@@ -1,0 +1,5 @@
+alfonso/configs/
+vendor/
+.vscode/
+glide.lock
+scripts/

@@ -1,0 +1,16 @@
+package: github.com/lightyeario/kelp
+import:
+- package: github.com/Beldur/kraken-go-api-client
+  version: a3aa238d0b4241f25f8cf61ae1dd5eb434f9c178
+- package: github.com/pkg/errors
+  version: v0.8.0
+- package: github.com/spf13/cobra
+  version: v0.0.1
+- package: github.com/stellar/go
+  version: a6a5de1d71f8246c7cdd4fdafedf4e3135662149
+  subpackages:
+  - build
+  - clients/horizon
+  - support/config
+  - support/errors
+  - support/log
