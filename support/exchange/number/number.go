@@ -9,18 +9,23 @@ import (
 const precision = 7
 
 // Number abstraction
-type Number struct {
-	f float64
-	s string
+type Number float64
+
+// AsFloat gives a float64 representation
+func (n Number) AsFloat() float64 {
+	return float64(n)
+}
+
+// AsString gives a string representation
+func (n Number) AsString() string {
+	return strconv.FormatFloat(n.AsFloat(), 'f', precision, 64)
 }
 
 // FromFloat makes a Number from a float
 func FromFloat(f float64) *Number {
 	fixed := toFixed(f, precision)
-	return &Number{
-		f: fixed,
-		s: strconv.FormatFloat(fixed, 'f', precision, 64),
-	}
+	n := Number(fixed)
+	return &n
 }
 
 // FromString makes a Number from a string, by calling FromFloat
