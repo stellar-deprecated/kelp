@@ -4,4 +4,5 @@ package assets
 var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
 	XLM: "XXLM",
 	BTC: "XXBT",
+	USD: "ZUSD",
 })

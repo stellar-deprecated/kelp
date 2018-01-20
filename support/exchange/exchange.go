@@ -16,4 +16,6 @@ type Ticker struct {
 // Exchange is the interface we use as a generic API to all crypto exchanges
 type Exchange interface {
 	GetTickerPrice([]assets.TradingPair) (map[assets.TradingPair]Ticker, error)
+
+	GetAccountBalances([]assets.Asset) (map[assets.Asset]number.Number, error)
 }

@@ -8,4 +8,5 @@ type Asset string
 const (
 	XLM Asset = "XLM"
 	BTC Asset = "BTC"
+	USD Asset = "USD"
 )
