@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-const precision = 7
+const precision = 8
 
 // Number abstraction
 type Number float64
