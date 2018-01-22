@@ -11,6 +11,7 @@ import (
 var testKrakenExchange Exchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
+	delimiter:      "",
 }
 
 func TestGetTickerPrice(t *testing.T) {
@@ -37,4 +38,17 @@ func TestGetAccountBalances(t *testing.T) {
 
 	bal := m[a]
 	assert.True(t, bal.AsFloat() > 0, bal.AsString())
+}
+
+func TestGetOrderBook(t *testing.T) {
+	xlmbtc := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	ob, e := testKrakenExchange.GetOrderBook(xlmbtc, 10)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	assert.True(t, len(ob.Asks()) > 0, len(ob.Asks()))
+	assert.True(t, len(ob.Bids()) > 0, len(ob.Bids()))
+	assert.True(t, ob.Asks()[0].OrderType.IsAsk())
+	assert.True(t, ob.Bids()[0].OrderType.IsBid())
 }

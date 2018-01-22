@@ -3,15 +3,22 @@ package exchange
 import (
 	"reflect"
 
+	"github.com/lightyeario/kelp/support/exchange/dates"
+
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/orderbook"
 )
+
+// ensure that krakenExchange conforms to the Exchange interface
+var _ Exchange = krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
 	assetConverter *assets.AssetConverter
 	api            *krakenapi.KrakenApi
+	delimiter      string
 }
 
 // Values gives you the values of a map
@@ -26,7 +33,7 @@ func Values(m map[assets.TradingPair]string) []string {
 
 // GetTickerPrice impl.
 func (k krakenExchange) GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]Ticker, error) {
-	pairsMap, e := assets.TradingPairs2Strings(k.assetConverter, "", pairs)
+	pairsMap, e := assets.TradingPairs2Strings(k.assetConverter, k.delimiter, pairs)
 	if e != nil {
 		return nil, e
 	}
@@ -70,14 +77,39 @@ func (k krakenExchange) GetAccountBalances(assetList []assets.Asset) (map[assets
 	return m, nil
 }
 
+// GetOrderBook impl.
+func (k krakenExchange) GetOrderBook(pair assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error) {
+	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
+	if e != nil {
+		return nil, e
+	}
+	krakenob, e := k.api.Depth(pairStr, int(maxCount))
+	if e != nil {
+		return nil, e
+	}
+
+	asks := readOrders(krakenob.Asks, orderbook.TypeAsk)
+	bids := readOrders(krakenob.Bids, orderbook.TypeBid)
+	ob := orderbook.MakeOrderBook(asks, bids)
+	return ob, nil
+}
+
+func readOrders(obi []krakenapi.OrderBookItem, orderType orderbook.OrderType) []orderbook.Order {
+	orders := []orderbook.Order{}
+	for _, item := range obi {
+		ts := dates.Timestamp(item.Ts)
+		orders = append(orders, orderbook.Order{
+			OrderType: orderType,
+			Price:     number.FromFloat(item.Price),
+			Volume:    number.FromFloat(item.Amount),
+			Timestamp: &ts,
+		})
+	}
+	return orders
+}
+
 func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float32 {
 	r := reflect.ValueOf(object)
 	f := reflect.Indirect(r).FieldByName(fieldName)
 	return f.Interface().(float32)
-}
-
-// KrakenExchange is the singleton instance of the kraken implementation
-var KrakenExchange Exchange = krakenExchange{
-	assetConverter: assets.KrakenAssetConverter,
-	api:            krakenapi.New("", ""),
 }
