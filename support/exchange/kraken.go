@@ -1,7 +1,10 @@
 package exchange
 
 import (
+	"errors"
 	"reflect"
+
+	"github.com/lightyeario/kelp/support/exchange/trades"
 
 	"github.com/lightyeario/kelp/support/exchange/dates"
 
@@ -94,15 +97,82 @@ func (k krakenExchange) GetOrderBook(pair assets.TradingPair, maxCount int32) (*
 	return ob, nil
 }
 
+// GetTrades impl.
+func (k krakenExchange) GetTrades(pair assets.TradingPair, maybeCursor interface{}) (*TradesResult, error) {
+	if maybeCursor != nil {
+		mc := maybeCursor.(int64)
+		return k.getTrades(pair, &mc)
+	}
+	return k.getTrades(pair, nil)
+}
+
+func (k krakenExchange) getTrades(pair assets.TradingPair, maybeCursor *int64) (*TradesResult, error) {
+	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
+	if e != nil {
+		return nil, e
+	}
+
+	var tradesResp *krakenapi.TradesResponse
+	if maybeCursor != nil {
+		tradesResp, e = k.api.Trades(pairStr, *maybeCursor)
+	} else {
+		tradesResp, e = k.api.Trades(pairStr, -1)
+	}
+	if e != nil {
+		return nil, e
+	}
+
+	tradesResult := &TradesResult{
+		Cursor: tradesResp.Last,
+		Trades: []trades.Trade{},
+	}
+	for _, tInfo := range tradesResp.Trades {
+		tradeType, e := getTradeType(tInfo)
+		if e != nil {
+			return nil, e
+		}
+		tradesResult.Trades = append(tradesResult.Trades, trades.Trade{
+			Type:      tradeType,
+			Price:     number.FromFloat(tInfo.PriceFloat),
+			Volume:    number.FromFloat(tInfo.VolumeFloat),
+			Timestamp: dates.MakeTimestamp(tInfo.Time),
+		})
+	}
+	return tradesResult, nil
+}
+
+func getTradeType(tInfo krakenapi.TradeInfo) (*trades.TradeType, error) {
+	var tradeType *trades.TradeType
+	if tInfo.Buy {
+		if tInfo.Market {
+			tradeType = trades.BuyMarket
+		} else if tInfo.Limit {
+			tradeType = trades.BuyLimit
+		} else {
+			return nil, errors.New("unidentified buy trade type")
+		}
+	} else if tInfo.Sell {
+		if tInfo.Market {
+			tradeType = trades.SellMarket
+		} else if tInfo.Limit {
+			tradeType = trades.SellLimit
+		} else {
+			return nil, errors.New("unidentified sell trade type")
+		}
+	} else {
+		return nil, errors.New("unidentified trade type")
+	}
+	return tradeType, nil
+}
+
 func readOrders(obi []krakenapi.OrderBookItem, orderType orderbook.OrderType) []orderbook.Order {
 	orders := []orderbook.Order{}
 	for _, item := range obi {
-		ts := dates.Timestamp(item.Ts)
 		orders = append(orders, orderbook.Order{
 			OrderType: orderType,
 			Price:     number.FromFloat(item.Price),
 			Volume:    number.FromFloat(item.Amount),
-			Timestamp: &ts,
+			Timestamp: dates.MakeTimestamp(item.Ts),
 		})
 	}
 	return orders

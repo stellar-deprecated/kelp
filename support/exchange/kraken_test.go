@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/Beldur/kraken-go-api-client"
@@ -15,8 +16,8 @@ var testKrakenExchange Exchange = krakenExchange{
 }
 
 func TestGetTickerPrice(t *testing.T) {
-	xlmbtc := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
-	pairs := []assets.TradingPair{xlmbtc}
+	pair := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	pairs := []assets.TradingPair{pair}
 
 	m, e := testKrakenExchange.GetTickerPrice(pairs)
 	if !assert.NoError(t, e) {
@@ -24,7 +25,7 @@ func TestGetTickerPrice(t *testing.T) {
 	}
 	assert.Equal(t, 1, len(m))
 
-	ticker := m[xlmbtc]
+	ticker := m[pair]
 	assert.True(t, ticker.AskPrice.AsFloat() < 1, ticker.AskPrice.AsString())
 }
 
@@ -41,8 +42,8 @@ func TestGetAccountBalances(t *testing.T) {
 }
 
 func TestGetOrderBook(t *testing.T) {
-	xlmbtc := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
-	ob, e := testKrakenExchange.GetOrderBook(xlmbtc, 10)
+	pair := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	ob, e := testKrakenExchange.GetOrderBook(pair, 10)
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -51,4 +52,16 @@ func TestGetOrderBook(t *testing.T) {
 	assert.True(t, len(ob.Bids()) > 0, len(ob.Bids()))
 	assert.True(t, ob.Asks()[0].OrderType.IsAsk())
 	assert.True(t, ob.Bids()[0].OrderType.IsBid())
+}
+
+func TestGetTrades(t *testing.T) {
+	pair := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	trades, e := testKrakenExchange.GetTrades(pair, nil)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	cursor := trades.Cursor.(int64)
+	assert.True(t, cursor > 0, strconv.FormatInt(cursor, 10))
+	assert.True(t, len(trades.Trades) > 0)
 }
