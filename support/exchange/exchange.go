@@ -21,6 +21,11 @@ type TradesResult struct {
 	Trades []trades.Trade
 }
 
+// TradeHistoryResult is the result of a GetTradeHistory call
+type TradeHistoryResult struct {
+	Trades []trades.Trade
+}
+
 // Exchange is the interface we use as a generic API to all crypto exchanges
 type Exchange interface {
 	// Public
@@ -34,4 +39,7 @@ type Exchange interface {
 
 	// Public
 	GetTrades(pair assets.TradingPair, maybeCursor interface{}) (*TradesResult, error)
+
+	// Private
+	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 }

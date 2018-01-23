@@ -65,3 +65,11 @@ func TestGetTrades(t *testing.T) {
 	assert.True(t, cursor > 0, strconv.FormatInt(cursor, 10))
 	assert.True(t, len(trades.Trades) > 0)
 }
+
+func TestGetTradeHistory(t *testing.T) {
+	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(nil, nil)
+	if !assert.NoError(t, e) {
+		return
+	}
+	assert.True(t, len(tradeHistoryResult.Trades) > 0)
+}
