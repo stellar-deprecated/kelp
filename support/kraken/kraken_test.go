@@ -1,15 +1,16 @@
-package exchange
+package kraken
 
 import (
 	"strconv"
 	"testing"
 
 	"github.com/Beldur/kraken-go-api-client"
+	"github.com/lightyeario/kelp/support/exchange"
 	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/stretchr/testify/assert"
 )
 
-var testKrakenExchange Exchange = krakenExchange{
+var testKrakenExchange exchange.Exchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",

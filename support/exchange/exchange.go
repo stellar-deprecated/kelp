@@ -28,21 +28,15 @@ type TradeHistoryResult struct {
 
 // Exchange is the interface we use as a generic API to all crypto exchanges
 type Exchange interface {
-	// Public
 	GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]Ticker, error)
 
-	// Private
 	GetAccountBalances(assetList []assets.Asset) (map[assets.Asset]number.Number, error)
 
-	// Public
 	GetOrderBook(pair assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
 
-	// Public
 	GetTrades(pair assets.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
-	// Private
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 
-	// Private
 	GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error)
 }
