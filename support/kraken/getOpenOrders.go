@@ -23,7 +23,7 @@ func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.Open
 	// TODO 2 - not sure if the trading pair is ordered correctly with the orderTypeMap above for buy/sell
 	m := map[assets.TradingPair][]orderbook.OpenOrder{}
 	for _, o := range openOrdersResponse.Open {
-		pair, e := k.parsePair(o.Description.AssetPair)
+		pair, e := assets.FromString(k.assetConverter, o.Description.AssetPair)
 		if e != nil {
 			return nil, e
 		}

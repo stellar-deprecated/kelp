@@ -15,17 +15,3 @@ type krakenExchange struct {
 	api            *krakenapi.KrakenApi
 	delimiter      string
 }
-
-func (k krakenExchange) parsePair(p string) (*assets.TradingPair, error) {
-	a, e := k.assetConverter.FromString(p[0:4])
-	if e != nil {
-		return nil, e
-	}
-
-	b, e := k.assetConverter.FromString(p[4:8])
-	if e != nil {
-		return nil, e
-	}
-
-	return &assets.TradingPair{AssetA: a, AssetB: b}, nil
-}

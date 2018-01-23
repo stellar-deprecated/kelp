@@ -17,7 +17,7 @@ var testKrakenExchange exchange.Exchange = krakenExchange{
 }
 
 func TestGetTickerPrice(t *testing.T) {
-	pair := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
 	pairs := []assets.TradingPair{pair}
 
 	m, e := testKrakenExchange.GetTickerPrice(pairs)
@@ -43,7 +43,7 @@ func TestGetAccountBalances(t *testing.T) {
 }
 
 func TestGetOrderBook(t *testing.T) {
-	pair := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
 	ob, e := testKrakenExchange.GetOrderBook(pair, 10)
 	if !assert.NoError(t, e) {
 		return
@@ -56,7 +56,7 @@ func TestGetOrderBook(t *testing.T) {
 }
 
 func TestGetTrades(t *testing.T) {
-	pair := assets.TradingPair{AssetA: assets.XLM, AssetB: assets.BTC}
+	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
 	trades, e := testKrakenExchange.GetTrades(pair, nil)
 	if !assert.NoError(t, e) {
 		return

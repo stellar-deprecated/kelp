@@ -21,7 +21,7 @@ type Trade struct {
 }
 
 func (t Trade) String() string {
-	pair := string(t.Pair.AssetA) + "_" + string(t.Pair.AssetB)
+	pair := string(t.Pair.Base) + "_" + string(t.Pair.Quote)
 	return fmt.Sprintf("Trades[txid: %s, ts: %d, pair: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
 		*t.TransactionID,
 		t.Timestamp,

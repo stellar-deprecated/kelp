@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/lightyeario/kelp/support/exchange"
+	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/lightyeario/kelp/support/exchange/dates"
 	"github.com/lightyeario/kelp/support/exchange/number"
 	"github.com/lightyeario/kelp/support/exchange/trades"
@@ -60,7 +61,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		_cost := m["cost"].(string)
 		_fee := m["fee"].(string)
 		_pair := m["pair"].(string)
-		pair, e := k.parsePair(_pair)
+		pair, e := assets.FromString(k.assetConverter, _pair)
 		if e != nil {
 			return nil, e
 		}
@@ -68,13 +69,12 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		res.Trades = append(res.Trades, trades.Trade{
 			TransactionID: &_txid,
 			Timestamp:     ts,
-			// TODO 2 - make clear what is base and what is quote currency -- base is AssetA, quote is AssetB?
-			Pair:   pair,
-			Type:   tradeType,
-			Price:  number.MustFromString(_price),
-			Volume: number.MustFromString(_vol),
-			Cost:   number.MustFromString(_cost),
-			Fee:    number.MustFromString(_fee),
+			Pair:          pair,
+			Type:          tradeType,
+			Price:         number.MustFromString(_price),
+			Volume:        number.MustFromString(_vol),
+			Cost:          number.MustFromString(_cost),
+			Fee:           number.MustFromString(_fee),
 		})
 	}
 	return &res, nil
