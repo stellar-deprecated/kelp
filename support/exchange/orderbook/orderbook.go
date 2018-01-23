@@ -5,15 +5,8 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/number"
 )
 
-// Order represents an order in the orderbook
-type Order struct {
-	OrderType OrderType
-	Price     *number.Number
-	Volume    *number.Number
-	Timestamp *dates.Timestamp
-}
-
 // OrderBook encapsulates the concept of an orderbook on a market
+// TODO 2 - add the trading pair to this struct
 type OrderBook struct {
 	asks []Order
 	bids []Order

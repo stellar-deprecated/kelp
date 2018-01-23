@@ -1,5 +1,9 @@
 package orderbook
 
+import (
+	"strconv"
+)
+
 // OrderType represents a type of an order, either an ask or a bid
 type OrderType int8
 
@@ -17,4 +21,14 @@ func (o OrderType) IsAsk() bool {
 // IsBid returns true of the order is of type bid
 func (o OrderType) IsBid() bool {
 	return o == TypeBid
+}
+
+// String is the stringer function
+func (o OrderType) String() string {
+	if o == TypeBid {
+		return "bid"
+	} else if o == TypeAsk {
+		return "ask"
+	}
+	return "error, unrecognized order type: " + strconv.FormatInt(int64(o), 10)
 }
