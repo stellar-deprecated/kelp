@@ -2,6 +2,7 @@ package trades
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/lightyeario/kelp/support/exchange/dates"
@@ -21,7 +22,11 @@ type Trade struct {
 }
 
 func (t Trade) String() string {
-	pair := string(t.Pair.Base) + "_" + string(t.Pair.Quote)
+	pair, e := t.Pair.ToString(assets.Display, "_")
+	if e != nil {
+		log.Panic(e)
+	}
+
 	return fmt.Sprintf("Trades[txid: %s, ts: %d, pair: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
 		*t.TransactionID,
 		t.Timestamp,

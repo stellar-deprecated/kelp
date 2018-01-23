@@ -40,3 +40,10 @@ func (c AssetConverter) FromString(s string) (Asset, error) {
 	}
 	return a, nil
 }
+
+// Display is a basic converter for display purposes
+var Display = makeAssetConverter(map[Asset]string{
+	XLM: string(XLM),
+	BTC: string(BTC),
+	USD: string(USD),
+})
