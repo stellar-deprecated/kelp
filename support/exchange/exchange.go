@@ -42,4 +42,7 @@ type Exchange interface {
 
 	// Private
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
+
+	// Private
+	GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error)
 }

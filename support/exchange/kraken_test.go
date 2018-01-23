@@ -73,3 +73,11 @@ func TestGetTradeHistory(t *testing.T) {
 	}
 	assert.True(t, len(tradeHistoryResult.Trades) > 0)
 }
+
+func TestGetOpenOrders(t *testing.T) {
+	m, e := testKrakenExchange.GetOpenOrders()
+	if !assert.NoError(t, e) {
+		return
+	}
+	assert.True(t, len(m) > 0, "there were no open orders")
+}
