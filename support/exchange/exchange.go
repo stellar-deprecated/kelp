@@ -32,9 +32,9 @@ type Exchange interface {
 
 	GetAccountBalances(assetList []assets.Asset) (map[assets.Asset]number.Number, error)
 
-	GetOrderBook(pair assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
+	GetOrderBook(pair *assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
 
-	GetTrades(pair assets.TradingPair, maybeCursor interface{}) (*TradesResult, error)
+	GetTrades(pair *assets.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 

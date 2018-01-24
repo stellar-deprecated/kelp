@@ -1,6 +1,8 @@
 package kraken
 
 import (
+	"fmt"
+
 	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/lightyeario/kelp/support/exchange/dates"
 	"github.com/lightyeario/kelp/support/exchange/number"
@@ -8,9 +10,15 @@ import (
 )
 
 // save this map for now to avoid if branches in GetOpenOrders below
+var orderActionMap = map[string]orderbook.OrderAction{
+	"buy":  orderbook.ActionBuy,
+	"sell": orderbook.ActionSell,
+}
+
+// save this map for now to avoid if branches in GetOpenOrders below
 var orderTypeMap = map[string]orderbook.OrderType{
-	"buy":  orderbook.TypeBid,
-	"sell": orderbook.TypeAsk,
+	"market": orderbook.TypeMarket,
+	"limit":  orderbook.TypeLimit,
 }
 
 // GetOpenOrders impl.
@@ -20,7 +28,6 @@ func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.Open
 		return nil, e
 	}
 
-	// TODO 2 - not sure if the trading pair is ordered correctly with the orderTypeMap above for buy/sell
 	m := map[assets.TradingPair][]orderbook.OpenOrder{}
 	for _, o := range openOrdersResponse.Open {
 		pair, e := assets.FromString(k.assetConverter, o.Description.AssetPair)
@@ -30,15 +37,20 @@ func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.Open
 		if _, ok := m[*pair]; !ok {
 			m[*pair] = []orderbook.OpenOrder{}
 		}
+		if _, ok := m[assets.TradingPair{Base: pair.Quote, Quote: pair.Base}]; ok {
+			return nil, fmt.Errorf("open orders are listed with repeated base/quote pairs for %s", *pair)
+		}
 
 		m[*pair] = append(m[*pair], orderbook.OpenOrder{
 			Order: orderbook.Order{
-				OrderType: orderTypeMap[o.Description.Type],
-				Price:     number.FromFloat(o.Price),
-				Volume:    number.MustFromString(o.Volume),
-				Timestamp: dates.MakeTimestamp(int64(o.OpenTime)),
+				Pair:        pair,
+				OrderAction: orderActionMap[o.Description.Type],
+				OrderType:   orderTypeMap[o.Description.OrderType],
+				Price:       number.FromFloat(o.Price),
+				Volume:      number.MustFromString(o.Volume),
+				Timestamp:   dates.MakeTimestamp(int64(o.OpenTime)),
 			},
-			ID:             o.ReferenceID, // TODO 2 - is this correct, or should it be o.UserRef?
+			ID:             o.ReferenceID,
 			StartTime:      dates.MakeTimestamp(int64(o.StartTime)),
 			ExpireTime:     dates.MakeTimestamp(int64(o.ExpireTime)),
 			VolumeExecuted: number.FromFloat(o.VolumeExecuted),

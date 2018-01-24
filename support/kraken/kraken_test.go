@@ -44,20 +44,22 @@ func TestGetAccountBalances(t *testing.T) {
 
 func TestGetOrderBook(t *testing.T) {
 	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
-	ob, e := testKrakenExchange.GetOrderBook(pair, 10)
+	ob, e := testKrakenExchange.GetOrderBook(&pair, 10)
 	if !assert.NoError(t, e) {
 		return
 	}
 
 	assert.True(t, len(ob.Asks()) > 0, len(ob.Asks()))
 	assert.True(t, len(ob.Bids()) > 0, len(ob.Bids()))
-	assert.True(t, ob.Asks()[0].OrderType.IsAsk())
-	assert.True(t, ob.Bids()[0].OrderType.IsBid())
+	assert.True(t, ob.Asks()[0].OrderAction.IsSell())
+	assert.True(t, ob.Asks()[0].OrderType.IsLimit())
+	assert.True(t, ob.Bids()[0].OrderAction.IsBuy())
+	assert.True(t, ob.Bids()[0].OrderType.IsLimit())
 }
 
 func TestGetTrades(t *testing.T) {
 	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
-	trades, e := testKrakenExchange.GetTrades(pair, nil)
+	trades, e := testKrakenExchange.GetTrades(&pair, nil)
 	if !assert.NoError(t, e) {
 		return
 	}

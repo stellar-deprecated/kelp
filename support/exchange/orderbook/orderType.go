@@ -1,34 +1,30 @@
 package orderbook
 
-import (
-	"strconv"
-)
-
-// OrderType represents a type of an order, either an ask or a bid
+// OrderType represents a type of an order, example market, limit, etc.
 type OrderType int8
 
-// TypeBid and TypeAsk are the two types of orders
+// These are the available order types
 const (
-	TypeBid OrderType = 1
-	TypeAsk OrderType = 0
+	TypeMarket OrderType = 0
+	TypeLimit  OrderType = 1
 )
 
-// IsAsk returns true of the order is of type ask
-func (o OrderType) IsAsk() bool {
-	return o == TypeAsk
+// IsMarket returns true for market orders
+func (o OrderType) IsMarket() bool {
+	return o == TypeMarket
 }
 
-// IsBid returns true of the order is of type bid
-func (o OrderType) IsBid() bool {
-	return o == TypeBid
+// IsLimit returns true for limit orders
+func (o OrderType) IsLimit() bool {
+	return o == TypeLimit
 }
 
 // String is the stringer function
 func (o OrderType) String() string {
-	if o == TypeBid {
-		return "bid"
-	} else if o == TypeAsk {
-		return "ask"
+	if o == TypeMarket {
+		return "market"
+	} else if o == TypeLimit {
+		return "limit"
 	}
-	return "error, unrecognized order type: " + strconv.FormatInt(int64(o), 10)
+	return "error, unrecognized order type"
 }

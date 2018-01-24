@@ -1,5 +1,9 @@
 package assets
 
+import (
+	"fmt"
+)
+
 // TradingPair lists an ordered pair that is understood by the bot and our exchange API.
 // EUR/USD = 1.25; EUR is base, USD is Quote. EUR is more valuable in this example
 // USD/EUR = 0.80; USD is base, EUR is Quote. EUR is more valuable in this example
@@ -8,6 +12,15 @@ type TradingPair struct {
 	Base Asset
 	// Quote (or Counter) represents the asset that has its unit specified relative to the base asset
 	Quote Asset
+}
+
+// String is the stringer function
+func (p TradingPair) String() string {
+	s, e := p.ToString(Display, "/")
+	if e != nil {
+		return fmt.Sprintf("<error, TradingPair: %s>", e)
+	}
+	return s
 }
 
 // ToString converts the trading pair to a string using the passed in assetConverter
