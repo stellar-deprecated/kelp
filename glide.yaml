@@ -1,7 +1,7 @@
 package: github.com/lightyeario/kelp
 import:
 - package: github.com/Beldur/kraken-go-api-client
-  version: a3aa238d0b4241f25f8cf61ae1dd5eb434f9c178
+  version: 7c409f1ae52143611755bc2d94534b4b3e3a3344
 - package: github.com/pkg/errors
   version: v0.8.0
 - package: github.com/spf13/cobra
