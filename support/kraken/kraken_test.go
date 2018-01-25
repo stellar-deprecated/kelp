@@ -62,6 +62,8 @@ func TestGetAccountBalances(t *testing.T) {
 		bal := m[a]
 		assert.True(t, bal.AsFloat() > 0, bal.AsString())
 	}
+
+	assert.Fail(t, "force fail")
 }
 
 func TestGetOrderBook(t *testing.T) {
@@ -104,6 +106,8 @@ func TestGetTradeHistory(t *testing.T) {
 	}
 
 	assert.True(t, len(tradeHistoryResult.Trades) > 0)
+
+	assert.Fail(t, "force fail")
 }
 
 func TestGetOpenOrders(t *testing.T) {
@@ -121,6 +125,8 @@ func TestGetOpenOrders(t *testing.T) {
 	}
 
 	assert.True(t, len(m) > 0, "there were no open orders")
+
+	assert.Fail(t, "force fail")
 }
 
 func TestAddOrder(t *testing.T) {
@@ -137,6 +143,8 @@ func TestAddOrder(t *testing.T) {
 
 	fmt.Printf("transactionID from order: %s\n", txID)
 	assert.NotNil(t, txID)
+
+	assert.Fail(t, "force fail")
 }
 
 func TestCancelOrder(t *testing.T) {
@@ -149,4 +157,6 @@ func TestCancelOrder(t *testing.T) {
 
 	fmt.Printf("result from cancel order (transactionID=%s): %s\n", txID.String(), result.String())
 	assert.Equal(t, trades.CancelResultCancelSuccessful, result)
+
+	assert.Fail(t, "force fail")
 }
