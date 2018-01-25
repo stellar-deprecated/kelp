@@ -14,5 +14,6 @@ type krakenExchange struct {
 	assetConverter *assets.AssetConverter
 	api            *krakenapi.KrakenApi
 	delimiter      string
+	precision      int8
 	isSimulated    bool // will simulate add and cancel orders if this is true
 }

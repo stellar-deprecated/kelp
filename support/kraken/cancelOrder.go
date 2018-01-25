@@ -7,7 +7,7 @@ import (
 )
 
 // CancelOrder impl.
-func (k krakenExchange) CancelOrder(txID orderbook.TransactionID) (trades.CancelOrderResult, error) {
+func (k krakenExchange) CancelOrder(txID *orderbook.TransactionID) (trades.CancelOrderResult, error) {
 	resp, e := k.api.CancelOrder(txID.String())
 	if e != nil {
 		return trades.CancelResultFailed, e

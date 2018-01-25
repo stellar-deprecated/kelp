@@ -38,14 +38,14 @@ func (p TradingPair) ToString(c *AssetConverter, delim string) (string, error) {
 	return a + delim + b, nil
 }
 
-// FromString makes a TradingPair out of a string
-func FromString(c *AssetConverter, p string) (*TradingPair, error) {
-	base, e := c.FromString(p[0:4])
+// TradingPairFromString makes a TradingPair out of a string
+func TradingPairFromString(codeSize int8, c *AssetConverter, p string) (*TradingPair, error) {
+	base, e := c.FromString(p[0:codeSize])
 	if e != nil {
 		return nil, e
 	}
 
-	quote, e := c.FromString(p[4:8])
+	quote, e := c.FromString(p[codeSize : codeSize*2])
 	if e != nil {
 		return nil, e
 	}

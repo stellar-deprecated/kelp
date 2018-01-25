@@ -23,11 +23,13 @@ func (k krakenExchange) GetAccountBalances(assetList []assets.Asset) (map[assets
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *number.FromFloat(float64(bal))
+		m[a] = *number.FromFloat(float64(bal), k.precision)
 	}
 	return m, nil
 }
 
+// this currently returns a float32 and is not very accurate.
+// Waiting on my PR to change this to use float64: https://github.com/beldur/kraken-go-api-client/pull/35
 func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float32 {
 	r := reflect.ValueOf(object)
 	f := reflect.Indirect(r).FieldByName(fieldName)

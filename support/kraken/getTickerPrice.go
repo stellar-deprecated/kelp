@@ -22,10 +22,10 @@ func (k krakenExchange) GetTickerPrice(pairs []assets.TradingPair) (map[assets.T
 	for _, p := range pairs {
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = exchange.Ticker{
-			AskPrice:  number.MustFromString(pairTickerInfo.Ask[0]),
-			AskVolume: number.MustFromString(pairTickerInfo.Ask[1]),
-			BidPrice:  number.MustFromString(pairTickerInfo.Bid[0]),
-			BidVolume: number.MustFromString(pairTickerInfo.Bid[1]),
+			AskPrice:  number.MustFromString(pairTickerInfo.Ask[0], k.precision),
+			AskVolume: number.MustFromString(pairTickerInfo.Ask[1], k.precision),
+			BidPrice:  number.MustFromString(pairTickerInfo.Bid[0], k.precision),
+			BidVolume: number.MustFromString(pairTickerInfo.Bid[1], k.precision),
 		}
 	}
 

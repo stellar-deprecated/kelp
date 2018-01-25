@@ -58,7 +58,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		_cost := m["cost"].(string)
 		_fee := m["fee"].(string)
 		_pair := m["pair"].(string)
-		pair, e := assets.FromString(k.assetConverter, _pair)
+		pair, e := assets.TradingPairFromString(4, k.assetConverter, _pair)
 		if e != nil {
 			return nil, e
 		}
@@ -68,13 +68,13 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 				Pair:        pair,
 				OrderAction: orderbook.OrderActionFromString(_type),
 				OrderType:   orderbook.OrderTypeFromString(_ordertype),
-				Price:       number.MustFromString(_price),
-				Volume:      number.MustFromString(_vol),
+				Price:       number.MustFromString(_price, k.precision),
+				Volume:      number.MustFromString(_vol, k.precision),
 				Timestamp:   ts,
 			},
 			TransactionID: orderbook.MakeTransactionID(_txid),
-			Cost:          number.MustFromString(_cost),
-			Fee:           number.MustFromString(_fee),
+			Cost:          number.MustFromString(_cost, k.precision),
+			Fee:           number.MustFromString(_fee, k.precision),
 		})
 	}
 	return &res, nil

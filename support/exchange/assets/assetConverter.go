@@ -36,7 +36,7 @@ func (c AssetConverter) ToString(a Asset) (string, error) {
 func (c AssetConverter) FromString(s string) (Asset, error) {
 	a, ok := c.string2Asset[s]
 	if !ok {
-		return "", errors.New("could not recognize string: " + s)
+		return "", errors.New("asset converter could not recognize string: " + s)
 	}
 	return a, nil
 }

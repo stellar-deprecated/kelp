@@ -5,6 +5,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/lightyeario/kelp/support/exchange/trades"
+
+	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/orderbook"
+
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/support/exchange"
 	"github.com/lightyeario/kelp/support/exchange/assets"
@@ -15,6 +20,7 @@ var testKrakenExchange exchange.Exchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",
+	precision:      8,
 	isSimulated:    true,
 }
 
@@ -48,8 +54,8 @@ func TestGetAccountBalances(t *testing.T) {
 	assert.Equal(t, 6, len(m))
 
 	// print balances here for convenience
-	for assetKey, balanceValue := range m {
-		fmt.Printf("Balance %s = %.8f\n", assetKey, balanceValue.AsFloat())
+	for _, assetKey := range assetList {
+		fmt.Printf("Balance %s = %.8f\n", assetKey, m[assetKey].AsFloat())
 	}
 
 	for _, a := range assetList {
@@ -90,6 +96,13 @@ func TestGetTradeHistory(t *testing.T) {
 	if !assert.NoError(t, e) {
 		return
 	}
+
+	// print here for convenience
+	fmt.Printf("total number of trades: %d\n", len(tradeHistoryResult.Trades))
+	for _, t := range tradeHistoryResult.Trades {
+		fmt.Println(t.String())
+	}
+
 	assert.True(t, len(tradeHistoryResult.Trades) > 0)
 }
 
@@ -108,4 +121,32 @@ func TestGetOpenOrders(t *testing.T) {
 	}
 
 	assert.True(t, len(m) > 0, "there were no open orders")
+}
+
+func TestAddOrder(t *testing.T) {
+	txID, e := testKrakenExchange.AddOrder(&orderbook.Order{
+		Pair:        &assets.TradingPair{Base: assets.REP, Quote: assets.ETH},
+		OrderAction: orderbook.ActionBuy,
+		OrderType:   orderbook.TypeLimit,
+		Price:       number.FromFloat(0.00001, 5),
+		Volume:      number.FromFloat(0.3145, 5),
+	})
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	fmt.Printf("transactionID from order: %s\n", txID)
+	assert.NotNil(t, txID)
+}
+
+func TestCancelOrder(t *testing.T) {
+	// need to add some transactionID here to run this test
+	txID := orderbook.MakeTransactionID("")
+	result, e := testKrakenExchange.CancelOrder(txID)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	fmt.Printf("result from cancel order (transactionID=%s): %s\n", txID.String(), result.String())
+	assert.Equal(t, trades.CancelResultCancelSuccessful, result)
 }

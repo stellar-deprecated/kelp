@@ -42,5 +42,5 @@ type Exchange interface {
 
 	AddOrder(order *orderbook.Order) (*orderbook.TransactionID, error)
 
-	CancelOrder(txID orderbook.TransactionID) (trades.CancelOrderResult, error)
+	CancelOrder(txID *orderbook.TransactionID) (trades.CancelOrderResult, error)
 }

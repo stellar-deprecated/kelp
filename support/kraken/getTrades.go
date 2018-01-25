@@ -58,8 +58,8 @@ func (k krakenExchange) getTrades(pair *assets.TradingPair, maybeCursor *int64) 
 				Pair:        pair,
 				OrderAction: action,
 				OrderType:   orderType,
-				Price:       number.FromFloat(tInfo.PriceFloat),
-				Volume:      number.FromFloat(tInfo.VolumeFloat),
+				Price:       number.FromFloat(tInfo.PriceFloat, k.precision),
+				Volume:      number.FromFloat(tInfo.VolumeFloat, k.precision),
 				Timestamp:   dates.MakeTimestamp(tInfo.Time),
 			},
 			// TransactionID unavailable

@@ -21,21 +21,21 @@ func (k krakenExchange) GetOrderBook(pair *assets.TradingPair, maxCount int32) (
 		return nil, e
 	}
 
-	asks := readOrders(krakenob.Asks, pair, orderbook.ActionSell)
-	bids := readOrders(krakenob.Bids, pair, orderbook.ActionBuy)
+	asks := k.readOrders(krakenob.Asks, pair, orderbook.ActionSell)
+	bids := k.readOrders(krakenob.Bids, pair, orderbook.ActionBuy)
 	ob := orderbook.MakeOrderBook(pair, asks, bids)
 	return ob, nil
 }
 
-func readOrders(obi []krakenapi.OrderBookItem, pair *assets.TradingPair, orderAction orderbook.OrderAction) []orderbook.Order {
+func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *assets.TradingPair, orderAction orderbook.OrderAction) []orderbook.Order {
 	orders := []orderbook.Order{}
 	for _, item := range obi {
 		orders = append(orders, orderbook.Order{
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   orderbook.TypeLimit,
-			Price:       number.FromFloat(item.Price),
-			Volume:      number.FromFloat(item.Amount),
+			Price:       number.FromFloat(item.Price, k.precision),
+			Volume:      number.FromFloat(item.Amount, k.precision),
 			Timestamp:   dates.MakeTimestamp(item.Ts),
 		})
 	}
