@@ -28,3 +28,13 @@ func (o OrderType) String() string {
 	}
 	return "error, unrecognized order type"
 }
+
+var orderTypeMap = map[string]OrderType{
+	"market": TypeMarket,
+	"limit":  TypeLimit,
+}
+
+// OrderTypeFromString is a convenience to convert from common strings to the corresponding OrderType
+func OrderTypeFromString(s string) OrderType {
+	return orderTypeMap[s]
+}

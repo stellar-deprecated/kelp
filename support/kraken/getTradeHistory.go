@@ -1,8 +1,9 @@
 package kraken
 
 import (
-	"errors"
 	"strconv"
+
+	"github.com/lightyeario/kelp/support/exchange/orderbook"
 
 	"github.com/lightyeario/kelp/support/exchange"
 	"github.com/lightyeario/kelp/support/exchange/assets"
@@ -52,10 +53,6 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		ts := dates.MakeTimestamp(int64(_time))
 		_type := m["type"].(string)
 		_ordertype := m["ordertype"].(string)
-		tradeType, e := getTradeTypeFromStrings(_type, _ordertype)
-		if e != nil {
-			return nil, e
-		}
 		_price := m["price"].(string)
 		_vol := m["vol"].(string)
 		_cost := m["cost"].(string)
@@ -67,39 +64,18 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		}
 
 		res.Trades = append(res.Trades, trades.Trade{
+			Order: orderbook.Order{
+				Pair:        pair,
+				OrderAction: orderbook.OrderActionFromString(_type),
+				OrderType:   orderbook.OrderTypeFromString(_ordertype),
+				Price:       number.MustFromString(_price),
+				Volume:      number.MustFromString(_vol),
+				Timestamp:   ts,
+			},
 			TransactionID: &_txid,
-			Timestamp:     ts,
-			Pair:          pair,
-			Type:          tradeType,
-			Price:         number.MustFromString(_price),
-			Volume:        number.MustFromString(_vol),
 			Cost:          number.MustFromString(_cost),
 			Fee:           number.MustFromString(_fee),
 		})
 	}
 	return &res, nil
-}
-
-func getTradeTypeFromStrings(_type string, _ordertype string) (*trades.TradeType, error) {
-	var tradeType *trades.TradeType
-	if _type == "buy" {
-		if _ordertype == "market" {
-			tradeType = trades.BuyMarket
-		} else if _ordertype == "limit" {
-			tradeType = trades.BuyLimit
-		} else {
-			return nil, errors.New("unidentified buy trade type")
-		}
-	} else if _type == "sell" {
-		if _ordertype == "market" {
-			tradeType = trades.SellMarket
-		} else if _ordertype == "limit" {
-			tradeType = trades.SellLimit
-		} else {
-			return nil, errors.New("unidentified sell trade type")
-		}
-	} else {
-		return nil, errors.New("unidentified trade type")
-	}
-	return tradeType, nil
 }

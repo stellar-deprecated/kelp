@@ -5,8 +5,8 @@ type OrderAction bool
 
 // ActionBuy and ActionSell are the two actions
 const (
-	ActionBuy  OrderAction = true
-	ActionSell OrderAction = false
+	ActionBuy  OrderAction = false
+	ActionSell OrderAction = true
 )
 
 // IsBuy returns true for buy actions
@@ -27,4 +27,14 @@ func (a OrderAction) String() string {
 		return "sell"
 	}
 	return "error, unrecognized order action"
+}
+
+var orderActionMap = map[string]OrderAction{
+	"buy":  ActionBuy,
+	"sell": ActionSell,
+}
+
+// OrderActionFromString is a convenience to convert from common strings to the corresponding OrderAction
+func OrderActionFromString(s string) OrderAction {
+	return orderActionMap[s]
 }

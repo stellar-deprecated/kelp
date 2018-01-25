@@ -3,6 +3,8 @@ package kraken
 import (
 	"errors"
 
+	"github.com/lightyeario/kelp/support/exchange/orderbook"
+
 	"github.com/Beldur/kraken-go-api-client"
 
 	"github.com/lightyeario/kelp/support/exchange"
@@ -42,40 +44,48 @@ func (k krakenExchange) getTrades(pair *assets.TradingPair, maybeCursor *int64) 
 		Trades: []trades.Trade{},
 	}
 	for _, tInfo := range tradesResp.Trades {
-		tradeType, e := getTradeType(tInfo)
+		action, e := getAction(tInfo)
 		if e != nil {
 			return nil, e
 		}
+		orderType, e := getOrderType(tInfo)
+		if e != nil {
+			return nil, e
+		}
+
 		tradesResult.Trades = append(tradesResult.Trades, trades.Trade{
-			Type:      tradeType,
-			Price:     number.FromFloat(tInfo.PriceFloat),
-			Volume:    number.FromFloat(tInfo.VolumeFloat),
-			Timestamp: dates.MakeTimestamp(tInfo.Time),
+			Order: orderbook.Order{
+				Pair:        pair,
+				OrderAction: action,
+				OrderType:   orderType,
+				Price:       number.FromFloat(tInfo.PriceFloat),
+				Volume:      number.FromFloat(tInfo.VolumeFloat),
+				Timestamp:   dates.MakeTimestamp(tInfo.Time),
+			},
+			// TransactionID unavailable
+			// Cost unavailable
+			// Fee unavailable
 		})
 	}
 	return tradesResult, nil
 }
 
-func getTradeType(tInfo krakenapi.TradeInfo) (*trades.TradeType, error) {
-	var tradeType *trades.TradeType
+func getAction(tInfo krakenapi.TradeInfo) (orderbook.OrderAction, error) {
 	if tInfo.Buy {
-		if tInfo.Market {
-			tradeType = trades.BuyMarket
-		} else if tInfo.Limit {
-			tradeType = trades.BuyLimit
-		} else {
-			return nil, errors.New("unidentified buy trade type")
-		}
+		return orderbook.ActionBuy, nil
 	} else if tInfo.Sell {
-		if tInfo.Market {
-			tradeType = trades.SellMarket
-		} else if tInfo.Limit {
-			tradeType = trades.SellLimit
-		} else {
-			return nil, errors.New("unidentified sell trade type")
-		}
-	} else {
-		return nil, errors.New("unidentified trade type")
+		return orderbook.ActionSell, nil
 	}
-	return tradeType, nil
+
+	// return ActionBuy as nil value
+	return orderbook.ActionBuy, errors.New("unidentified trade action")
+}
+
+func getOrderType(tInfo krakenapi.TradeInfo) (orderbook.OrderType, error) {
+	if tInfo.Market {
+		return orderbook.TypeMarket, nil
+	} else if tInfo.Limit {
+		return orderbook.TypeLimit, nil
+	}
+	return -1, errors.New("unidentified trade action")
 }

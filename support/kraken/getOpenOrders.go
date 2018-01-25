@@ -9,18 +9,6 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/orderbook"
 )
 
-// save this map for now to avoid if branches in GetOpenOrders below
-var orderActionMap = map[string]orderbook.OrderAction{
-	"buy":  orderbook.ActionBuy,
-	"sell": orderbook.ActionSell,
-}
-
-// save this map for now to avoid if branches in GetOpenOrders below
-var orderTypeMap = map[string]orderbook.OrderType{
-	"market": orderbook.TypeMarket,
-	"limit":  orderbook.TypeLimit,
-}
-
 // GetOpenOrders impl.
 func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error) {
 	openOrdersResponse, e := k.api.OpenOrders(map[string]string{})
@@ -44,8 +32,8 @@ func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.Open
 		m[*pair] = append(m[*pair], orderbook.OpenOrder{
 			Order: orderbook.Order{
 				Pair:        pair,
-				OrderAction: orderActionMap[o.Description.Type],
-				OrderType:   orderTypeMap[o.Description.OrderType],
+				OrderAction: orderbook.OrderActionFromString(o.Description.Type),
+				OrderType:   orderbook.OrderTypeFromString(o.Description.OrderType),
 				Price:       number.FromFloat(o.Price),
 				Volume:      number.MustFromString(o.Volume),
 				Timestamp:   dates.MakeTimestamp(int64(o.OpenTime)),
