@@ -46,4 +46,7 @@ var Display = makeAssetConverter(map[Asset]string{
 	XLM: string(XLM),
 	BTC: string(BTC),
 	USD: string(USD),
+	ETH: string(ETH),
+	LTC: string(LTC),
+	REP: string(REP),
 })

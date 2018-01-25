@@ -9,4 +9,7 @@ const (
 	XLM Asset = "XLM"
 	BTC Asset = "BTC"
 	USD Asset = "USD"
+	ETH Asset = "ETH"
+	LTC Asset = "LTC"
+	REP Asset = "REP"
 )

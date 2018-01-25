@@ -1,6 +1,7 @@
 package kraken
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -32,15 +33,29 @@ func TestGetTickerPrice(t *testing.T) {
 }
 
 func TestGetAccountBalances(t *testing.T) {
-	a := assets.USD
-	m, e := testKrakenExchange.GetAccountBalances([]assets.Asset{a})
+	assetList := []assets.Asset{
+		assets.USD,
+		assets.XLM,
+		assets.BTC,
+		assets.LTC,
+		assets.ETH,
+		assets.REP,
+	}
+	m, e := testKrakenExchange.GetAccountBalances(assetList)
 	if !assert.NoError(t, e) {
 		return
 	}
-	assert.Equal(t, 1, len(m))
+	assert.Equal(t, 6, len(m))
 
-	bal := m[a]
-	assert.True(t, bal.AsFloat() > 0, bal.AsString())
+	// print balances here for convenience
+	for assetKey, balanceValue := range m {
+		fmt.Printf("Balance %s = %.8f\n", assetKey, balanceValue.AsFloat())
+	}
+
+	for _, a := range assetList {
+		bal := m[a]
+		assert.True(t, bal.AsFloat() > 0, bal.AsString())
+	}
 }
 
 func TestGetOrderBook(t *testing.T) {

@@ -5,4 +5,7 @@ var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
 	XLM: "XXLM",
 	BTC: "XXBT",
 	USD: "ZUSD",
+	ETH: "XETH",
+	LTC: "XLTC",
+	REP: "XREP",
 })
