@@ -98,5 +98,14 @@ func TestGetOpenOrders(t *testing.T) {
 	if !assert.NoError(t, e) {
 		return
 	}
+
+	// print open orders here for convenience
+	for pair, openOrders := range m {
+		fmt.Printf("Open Orders for pair: %s\n", pair.String())
+		for _, o := range openOrders {
+			fmt.Printf("    %s\n", o.String())
+		}
+	}
+
 	assert.True(t, len(m) > 0, "there were no open orders")
 }
