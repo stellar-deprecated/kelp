@@ -41,4 +41,6 @@ type Exchange interface {
 	GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error)
 
 	AddOrder(order *orderbook.Order) (*orderbook.TransactionID, error)
+
+	CancelOrder(txID orderbook.TransactionID) (trades.CancelOrderResult, error)
 }
