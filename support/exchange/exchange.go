@@ -39,4 +39,6 @@ type Exchange interface {
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 
 	GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error)
+
+	AddOrder(order *orderbook.Order) (*orderbook.TransactionID, error)
 }

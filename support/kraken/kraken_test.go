@@ -14,6 +14,7 @@ var testKrakenExchange exchange.Exchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",
+	isSimulated:    true,
 }
 
 func TestGetTickerPrice(t *testing.T) {

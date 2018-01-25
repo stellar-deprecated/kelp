@@ -11,7 +11,7 @@ import (
 // Trade represents a trade on an exchange
 type Trade struct {
 	orderbook.Order
-	TransactionID *string
+	TransactionID *orderbook.TransactionID
 	Cost          *number.Number
 	Fee           *number.Number
 }

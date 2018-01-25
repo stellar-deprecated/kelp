@@ -72,7 +72,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 				Volume:      number.MustFromString(_vol),
 				Timestamp:   ts,
 			},
-			TransactionID: &_txid,
+			TransactionID: orderbook.MakeTransactionID(_txid),
 			Cost:          number.MustFromString(_cost),
 			Fee:           number.MustFromString(_fee),
 		})
