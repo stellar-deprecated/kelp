@@ -2,7 +2,6 @@ package kraken
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/lightyeario/kelp/support/exchange/dates"
@@ -31,15 +30,13 @@ func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.Open
 			return nil, fmt.Errorf("open orders are listed with repeated base/quote pairs for %s", *pair)
 		}
 
-		// o.Volume does not work properly, opened a Pull Request here: https://github.com/beldur/kraken-go-api-client/pull/34
-		volumeString := strings.Split(o.Description.Order, " ")[1]
 		m[*pair] = append(m[*pair], orderbook.OpenOrder{
 			Order: orderbook.Order{
 				Pair:        pair,
 				OrderAction: orderbook.OrderActionFromString(o.Description.Type),
 				OrderType:   orderbook.OrderTypeFromString(o.Description.OrderType),
 				Price:       number.MustFromString(o.Description.PrimaryPrice, k.precision),
-				Volume:      number.MustFromString(volumeString, k.precision),
+				Volume:      number.MustFromString(o.Volume, k.precision),
 				Timestamp:   dates.MakeTimestamp(int64(o.OpenTime)),
 			},
 			ID:             ID,
