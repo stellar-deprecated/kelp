@@ -6,6 +6,8 @@ import:
   version: v0.8.0
 - package: github.com/spf13/cobra
   version: v0.0.1
+- package: github.com/spf13/pflag
+  version: v1.0.0
 - package: github.com/stellar/go
   version: a6a5de1d71f8246c7cdd4fdafedf4e3135662149
   subpackages:
