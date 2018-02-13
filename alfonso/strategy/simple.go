@@ -48,7 +48,7 @@ type SimpleStrategy struct {
 
 	// uninitialized
 	centerPrice           float64
-	lastPlacedCenterPrice float64
+	lastPlacedCenterPrice *float64
 	maxAssetA             float64
 	maxAssetB             float64
 }
@@ -84,9 +84,21 @@ func (s SimpleStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Of
 }
 
 // PreUpdate changes the strategy's state in prepration for the update
-func (s *SimpleStrategy) PreUpdate(maxAssetA float64, maxAssetB float64) error {
+func (s *SimpleStrategy) PreUpdate(
+	maxAssetA float64,
+	maxAssetB float64,
+	buyingAOffers []horizon.Offer,
+	sellingAOffers []horizon.Offer,
+) error {
 	s.maxAssetA = maxAssetA
 	s.maxAssetB = maxAssetB
+
+	// load lastPlacedCenterPrice
+	if s.lastPlacedCenterPrice == nil && len(buyingAOffers) > 0 && len(sellingAOffers) > 0 {
+		last := (1/kelp.PriceAsFloat(buyingAOffers[0].Price) + kelp.PriceAsFloat(sellingAOffers[0].Price)) / 2
+		s.lastPlacedCenterPrice = &last
+		log.Info("loaded lastPlacedCenterPrice: ", *s.lastPlacedCenterPrice)
+	}
 
 	var e error
 	s.centerPrice, e = s.pf.GetCenterPrice()
@@ -104,7 +116,7 @@ func (s SimpleStrategy) UpdateWithOps(buyingAOffers []horizon.Offer, sellingAOff
 	buyOps := s.updateLevels(bindOffersToUpdateLevel(s.updateBuyLevel, buyingAOffers))
 
 	ops := []build.TransactionMutator{}
-	if s.centerPrice < s.lastPlacedCenterPrice {
+	if s.centerPrice < *s.lastPlacedCenterPrice {
 		ops = append(ops, buyOps...)
 		ops = append(ops, sellOps...)
 	} else {
@@ -117,7 +129,7 @@ func (s SimpleStrategy) UpdateWithOps(buyingAOffers []horizon.Offer, sellingAOff
 
 // PostUpdate changes the strategy's state after the update has taken place
 func (s *SimpleStrategy) PostUpdate() error {
-	s.lastPlacedCenterPrice = s.centerPrice
+	*s.lastPlacedCenterPrice = s.centerPrice
 	return nil
 }
 

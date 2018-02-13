@@ -81,7 +81,7 @@ func (b *Bot) update() {
 	b.sellingAOffers = b.strat.PruneExistingOffers(b.sellingAOffers)
 	b.buyingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers)
 
-	e := b.strat.PreUpdate(b.maxAssetA, b.maxAssetB)
+	e := b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.buyingAOffers, b.sellingAOffers)
 	if e != nil {
 		log.Info(e)
 		b.deleteAllOffers()
