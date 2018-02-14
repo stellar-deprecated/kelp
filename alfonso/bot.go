@@ -88,6 +88,9 @@ func (b *Bot) update() {
 		return
 	}
 
+	// reset cached xlm exposure here so we only compute it once per update
+	// TODO 2 - calculate this here and pass it in
+	b.txButler.ResetCachedXlmExposure()
 	ops, e := b.strat.UpdateWithOps(b.buyingAOffers, b.sellingAOffers)
 	if e != nil {
 		log.Info(e)

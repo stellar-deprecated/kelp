@@ -21,6 +21,9 @@ type TxButler struct {
 	Network        build.Network
 	seqNum         uint64
 	reloadSeqNum   bool
+
+	// uninitialized
+	cachedXlmExposure *float64
 }
 
 func (self *TxButler) Init() {
@@ -272,7 +275,16 @@ func (self *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 	log.Info("", resp.Hash)
 }
 
+// ResetCachedXlmExposure resets the cache
+func (t *TxButler) ResetCachedXlmExposure() {
+	t.cachedXlmExposure = nil
+}
+
 func (self *TxButler) xlmExposure() (float64, error) {
+	if self.cachedXlmExposure != nil {
+		return *self.cachedXlmExposure, nil
+	}
+
 	// uses all offers for this trading account to accommodate sharing by other bots
 	offers, err := LoadAllOffers(self.TradingAccount, self.API)
 	if err != nil {
@@ -291,5 +303,7 @@ func (self *TxButler) xlmExposure() (float64, error) {
 			sum += offerAmt
 		}
 	}
+
+	self.cachedXlmExposure = &sum
 	return sum, nil
 }
