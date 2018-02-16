@@ -17,3 +17,14 @@ type krakenExchange struct {
 	precision      int8
 	isSimulated    bool // will simulate add and cancel orders if this is true
 }
+
+// MakeKrakenExchange is a factory method to make the kraken exchange
+// TODO 2, should take in config file for kraken api keys
+func MakeKrakenExchange() exchange.Exchange {
+	return &krakenExchange{
+		assetConverter: assets.KrakenAssetConverter,
+		api:            krakenapi.New("", ""),
+		delimiter:      "",
+		precision:      8,
+	}
+}

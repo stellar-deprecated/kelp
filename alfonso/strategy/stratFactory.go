@@ -12,8 +12,8 @@ import (
 // StratFactory makes a strategy
 func StratFactory(
 	txButler *kelp.TxButler,
-	assetA horizon.Asset,
-	assetB horizon.Asset,
+	assetA *horizon.Asset,
+	assetB *horizon.Asset,
 	stratType string,
 	stratConfigPath string,
 ) Strategy {
@@ -23,6 +23,11 @@ func StratFactory(
 		err := config.Read(stratConfigPath, &cfg)
 		CheckConfigError(cfg, err)
 		return MakeSimpleStrategy(txButler, assetA, assetB, &cfg)
+	case "mirror":
+		var cfg MirrorConfig
+		err := config.Read(stratConfigPath, &cfg)
+		CheckConfigError(cfg, err)
+		return MakeMirrorStrategy(txButler, assetA, assetB, &cfg)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)

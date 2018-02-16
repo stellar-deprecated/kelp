@@ -1,8 +1,6 @@
 package strategy
 
 import (
-
-	//"context"
 	"math"
 
 	"github.com/lightyeario/kelp/alfonso/priceFeed"
@@ -41,8 +39,8 @@ type SimpleConfig struct {
 // on each side of a "centered" price based on a configuration file
 type SimpleStrategy struct {
 	txButler *kelp.TxButler
-	assetA   horizon.Asset
-	assetB   horizon.Asset
+	assetA   *horizon.Asset
+	assetB   *horizon.Asset
 	config   *SimpleConfig
 	pf       priceFeed.FeedPair
 
@@ -57,7 +55,7 @@ type SimpleStrategy struct {
 var _ Strategy = &SimpleStrategy{}
 
 // MakeSimpleStrategy is a factory method
-func MakeSimpleStrategy(txButler *kelp.TxButler, assetA horizon.Asset, assetB horizon.Asset, config *SimpleConfig) Strategy {
+func MakeSimpleStrategy(txButler *kelp.TxButler, assetA *horizon.Asset, assetB *horizon.Asset, config *SimpleConfig) Strategy {
 	return &SimpleStrategy{
 		txButler: txButler,
 		assetA:   assetA,
@@ -167,7 +165,7 @@ func (s *SimpleStrategy) updateBuyLevel(buyingAOffers []horizon.Offer, index int
 		// no existing offer at this index
 		log.Info("create buy: target:", targetPrice, " ta:", targetAmount)
 
-		return s.txButler.CreateBuyOffer(s.assetA, s.assetB, targetPrice, targetAmount)
+		return s.txButler.CreateBuyOffer(*s.assetA, *s.assetB, targetPrice, targetAmount)
 	}
 
 	highestPrice := targetPrice + targetPrice*s.config.PRICE_TOLERANCE
@@ -200,7 +198,7 @@ func (s *SimpleStrategy) updateSellLevel(sellingAOffers []horizon.Offer, index i
 	if len(sellingAOffers) <= index {
 		// no existing offer at this index
 		log.Info("create sell: target:", targetPrice, " ta:", targetAmount)
-		return s.txButler.CreateSellOffer(s.assetA, s.assetB, targetPrice, targetAmount)
+		return s.txButler.CreateSellOffer(*s.assetA, *s.assetB, targetPrice, targetAmount)
 	}
 
 	highestPrice := targetPrice + targetPrice*s.config.PRICE_TOLERANCE

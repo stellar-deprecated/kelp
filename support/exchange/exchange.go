@@ -28,6 +28,10 @@ type TradeHistoryResult struct {
 
 // Exchange is the interface we use as a generic API to all crypto exchanges
 type Exchange interface {
+	GetPrecision() int8
+
+	GetAssetConverter() *assets.AssetConverter
+
 	GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]Ticker, error)
 
 	GetAccountBalances(assetList []assets.Asset) (map[assets.Asset]number.Number, error)

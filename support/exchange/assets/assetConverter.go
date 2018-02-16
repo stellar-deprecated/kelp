@@ -2,6 +2,9 @@ package assets
 
 import (
 	"errors"
+	"os"
+
+	"github.com/stellar/go/support/log"
 )
 
 // AssetConverter converts to and from the asset type, it is specific to an exchange
@@ -39,6 +42,16 @@ func (c AssetConverter) FromString(s string) (Asset, error) {
 		return "", errors.New("asset converter could not recognize string: " + s)
 	}
 	return a, nil
+}
+
+// MustFromString converts from a string to an asset, failing on errors
+func (c AssetConverter) MustFromString(s string) Asset {
+	a, e := c.FromString(s)
+	if e != nil {
+		log.Info(e)
+		os.Exit(1)
+	}
+	return a
 }
 
 // Display is a basic converter for display purposes

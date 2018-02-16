@@ -79,7 +79,9 @@ func run(cmd *cobra.Command, args []string) {
 	// TODO move txbutler factory to file and move the init code into that function, potentially factory takes config directly
 	txB.Init()
 
-	strat := strategy.StratFactory(txB, botConfig.AssetA(), botConfig.AssetB(), *stratType, *stratConfigPath)
+	assetA := botConfig.AssetA()
+	assetB := botConfig.AssetB()
+	strat := strategy.StratFactory(txB, &assetA, &assetB, *stratType, *stratConfigPath)
 	bot := MakeBot(
 		*client,
 		botConfig.AssetA(),
