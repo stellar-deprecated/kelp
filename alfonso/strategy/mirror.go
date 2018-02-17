@@ -13,9 +13,11 @@ import (
 
 // MirrorConfig contains the configuration params for this strategy
 type MirrorConfig struct {
-	EXCHANGE       string `valid:"-"`
-	EXCHANGE_BASE  string `valid:"-"`
-	EXCHANGE_QUOTE string `valid:"-"`
+	EXCHANGE         string  `valid:"-"`
+	EXCHANGE_BASE    string  `valid:"-"`
+	EXCHANGE_QUOTE   string  `valid:"-"`
+	ORDERBOOK_DEPTH  int32   `valid:"-"`
+	VOLUME_DIVIDE_BY float64 `valid:"-"`
 	// TODO 2 need to account for these tolerances in the strategy impl.
 	PRICE_TOLERANCE  float64 `valid:"-"`
 	AMOUNT_TOLERANCE float64 `valid:"-"`
@@ -80,7 +82,7 @@ func (s MirrorStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.exchange.GetOrderBook(s.orderbookPair, 10)
+	ob, e := s.exchange.GetOrderBook(s.orderbookPair, s.config.ORDERBOOK_DEPTH)
 	if e != nil {
 		return nil, e
 	}
@@ -113,19 +115,22 @@ func (s *MirrorStrategy) updateLevels(
 	if len(newOrders) >= len(oldOffers) {
 		offset := len(newOrders) - len(oldOffers)
 		for i := len(newOrders) - 1; (i - offset) >= 0; i-- {
-			mo := modifyOffer(oldOffers[i-offset], newOrders[i].Price.AsFloat(), newOrders[i].Volume.AsFloat())
+			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
+			mo := modifyOffer(oldOffers[i-offset], newOrders[i].Price.AsFloat(), vol)
 			ops = append(ops, *mo)
 		}
 
 		// create offers for remaining new bids
 		for i := offset - 1; i >= 0; i-- {
-			mo := createOffer(*s.baseAsset, *s.quoteAsset, newOrders[i].Price.AsFloat(), newOrders[i].Volume.AsFloat())
+			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
+			mo := createOffer(*s.baseAsset, *s.quoteAsset, newOrders[i].Price.AsFloat(), vol)
 			ops = append(ops, *mo)
 		}
 	} else {
 		offset := len(oldOffers) - len(newOrders)
 		for i := len(oldOffers) - 1; (i - offset) >= 0; i-- {
-			mo := modifyOffer(oldOffers[i], newOrders[i-offset].Price.AsFloat(), newOrders[i-offset].Volume.AsFloat())
+			vol := newOrders[i-offset].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
+			mo := modifyOffer(oldOffers[i], newOrders[i-offset].Price.AsFloat(), vol)
 			ops = append(ops, *mo)
 		}
 
