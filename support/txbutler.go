@@ -161,6 +161,7 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 		if offer != nil {
 			offerAmt, err := self.ParseOfferAmount(offer.Amount)
 			if err != nil {
+				log.Info(err)
 				return nil
 			}
 			// modifying an offer will not increase the min reserve but will affect the xlm exposure
@@ -173,11 +174,13 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 		// check if incrementalXlmAmount is within budget
 		bal, minAccountBal, err := self.lumenBalance()
 		if err != nil {
+			log.Info(err)
 			return nil
 		}
 
 		xlmExposure, err := self.xlmExposure()
 		if err != nil {
+			log.Info(err)
 			return nil
 		}
 

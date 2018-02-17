@@ -117,21 +117,27 @@ func (s *MirrorStrategy) updateLevels(
 		for i := len(newOrders) - 1; (i - offset) >= 0; i-- {
 			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
 			mo := modifyOffer(oldOffers[i-offset], newOrders[i].Price.AsFloat(), vol)
-			ops = append(ops, *mo)
+			if mo != nil {
+				ops = append(ops, *mo)
+			}
 		}
 
 		// create offers for remaining new bids
 		for i := offset - 1; i >= 0; i-- {
 			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
 			mo := createOffer(*s.baseAsset, *s.quoteAsset, newOrders[i].Price.AsFloat(), vol)
-			ops = append(ops, *mo)
+			if mo != nil {
+				ops = append(ops, *mo)
+			}
 		}
 	} else {
 		offset := len(oldOffers) - len(newOrders)
 		for i := len(oldOffers) - 1; (i - offset) >= 0; i-- {
 			vol := newOrders[i-offset].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
 			mo := modifyOffer(oldOffers[i], newOrders[i-offset].Price.AsFloat(), vol)
-			ops = append(ops, *mo)
+			if mo != nil {
+				ops = append(ops, *mo)
+			}
 		}
 
 		// delete remaining prior offers
