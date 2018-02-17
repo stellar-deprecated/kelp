@@ -1,6 +1,7 @@
 package kelp
 
 import (
+	"math"
 	"math/big"
 	"strconv"
 
@@ -40,6 +41,10 @@ func AmountStringAsFloat(amount string) float64 {
 		return 0
 	}
 	return p
+}
+
+func FloatEquals(f1 float64, f2 float64, epsilon float64) bool {
+	return math.Abs(f1-f2) < epsilon
 }
 
 func GetPrice(offer horizon.Offer) float64 {

@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"github.com/lightyeario/kelp/support/exchange/number"
 	"github.com/lightyeario/kelp/support/exchange/orderbook"
 
 	"github.com/lightyeario/kelp/support"
@@ -9,6 +10,7 @@ import (
 	"github.com/lightyeario/kelp/support/kraken"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/support/log"
 )
 
 // MirrorConfig contains the configuration params for this strategy
@@ -91,14 +93,18 @@ func (s MirrorStrategy) UpdateWithOps(
 		s.txButler.ModifyBuyOffer,
 		s.txButler.CreateBuyOffer,
 		(1 - s.config.PER_LEVEL_SPREAD),
+		true,
 	)
+	log.Info("num. buyOps in this update: ", len(buyOps))
 	sellOps := s.updateLevels(
 		sellingAOffers,
 		ob.Asks(),
 		s.txButler.ModifySellOffer,
 		s.txButler.CreateSellOffer,
 		(1 + s.config.PER_LEVEL_SPREAD),
+		false,
 	)
+	log.Info("num. sellOps in this update: ", len(sellOps))
 
 	ops := []build.TransactionMutator{}
 	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= kelp.PriceAsFloat(sellingAOffers[0].Price) {
@@ -118,17 +124,13 @@ func (s *MirrorStrategy) updateLevels(
 	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
 	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder,
 	priceMultiplier float64,
+	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) []build.TransactionMutator {
 	ops := []build.TransactionMutator{}
 	if len(newOrders) >= len(oldOffers) {
 		offset := len(newOrders) - len(oldOffers)
 		for i := len(newOrders) - 1; (i - offset) >= 0; i-- {
-			price := newOrders[i].Price.AsFloat() * priceMultiplier
-			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
-			mo := modifyOffer(oldOffers[i-offset], price, vol)
-			if mo != nil {
-				ops = append(ops, *mo)
-			}
+			ops = doModifyOffer(oldOffers[i-offset], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
 		}
 
 		// create offers for remaining new bids
@@ -143,18 +145,48 @@ func (s *MirrorStrategy) updateLevels(
 	} else {
 		offset := len(oldOffers) - len(newOrders)
 		for i := len(oldOffers) - 1; (i - offset) >= 0; i-- {
-			price := newOrders[i-offset].Price.AsFloat() * priceMultiplier
-			vol := newOrders[i-offset].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
-			mo := modifyOffer(oldOffers[i], price, vol)
-			if mo != nil {
-				ops = append(ops, *mo)
-			}
+			ops = doModifyOffer(oldOffers[i], newOrders[i-offset], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
 		}
 
 		// delete remaining prior offers
 		for i := offset - 1; i >= 0; i-- {
 			s.txButler.DeleteOffer(oldOffers[i])
 		}
+	}
+	return ops
+}
+
+func doModifyOffer(
+	oldOffer horizon.Offer,
+	newOrder orderbook.Order,
+	priceMultiplier float64,
+	volumeDivideBy float64,
+	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
+	ops []build.TransactionMutator,
+	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
+) []build.TransactionMutator {
+	price := newOrder.Price.AsFloat() * priceMultiplier
+	vol := newOrder.Volume.AsFloat() / volumeDivideBy
+
+	oldPrice := number.MustFromString(oldOffer.Price, 6)
+	oldVol := number.MustFromString(oldOffer.Amount, 6)
+	if hackPriceInvertForBuyOrderChangeCheck {
+		// we want to multiply oldVol by the original oldPrice so we can get the correct oldVol, since ModifyBuyOffer multiplies price * vol
+		oldVol = number.FromFloat(oldVol.AsFloat()*oldPrice.AsFloat(), 6)
+		oldPrice = number.FromFloat(1/oldPrice.AsFloat(), 6)
+	}
+	newPrice := number.FromFloat(price, 6)
+	newVol := number.FromFloat(vol, 6)
+	epsilon := 0.0001
+	sameOrderParams := kelp.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && kelp.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
+	//log.Info("oldPrice: ", oldPrice.AsString(), " | newPrice: ", newPrice.AsString(), " | oldVol: ", oldVol.AsString(), " | newVol: ", newVol.AsString(), " | sameOrderParams: ", sameOrderParams)
+	if sameOrderParams {
+		return ops
+	}
+
+	mo := modifyOffer(oldOffer, price, vol)
+	if mo != nil {
+		ops = append(ops, *mo)
 	}
 	return ops
 }
