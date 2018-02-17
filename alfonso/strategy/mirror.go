@@ -18,9 +18,7 @@ type MirrorConfig struct {
 	EXCHANGE_QUOTE   string  `valid:"-"`
 	ORDERBOOK_DEPTH  int32   `valid:"-"`
 	VOLUME_DIVIDE_BY float64 `valid:"-"`
-	// TODO 2 need to account for these tolerances in the strategy impl.
-	PRICE_TOLERANCE  float64 `valid:"-"`
-	AMOUNT_TOLERANCE float64 `valid:"-"`
+	PER_LEVEL_SPREAD float64 `valid:"-"`
 }
 
 // MirrorStrategy is a strategy to mirror the orderbook of a given exchange
@@ -87,12 +85,21 @@ func (s MirrorStrategy) UpdateWithOps(
 		return nil, e
 	}
 
-	// TODO 2 confirm Bids is correct
-	buyOps := s.updateLevels(buyingAOffers, ob.Bids(), s.txButler.ModifyBuyOffer, s.txButler.CreateBuyOffer)
-	// TODO 2 confirm Asks is correct
-	sellOps := s.updateLevels(sellingAOffers, ob.Asks(), s.txButler.ModifySellOffer, s.txButler.CreateSellOffer)
+	buyOps := s.updateLevels(
+		buyingAOffers,
+		ob.Bids(),
+		s.txButler.ModifyBuyOffer,
+		s.txButler.CreateBuyOffer,
+		(1 - s.config.PER_LEVEL_SPREAD),
+	)
+	sellOps := s.updateLevels(
+		sellingAOffers,
+		ob.Asks(),
+		s.txButler.ModifySellOffer,
+		s.txButler.CreateSellOffer,
+		(1 + s.config.PER_LEVEL_SPREAD),
+	)
 
-	// TODO 2 confirm this should be Bids here (intention is for it to be the new buy orders)
 	ops := []build.TransactionMutator{}
 	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= kelp.PriceAsFloat(sellingAOffers[0].Price) {
 		ops = append(ops, sellOps...)
@@ -110,13 +117,15 @@ func (s *MirrorStrategy) updateLevels(
 	newOrders []orderbook.Order,
 	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
 	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder,
+	priceMultiplier float64,
 ) []build.TransactionMutator {
 	ops := []build.TransactionMutator{}
 	if len(newOrders) >= len(oldOffers) {
 		offset := len(newOrders) - len(oldOffers)
 		for i := len(newOrders) - 1; (i - offset) >= 0; i-- {
+			price := newOrders[i].Price.AsFloat() * priceMultiplier
 			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
-			mo := modifyOffer(oldOffers[i-offset], newOrders[i].Price.AsFloat(), vol)
+			mo := modifyOffer(oldOffers[i-offset], price, vol)
 			if mo != nil {
 				ops = append(ops, *mo)
 			}
@@ -124,8 +133,9 @@ func (s *MirrorStrategy) updateLevels(
 
 		// create offers for remaining new bids
 		for i := offset - 1; i >= 0; i-- {
+			price := newOrders[i].Price.AsFloat() * priceMultiplier
 			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
-			mo := createOffer(*s.baseAsset, *s.quoteAsset, newOrders[i].Price.AsFloat(), vol)
+			mo := createOffer(*s.baseAsset, *s.quoteAsset, price, vol)
 			if mo != nil {
 				ops = append(ops, *mo)
 			}
@@ -133,8 +143,9 @@ func (s *MirrorStrategy) updateLevels(
 	} else {
 		offset := len(oldOffers) - len(newOrders)
 		for i := len(oldOffers) - 1; (i - offset) >= 0; i-- {
+			price := newOrders[i-offset].Price.AsFloat() * priceMultiplier
 			vol := newOrders[i-offset].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
-			mo := modifyOffer(oldOffers[i], newOrders[i-offset].Price.AsFloat(), vol)
+			mo := modifyOffer(oldOffers[i], price, vol)
 			if mo != nil {
 				ops = append(ops, *mo)
 			}
