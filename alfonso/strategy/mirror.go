@@ -7,7 +7,6 @@ import (
 	"github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/exchange"
 	"github.com/lightyeario/kelp/support/exchange/assets"
-	"github.com/lightyeario/kelp/support/kraken"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -42,12 +41,7 @@ var _ Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
 func MakeMirrorStrategy(txButler *kelp.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
-	var exchange exchange.Exchange
-	switch config.EXCHANGE {
-	case "kraken":
-		exchange = kraken.MakeKrakenExchange()
-	}
-
+	exchange := kelp.ExchangeFactory(config.EXCHANGE)
 	orderbookPair := &assets.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
