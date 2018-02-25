@@ -28,6 +28,11 @@ func StratFactory(
 		err := config.Read(stratConfigPath, &cfg)
 		CheckConfigError(cfg, err)
 		return MakeMirrorStrategy(txButler, assetA, assetB, &cfg)
+	case "sell":
+		var cfg SellConfig
+		err := config.Read(stratConfigPath, &cfg)
+		CheckConfigError(cfg, err)
+		return MakeSellStrategy(txButler, assetA, assetB, &cfg)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)

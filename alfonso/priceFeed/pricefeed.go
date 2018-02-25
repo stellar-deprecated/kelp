@@ -2,7 +2,9 @@ package priceFeed
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/lightyeario/kelp/support"
@@ -24,10 +26,6 @@ func priceFeedFactory(feedType string, url string) priceFeed {
 	case "fixed":
 		return newFixedFeed(url)
 	case "exchange":
-		// TODO 2 this should not be needed here because this gives you two prices (1 ratio),
-		// whereas priceFeed typically only gives you 1 price. Maybe this should not be a priceFeed
-		// or it should be a different impl. of priceFeed or something? something is different here that I need to think about.
-
 		// [0] = exchangeType, [1] = base, [2] = quote, [1] = bidPrice/askPrice
 		urlParts := strings.Split(url, "/")
 		exchange := kelp.ExchangeFactory(urlParts[0])
@@ -35,7 +33,10 @@ func priceFeedFactory(feedType string, url string) priceFeed {
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
 			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),
 		}
-		useBidPrice := urlParts[3] == "bidPrice"
+		useBidPrice, e := strconv.ParseBool(urlParts[3])
+		if e != nil {
+			log.Panic("could not parse boolean bid price from url (index = 3): ", url)
+		}
 		return newExchangeFeed(&exchange, &tradingPair, useBidPrice)
 	}
 	return nil
