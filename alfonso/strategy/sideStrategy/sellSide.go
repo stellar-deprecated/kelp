@@ -15,8 +15,8 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
-// SellConfig contains the configuration params for this SideStrategy
-type SellConfig struct {
+// SellSideConfig contains the configuration params for this SideStrategy
+type SellSideConfig struct {
 	EXCHANGE         string        `valid:"-"`
 	EXCHANGE_BASE    string        `valid:"-"`
 	EXCHANGE_QUOTE   string        `valid:"-"`
@@ -32,7 +32,7 @@ type SellSideStrategy struct {
 	txButler   *kelp.TxButler
 	assetBase  *horizon.Asset
 	assetQuote *horizon.Asset
-	config     *SellConfig
+	config     *SellSideConfig
 	pf         priceFeed.FeedPair
 
 	// uninitialized
@@ -49,7 +49,7 @@ func MakeSellSideStrategy(
 	txButler *kelp.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	config *SellConfig,
+	config *SellSideConfig,
 ) SideStrategy {
 	useBidPrice, e := strconv.ParseBool(config.USE_BID_PRICE)
 	if e != nil {
