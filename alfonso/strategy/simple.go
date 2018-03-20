@@ -71,7 +71,11 @@ func MakeSimpleStrategy(txButler *kelp.TxButler, assetA *horizon.Asset, assetB *
 }
 
 // PruneExistingOffers deletes any extra offers
-func (s SimpleStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Offer {
+func (s SimpleStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]horizon.Offer, []horizon.Offer) {
+	return s.pruneExistingOffersHelper(buyingAOffers), s.pruneExistingOffersHelper(sellingAOffers)
+}
+
+func (s SimpleStrategy) pruneExistingOffersHelper(offers []horizon.Offer) []horizon.Offer {
 	for i := len(s.config.LEVELS); i < len(offers); i++ {
 		s.txButler.DeleteOffer(offers[i])
 	}

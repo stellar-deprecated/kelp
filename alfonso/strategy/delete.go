@@ -30,11 +30,17 @@ func MakeDeleteStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *DeleteStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Offer {
+func (s *DeleteStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]horizon.Offer, []horizon.Offer) {
+	offers := selectOfferSide(buyingAOffers, sellingAOffers)
 	for i := 0; i < len(offers); i++ {
 		s.txButler.DeleteOffer(offers[i])
 	}
-	return []horizon.Offer{}
+
+	offers = []horizon.Offer{}
+	if buyingAOffers != nil {
+		return offers, sellingAOffers
+	}
+	return buyingAOffers, offers
 }
 
 // PreUpdate impl
