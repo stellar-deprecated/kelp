@@ -2,7 +2,7 @@ package strategy
 
 import (
 	"fmt"
-	"log"
+	"math"
 	"strconv"
 
 	"github.com/lightyeario/kelp/alfonso/priceFeed"
@@ -10,6 +10,7 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/support/log"
 )
 
 // SellConfig contains the configuration params for this strategy
@@ -33,10 +34,9 @@ type SellStrategy struct {
 	pf         priceFeed.FeedPair
 
 	// uninitialized
-	centerPrice           float64
-	lastPlacedCenterPrice *float64
-	maxAssetBase          float64
-	maxAssetQuote         float64
+	centerPrice   float64
+	maxAssetBase  float64
+	maxAssetQuote float64
 }
 
 // ensure it implements Strategy
@@ -55,6 +55,7 @@ func MakeSellStrategy(
 	assetOrderReversed := config.EXCHANGE_BASE == assetQuote.Code && config.EXCHANGE_QUOTE == assetBase.Code
 	if !assetOrderMatched && !assetOrderReversed {
 		log.Panic("strategy's config does not have the same base/quote as is specified in the bot config")
+		return nil
 	}
 
 	// convert to exchange's codes
@@ -62,18 +63,20 @@ func MakeSellStrategy(
 	baseExchangeAssetStr, e := exchangeAssetConverter.ToString(assets.Display.MustFromString(config.EXCHANGE_BASE))
 	if e != nil {
 		log.Panic("could not fetch exchange's asset code for string: ", config.EXCHANGE_BASE, e)
+		return nil
 	}
 	quoteExchangeAssetStr, e := exchangeAssetConverter.ToString(assets.Display.MustFromString(config.EXCHANGE_QUOTE))
 	if e != nil {
 		log.Panic("could not fetch exchange's asset code for string: ", config.EXCHANGE_QUOTE, e)
+		return nil
 	}
 
 	useBidPrice, e := strconv.ParseBool(config.USE_BID_PRICE)
 	if e != nil {
 		log.Panic("could not parse USE_BID_PRICE as a bool value: ", config.USE_BID_PRICE)
+		return nil
 	}
 
-	// build
 	exchangeFeedPairURL := fmt.Sprintf("%s/%s/%s/%v", config.EXCHANGE, baseExchangeAssetStr, quoteExchangeAssetStr, useBidPrice)
 	return &SellStrategy{
 		txButler:   txButler,
@@ -91,25 +94,80 @@ func MakeSellStrategy(
 
 // PruneExistingOffers impl
 func (s *SellStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Offer {
-	return nil
+	for i := len(s.config.LEVELS); i < len(offers); i++ {
+		s.txButler.DeleteOffer(offers[i])
+	}
+	if len(offers) > len(s.config.LEVELS) {
+		return offers[:len(s.config.LEVELS)]
+	}
+	return offers
 }
 
 // PreUpdate impl
 func (s *SellStrategy) PreUpdate(
-	maxAssetA float64,
-	maxAssetB float64,
-	buyingAOffers []horizon.Offer,
-	sellingAOffers []horizon.Offer,
+	maxAssetBase float64,
+	maxAssetQuote float64,
+	offers []horizon.Offer,
+	_ []horizon.Offer,
 ) error {
-	return nil
+	s.maxAssetBase = maxAssetBase
+	s.maxAssetQuote = maxAssetQuote
+
+	var e error
+	s.centerPrice, e = s.pf.GetCenterPrice()
+	if e != nil {
+		log.Error("Center price couldn't be loaded! ", e)
+	} else {
+		log.Info("Center price: ", s.centerPrice, "        v0.2")
+	}
+	return e
 }
 
 // UpdateWithOps impl
-func (s *SellStrategy) UpdateWithOps(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, error) {
-	return nil, nil
+func (s *SellStrategy) UpdateWithOps(offers []horizon.Offer, _ []horizon.Offer) ([]build.TransactionMutator, error) {
+	ops := []build.TransactionMutator{}
+	for i := len(s.config.LEVELS) - 1; i >= 0; i-- {
+		op := s.updateSellLevel(offers, i)
+		if op != nil {
+			ops = append(ops, op)
+		}
+	}
+	return ops, nil
 }
 
 // PostUpdate impl
 func (s *SellStrategy) PostUpdate() error {
+	return nil
+}
+
+// Selling Base
+func (s *SellStrategy) updateSellLevel(offers []horizon.Offer, index int) *build.ManageOfferBuilder {
+	spread := s.centerPrice * s.config.LEVELS[index].SPREAD
+	targetPrice := s.centerPrice + spread
+	targetAmount := s.config.LEVELS[index].AMOUNT * s.config.AMOUNT_OF_A_BASE
+	targetAmount = math.Min(targetAmount, s.maxAssetBase)
+
+	if len(offers) <= index {
+		// no existing offer at this index
+		log.Info("create sell: target:", targetPrice, " ta:", targetAmount)
+		return s.txButler.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
+	}
+
+	highestPrice := targetPrice + targetPrice*s.config.PRICE_TOLERANCE
+	lowestPrice := targetPrice - targetPrice*s.config.PRICE_TOLERANCE
+	minAmount := targetAmount - targetAmount*s.config.AMOUNT_TOLERANCE
+	maxAmount := targetAmount + targetAmount*s.config.AMOUNT_TOLERANCE
+
+	//check if existing offer needs to be modified
+	curPrice := kelp.GetPrice(offers[index])
+	curAmount := kelp.AmountStringAsFloat(offers[index].Amount)
+
+	// existing offer not within tolerances
+	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
+	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
+	if priceTrigger || amountTrigger {
+		log.Info("mod sell curPrice: ", curPrice, ", highPrice: ", highestPrice, ", lowPrice: ", lowestPrice, ", curAmt: ", curAmount, ", minAmt: ", minAmount, ", maxAmt: ", maxAmount)
+		return s.txButler.ModifySellOffer(offers[index], targetPrice, targetAmount)
+	}
 	return nil
 }
