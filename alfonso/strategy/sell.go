@@ -7,7 +7,6 @@ import (
 
 	"github.com/lightyeario/kelp/alfonso/priceFeed"
 	kelp "github.com/lightyeario/kelp/support"
-	"github.com/lightyeario/kelp/support/exchange/assets"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -49,34 +48,13 @@ func MakeSellStrategy(
 	assetQuote *horizon.Asset,
 	config *SellConfig,
 ) Strategy {
-	// check valid config codes
-	assetOrderMatched := config.EXCHANGE_BASE == assetBase.Code && config.EXCHANGE_QUOTE == assetQuote.Code
-	assetOrderReversed := config.EXCHANGE_BASE == assetQuote.Code && config.EXCHANGE_QUOTE == assetBase.Code
-	if !assetOrderMatched && !assetOrderReversed {
-		log.Panic("strategy's config does not have the same base/quote as is specified in the bot config")
-		return nil
-	}
-
-	// convert to exchange's codes
-	exchangeAssetConverter := kelp.ExchangeFactory(config.EXCHANGE).GetAssetConverter()
-	baseExchangeAssetStr, e := exchangeAssetConverter.ToString(assets.Display.MustFromString(config.EXCHANGE_BASE))
-	if e != nil {
-		log.Panic("could not fetch exchange's asset code for string: ", config.EXCHANGE_BASE, e)
-		return nil
-	}
-	quoteExchangeAssetStr, e := exchangeAssetConverter.ToString(assets.Display.MustFromString(config.EXCHANGE_QUOTE))
-	if e != nil {
-		log.Panic("could not fetch exchange's asset code for string: ", config.EXCHANGE_QUOTE, e)
-		return nil
-	}
-
 	useBidPrice, e := strconv.ParseBool(config.USE_BID_PRICE)
 	if e != nil {
 		log.Panic("could not parse USE_BID_PRICE as a bool value: ", config.USE_BID_PRICE)
 		return nil
 	}
 
-	exchangeFeedPairURL := fmt.Sprintf("%s/%s/%s/%v", config.EXCHANGE, baseExchangeAssetStr, quoteExchangeAssetStr, useBidPrice)
+	exchangeFeedPairURL := fmt.Sprintf("%s/%s/%s/%v", config.EXCHANGE, config.EXCHANGE_BASE, config.EXCHANGE_QUOTE, useBidPrice)
 	return &SellStrategy{
 		txButler:   txButler,
 		assetBase:  assetBase,
