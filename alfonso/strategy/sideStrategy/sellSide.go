@@ -1,9 +1,7 @@
 package sideStrategy
 
 import (
-	"fmt"
 	"math"
-	"strconv"
 
 	"github.com/lightyeario/kelp/support/exchange/number"
 
@@ -17,10 +15,10 @@ import (
 
 // SellSideConfig contains the configuration params for this SideStrategy
 type SellSideConfig struct {
-	EXCHANGE         string        `valid:"-"`
-	EXCHANGE_BASE    string        `valid:"-"`
-	EXCHANGE_QUOTE   string        `valid:"-"`
-	USE_BID_PRICE    string        `valid:"-"`
+	DATA_TYPE_A      string        `valid:"-"`
+	DATA_FEED_A_URL  string        `valid:"-"`
+	DATA_TYPE_B      string        `valid:"-"`
+	DATA_FEED_B_URL  string        `valid:"-"`
 	PRICE_TOLERANCE  float64       `valid:"-"`
 	AMOUNT_TOLERANCE float64       `valid:"-"`
 	AMOUNT_OF_A_BASE float64       `valid:"-"` // the size of order
@@ -51,23 +49,16 @@ func MakeSellSideStrategy(
 	assetQuote *horizon.Asset,
 	config *SellSideConfig,
 ) SideStrategy {
-	useBidPrice, e := strconv.ParseBool(config.USE_BID_PRICE)
-	if e != nil {
-		log.Panic("could not parse USE_BID_PRICE as a bool value: ", config.USE_BID_PRICE)
-		return nil
-	}
-
-	exchangeFeedPairURL := fmt.Sprintf("%s/%s/%s/%v", config.EXCHANGE, config.EXCHANGE_BASE, config.EXCHANGE_QUOTE, useBidPrice)
 	return &SellSideStrategy{
 		txButler:   txButler,
 		assetBase:  assetBase,
 		assetQuote: assetQuote,
 		config:     config,
 		pf: *priceFeed.MakeFeedPair(
-			"exchange", // hardcode "exchange" here because this pricefeed is from an exchange, at least for now
-			exchangeFeedPairURL,
-			"fixed", // this is a fixed value of 1 because the exchange priceFeed is a ratio of both assets
-			"1.0",
+			config.DATA_TYPE_A,
+			config.DATA_FEED_A_URL,
+			config.DATA_TYPE_B,
+			config.DATA_FEED_B_URL,
 		),
 	}
 }
