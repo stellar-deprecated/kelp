@@ -53,6 +53,14 @@ func MustFromString(s string, precision int8) *Number {
 	return parsed
 }
 
+// Invert inverts a number, returns nil if the original number is nil, preserves precision
+func Invert(n *Number) *Number {
+	if n == nil {
+		return nil
+	}
+	return FromFloat(1/n.AsFloat(), n.Precision())
+}
+
 func round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }

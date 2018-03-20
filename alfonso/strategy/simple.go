@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/lightyeario/kelp/alfonso/priceFeed"
+	"github.com/lightyeario/kelp/alfonso/strategy/level"
 	"github.com/lightyeario/kelp/support"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -17,22 +18,16 @@ Prices are (amount of B)/(amount of A)
 Amounts are in A
 */
 
-// Level represents a layer in the orderbook
-type Level struct {
-	SPREAD float64 `valid:"-"`
-	AMOUNT float64 `valid:"-"`
-}
-
 // SimpleConfig contains the configuration params for this strategy
 type SimpleConfig struct {
-	PRICE_TOLERANCE  float64 `valid:"-"`
-	AMOUNT_TOLERANCE float64 `valid:"-"`
-	AMOUNT_OF_A_BASE float64 `valid:"-"` // the size of order to keep on either side
-	DATA_TYPE_A      string  `valid:"-"`
-	DATA_FEED_A_URL  string  `valid:"-"`
-	DATA_TYPE_B      string  `valid:"-"`
-	DATA_FEED_B_URL  string  `valid:"-"`
-	LEVELS           []Level `valid:"-"`
+	PRICE_TOLERANCE  float64       `valid:"-"`
+	AMOUNT_TOLERANCE float64       `valid:"-"`
+	AMOUNT_OF_A_BASE float64       `valid:"-"` // the size of order to keep on either side
+	DATA_TYPE_A      string        `valid:"-"`
+	DATA_FEED_A_URL  string        `valid:"-"`
+	DATA_TYPE_B      string        `valid:"-"`
+	DATA_FEED_B_URL  string        `valid:"-"`
+	LEVELS           []level.Level `valid:"-"`
 }
 
 // SimpleStrategy is a simple market maker strategy that puts buy and sell orders
