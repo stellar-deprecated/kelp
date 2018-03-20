@@ -1,10 +1,13 @@
 package sideStrategy
 
 import (
+	"fmt"
+
 	kelp "github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/exchange/number"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/support/log"
 )
 
 // DeleteSideStrategy is a sideStrategy to delete the orders for a given currency pair on one side of the orderbook
@@ -32,6 +35,7 @@ func MakeDeleteSideStrategy(
 
 // PruneExistingOffers impl
 func (s *DeleteSideStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Offer {
+	log.Info(fmt.Sprintf("deleteSideStrategy: deleting %d offers", len(offers)))
 	for i := 0; i < len(offers); i++ {
 		s.txButler.DeleteOffer(offers[i])
 	}
