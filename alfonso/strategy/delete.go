@@ -41,14 +41,17 @@ func (s *DeleteStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.O
 func (s *DeleteStrategy) PreUpdate(
 	maxAssetBase float64,
 	maxAssetQuote float64,
-	offers []horizon.Offer,
-	_ []horizon.Offer,
+	buyingAOffers []horizon.Offer,
+	sellingAOffers []horizon.Offer,
 ) error {
 	return nil
 }
 
 // UpdateWithOps impl
-func (s *DeleteStrategy) UpdateWithOps(offers []horizon.Offer, _ []horizon.Offer) ([]build.TransactionMutator, error) {
+func (s *DeleteStrategy) UpdateWithOps(
+	buyingAOffers []horizon.Offer,
+	sellingAOffers []horizon.Offer,
+) ([]build.TransactionMutator, error) {
 	return []build.TransactionMutator{}, nil
 }
 

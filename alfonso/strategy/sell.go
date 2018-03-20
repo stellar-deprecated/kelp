@@ -84,8 +84,8 @@ func (s *SellStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Off
 func (s *SellStrategy) PreUpdate(
 	maxAssetBase float64,
 	maxAssetQuote float64,
-	offers []horizon.Offer,
-	_ []horizon.Offer,
+	buyingAOffers []horizon.Offer,
+	sellingAOffers []horizon.Offer,
 ) error {
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
@@ -101,7 +101,11 @@ func (s *SellStrategy) PreUpdate(
 }
 
 // UpdateWithOps impl
-func (s *SellStrategy) UpdateWithOps(offers []horizon.Offer, _ []horizon.Offer) ([]build.TransactionMutator, error) {
+func (s *SellStrategy) UpdateWithOps(
+	buyingAOffers []horizon.Offer,
+	sellingAOffers []horizon.Offer,
+) ([]build.TransactionMutator, error) {
+	offers := selectOfferSide(buyingAOffers, sellingAOffers)
 	ops := []build.TransactionMutator{}
 	for i := len(s.config.LEVELS) - 1; i >= 0; i-- {
 		op := s.updateSellLevel(offers, i)
