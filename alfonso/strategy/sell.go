@@ -45,7 +45,6 @@ var _ Strategy = &SellStrategy{}
 // MakeSellStrategy is a factory method for SellStrategy
 func MakeSellStrategy(
 	txButler *kelp.TxButler,
-	exchange string,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *SellConfig,
