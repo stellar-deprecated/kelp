@@ -11,6 +11,7 @@ import (
 
 const baseReserve = 0.5
 const operationalBuffer = 2000
+const fractionalReserveMagnifier = 10
 
 type TxButler struct {
 	API            horizon.Client
@@ -185,11 +186,11 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 		}
 
 		additionalExposure := incrementalXlmAmount >= 0
-		possibleTerminalExposure := (xlmExposure + incrementalXlmAmount) > (bal - minAccountBal - operationalBuffer)
+		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / fractionalReserveMagnifier) > (bal - minAccountBal - operationalBuffer)
 		if additionalExposure && possibleTerminalExposure {
 			log.Info("not placing offer because we run the risk of running out of lumens | xlmExposure: ", xlmExposure,
 				" | incrementalXlmAmount: ", incrementalXlmAmount, " | bal: ", bal, " | minAccountBal: ", minAccountBal,
-				" | operationalBuffer: ", operationalBuffer)
+				" | operationalBuffer: ", operationalBuffer, " | fractionalReserveMagnifier: ", fractionalReserveMagnifier)
 			return nil
 		}
 	}
