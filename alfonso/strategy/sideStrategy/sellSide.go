@@ -15,14 +15,15 @@ import (
 
 // SellSideConfig contains the configuration params for this SideStrategy
 type SellSideConfig struct {
-	DATA_TYPE_A      string        `valid:"-"`
-	DATA_FEED_A_URL  string        `valid:"-"`
-	DATA_TYPE_B      string        `valid:"-"`
-	DATA_FEED_B_URL  string        `valid:"-"`
-	PRICE_TOLERANCE  float64       `valid:"-"`
-	AMOUNT_TOLERANCE float64       `valid:"-"`
-	AMOUNT_OF_A_BASE float64       `valid:"-"` // the size of order
-	LEVELS           []level.Level `valid:"-"`
+	DATA_TYPE_A            string        `valid:"-"`
+	DATA_FEED_A_URL        string        `valid:"-"`
+	DATA_TYPE_B            string        `valid:"-"`
+	DATA_FEED_B_URL        string        `valid:"-"`
+	PRICE_TOLERANCE        float64       `valid:"-"`
+	AMOUNT_TOLERANCE       float64       `valid:"-"`
+	AMOUNT_OF_A_BASE       float64       `valid:"-"` // the size of order
+	DIVIDE_AMOUNT_BY_PRICE bool          `valid:"-"` // whether we want to divide the amount by the price, usually true if this is on the buy side
+	LEVELS                 []level.Level `valid:"-"`
 }
 
 // SellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
@@ -125,6 +126,9 @@ func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	spread := s.centerPrice * s.config.LEVELS[index].SPREAD
 	targetPrice := s.centerPrice + spread
 	targetAmount := s.config.LEVELS[index].AMOUNT * s.config.AMOUNT_OF_A_BASE
+	if s.config.DIVIDE_AMOUNT_BY_PRICE {
+		targetAmount /= targetPrice
+	}
 	targetAmount = math.Min(targetAmount, s.maxAssetBase)
 
 	if len(offers) <= index {
