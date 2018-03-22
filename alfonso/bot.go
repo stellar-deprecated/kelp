@@ -7,6 +7,7 @@ import (
 
 	"github.com/lightyeario/kelp/alfonso/strategy"
 	kelp "github.com/lightyeario/kelp/support"
+	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
 )
@@ -61,17 +62,24 @@ func (b *Bot) Start() {
 }
 
 // deletes all offers for this bot (not all offers on the account)
-// TODO do in one transaction
 func (b *Bot) deleteAllOffers() {
+	dOps := []build.TransactionMutator{}
 	for _, offer := range b.sellingAOffers {
-		b.txButler.DeleteOffer(offer)
+		dOp := b.txButler.DeleteOffer(offer)
+		dOps = append(dOps, &dOp)
 	}
 	b.sellingAOffers = []horizon.Offer{}
 
 	for _, offer := range b.buyingAOffers {
-		b.txButler.DeleteOffer(offer)
+		dOp := b.txButler.DeleteOffer(offer)
+		dOps = append(dOps, &dOp)
 	}
 	b.buyingAOffers = []horizon.Offer{}
+
+	log.Info(fmt.Sprintf("deleting %d offers", len(dOps)))
+	if len(dOps) > 0 {
+		b.txButler.SubmitOps(dOps)
+	}
 }
 
 // time to update the order book and possibly readjust your offers
@@ -80,7 +88,11 @@ func (b *Bot) update() {
 	b.load()
 	b.loadExistingOffers()
 	// must delete excess offers
-	b.buyingAOffers, b.sellingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers, b.sellingAOffers)
+	var pruneOps []build.TransactionMutator
+	pruneOps, b.buyingAOffers, b.sellingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers, b.sellingAOffers)
+	if len(pruneOps) > 0 {
+		b.txButler.SubmitOps(pruneOps)
+	}
 
 	e := b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.buyingAOffers, b.sellingAOffers)
 	if e != nil {

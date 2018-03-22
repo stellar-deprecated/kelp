@@ -66,42 +66,18 @@ func (self *TxButler) incrementSeqNum() {
 
 }
 
-func (self *TxButler) DeleteAllOffers() {
-	offers, err := LoadAllOffers(self.TradingAccount, self.API)
-	if err != nil {
-		log.Info("DeleteAllOffers: ", err)
-		return
-	}
-	for _, offer := range offers {
-		self.DeleteOffer(offer)
-	}
-}
-
-// TODO 2 - make this return operations so this can be done in a single ledger without having to deal with seq number management across threads
-func (self *TxButler) DeleteOffer(offer horizon.Offer) {
-	//log.Info("Delete Offer: ", offer.ID)
+// DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
+func (txb *TxButler) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 	rate := build.Rate{
 		Selling: Asset2Asset(offer.Selling),
 		Buying:  Asset2Asset(offer.Buying),
 		Price:   build.Price(offer.Price),
 	}
 
-	var mo build.ManageOfferBuilder
-	if self.SourceAccount == self.TradingAccount {
-		mo = build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID))
-	} else {
-		mo = build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID), build.SourceAccount{self.TradingAccount})
+	if txb.SourceAccount == txb.TradingAccount {
+		return build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID))
 	}
-
-	self.incrementSeqNum()
-	tx := build.Transaction(
-		build.SourceAccount{self.SourceAccount},
-		build.Sequence{self.seqNum},
-		self.Network,
-		mo,
-	)
-
-	go self.signAndSubmit(tx)
+	return build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID), build.SourceAccount{AddressOrSeed: txb.TradingAccount})
 }
 
 func (self *TxButler) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {

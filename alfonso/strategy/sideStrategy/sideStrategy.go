@@ -8,7 +8,7 @@ import (
 
 // SideStrategy represents a strategy on a single side of the orderbook
 type SideStrategy interface {
-	PruneExistingOffers(offers []horizon.Offer) []horizon.Offer
+	PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer)
 	PreUpdate(maxAssetA float64, maxAssetB float64, offers []horizon.Offer) error
 	UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *number.Number, e error)
 	PostUpdate() error

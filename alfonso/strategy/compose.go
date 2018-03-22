@@ -39,10 +39,11 @@ func MakeComposeStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *ComposeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]horizon.Offer, []horizon.Offer) {
-	newBuyingAOffers := s.buyStrat.PruneExistingOffers(buyingAOffers)
-	newSellingAOffers := s.sellStrat.PruneExistingOffers(sellingAOffers)
-	return newBuyingAOffers, newSellingAOffers
+func (s *ComposeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+	pruneOps1, newBuyingAOffers := s.buyStrat.PruneExistingOffers(buyingAOffers)
+	pruneOps2, newSellingAOffers := s.sellStrat.PruneExistingOffers(sellingAOffers)
+	pruneOps1 = append(pruneOps1, pruneOps2...)
+	return pruneOps1, newBuyingAOffers, newSellingAOffers
 }
 
 // PreUpdate impl

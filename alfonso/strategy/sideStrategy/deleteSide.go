@@ -34,12 +34,14 @@ func MakeDeleteSideStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *DeleteSideStrategy) PruneExistingOffers(offers []horizon.Offer) []horizon.Offer {
+func (s *DeleteSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
 	log.Info(fmt.Sprintf("deleteSideStrategy: deleting %d offers", len(offers)))
+	pruneOps := []build.TransactionMutator{}
 	for i := 0; i < len(offers); i++ {
-		s.txButler.DeleteOffer(offers[i])
+		pOp := s.txButler.DeleteOffer(offers[i])
+		pruneOps = append(pruneOps, &pOp)
 	}
-	return []horizon.Offer{}
+	return pruneOps, []horizon.Offer{}
 }
 
 // PreUpdate impl

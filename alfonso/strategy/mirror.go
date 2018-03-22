@@ -57,8 +57,8 @@ func MakeMirrorStrategy(txButler *kelp.TxButler, baseAsset *horizon.Asset, quote
 }
 
 // PruneExistingOffers deletes any extra offers
-func (s MirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]horizon.Offer, []horizon.Offer) {
-	return buyingAOffers, sellingAOffers
+func (s MirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+	return []build.TransactionMutator{}, buyingAOffers, sellingAOffers
 }
 
 // PreUpdate changes the strategy's state in prepration for the update
@@ -144,7 +144,8 @@ func (s *MirrorStrategy) updateLevels(
 
 		// delete remaining prior offers
 		for i := offset - 1; i >= 0; i-- {
-			s.txButler.DeleteOffer(oldOffers[i])
+			op := s.txButler.DeleteOffer(oldOffers[i])
+			ops = append(ops, op)
 		}
 	}
 	return ops
