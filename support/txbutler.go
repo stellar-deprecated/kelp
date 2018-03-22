@@ -11,7 +11,7 @@ import (
 
 const baseReserve = 0.5
 const operationalBuffer = 2000
-const fractionalReserveMagnifier = 10
+const fractionalReserveMagnifier = 20
 
 type TxButler struct {
 	API            horizon.Client
