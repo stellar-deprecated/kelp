@@ -9,19 +9,17 @@ import (
 
 // encapsulates a priceFeed from an exchange
 type exchangeFeed struct {
-	exchange    *exchange.Exchange
-	pairs       []assets.TradingPair
-	useBidPrice bool // bid price if true, else ask price
+	exchange *exchange.Exchange
+	pairs    []assets.TradingPair
 }
 
 // ensure that it implements priceFeed
 var _ priceFeed = &exchangeFeed{}
 
-func newExchangeFeed(exchange *exchange.Exchange, pair *assets.TradingPair, useBidPrice bool) *exchangeFeed {
+func newExchangeFeed(exchange *exchange.Exchange, pair *assets.TradingPair) *exchangeFeed {
 	return &exchangeFeed{
-		exchange:    exchange,
-		pairs:       []assets.TradingPair{*pair},
-		useBidPrice: useBidPrice,
+		exchange: exchange,
+		pairs:    []assets.TradingPair{*pair},
 	}
 }
 
@@ -37,8 +35,6 @@ func (f *exchangeFeed) getPrice() (float64, error) {
 		return 0, fmt.Errorf("could not get price for trading pair: %s", f.pairs[0].String())
 	}
 
-	if f.useBidPrice {
-		return p.BidPrice.AsFloat(), nil
-	}
-	return p.AskPrice.AsFloat(), nil
+	centerPrice := (p.BidPrice.AsFloat() + p.AskPrice.AsFloat()) / 2
+	return centerPrice, nil
 }

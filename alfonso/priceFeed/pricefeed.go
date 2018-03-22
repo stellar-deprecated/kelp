@@ -2,9 +2,7 @@ package priceFeed
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/lightyeario/kelp/support"
@@ -26,18 +24,14 @@ func priceFeedFactory(feedType string, url string) priceFeed {
 	case "fixed":
 		return newFixedFeed(url)
 	case "exchange":
-		// [0] = exchangeType, [1] = base, [2] = quote, [1] = bidPrice/askPrice
+		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
 		exchange := kelp.ExchangeFactory(urlParts[0])
 		tradingPair := assets.TradingPair{
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
 			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),
 		}
-		useBidPrice, e := strconv.ParseBool(urlParts[3])
-		if e != nil {
-			log.Panic("could not parse boolean bid price from url (index = 3): ", url)
-		}
-		return newExchangeFeed(&exchange, &tradingPair, useBidPrice)
+		return newExchangeFeed(&exchange, &tradingPair)
 	}
 	return nil
 }
