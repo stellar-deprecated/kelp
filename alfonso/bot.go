@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -54,6 +55,7 @@ func MakeBot(
 func (b *Bot) Start() {
 	for {
 		b.update()
+		log.Info(fmt.Sprintf("sleeping for %d seconds...", b.tickIntervalSeconds))
 		time.Sleep(time.Duration(b.tickIntervalSeconds) * time.Second)
 	}
 }
