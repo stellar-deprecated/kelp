@@ -193,7 +193,7 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 	return &result
 }
 
-func (self *TxButler) SubmitOps(ops []build.TransactionMutator) {
+func (self *TxButler) SubmitOps(ops []build.TransactionMutator) error {
 	self.incrementSeqNum()
 	muts := []build.TransactionMutator{
 		build.Sequence{self.seqNum},
@@ -202,7 +202,11 @@ func (self *TxButler) SubmitOps(ops []build.TransactionMutator) {
 	}
 	muts = append(muts, ops...)
 	tx := build.Transaction(muts...)
+	if tx.Err != nil {
+		return errors.Wrap(tx.Err, "txButler SubmitOps error: ")
+	}
 	go self.signAndSubmit(tx)
+	return nil
 }
 
 func (self *TxButler) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
@@ -211,12 +215,6 @@ func (self *TxButler) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, 
 }
 
 func (self *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
-
-	if tx.Err != nil {
-		log.Info("s&s err ", tx.Err)
-		return
-	}
-
 	var txe build.TransactionEnvelopeBuilder
 	if self.SourceSeed != self.TradingSeed {
 		txe = tx.Sign(self.SourceSeed, self.TradingSeed)

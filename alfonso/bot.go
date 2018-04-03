@@ -12,6 +12,16 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
+// uniqueKey represents the unique key for this bot
+type uniqueKey struct {
+	assetBaseCode    string
+	assetBaseIssuer  string
+	assetQuoteCode   string
+	assetQuoteIssuer string
+	key              string
+	hash             string
+}
+
 // Bot represents a market making bot, which contains it's strategy
 // the Bot is meant to contain all the non-strategy specific logic
 type Bot struct {
@@ -23,6 +33,8 @@ type Bot struct {
 	txButler            *kelp.TxButler
 	strat               strategy.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
+	dataKey             *uniqueKey
+	writeUniqueKey      bool
 
 	// uninitialized
 	maxAssetA      float64
@@ -40,6 +52,8 @@ func MakeBot(
 	txButler *kelp.TxButler,
 	strat strategy.Strategy,
 	tickIntervalSeconds int32,
+	dataKey *uniqueKey,
+	writeUniqueKey bool,
 ) *Bot {
 	return &Bot{
 		api:                 api,
@@ -49,6 +63,8 @@ func MakeBot(
 		txButler:            txButler,
 		strat:               strat,
 		tickIntervalSeconds: tickIntervalSeconds,
+		dataKey:             dataKey,
+		writeUniqueKey:      writeUniqueKey,
 	}
 }
 
@@ -78,25 +94,35 @@ func (b *Bot) deleteAllOffers() {
 
 	log.Info(fmt.Sprintf("deleting %d offers", len(dOps)))
 	if len(dOps) > 0 {
-		b.txButler.SubmitOps(dOps)
+		e := b.txButler.SubmitOps(dOps)
+		if e != nil {
+			log.Warn(e)
+			return
+		}
 	}
 }
 
 // time to update the order book and possibly readjust your offers
 // TODO make sure we aren't crossing existing orders when we place these
 func (b *Bot) update() {
+	var e error
 	b.load()
 	b.loadExistingOffers()
 	// must delete excess offers
 	var pruneOps []build.TransactionMutator
 	pruneOps, b.buyingAOffers, b.sellingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers, b.sellingAOffers)
 	if len(pruneOps) > 0 {
-		b.txButler.SubmitOps(pruneOps)
+		e = b.txButler.SubmitOps(pruneOps)
+		if e != nil {
+			log.Warn(e)
+			b.deleteAllOffers()
+			return
+		}
 	}
 
-	e := b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.buyingAOffers, b.sellingAOffers)
+	e = b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.buyingAOffers, b.sellingAOffers)
 	if e != nil {
-		log.Info(e)
+		log.Warn(e)
 		b.deleteAllOffers()
 		return
 	}
@@ -106,20 +132,59 @@ func (b *Bot) update() {
 	b.txButler.ResetCachedXlmExposure()
 	ops, e := b.strat.UpdateWithOps(b.buyingAOffers, b.sellingAOffers)
 	if e != nil {
-		log.Info(e)
+		log.Warn(e)
 		b.deleteAllOffers()
 		return
 	}
+
+	// append manageDataOps to update timestamp along with the update ops
+	mdOps, e := b.makeManageDataOps(time.Now())
+	if e != nil {
+		log.Warn(e)
+		b.deleteAllOffers()
+		return
+	}
+	ops = append(ops, mdOps...)
 	if len(ops) > 0 {
-		b.txButler.SubmitOps(ops)
+		e = b.txButler.SubmitOps(ops)
+		if e != nil {
+			log.Warn(e)
+			b.deleteAllOffers()
+			return
+		}
+		// TODO 3 - should verify that the async submission actually succeeded before setting to false
+		b.writeUniqueKey = false
 	}
 
 	e = b.strat.PostUpdate()
 	if e != nil {
-		log.Info(e)
+		log.Warn(e)
 		b.deleteAllOffers()
 		return
 	}
+}
+
+// makeManageDataOps writes data to the account to track when this bot successfully updated its orderbook
+// looks like this: hash=sortedAsset1/sortedAsset2/timeMillis
+func (b *Bot) makeManageDataOps(t time.Time) ([]build.TransactionMutator, error) {
+	ops := []build.TransactionMutator{}
+
+	// always write timestamp
+	millis := t.UnixNano() / 1000000
+	millisStr := fmt.Sprintf("%d", millis)
+	millisData := []byte(millisStr)
+	millisOp := build.SetData(b.dataKey.hash+"/0", millisData, build.SourceAccount{AddressOrSeed: b.tradingAccount})
+	ops = append(ops, &millisOp)
+
+	if b.writeUniqueKey {
+		ops = append(ops, build.SetData(b.dataKey.hash+"/1", []byte(b.dataKey.assetBaseCode), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
+		ops = append(ops, build.SetData(b.dataKey.hash+"/2", []byte(b.dataKey.assetBaseIssuer), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
+		ops = append(ops, build.SetData(b.dataKey.hash+"/3", []byte(b.dataKey.assetQuoteCode), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
+		ops = append(ops, build.SetData(b.dataKey.hash+"/4", []byte(b.dataKey.assetQuoteIssuer), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
+	}
+	log.Info("setting data with key = " + b.dataKey.key + " | hash = " + b.dataKey.hash + " | millis = " + millisStr)
+
+	return ops, nil
 }
 
 func (b *Bot) load() {
