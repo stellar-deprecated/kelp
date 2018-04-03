@@ -217,25 +217,10 @@ func (b *Bot) loadExistingOffers() {
 	// TODO 2 pass in reference to horizon.Client
 	offers, e := kelp.LoadAllOffers(b.tradingAccount, b.api)
 	if e != nil {
-		log.Info(e)
+		log.Warn(e)
 		return
 	}
-
-	b.sellingAOffers = []horizon.Offer{}
-	b.buyingAOffers = []horizon.Offer{}
-	for _, offer := range offers {
-		if offer.Selling == b.assetA {
-			if offer.Buying == b.assetB {
-				//log.Info("Found selling offer p:", offer.Price, " a:", offer.Amount)
-				b.sellingAOffers = append(b.sellingAOffers, offer)
-			}
-		} else if offer.Selling == b.assetB {
-			if offer.Buying == b.assetA {
-				//log.Info("Found buying offer p:", offer.Price, " a:", offer.Amount)
-				b.buyingAOffers = append(b.buyingAOffers, offer)
-			}
-		}
-	}
+	b.sellingAOffers, b.buyingAOffers = kelp.FilterOffers(offers, b.assetA, b.assetB)
 
 	sort.Sort(kelp.ByPrice(b.buyingAOffers))
 	sort.Sort(kelp.ByPrice(b.sellingAOffers)) // don't need to reverse since the prices are inverse

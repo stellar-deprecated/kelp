@@ -1,13 +1,18 @@
 package kelp
 
 import (
+	"fmt"
 	"math"
 	"math/big"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/support/config"
 	"github.com/stellar/go/support/log"
 )
 
@@ -116,6 +121,22 @@ func LoadAllOffers(account string, api horizon.Client) (offersRet []horizon.Offe
 	return
 }
 
+// FilterOffers filters out the offers into selling and buying, where sellOffers sells the sellAsset and buyOffers buys the sellAsset
+func FilterOffers(offers []horizon.Offer, sellAsset horizon.Asset, buyAsset horizon.Asset) (sellOffers []horizon.Offer, buyOffers []horizon.Offer) {
+	for _, offer := range offers {
+		if offer.Selling == sellAsset {
+			if offer.Buying == buyAsset {
+				sellOffers = append(sellOffers, offer)
+			}
+		} else if offer.Selling == buyAsset {
+			if offer.Buying == sellAsset {
+				buyOffers = append(buyOffers, offer)
+			}
+		}
+	}
+	return
+}
+
 // look at the average price 3 target amounts back on each side.
 // TODO: remove own orders form this calculation
 func CalculateCenterPrice(assetA horizon.Asset, assetB horizon.Asset, api horizon.Client) (float64, error) {
@@ -150,4 +171,42 @@ func CalculateCenterPrice(assetA horizon.Asset, assetB horizon.Asset, api horizo
 
 	centerPrice := (averageAskPrice + averageBidPrice) / 2
 	return centerPrice, nil
+}
+
+// CheckConfigError checks configs for errors
+func CheckConfigError(cfg interface{}, e error) {
+	fmt.Printf("Result: %+v\n", cfg)
+
+	if e != nil {
+		switch cause := errors.Cause(e).(type) {
+		case *config.InvalidConfigError:
+			log.Error("config file: ", cause)
+		default:
+			log.Error(e)
+		}
+		os.Exit(1)
+	}
+}
+
+// ParseSecret returns the address from the secret
+func ParseSecret(secret string) (*string, error) {
+	if secret == "" {
+		return nil, nil
+	}
+
+	sourceKP, err := keypair.Parse(secret)
+	if err != nil {
+		return nil, err
+	}
+
+	address := sourceKP.Address()
+	return &address, nil
+}
+
+// ParseNetwork checks the horizon url and returns the test network if it contains "test"
+func ParseNetwork(horizonURL string) build.Network {
+	if strings.Contains(horizonURL, "test") {
+		return build.TestNetwork
+	}
+	return build.PublicNetwork
 }

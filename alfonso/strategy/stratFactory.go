@@ -21,17 +21,17 @@ func StratFactory(
 	case "simple":
 		var cfg SimpleConfig
 		err := config.Read(stratConfigPath, &cfg)
-		CheckConfigError(cfg, err)
+		kelp.CheckConfigError(cfg, err)
 		return MakeSimpleStrategy(txButler, assetA, assetB, &cfg)
 	case "mirror":
 		var cfg MirrorConfig
 		err := config.Read(stratConfigPath, &cfg)
-		CheckConfigError(cfg, err)
+		kelp.CheckConfigError(cfg, err)
 		return MakeMirrorStrategy(txButler, assetA, assetB, &cfg)
 	case "sell":
 		var cfg SellConfig
 		err := config.Read(stratConfigPath, &cfg)
-		CheckConfigError(cfg, err)
+		kelp.CheckConfigError(cfg, err)
 		return MakeSellStrategy(txButler, assetA, assetB, &cfg)
 	}
 

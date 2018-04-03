@@ -10,7 +10,6 @@ import (
 	"github.com/lightyeario/kelp/alfonso/strategy"
 	"github.com/lightyeario/kelp/support"
 	"github.com/spf13/cobra"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/go/support/log"
@@ -57,7 +56,7 @@ func main() {
 func run(cmd *cobra.Command, args []string) {
 	log.Info("Starting alfonso: v0.2")
 	err := config.Read(*botConfigPath, &botConfig)
-	strategy.CheckConfigError(botConfig, err)
+	kelp.CheckConfigError(botConfig, err)
 	err = botConfig.Init()
 	if err != nil {
 		log.Error(err)
@@ -70,16 +69,14 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  botConfig.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := makeTxButler(
+	txB := kelp.MakeTxButler(
 		client,
 		botConfig.SOURCE_SECRET_SEED,
 		botConfig.TRADING_SECRET_SEED,
 		botConfig.SourceAccount(),
 		botConfig.TradingAccount(),
-		parseNetwork(botConfig.HORIZON_URL),
+		kelp.ParseNetwork(botConfig.HORIZON_URL),
 	)
-	// TODO move txbutler factory to file and move the init code into that function, potentially factory takes config directly
-	txB.Init()
 
 	assetA := botConfig.AssetA()
 	assetB := botConfig.AssetB()
@@ -144,31 +141,5 @@ func makeSortedUniqueKey(assetA, assetB horizon.Asset) *uniqueKey {
 		assetQuoteIssuer: assetQuoteIssuer,
 		key:              key,
 		hash:             hash,
-	}
-}
-
-func parseNetwork(horizonURL string) build.Network {
-	if strings.Contains(horizonURL, "test") {
-		return build.TestNetwork
-	}
-	return build.PublicNetwork
-}
-
-func makeTxButler(
-	client *horizon.Client,
-	sourceSeed string,
-	tradingSeed string,
-	sourceAccount string,
-	tradingAccount string,
-	network build.Network,
-) *kelp.TxButler {
-	return &kelp.TxButler{
-		// TODO TxButler needs to take in the reference
-		API:            *client,
-		SourceSeed:     sourceSeed,
-		TradingSeed:    tradingSeed,
-		SourceAccount:  sourceAccount,
-		TradingAccount: tradingAccount,
-		Network:        network,
 	}
 }

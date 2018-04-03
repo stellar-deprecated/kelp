@@ -27,16 +27,36 @@ type TxButler struct {
 	cachedXlmExposure *float64
 }
 
-func (self *TxButler) Init() {
-	//log.Info("init txbutler")
-	log.Info("Using network passphrase: ", self.Network.Passphrase)
+// MakeTxButler is a factory method for TxButler
+func MakeTxButler(
+	client *horizon.Client,
+	sourceSeed string,
+	tradingSeed string,
+	sourceAccount string,
+	tradingAccount string,
+	network build.Network,
+) *TxButler {
+	txb := &TxButler{
+		// TODO TxButler needs to take in the reference
+		API:            *client,
+		SourceSeed:     sourceSeed,
+		TradingSeed:    tradingSeed,
+		SourceAccount:  sourceAccount,
+		TradingAccount: tradingAccount,
+		Network:        network,
+	}
 
-	if self.SourceAccount == "" {
-		self.SourceAccount = self.TradingAccount
-		self.SourceSeed = self.TradingSeed
+	//log.Info("init txbutler")
+	log.Info("Using network passphrase: ", txb.Network.Passphrase)
+
+	if txb.SourceAccount == "" {
+		txb.SourceAccount = txb.TradingAccount
+		txb.SourceSeed = txb.TradingSeed
 		log.Info("No Source Account Set")
 	}
-	self.reloadSeqNum = true
+	txb.reloadSeqNum = true
+
+	return txb
 }
 
 /*

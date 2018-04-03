@@ -2,15 +2,10 @@ package strategy
 
 import (
 	"fmt"
-	"os"
 
 	kelp "github.com/lightyeario/kelp/support"
-	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/keypair"
-	"github.com/stellar/go/support/config"
-	"github.com/stellar/go/support/log"
 )
 
 // BotConfig represents the configuration params for the bot
@@ -68,7 +63,7 @@ func (b *BotConfig) Init() error {
 	}
 
 	var e error
-	b.tradingAccount, e = parseSecret(b.TRADING_SECRET_SEED)
+	b.tradingAccount, e = kelp.ParseSecret(b.TRADING_SECRET_SEED)
 	if e != nil {
 		return e
 	}
@@ -77,39 +72,10 @@ func (b *BotConfig) Init() error {
 		return fmt.Errorf("no trading account specified")
 	}
 
-	b.sourceAccount, e = parseSecret(b.SOURCE_SECRET_SEED)
+	b.sourceAccount, e = kelp.ParseSecret(b.SOURCE_SECRET_SEED)
 	if e != nil {
 		return e
 	}
 
 	return nil
-}
-
-// CheckConfigError checks configs for errors
-func CheckConfigError(cfg interface{}, e error) {
-	fmt.Printf("Result: %+v\n", cfg)
-
-	if e != nil {
-		switch cause := errors.Cause(e).(type) {
-		case *config.InvalidConfigError:
-			log.Error("config file: ", cause)
-		default:
-			log.Error(e)
-		}
-		os.Exit(1)
-	}
-}
-
-func parseSecret(secret string) (*string, error) {
-	if secret == "" {
-		return nil, nil
-	}
-
-	sourceKP, err := keypair.Parse(secret)
-	if err != nil {
-		return nil, err
-	}
-
-	address := sourceKP.Address()
-	return &address, nil
 }
