@@ -1,4 +1,5 @@
 alfonso/configs/
+terminator/configs/
 vendor/
 .vscode/
 glide.lock
