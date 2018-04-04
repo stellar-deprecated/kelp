@@ -8,10 +8,11 @@ import (
 
 // Config represents the configuration params for the bot
 type Config struct {
-	SOURCE_SECRET_SEED    string `valid:"-"`
-	TRADING_SECRET_SEED   string `valid:"-"`
-	TICK_INTERVAL_SECONDS int32  `valid:"-"`
-	HORIZON_URL           string `valid:"-"`
+	SOURCE_SECRET_SEED     string `valid:"-"`
+	TRADING_SECRET_SEED    string `valid:"-"`
+	ALLOW_INACTIVE_MINUTES int32  `valid:"-"` // bots that are inactive for more than this time will have its offers deleted
+	TICK_INTERVAL_SECONDS  int32  `valid:"-"`
+	HORIZON_URL            string `valid:"-"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil

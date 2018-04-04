@@ -86,6 +86,16 @@ func (self *TxButler) incrementSeqNum() {
 
 }
 
+// DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
+func (txb *TxButler) DeleteAllOffers(offers []horizon.Offer) []build.TransactionMutator {
+	ops := []build.TransactionMutator{}
+	for _, offer := range offers {
+		op := txb.DeleteOffer(offer)
+		ops = append(ops, &op)
+	}
+	return ops
+}
+
 // DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
 func (txb *TxButler) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 	rate := build.Rate{

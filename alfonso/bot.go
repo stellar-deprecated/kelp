@@ -80,16 +80,10 @@ func (b *Bot) Start() {
 // deletes all offers for this bot (not all offers on the account)
 func (b *Bot) deleteAllOffers() {
 	dOps := []build.TransactionMutator{}
-	for _, offer := range b.sellingAOffers {
-		dOp := b.txButler.DeleteOffer(offer)
-		dOps = append(dOps, &dOp)
-	}
-	b.sellingAOffers = []horizon.Offer{}
 
-	for _, offer := range b.buyingAOffers {
-		dOp := b.txButler.DeleteOffer(offer)
-		dOps = append(dOps, &dOp)
-	}
+	dOps = append(dOps, b.txButler.DeleteAllOffers(b.sellingAOffers)...)
+	b.sellingAOffers = []horizon.Offer{}
+	dOps = append(dOps, b.txButler.DeleteAllOffers(b.buyingAOffers)...)
 	b.buyingAOffers = []horizon.Offer{}
 
 	log.Info(fmt.Sprintf("deleting %d offers", len(dOps)))
