@@ -14,6 +14,7 @@ import (
 )
 
 const terminatorKey = "term"
+const botPrefix = "b/"
 
 // Terminator contains the logic to terminate offers
 type Terminator struct {
@@ -134,11 +135,12 @@ func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizo
 	numOffers := len(ops)
 
 	// delete existing data entries
-	ops = append(ops, build.ClearData(hash+"/0", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(hash+"/1", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(hash+"/2", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(hash+"/3", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(hash+"/4", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	dataKeyPrefix := botPrefix + hash
+	ops = append(ops, build.ClearData(dataKeyPrefix+"/0", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(dataKeyPrefix+"/1", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(dataKeyPrefix+"/2", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(dataKeyPrefix+"/3", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(dataKeyPrefix+"/4", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 
 	// update timestamp for terminator
 	tsMillisStr := fmt.Sprintf("%d", tsMillis)
@@ -168,13 +170,14 @@ func excludeActiveBots(m map[string]botKey, cutoffMillis int64) map[string]botKe
 func reconstructBotMap(data map[string]string) (map[string]botKey, error) {
 	m := make(map[string]botKey)
 	for k, v := range data {
-		if k == terminatorKey {
+		if !strings.HasPrefix(k, botPrefix) {
 			continue
 		}
 
 		keyParts := strings.Split(k, "/")
-		hash := keyParts[0]
-		botKeyPart := keyParts[1]
+		// [0] is b which we've checked for above so ignore here
+		hash := keyParts[1]
+		botKeyPart := keyParts[2]
 
 		currentBotKey, ok := m[hash]
 		if !ok {

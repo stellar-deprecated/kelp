@@ -12,6 +12,8 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
+const botDataKeyPrefix = "b/"
+
 // uniqueKey represents the unique key for this bot
 type uniqueKey struct {
 	assetBaseCode    string
@@ -162,21 +164,23 @@ func (b *Bot) update() {
 // looks like this: hash=sortedAsset1/sortedAsset2/timeMillis
 func (b *Bot) makeManageDataOps(t time.Time) ([]build.TransactionMutator, error) {
 	ops := []build.TransactionMutator{}
+	dataKeyPrefix := botDataKeyPrefix + b.dataKey.hash
+	tradingSourceAccount := build.SourceAccount{AddressOrSeed: b.tradingAccount}
 
 	// always write timestamp
 	millis := t.UnixNano() / 1000000
 	millisStr := fmt.Sprintf("%d", millis)
 	millisData := []byte(millisStr)
-	millisOp := build.SetData(b.dataKey.hash+"/0", millisData, build.SourceAccount{AddressOrSeed: b.tradingAccount})
+	millisOp := build.SetData(dataKeyPrefix+"/0", millisData, tradingSourceAccount)
 	ops = append(ops, &millisOp)
 
 	if b.writeUniqueKey {
-		ops = append(ops, build.SetData(b.dataKey.hash+"/1", []byte(b.dataKey.assetBaseCode), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
-		ops = append(ops, build.SetData(b.dataKey.hash+"/2", []byte(b.dataKey.assetBaseIssuer), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
-		ops = append(ops, build.SetData(b.dataKey.hash+"/3", []byte(b.dataKey.assetQuoteCode), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
-		ops = append(ops, build.SetData(b.dataKey.hash+"/4", []byte(b.dataKey.assetQuoteIssuer), build.SourceAccount{AddressOrSeed: b.tradingAccount}))
+		ops = append(ops, build.SetData(dataKeyPrefix+"/1", []byte(b.dataKey.assetBaseCode), tradingSourceAccount))
+		ops = append(ops, build.SetData(dataKeyPrefix+"/2", []byte(b.dataKey.assetBaseIssuer), tradingSourceAccount))
+		ops = append(ops, build.SetData(dataKeyPrefix+"/3", []byte(b.dataKey.assetQuoteCode), tradingSourceAccount))
+		ops = append(ops, build.SetData(dataKeyPrefix+"/4", []byte(b.dataKey.assetQuoteIssuer), tradingSourceAccount))
 	}
-	log.Info("setting data with key = " + b.dataKey.key + " | hash = " + b.dataKey.hash + " | millis = " + millisStr)
+	log.Info("setting data with key = " + b.dataKey.key + " | dataKeyPrefix = " + dataKeyPrefix + " | millis = " + millisStr)
 
 	return ops, nil
 }
