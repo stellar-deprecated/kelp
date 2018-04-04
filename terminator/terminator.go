@@ -83,6 +83,19 @@ func (t *Terminator) run() {
 	filtered := excludeActiveBots(m, cutoffMillis)
 	log.Info(fmt.Sprintf("Found %d inactive bots", len(filtered)))
 	if len(filtered) == 0 {
+		// update data to reflect a successful return from terminator
+		newTimestamp := time.Now().UnixNano() / 1000000
+		tsMillisStr := fmt.Sprintf("%d", newTimestamp)
+		ops := []build.TransactionMutator{
+			build.SetData(terminatorKey, []byte(tsMillisStr), build.SourceAccount{AddressOrSeed: t.tradingAccount}),
+		}
+
+		log.Info("updating delete timestamp to ", tsMillisStr)
+		e = t.txb.SubmitOps(ops)
+		if e != nil {
+			log.Error(e)
+			return
+		}
 		return
 	}
 
@@ -101,7 +114,8 @@ func (t *Terminator) run() {
 		assetA := convertToAsset(bk.assetACode, bk.assetAIssuer)
 		assetB := convertToAsset(bk.assetBCode, bk.assetBIssuer)
 		inactiveSellOffers, inactiveBuyOffers := kelp.FilterOffers(offers, assetA, assetB)
-		t.deleteOffers(inactiveSellOffers, inactiveBuyOffers, hash)
+		newTimestamp := time.Now().UnixNano() / 1000000
+		t.deleteOffers(inactiveSellOffers, inactiveBuyOffers, hash, newTimestamp)
 	}
 }
 
@@ -113,19 +127,24 @@ func convertToAsset(code string, issuer string) horizon.Asset {
 }
 
 // deleteOffers deletes passed in offers along with the data for the passed in hash
-func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, hash string) {
+func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, hash string, tsMillis int64) {
 	ops := []build.TransactionMutator{}
 	ops = append(ops, t.txb.DeleteAllOffers(sellOffers)...)
 	ops = append(ops, t.txb.DeleteAllOffers(buyOffers)...)
 	numOffers := len(ops)
 
+	// delete existing data entries
 	ops = append(ops, build.ClearData(hash+"/0", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 	ops = append(ops, build.ClearData(hash+"/1", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 	ops = append(ops, build.ClearData(hash+"/2", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 	ops = append(ops, build.ClearData(hash+"/3", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 	ops = append(ops, build.ClearData(hash+"/4", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 
-	log.Info(fmt.Sprintf("deleting %d offers and 5 data entries", numOffers))
+	// update timestamp for terminator
+	tsMillisStr := fmt.Sprintf("%d", tsMillis)
+	ops = append(ops, build.SetData(terminatorKey, []byte(tsMillisStr), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+
+	log.Info(fmt.Sprintf("deleting %d offers and 5 data entries, updating delete timestamp to %s", numOffers, tsMillisStr))
 	if len(ops) > 0 {
 		e := t.txb.SubmitOps(ops)
 		if e != nil {
