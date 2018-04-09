@@ -7,22 +7,11 @@ import (
 
 	"github.com/lightyeario/kelp/alfonso/strategy"
 	kelp "github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/datamodel"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
 )
-
-const botDataKeyPrefix = "b/"
-
-// uniqueKey represents the unique key for this bot
-type uniqueKey struct {
-	assetBaseCode    string
-	assetBaseIssuer  string
-	assetQuoteCode   string
-	assetQuoteIssuer string
-	key              string
-	hash             string
-}
 
 // Bot represents a market making bot, which contains it's strategy
 // the Bot is meant to contain all the non-strategy specific logic
@@ -35,7 +24,7 @@ type Bot struct {
 	txButler            *kelp.TxButler
 	strat               strategy.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
-	dataKey             *uniqueKey
+	dataKey             *datamodel.BotKey
 	writeUniqueKey      bool
 
 	// uninitialized
@@ -54,7 +43,7 @@ func MakeBot(
 	txButler *kelp.TxButler,
 	strat strategy.Strategy,
 	tickIntervalSeconds int32,
-	dataKey *uniqueKey,
+	dataKey *datamodel.BotKey,
 	writeUniqueKey bool,
 ) *Bot {
 	return &Bot{
@@ -164,23 +153,22 @@ func (b *Bot) update() {
 // looks like this: hash=sortedAsset1/sortedAsset2/timeMillis
 func (b *Bot) makeManageDataOps(t time.Time) ([]build.TransactionMutator, error) {
 	ops := []build.TransactionMutator{}
-	dataKeyPrefix := botDataKeyPrefix + b.dataKey.hash
 	tradingSourceAccount := build.SourceAccount{AddressOrSeed: b.tradingAccount}
 
 	// always write timestamp
 	millis := t.UnixNano() / 1000000
 	millisStr := fmt.Sprintf("%d", millis)
 	millisData := []byte(millisStr)
-	millisOp := build.SetData(dataKeyPrefix+"/0", millisData, tradingSourceAccount)
+	millisOp := build.SetData(b.dataKey.FullKey(0), millisData, tradingSourceAccount)
 	ops = append(ops, &millisOp)
 
 	if b.writeUniqueKey {
-		ops = append(ops, build.SetData(dataKeyPrefix+"/1", []byte(b.dataKey.assetBaseCode), tradingSourceAccount))
-		ops = append(ops, build.SetData(dataKeyPrefix+"/2", []byte(b.dataKey.assetBaseIssuer), tradingSourceAccount))
-		ops = append(ops, build.SetData(dataKeyPrefix+"/3", []byte(b.dataKey.assetQuoteCode), tradingSourceAccount))
-		ops = append(ops, build.SetData(dataKeyPrefix+"/4", []byte(b.dataKey.assetQuoteIssuer), tradingSourceAccount))
+		ops = append(ops, build.SetData(b.dataKey.FullKey(1), []byte(b.dataKey.AssetBaseCode), tradingSourceAccount))
+		ops = append(ops, build.SetData(b.dataKey.FullKey(2), []byte(b.dataKey.AssetBaseIssuer), tradingSourceAccount))
+		ops = append(ops, build.SetData(b.dataKey.FullKey(3), []byte(b.dataKey.AssetQuoteCode), tradingSourceAccount))
+		ops = append(ops, build.SetData(b.dataKey.FullKey(4), []byte(b.dataKey.AssetQuoteIssuer), tradingSourceAccount))
 	}
-	log.Info("setting data with key = " + b.dataKey.key + " | dataKeyPrefix = " + dataKeyPrefix + " | millis = " + millisStr)
+	log.Info("setting data with key = " + b.dataKey.Key() + " | dataKeyPrefix = " + b.dataKey.HashWithPrefix() + " | millis = " + millisStr)
 
 	return ops, nil
 }

@@ -4,8 +4,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
+
+	"github.com/lightyeario/kelp/support/datamodel"
 
 	"github.com/lightyeario/kelp/support"
 	"github.com/stellar/go/build"
@@ -51,12 +52,10 @@ func (t *Terminator) StartService() {
 	}
 }
 
-type botKey struct {
-	assetACode   string
-	assetAIssuer string
-	assetBCode   string
-	assetBIssuer string
-	lastUpdated  int64
+// botKeyPair is a pair of the datamodel.BotKey and the time the bot was last updated
+type botKeyPair struct {
+	dataKey     datamodel.BotKey
+	lastUpdated int64
 }
 
 func (t *Terminator) run() {
@@ -66,7 +65,7 @@ func (t *Terminator) run() {
 		return
 	}
 
-	// m is a map of hashes to botKey(s)
+	// m is a map of hashes to botKeyPair(s)
 	m, e := reconstructBotMap(account.Data)
 	if e != nil {
 		log.Error(e)
@@ -109,11 +108,10 @@ func (t *Terminator) run() {
 
 	// delete the offers of inactive bots
 	for hash, bk := range filtered {
-		key := fmt.Sprintf("%s/%s/%s/%s/%d", bk.assetACode, bk.assetAIssuer, bk.assetBCode, bk.assetBIssuer, bk.lastUpdated)
-		log.Info("working on bot with key: ", key)
+		log.Info(fmt.Sprintf("working on bot with key: %s | lastUpdated: %d", bk.dataKey.Key(), bk.lastUpdated))
 
-		assetA := convertToAsset(bk.assetACode, bk.assetAIssuer)
-		assetB := convertToAsset(bk.assetBCode, bk.assetBIssuer)
+		assetA := convertToAsset(bk.dataKey.AssetBaseCode, bk.dataKey.AssetBaseIssuer)
+		assetB := convertToAsset(bk.dataKey.AssetQuoteCode, bk.dataKey.AssetQuoteIssuer)
 		inactiveSellOffers, inactiveBuyOffers := kelp.FilterOffers(offers, assetA, assetB)
 		newTimestamp := time.Now().UnixNano() / 1000000
 		t.deleteOffers(inactiveSellOffers, inactiveBuyOffers, hash, newTimestamp)
@@ -157,8 +155,8 @@ func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizo
 }
 
 // excludeActiveBots filters out bots that have a lastUpdated timestamp that is greater than or equal to cutoffMillis
-func excludeActiveBots(m map[string]botKey, cutoffMillis int64) map[string]botKey {
-	filtered := make(map[string]botKey)
+func excludeActiveBots(m map[string]botKeyPair, cutoffMillis int64) map[string]botKeyPair {
+	filtered := make(map[string]botKeyPair)
 	for k, v := range m {
 		if v.lastUpdated < cutoffMillis {
 			filtered[k] = v
@@ -167,21 +165,17 @@ func excludeActiveBots(m map[string]botKey, cutoffMillis int64) map[string]botKe
 	return filtered
 }
 
-func reconstructBotMap(data map[string]string) (map[string]botKey, error) {
-	m := make(map[string]botKey)
+func reconstructBotMap(data map[string]string) (map[string]botKeyPair, error) {
+	m := make(map[string]botKeyPair)
 	for k, v := range data {
-		if !strings.HasPrefix(k, botPrefix) {
+		if !datamodel.IsBotKey(k) {
 			continue
 		}
 
-		keyParts := strings.Split(k, "/")
-		// [0] is b which we've checked for above so ignore here
-		hash := keyParts[1]
-		botKeyPart := keyParts[2]
-
+		hash, botKeyPart := datamodel.SplitDataKey(k)
 		currentBotKey, ok := m[hash]
 		if !ok {
-			currentBotKey = botKey{}
+			currentBotKey = botKeyPair{}
 		}
 		e := updateBotKey(&currentBotKey, botKeyPart, v)
 		if e != nil {
@@ -192,7 +186,7 @@ func reconstructBotMap(data map[string]string) (map[string]botKey, error) {
 	return m, nil
 }
 
-func updateBotKey(currentBotKey *botKey, botKeyPart string, value string) error {
+func updateBotKey(currentBotKey *botKeyPair, botKeyPart string, value string) error {
 	decoded, e := base64.StdEncoding.DecodeString(value)
 	if e != nil {
 		return e
@@ -207,13 +201,13 @@ func updateBotKey(currentBotKey *botKey, botKeyPart string, value string) error 
 			return e
 		}
 	case "1":
-		currentBotKey.assetACode = string(decoded)
+		currentBotKey.dataKey.AssetBaseCode = string(decoded)
 	case "2":
-		currentBotKey.assetAIssuer = string(decoded)
+		currentBotKey.dataKey.AssetBaseIssuer = string(decoded)
 	case "3":
-		currentBotKey.assetBCode = string(decoded)
+		currentBotKey.dataKey.AssetQuoteCode = string(decoded)
 	case "4":
-		currentBotKey.assetBIssuer = string(decoded)
+		currentBotKey.dataKey.AssetQuoteIssuer = string(decoded)
 	}
 	return nil
 }

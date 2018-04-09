@@ -1,11 +1,10 @@
 package main
 
 import (
-	"crypto/sha1"
-	"fmt"
 	"net/http"
 	"os"
-	"strings"
+
+	"github.com/lightyeario/kelp/support/datamodel"
 
 	"github.com/lightyeario/kelp/alfonso/strategy"
 	"github.com/lightyeario/kelp/support"
@@ -80,7 +79,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	assetA := botConfig.AssetA()
 	assetB := botConfig.AssetB()
-	dataKey := makeSortedUniqueKey(assetA, assetB)
+	dataKey := datamodel.MakeSortedBotKey(assetA, assetB)
 	strat := strategy.StratFactory(txB, &assetA, &assetB, *stratType, *stratConfigPath)
 	bot := MakeBot(
 		*client,
@@ -98,48 +97,5 @@ func run(cmd *cobra.Command, args []string) {
 	for true {
 		bot.Start()
 		log.Info("Restarting strat")
-	}
-}
-
-func makeSortedUniqueKey(assetA, assetB horizon.Asset) *uniqueKey {
-	const native string = "native"
-	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string
-	if assetA.Type == native && assetB.Type == native {
-		log.Panic("invalid asset types, both cannot be native")
-	} else if assetA.Type == native {
-		assetBaseCode = native
-		assetBaseIssuer = ""
-		assetQuoteCode = assetB.Code
-		assetQuoteIssuer = assetB.Issuer
-	} else if assetB.Type == native {
-		assetBaseCode = native
-		assetBaseIssuer = ""
-		assetQuoteCode = assetA.Code
-		assetQuoteIssuer = assetA.Issuer
-	} else if strings.Compare(assetA.Code+"/"+assetA.Issuer, assetB.Code+"/"+assetB.Issuer) <= 0 {
-		assetBaseCode = assetA.Code
-		assetBaseIssuer = assetA.Issuer
-		assetQuoteCode = assetB.Code
-		assetQuoteIssuer = assetB.Issuer
-	} else {
-		assetBaseCode = assetB.Code
-		assetBaseIssuer = assetB.Issuer
-		assetQuoteCode = assetA.Code
-		assetQuoteIssuer = assetA.Issuer
-	}
-
-	key := fmt.Sprintf("%s/%s/%s/%s", assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer)
-	h := sha1.New()
-	h.Write([]byte(key))
-	bs := h.Sum(nil)
-	hash := fmt.Sprintf("%x", bs)
-
-	return &uniqueKey{
-		assetBaseCode:    assetBaseCode,
-		assetBaseIssuer:  assetBaseIssuer,
-		assetQuoteCode:   assetQuoteCode,
-		assetQuoteIssuer: assetQuoteIssuer,
-		key:              key,
-		hash:             hash,
 	}
 }
