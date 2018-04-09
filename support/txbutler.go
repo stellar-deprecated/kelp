@@ -11,17 +11,17 @@ import (
 
 const baseReserve = 0.5
 const operationalBuffer = 2000
-const fractionalReserveMagnifier = 20
 
 type TxButler struct {
-	API            horizon.Client
-	SourceAccount  string
-	TradingAccount string
-	SourceSeed     string
-	TradingSeed    string
-	Network        build.Network
-	seqNum         uint64
-	reloadSeqNum   bool
+	API                        horizon.Client
+	SourceAccount              string
+	TradingAccount             string
+	SourceSeed                 string
+	TradingSeed                string
+	Network                    build.Network
+	FractionalReserveMagnifier int8
+	seqNum                     uint64
+	reloadSeqNum               bool
 
 	// uninitialized
 	cachedXlmExposure *float64
@@ -35,15 +35,17 @@ func MakeTxButler(
 	sourceAccount string,
 	tradingAccount string,
 	network build.Network,
+	fractionalReserveMagnifier int8,
 ) *TxButler {
 	txb := &TxButler{
 		// TODO TxButler needs to take in the reference
-		API:            *client,
-		SourceSeed:     sourceSeed,
-		TradingSeed:    tradingSeed,
-		SourceAccount:  sourceAccount,
-		TradingAccount: tradingAccount,
-		Network:        network,
+		API:                        *client,
+		SourceSeed:                 sourceSeed,
+		TradingSeed:                tradingSeed,
+		SourceAccount:              sourceAccount,
+		TradingAccount:             tradingAccount,
+		Network:                    network,
+		FractionalReserveMagnifier: fractionalReserveMagnifier,
 	}
 
 	//log.Info("init txbutler")
@@ -192,11 +194,11 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 		}
 
 		additionalExposure := incrementalXlmAmount >= 0
-		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / fractionalReserveMagnifier) > (bal - minAccountBal - operationalBuffer)
+		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(self.FractionalReserveMagnifier)) > (bal - minAccountBal - operationalBuffer)
 		if additionalExposure && possibleTerminalExposure {
 			log.Info("not placing offer because we run the risk of running out of lumens | xlmExposure: ", xlmExposure,
 				" | incrementalXlmAmount: ", incrementalXlmAmount, " | bal: ", bal, " | minAccountBal: ", minAccountBal,
-				" | operationalBuffer: ", operationalBuffer, " | fractionalReserveMagnifier: ", fractionalReserveMagnifier)
+				" | operationalBuffer: ", operationalBuffer, " | fractionalReserveMagnifier: ", self.FractionalReserveMagnifier)
 			return nil
 		}
 	}

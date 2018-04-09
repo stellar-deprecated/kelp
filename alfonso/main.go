@@ -45,6 +45,7 @@ var botConfigPath = rootCmd.PersistentFlags().String("botConf", "./alfonso.cfg",
 var botConfig strategy.BotConfig
 var stratType = rootCmd.PersistentFlags().String("stratType", "simple", "type of strategy to run")
 var stratConfigPath = rootCmd.PersistentFlags().String("stratConf", "./alfonso.cfg", "strategy config file path")
+var fractionalReserveMagnifier = rootCmd.PersistentFlags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
 
 func main() {
 	log.SetLevel(log.DebugLevel)
@@ -75,6 +76,7 @@ func run(cmd *cobra.Command, args []string) {
 		botConfig.SourceAccount(),
 		botConfig.TradingAccount(),
 		kelp.ParseNetwork(botConfig.HORIZON_URL),
+		*fractionalReserveMagnifier,
 	)
 
 	assetA := botConfig.AssetA()
