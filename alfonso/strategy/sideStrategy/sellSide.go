@@ -3,39 +3,31 @@ package sideStrategy
 import (
 	"math"
 
+	"github.com/lightyeario/kelp/alfonso/strategy/level"
+
 	"github.com/lightyeario/kelp/support/exchange/number"
 
 	"github.com/lightyeario/kelp/alfonso/priceFeed"
-	"github.com/lightyeario/kelp/alfonso/strategy/level"
 	kelp "github.com/lightyeario/kelp/support"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
 )
 
-// SellSideConfig contains the configuration params for this SideStrategy
-type SellSideConfig struct {
-	DATA_TYPE_A            string        `valid:"-"`
-	DATA_FEED_A_URL        string        `valid:"-"`
-	DATA_TYPE_B            string        `valid:"-"`
-	DATA_FEED_B_URL        string        `valid:"-"`
-	PRICE_TOLERANCE        float64       `valid:"-"`
-	AMOUNT_TOLERANCE       float64       `valid:"-"`
-	AMOUNT_OF_A_BASE       float64       `valid:"-"` // the size of order
-	DIVIDE_AMOUNT_BY_PRICE bool          `valid:"-"` // whether we want to divide the amount by the price, usually true if this is on the buy side
-	LEVELS                 []level.Level `valid:"-"`
-}
-
 // SellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
 type SellSideStrategy struct {
-	txButler   *kelp.TxButler
-	assetBase  *horizon.Asset
-	assetQuote *horizon.Asset
-	config     *SellSideConfig
-	pf         priceFeed.FeedPair
+	txButler            *kelp.TxButler
+	assetBase           *horizon.Asset
+	assetQuote          *horizon.Asset
+	pf                  priceFeed.FeedPair
+	levelsProvider      level.Provider
+	priceTolerance      float64
+	amountTolerance     float64
+	divideAmountByPrice bool
 
 	// uninitialized
 	centerPrice   float64
+	currentLevels []level.Level // levels for current iteration
 	maxAssetBase  float64
 	maxAssetQuote float64
 }
@@ -48,31 +40,33 @@ func MakeSellSideStrategy(
 	txButler *kelp.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	config *SellSideConfig,
+	pf priceFeed.FeedPair,
+	levelsProvider level.Provider,
+	priceTolerance float64,
+	amountTolerance float64,
+	divideAmountByPrice bool,
 ) SideStrategy {
 	return &SellSideStrategy{
-		txButler:   txButler,
-		assetBase:  assetBase,
-		assetQuote: assetQuote,
-		config:     config,
-		pf: *priceFeed.MakeFeedPair(
-			config.DATA_TYPE_A,
-			config.DATA_FEED_A_URL,
-			config.DATA_TYPE_B,
-			config.DATA_FEED_B_URL,
-		),
+		txButler:            txButler,
+		assetBase:           assetBase,
+		assetQuote:          assetQuote,
+		pf:                  pf,
+		levelsProvider:      levelsProvider,
+		priceTolerance:      priceTolerance,
+		amountTolerance:     amountTolerance,
+		divideAmountByPrice: divideAmountByPrice,
 	}
 }
 
 // PruneExistingOffers impl
 func (s *SellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
 	pruneOps := []build.TransactionMutator{}
-	for i := len(s.config.LEVELS); i < len(offers); i++ {
+	for i := len(s.currentLevels); i < len(offers); i++ {
 		pOp := s.txButler.DeleteOffer(offers[i])
 		pruneOps = append(pruneOps, &pOp)
 	}
-	if len(offers) > len(s.config.LEVELS) {
-		offers = offers[:len(s.config.LEVELS)]
+	if len(offers) > len(s.currentLevels) {
+		offers = offers[:len(s.currentLevels)]
 	}
 	return pruneOps, offers
 }
@@ -86,16 +80,24 @@ func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	s.centerPrice, e = s.pf.GetCenterPrice()
 	if e != nil {
 		log.Error("Center price couldn't be loaded! ", e)
+		return e
 	} else {
 		log.Info("Center price: ", s.centerPrice, "        v0.2")
 	}
-	return e
+
+	// load currentLevels only once here
+	s.currentLevels, e = s.levelsProvider.GetLevels(s.centerPrice)
+	if e != nil {
+		log.Error("Center price couldn't be loaded! ", e)
+		return e
+	}
+	return nil
 }
 
 // UpdateWithOps impl
 func (s *SellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *number.Number, e error) {
 	newTopOffer = nil
-	for i := len(s.config.LEVELS) - 1; i >= 0; i-- {
+	for i := len(s.currentLevels) - 1; i >= 0; i-- {
 		op := s.updateSellLevel(offers, i)
 		if op != nil {
 			offer, e := number.FromString(op.MO.Price.String(), 7)
@@ -121,10 +123,9 @@ func (s *SellSideStrategy) PostUpdate() error {
 
 // Selling Base
 func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *build.ManageOfferBuilder {
-	spread := s.centerPrice * s.config.LEVELS[index].SPREAD
-	targetPrice := s.centerPrice + spread
-	targetAmount := s.config.LEVELS[index].AMOUNT * s.config.AMOUNT_OF_A_BASE
-	if s.config.DIVIDE_AMOUNT_BY_PRICE {
+	targetPrice := s.currentLevels[index].TargetPrice()
+	targetAmount := s.currentLevels[index].TargetAmount()
+	if s.divideAmountByPrice {
 		targetAmount /= targetPrice
 	}
 	targetAmount = math.Min(targetAmount, s.maxAssetBase)
@@ -135,10 +136,10 @@ func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 		return s.txButler.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
 	}
 
-	highestPrice := targetPrice + targetPrice*s.config.PRICE_TOLERANCE
-	lowestPrice := targetPrice - targetPrice*s.config.PRICE_TOLERANCE
-	minAmount := targetAmount - targetAmount*s.config.AMOUNT_TOLERANCE
-	maxAmount := targetAmount + targetAmount*s.config.AMOUNT_TOLERANCE
+	highestPrice := targetPrice + targetPrice*s.priceTolerance
+	lowestPrice := targetPrice - targetPrice*s.priceTolerance
+	minAmount := targetAmount - targetAmount*s.amountTolerance
+	maxAmount := targetAmount + targetAmount*s.amountTolerance
 
 	//check if existing offer needs to be modified
 	curPrice := kelp.GetPrice(offers[index])
