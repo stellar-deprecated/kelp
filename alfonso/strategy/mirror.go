@@ -62,12 +62,7 @@ func (s MirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, selli
 }
 
 // PreUpdate changes the strategy's state in prepration for the update
-func (s *MirrorStrategy) PreUpdate(
-	maxAssetA float64,
-	maxAssetB float64,
-	buyingAOffers []horizon.Offer,
-	sellingAOffers []horizon.Offer,
-) error {
+func (s *MirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64) error {
 	return nil
 }
 

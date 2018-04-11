@@ -78,11 +78,7 @@ func (s *SellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.
 }
 
 // PreUpdate impl
-func (s *SellSideStrategy) PreUpdate(
-	maxAssetBase float64,
-	maxAssetQuote float64,
-	offers []horizon.Offer,
-) error {
+func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64) error {
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
 

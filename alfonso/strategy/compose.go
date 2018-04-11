@@ -47,16 +47,11 @@ func (s *ComposeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sel
 }
 
 // PreUpdate impl
-func (s *ComposeStrategy) PreUpdate(
-	maxAssetBase float64,
-	maxAssetQuote float64,
-	buyingAOffers []horizon.Offer,
-	sellingAOffers []horizon.Offer,
-) error {
+func (s *ComposeStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64) error {
 	// swap assets (base/quote) for buying strategy
-	e1 := s.buyStrat.PreUpdate(maxAssetQuote, maxAssetBase, buyingAOffers)
+	e1 := s.buyStrat.PreUpdate(maxAssetQuote, maxAssetBase)
 	// assets maintain same ordering for selling
-	e2 := s.sellStrat.PreUpdate(maxAssetBase, maxAssetQuote, sellingAOffers)
+	e2 := s.sellStrat.PreUpdate(maxAssetBase, maxAssetQuote)
 
 	if e1 == nil && e2 == nil {
 		return nil

@@ -93,7 +93,16 @@ func (b *Bot) update() {
 	var e error
 	b.load()
 	b.loadExistingOffers()
-	// must delete excess offers
+
+	// strategy has a chance to set any state it needs
+	e = b.strat.PreUpdate(b.maxAssetA, b.maxAssetB)
+	if e != nil {
+		log.Warn(e)
+		b.deleteAllOffers()
+		return
+	}
+
+	// delete excess offers
 	var pruneOps []build.TransactionMutator
 	pruneOps, b.buyingAOffers, b.sellingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers, b.sellingAOffers)
 	if len(pruneOps) > 0 {
@@ -103,13 +112,6 @@ func (b *Bot) update() {
 			b.deleteAllOffers()
 			return
 		}
-	}
-
-	e = b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.buyingAOffers, b.sellingAOffers)
-	if e != nil {
-		log.Warn(e)
-		b.deleteAllOffers()
-		return
 	}
 
 	// reset cached xlm exposure here so we only compute it once per update
