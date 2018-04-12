@@ -28,17 +28,17 @@ func MakeSellStrategy(
 	assetQuote *horizon.Asset,
 	config *SellConfig,
 ) Strategy {
+	pf := priceFeed.MakeFeedPair(
+		config.DATA_TYPE_A,
+		config.DATA_FEED_A_URL,
+		config.DATA_TYPE_B,
+		config.DATA_FEED_B_URL,
+	)
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
 		txButler,
 		assetBase,
 		assetQuote,
-		*priceFeed.MakeFeedPair(
-			config.DATA_TYPE_A,
-			config.DATA_FEED_A_URL,
-			config.DATA_TYPE_B,
-			config.DATA_FEED_B_URL,
-		),
-		level.MakeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE),
+		level.MakeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE, pf),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		config.DIVIDE_AMOUNT_BY_PRICE,

@@ -19,5 +19,5 @@ func (l Level) TargetAmount() float64 {
 // Provider returns the levels for the given center price.
 // Implementations should consider the spread they want to keep along with possibly having variable number of levels if needed
 type Provider interface {
-	GetLevels(centerPrice float64) ([]Level, error)
+	GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error)
 }

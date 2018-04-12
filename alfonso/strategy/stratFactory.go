@@ -33,6 +33,11 @@ func StratFactory(
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
 		return MakeSellStrategy(txButler, assetA, assetB, &cfg)
+	case "autonomous":
+		var cfg AutonomousConfig
+		err := config.Read(stratConfigPath, &cfg)
+		kelp.CheckConfigError(cfg, err)
+		return MakeAutonomousStrategy(txButler, assetA, assetB, &cfg)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)

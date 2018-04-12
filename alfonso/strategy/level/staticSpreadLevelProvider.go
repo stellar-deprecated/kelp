@@ -1,5 +1,10 @@
 package level
 
+import (
+	"github.com/lightyeario/kelp/alfonso/priceFeed"
+	"github.com/stellar/go/support/log"
+)
+
 // StaticLevel represents a layer in the orderbook defined statically
 // extracted here because it's shared by strategy and sideStrategy where strategy depeneds on sideStrategy
 type StaticLevel struct {
@@ -11,21 +16,31 @@ type StaticLevel struct {
 type staticSpreadLevelProvider struct {
 	staticLevels []StaticLevel
 	amountOfBase float64
+	pf           *priceFeed.FeedPair
 }
 
 // ensure it implements the Provider interface
 var _ Provider = &staticSpreadLevelProvider{}
 
 // MakeStaticSpreadLevelProvider is a factory method
-func MakeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase float64) Provider {
+func MakeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase float64, pf *priceFeed.FeedPair) Provider {
 	return &staticSpreadLevelProvider{
 		staticLevels: staticLevels,
 		amountOfBase: amountOfBase,
+		pf:           pf,
 	}
 }
 
 // GetLevels impl.
-func (p *staticSpreadLevelProvider) GetLevels(centerPrice float64) ([]Level, error) {
+func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error) {
+	centerPrice, e := p.pf.GetCenterPrice()
+	if e != nil {
+		log.Error("Center price couldn't be loaded! ", e)
+		return nil, e
+	} else {
+		log.Info("Center price: ", centerPrice)
+	}
+
 	levels := []Level{}
 	for _, sl := range p.staticLevels {
 		absoluteSpread := centerPrice * sl.SPREAD

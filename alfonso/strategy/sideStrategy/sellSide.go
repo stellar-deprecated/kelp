@@ -7,7 +7,6 @@ import (
 
 	"github.com/lightyeario/kelp/support/exchange/number"
 
-	"github.com/lightyeario/kelp/alfonso/priceFeed"
 	kelp "github.com/lightyeario/kelp/support"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -19,14 +18,12 @@ type SellSideStrategy struct {
 	txButler            *kelp.TxButler
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
-	pf                  priceFeed.FeedPair
 	levelsProvider      level.Provider
 	priceTolerance      float64
 	amountTolerance     float64
 	divideAmountByPrice bool
 
 	// uninitialized
-	centerPrice   float64
 	currentLevels []level.Level // levels for current iteration
 	maxAssetBase  float64
 	maxAssetQuote float64
@@ -40,7 +37,6 @@ func MakeSellSideStrategy(
 	txButler *kelp.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	pf priceFeed.FeedPair,
 	levelsProvider level.Provider,
 	priceTolerance float64,
 	amountTolerance float64,
@@ -50,7 +46,6 @@ func MakeSellSideStrategy(
 		txButler:            txButler,
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
-		pf:                  pf,
 		levelsProvider:      levelsProvider,
 		priceTolerance:      priceTolerance,
 		amountTolerance:     amountTolerance,
@@ -76,17 +71,9 @@ func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
 
-	var e error
-	s.centerPrice, e = s.pf.GetCenterPrice()
-	if e != nil {
-		log.Error("Center price couldn't be loaded! ", e)
-		return e
-	} else {
-		log.Info("Center price: ", s.centerPrice, "        v0.2")
-	}
-
 	// load currentLevels only once here
-	s.currentLevels, e = s.levelsProvider.GetLevels(s.centerPrice)
+	var e error
+	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
 	if e != nil {
 		log.Error("Center price couldn't be loaded! ", e)
 		return e

@@ -27,18 +27,20 @@ func MakeSimpleStrategy(
 	assetQuote *horizon.Asset,
 	config *SimpleConfig,
 ) Strategy {
-	levelProvider := level.MakeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE)
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
 		txButler,
 		assetBase,
 		assetQuote,
-		*priceFeed.MakeFeedPair(
-			config.DATA_TYPE_A,
-			config.DATA_FEED_A_URL,
-			config.DATA_TYPE_B,
-			config.DATA_FEED_B_URL,
+		level.MakeStaticSpreadLevelProvider(
+			config.LEVELS,
+			config.AMOUNT_OF_A_BASE,
+			priceFeed.MakeFeedPair(
+				config.DATA_TYPE_A,
+				config.DATA_FEED_A_URL,
+				config.DATA_TYPE_B,
+				config.DATA_FEED_B_URL,
+			),
 		),
-		levelProvider,
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -48,13 +50,16 @@ func MakeSimpleStrategy(
 		txButler,
 		assetQuote,
 		assetBase,
-		*priceFeed.MakeFeedPair(
-			config.DATA_TYPE_B,
-			config.DATA_FEED_B_URL,
-			config.DATA_TYPE_A,
-			config.DATA_FEED_A_URL,
+		level.MakeStaticSpreadLevelProvider(
+			config.LEVELS,
+			config.AMOUNT_OF_A_BASE,
+			priceFeed.MakeFeedPair(
+				config.DATA_TYPE_B,
+				config.DATA_FEED_B_URL,
+				config.DATA_TYPE_A,
+				config.DATA_FEED_A_URL,
+			),
 		),
-		levelProvider,
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,
