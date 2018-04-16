@@ -9,7 +9,6 @@ type autonomousLevelProvider struct {
 	// TODO 2 - spread should be calculated to be inversely proportional to total sum of balances on either side (after taking the multiplicative effect of the priceFeed into account)
 	spread                     float64
 	maxLevels                  int8
-	divideAmountByPrice        bool
 	plateauThresholdPercentage float64 // flattens price if any asset has this ratio of the total number of tokens
 }
 
@@ -17,11 +16,10 @@ type autonomousLevelProvider struct {
 var _ Provider = &autonomousLevelProvider{}
 
 // MakeAutonomousLevelProvider is the factory method
-func MakeAutonomousLevelProvider(spread float64, maxLevels int8, divideAmountByPrice bool, plateauThresholdPercentage float64) Provider {
+func MakeAutonomousLevelProvider(spread float64, maxLevels int8, plateauThresholdPercentage float64) Provider {
 	return &autonomousLevelProvider{
 		spread:                     spread,
 		maxLevels:                  maxLevels,
-		divideAmountByPrice:        divideAmountByPrice,
 		plateauThresholdPercentage: plateauThresholdPercentage,
 	}
 }
@@ -45,10 +43,6 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 
 		// TODO 2 - need to add a better model for the targetAmount
 		targetAmount := 4 * sum * p.spread
-		if p.divideAmountByPrice {
-			targetAmount /= targetPrice
-		}
-
 		levels = append(levels, Level{
 			targetPrice:  targetPrice,
 			targetAmount: targetAmount,
