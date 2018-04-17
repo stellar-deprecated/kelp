@@ -5,20 +5,20 @@ package level
 // that would require building in some trade tracking along with asset balance tracking for this strategy. The support
 // for this can always be added later.
 type autonomousLevelProvider struct {
-	// TODO 2 - need to add a price feed to peg the relative value of assets that are not relatively equal
-	// TODO 2 - spread should be calculated to be inversely proportional to total sum of balances on either side (after taking the multiplicative effect of the priceFeed into account)
-	spread                     float64
-	plateauThresholdPercentage float64 // flattens price if any asset has this ratio of the total number of tokens
+	spread                        float64
+	plateauThresholdPercentage    float64 // flattens price if any asset has this ratio of the total number of tokens
+	useMaxQuoteInTargetAmountCalc bool    // else use maxBase
 }
 
 // ensure it implements Provider
 var _ Provider = &autonomousLevelProvider{}
 
 // MakeAutonomousLevelProvider is the factory method
-func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64) Provider {
+func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64, useMaxQuoteInTargetAmountCalc bool) Provider {
 	return &autonomousLevelProvider{
 		spread: spread,
-		plateauThresholdPercentage: plateauThresholdPercentage,
+		plateauThresholdPercentage:    plateauThresholdPercentage,
+		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 	}
 }
 
@@ -34,8 +34,13 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		centerPrice = maxAssetQuote / maxAssetBase
 	}
 
-	targetPrice := centerPrice * (1 + p.spread)
+	// price always adds the spread
+	targetPrice := centerPrice * (1 + p.spread/2)
+
 	targetAmount := (2 * maxAssetBase * p.spread) / (4 + p.spread)
+	if p.useMaxQuoteInTargetAmountCalc {
+		targetAmount = (2 * maxAssetQuote * p.spread) / (4 + p.spread)
+	}
 	// since targetAmount needs to be less then what we've set above based on the inequality formula, let's reduce it by 5%
 	targetAmount *= 0.95
 	level := Level{

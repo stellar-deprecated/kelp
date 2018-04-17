@@ -15,7 +15,7 @@ type AutonomousConfig struct {
 	DATA_FEED_B_URL              string  `valid:"-"`
 	PRICE_TOLERANCE              float64 `valid:"-"`
 	AMOUNT_TOLERANCE             float64 `valid:"-"`
-	SPREAD                       float64 `valid:"-"`
+	SPREAD                       float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
 	PLATEAU_THRESHOLD_PERCENTAGE float64 `valid:"-"`
 }
 
@@ -30,7 +30,7 @@ func MakeAutonomousStrategy(
 		txButler,
 		assetBase,
 		assetQuote,
-		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE),
+		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE, false),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -40,7 +40,7 @@ func MakeAutonomousStrategy(
 		txButler,
 		assetQuote,
 		assetBase,
-		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE),
+		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE, true), // real base is passed in as quote so pass in true
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,
