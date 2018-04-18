@@ -1,6 +1,10 @@
 package level
 
-import "log"
+import (
+	"log"
+	"math/rand"
+	"time"
+)
 
 // autonomousLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
 // This strategy does not allow using the balance of a single asset for more strategies other than this one because
@@ -10,25 +14,42 @@ type autonomousLevelProvider struct {
 	spread                        float64
 	plateauThresholdPercentage    float64 // flattens price if any asset has this ratio of the total number of tokens
 	useMaxQuoteInTargetAmountCalc bool    // else use maxBase
-	amountSpread                  float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
+	minAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
+	maxAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
 	levels                        int8
+	randGen                       *rand.Rand
+
+	// precomputed before construction
+	diffAmountSpread float64 // maxAmountSpread - minAmountSpread
 }
 
 // ensure it implements Provider
 var _ Provider = &autonomousLevelProvider{}
 
 // MakeAutonomousLevelProvider is the factory method
-func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64, useMaxQuoteInTargetAmountCalc bool, amountSpread float64, levels int8) Provider {
-	if amountSpread >= 1.0 || amountSpread <= 0.0 {
-		log.Fatal("amountSpread needs to be between 0 and 1 (exclusive): ", amountSpread)
+func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64, useMaxQuoteInTargetAmountCalc bool, minAmountSpread float64, maxAmountSpread float64, levels int8) Provider {
+	validateSpread(minAmountSpread)
+	validateSpread(maxAmountSpread)
+	if minAmountSpread > maxAmountSpread {
+		log.Fatalf("minAmountSpread (%.7f) needs to be <= maxAmountSpread (%.7f)\n", minAmountSpread, maxAmountSpread)
 	}
 
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &autonomousLevelProvider{
 		spread: spread,
 		plateauThresholdPercentage:    plateauThresholdPercentage,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
-		amountSpread:                  amountSpread,
+		minAmountSpread:               minAmountSpread,
+		maxAmountSpread:               maxAmountSpread,
 		levels:                        levels,
+		randGen:                       randGen,
+		diffAmountSpread:              maxAmountSpread - minAmountSpread,
+	}
+}
+
+func validateSpread(spread float64) {
+	if spread >= 1.0 || spread <= 0.0 {
+		log.Fatalf("spread values need to be between 0 and 1 (exclusive): %.7f\n", spread)
 	}
 }
 
@@ -67,6 +88,16 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 	return levels, nil
 }
 
+// getAmountSpread returns a random value between minAmountSpread (inclusive) and maxAmountSpread (exclusive)
+func (p *autonomousLevelProvider) getAmountSpread() float64 {
+	// generates a float between 0 and 1
+	randFloat := p.randGen.Float64()
+	// reduce to a float between 0 and diffAmountSpread
+	spreadAboveMin := p.diffAmountSpread * randFloat
+	// convert to a float between minAmountSpread and maxAmountSpread
+	return p.minAmountSpread + spreadAboveMin
+}
+
 func (p *autonomousLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (Level, error) {
 	sum := maxAssetQuote + maxAssetBase
 	var centerPrice float64
@@ -86,7 +117,7 @@ func (p *autonomousLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote f
 		targetAmount = (2 * maxAssetQuote * p.spread) / (4 + p.spread)
 	}
 	// since targetAmount needs to be less then what we've set above based on the inequality formula, let's reduce it by 5%
-	targetAmount *= (1 - p.amountSpread)
+	targetAmount *= (1 - p.getAmountSpread())
 	level := Level{
 		targetPrice:  targetPrice,
 		targetAmount: targetAmount,

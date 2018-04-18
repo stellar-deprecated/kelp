@@ -17,7 +17,8 @@ type AutonomousConfig struct {
 	AMOUNT_TOLERANCE             float64 `valid:"-"`
 	SPREAD                       float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
 	PLATEAU_THRESHOLD_PERCENTAGE float64 `valid:"-"`
-	AMOUNT_SPREAD                float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
+	MIN_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
+	MAX_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
 	LEVELS                       int8    `valid:"-"` // number of levels to have on either side
 }
 
@@ -32,7 +33,7 @@ func MakeAutonomousStrategy(
 		txButler,
 		assetBase,
 		assetQuote,
-		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE, false, config.AMOUNT_SPREAD, config.LEVELS),
+		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE, false, config.MIN_AMOUNT_SPREAD, config.MAX_AMOUNT_SPREAD, config.LEVELS),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -42,7 +43,7 @@ func MakeAutonomousStrategy(
 		txButler,
 		assetQuote,
 		assetBase,
-		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE, true, config.AMOUNT_SPREAD, config.LEVELS), // real base is passed in as quote so pass in true
+		level.MakeAutonomousLevelProvider(config.SPREAD, config.PLATEAU_THRESHOLD_PERCENTAGE, true, config.MIN_AMOUNT_SPREAD, config.MAX_AMOUNT_SPREAD, config.LEVELS), // real base is passed in as quote so pass in true
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,
