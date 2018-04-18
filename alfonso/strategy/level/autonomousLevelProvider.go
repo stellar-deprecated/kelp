@@ -18,9 +18,10 @@ type autonomousLevelProvider struct {
 	maxAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
 	maxLevels                     int16
 	levelDensity                  float64
-	randGen                       *rand.Rand
+	ensureFirstNLevels            int16 // always adds the first N levels, meaningless if levelDensity = 1.0
 
 	// precomputed before construction
+	randGen          *rand.Rand
 	diffAmountSpread float64 // maxAmountSpread - minAmountSpread
 }
 
@@ -28,7 +29,16 @@ type autonomousLevelProvider struct {
 var _ Provider = &autonomousLevelProvider{}
 
 // MakeAutonomousLevelProvider is the factory method
-func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64, useMaxQuoteInTargetAmountCalc bool, minAmountSpread float64, maxAmountSpread float64, maxLevels int16, levelDensity float64) Provider {
+func MakeAutonomousLevelProvider(
+	spread float64,
+	plateauThresholdPercentage float64,
+	useMaxQuoteInTargetAmountCalc bool,
+	minAmountSpread float64,
+	maxAmountSpread float64,
+	maxLevels int16,
+	levelDensity float64,
+	ensureFirstNLevels int16,
+) Provider {
 	validateSpread(minAmountSpread)
 	validateSpread(maxAmountSpread)
 	if minAmountSpread > maxAmountSpread {
@@ -44,6 +54,7 @@ func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage floa
 		maxAmountSpread:               maxAmountSpread,
 		maxLevels:                     maxLevels,
 		levelDensity:                  levelDensity,
+		ensureFirstNLevels:            ensureFirstNLevels,
 		randGen:                       randGen,
 		diffAmountSpread:              maxAmountSpread - minAmountSpread,
 	}
@@ -89,7 +100,9 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		_maxAssetQuote += quoteIncreased
 
 		// decide whether to add this level
-		includeLevel := p.randGen.Float64() < p.levelDensity
+		includeLevelUsingProbability := p.randGen.Float64() < p.levelDensity
+		includeLevelUsingConstraint := i < p.ensureFirstNLevels
+		includeLevel := includeLevelUsingConstraint || includeLevelUsingProbability
 		if includeLevel {
 			// include the amountCarryover from previous levels, price of the level remains unchanged
 			levels = append(levels, Level{

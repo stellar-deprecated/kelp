@@ -17,6 +17,7 @@ type AutonomousConfig struct {
 	MAX_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
 	MAX_LEVELS                   int16   `valid:"-"` // max number of levels to have on either side
 	LEVEL_DENSITY                float64 `valid:"-"` // value between 0.0 to 1.0 used as a probability
+	ENSURE_FIRST_N_LEVELS        int16   `valid:"-"` // always adds the first N levels, meaningless if levelDensity = 1.0
 }
 
 // MakeAutonomousStrategy is a factory method for AutonomousStrategy
@@ -37,7 +38,8 @@ func MakeAutonomousStrategy(
 			config.MIN_AMOUNT_SPREAD,
 			config.MAX_AMOUNT_SPREAD,
 			config.MAX_LEVELS,
-			config.LEVEL_DENSITY),
+			config.LEVEL_DENSITY,
+			config.ENSURE_FIRST_N_LEVELS),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -54,7 +56,8 @@ func MakeAutonomousStrategy(
 			config.MIN_AMOUNT_SPREAD,
 			config.MAX_AMOUNT_SPREAD,
 			config.MAX_LEVELS,
-			config.LEVEL_DENSITY),
+			config.LEVEL_DENSITY,
+			config.ENSURE_FIRST_N_LEVELS),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,
