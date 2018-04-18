@@ -9,17 +9,18 @@ import (
 
 // AutonomousConfig contains the configuration params for this Strategy
 type AutonomousConfig struct {
-	PRICE_TOLERANCE              float64 `valid:"-"`
-	AMOUNT_TOLERANCE             float64 `valid:"-"`
-	SPREAD                       float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
-	PLATEAU_THRESHOLD_PERCENTAGE float64 `valid:"-"`
-	MIN_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
-	MAX_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
-	MAX_LEVELS                   int16   `valid:"-"` // max number of levels to have on either side
-	LEVEL_DENSITY                float64 `valid:"-"` // value between 0.0 to 1.0 used as a probability
-	ENSURE_FIRST_N_LEVELS        int16   `valid:"-"` // always adds the first N levels, meaningless if levelDensity = 1.0
-	MIN_AMOUNT_CARRYOVER_SPREAD  float64 `valid:"-"` // the minimum spread % we take off the amountCarryover before placing the orders
-	MAX_AMOUNT_CARRYOVER_SPREAD  float64 `valid:"-"` // the maximum spread % we take off the amountCarryover before placing the orders
+	PRICE_TOLERANCE                 float64 `valid:"-"`
+	AMOUNT_TOLERANCE                float64 `valid:"-"`
+	SPREAD                          float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
+	PLATEAU_THRESHOLD_PERCENTAGE    float64 `valid:"-"`
+	MIN_AMOUNT_SPREAD               float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
+	MAX_AMOUNT_SPREAD               float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
+	MAX_LEVELS                      int16   `valid:"-"` // max number of levels to have on either side
+	LEVEL_DENSITY                   float64 `valid:"-"` // value between 0.0 to 1.0 used as a probability
+	ENSURE_FIRST_N_LEVELS           int16   `valid:"-"` // always adds the first N levels, meaningless if levelDensity = 1.0
+	MIN_AMOUNT_CARRYOVER_SPREAD     float64 `valid:"-"` // the minimum spread % we take off the amountCarryover before placing the orders
+	MAX_AMOUNT_CARRYOVER_SPREAD     float64 `valid:"-"` // the maximum spread % we take off the amountCarryover before placing the orders
+	CARRYOVER_INCLUSION_PROBABILITY float64 `valid:"-"` // probability of including the carryover at a level that will be added
 }
 
 // MakeAutonomousStrategy is a factory method for AutonomousStrategy
@@ -43,7 +44,8 @@ func MakeAutonomousStrategy(
 			config.LEVEL_DENSITY,
 			config.ENSURE_FIRST_N_LEVELS,
 			config.MIN_AMOUNT_CARRYOVER_SPREAD,
-			config.MAX_AMOUNT_CARRYOVER_SPREAD),
+			config.MAX_AMOUNT_CARRYOVER_SPREAD,
+			config.CARRYOVER_INCLUSION_PROBABILITY),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -63,7 +65,8 @@ func MakeAutonomousStrategy(
 			config.LEVEL_DENSITY,
 			config.ENSURE_FIRST_N_LEVELS,
 			config.MIN_AMOUNT_CARRYOVER_SPREAD,
-			config.MAX_AMOUNT_CARRYOVER_SPREAD),
+			config.MAX_AMOUNT_CARRYOVER_SPREAD,
+			config.CARRYOVER_INCLUSION_PROBABILITY),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,

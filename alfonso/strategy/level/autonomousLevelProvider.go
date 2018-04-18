@@ -18,13 +18,14 @@ type autonomousLevelProvider struct {
 	maxAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
 	maxLevels                     int16
 	levelDensity                  float64
-	ensureFirstNLevels            int16 // always adds the first N levels, meaningless if levelDensity = 1.0
+	ensureFirstNLevels            int16   // always adds the first N levels, meaningless if levelDensity = 1.0
+	minAmountCarryoverSpread      float64 // the minimum spread % we take off the amountCarryover before placing the orders
+	maxAmountCarryoverSpread      float64 // the maximum spread % we take off the amountCarryover before placing the orders
+	carryoverInclusionProbability float64 // probability of including the carryover at a level that will be added
 
 	// precomputed before construction
-	randGen                  *rand.Rand
-	diffAmountSpread         float64 // maxAmountSpread - minAmountSpread
-	minAmountCarryoverSpread float64 // the minimum spread % we take off the amountCarryover before placing the orders
-	maxAmountCarryoverSpread float64 // the maximum spread % we take off the amountCarryover before placing the orders
+	randGen          *rand.Rand
+	diffAmountSpread float64 // maxAmountSpread - minAmountSpread
 }
 
 // ensure it implements Provider
@@ -42,6 +43,7 @@ func MakeAutonomousLevelProvider(
 	ensureFirstNLevels int16,
 	minAmountCarryoverSpread float64,
 	maxAmountCarryoverSpread float64,
+	carryoverInclusionProbability float64,
 ) Provider {
 	validateSpread(minAmountSpread)
 	validateSpread(maxAmountSpread)
@@ -53,8 +55,11 @@ func MakeAutonomousLevelProvider(
 	if minAmountCarryoverSpread > maxAmountCarryoverSpread {
 		log.Fatalf("minAmountCarryoverSpread (%.7f) needs to be <= maxAmountCarryoverSpread (%.7f)\n", minAmountCarryoverSpread, maxAmountCarryoverSpread)
 	}
+	// carryoverInclusionProbability is a value between 0 and 1
+	validateSpread(carryoverInclusionProbability)
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	diffAmountSpread := maxAmountSpread - minAmountSpread
 	return &autonomousLevelProvider{
 		spread: spread,
 		plateauThresholdPercentage:    plateauThresholdPercentage,
@@ -64,10 +69,11 @@ func MakeAutonomousLevelProvider(
 		maxLevels:                     maxLevels,
 		levelDensity:                  levelDensity,
 		ensureFirstNLevels:            ensureFirstNLevels,
-		randGen:                       randGen,
-		diffAmountSpread:              maxAmountSpread - minAmountSpread,
 		minAmountCarryoverSpread:      minAmountCarryoverSpread,
 		maxAmountCarryoverSpread:      maxAmountCarryoverSpread,
+		carryoverInclusionProbability: carryoverInclusionProbability,
+		randGen:          randGen,
+		diffAmountSpread: diffAmountSpread,
 	}
 }
 
@@ -114,7 +120,14 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		includeLevelUsingProbability := p.randGen.Float64() < p.levelDensity
 		includeLevelUsingConstraint := i < p.ensureFirstNLevels
 		includeLevel := includeLevelUsingConstraint || includeLevelUsingProbability
-		if includeLevel {
+		if !includeLevel {
+			// accummulate targetAmount into amountCarryover
+			amountCarryover += level.TargetAmount()
+			continue
+		}
+
+		includeCarryover := p.randGen.Float64() < p.carryoverInclusionProbability
+		if includeCarryover {
 			// take a spread off the amountCarryover, clamping to min/max values
 			amountCarryoverSpread := p.randGen.Float64()
 			if amountCarryoverSpread < p.minAmountCarryoverSpread {
@@ -126,17 +139,17 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 
 			// include a partial amount of the carryover after we took the spread
 			amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
-			// include the amountCarryover from previous levels, price of the level remains unchanged
-			levels = append(levels, Level{
-				targetPrice:  level.TargetPrice(),
-				targetAmount: level.TargetAmount() + amountCarryoverToInclude,
-			})
 			// update amountCarryover to reflect inclusion in the level
 			amountCarryover -= amountCarryoverToInclude
-		} else {
-			// accummulate targetAmount into amountCarryover
-			amountCarryover += level.TargetAmount()
+			// include the amountCarryover we computed, price of the level remains unchanged
+			level = Level{
+				targetPrice:  level.TargetPrice(),
+				targetAmount: level.TargetAmount() + amountCarryoverToInclude,
+			}
 		}
+
+		// always append the level here
+		levels = append(levels, level)
 	}
 	return levels, nil
 }
