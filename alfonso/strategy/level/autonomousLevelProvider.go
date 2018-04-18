@@ -21,8 +21,10 @@ type autonomousLevelProvider struct {
 	ensureFirstNLevels            int16 // always adds the first N levels, meaningless if levelDensity = 1.0
 
 	// precomputed before construction
-	randGen          *rand.Rand
-	diffAmountSpread float64 // maxAmountSpread - minAmountSpread
+	randGen                  *rand.Rand
+	diffAmountSpread         float64 // maxAmountSpread - minAmountSpread
+	minAmountCarryoverSpread float64 // the minimum spread % we take off the amountCarryover before placing the orders
+	maxAmountCarryoverSpread float64 // the maximum spread % we take off the amountCarryover before placing the orders
 }
 
 // ensure it implements Provider
@@ -57,6 +59,8 @@ func MakeAutonomousLevelProvider(
 		ensureFirstNLevels:            ensureFirstNLevels,
 		randGen:                       randGen,
 		diffAmountSpread:              maxAmountSpread - minAmountSpread,
+		minAmountCarryoverSpread:      0.10,
+		maxAmountCarryoverSpread:      0.30,
 	}
 }
 
@@ -104,20 +108,24 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		includeLevelUsingConstraint := i < p.ensureFirstNLevels
 		includeLevel := includeLevelUsingConstraint || includeLevelUsingProbability
 		if includeLevel {
-			// include a partial amount of the carryover, update amountCarryover, handle double precision issues while subtracting
-			amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
-			if amountCarryoverToInclude >= amountCarryover {
-				amountCarryoverToInclude = amountCarryover
-				amountCarryover = 0
-			} else {
-				amountCarryover -= amountCarryoverToInclude
+			// take a spread off the amountCarryover, clamping to min/max values
+			amountCarryoverSpread := p.randGen.Float64()
+			if amountCarryoverSpread < p.minAmountCarryoverSpread {
+				amountCarryoverSpread = p.minAmountCarryoverSpread
+			} else if amountCarryoverSpread > p.maxAmountCarryoverSpread {
+				amountCarryoverSpread = p.maxAmountCarryoverSpread
 			}
+			amountCarryover = (1 - amountCarryoverSpread) * amountCarryover
 
+			// include a partial amount of the carryover after we took the spread
+			amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
 			// include the amountCarryover from previous levels, price of the level remains unchanged
 			levels = append(levels, Level{
 				targetPrice:  level.TargetPrice(),
 				targetAmount: level.TargetAmount() + amountCarryoverToInclude,
 			})
+			// update amountCarryover to reflect inclusion in the level
+			amountCarryover -= amountCarryoverToInclude
 		} else {
 			// accummulate targetAmount into amountCarryover
 			amountCarryover += level.TargetAmount()
