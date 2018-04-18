@@ -40,11 +40,18 @@ func MakeAutonomousLevelProvider(
 	maxLevels int16,
 	levelDensity float64,
 	ensureFirstNLevels int16,
+	minAmountCarryoverSpread float64,
+	maxAmountCarryoverSpread float64,
 ) Provider {
 	validateSpread(minAmountSpread)
 	validateSpread(maxAmountSpread)
 	if minAmountSpread > maxAmountSpread {
 		log.Fatalf("minAmountSpread (%.7f) needs to be <= maxAmountSpread (%.7f)\n", minAmountSpread, maxAmountSpread)
+	}
+	validateSpread(minAmountCarryoverSpread)
+	validateSpread(maxAmountCarryoverSpread)
+	if minAmountCarryoverSpread > maxAmountCarryoverSpread {
+		log.Fatalf("minAmountCarryoverSpread (%.7f) needs to be <= maxAmountCarryoverSpread (%.7f)\n", minAmountCarryoverSpread, maxAmountCarryoverSpread)
 	}
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -59,8 +66,8 @@ func MakeAutonomousLevelProvider(
 		ensureFirstNLevels:            ensureFirstNLevels,
 		randGen:                       randGen,
 		diffAmountSpread:              maxAmountSpread - minAmountSpread,
-		minAmountCarryoverSpread:      0.10,
-		maxAmountCarryoverSpread:      0.30,
+		minAmountCarryoverSpread:      minAmountCarryoverSpread,
+		maxAmountCarryoverSpread:      maxAmountCarryoverSpread,
 	}
 }
 
