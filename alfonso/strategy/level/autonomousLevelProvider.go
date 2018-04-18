@@ -68,27 +68,7 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 			return nil, e
 		}
 
-		// decide whether to add this level
-		includeLevel := p.randGen.Float64() < p.levelDensity
-		if !includeLevel {
-			// accummulate the targetAmount to be included in the next level
-			amountCarryover += level.TargetAmount()
-			// continue, we don't want to add a level or update the _maxAssetBase and _maxAssetQuote because this level will not be created
-			continue
-		}
-
-		// include the amountCarryover from previous levels
-		newTargetAmount := level.TargetAmount() + amountCarryover
-		// reset the amountCarryover
-		amountCarryover = 0
-		// price of the level remains unchanged
-		level = Level{
-			targetPrice:  level.TargetPrice(),
-			targetAmount: newTargetAmount,
-		}
-		levels = append(levels, level)
-
-		// update _maxAssetBase and _maxAssetQuote to account for the change of including the level we just added
+		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
 		// targetPrice is always quote/base
 		var baseDecreased float64
 		var quoteIncreased float64
@@ -107,6 +87,21 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		_maxAssetBase -= baseDecreased
 		// add because we had to buy these many units to reach the next level
 		_maxAssetQuote += quoteIncreased
+
+		// decide whether to add this level
+		includeLevel := p.randGen.Float64() < p.levelDensity
+		if includeLevel {
+			// include the amountCarryover from previous levels, price of the level remains unchanged
+			levels = append(levels, Level{
+				targetPrice:  level.TargetPrice(),
+				targetAmount: level.TargetAmount() + amountCarryover,
+			})
+			// reset the amountCarryover
+			amountCarryover = 0
+		} else {
+			// accummulate targetAmount into amountCarryover
+			amountCarryover += level.TargetAmount()
+		}
 	}
 	return levels, nil
 }
