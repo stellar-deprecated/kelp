@@ -24,8 +24,7 @@ type autonomousLevelProvider struct {
 	carryoverInclusionProbability float64 // probability of including the carryover at a level that will be added
 
 	// precomputed before construction
-	randGen          *rand.Rand
-	diffAmountSpread float64 // maxAmountSpread - minAmountSpread
+	randGen *rand.Rand
 }
 
 // ensure it implements Provider
@@ -59,7 +58,6 @@ func MakeAutonomousLevelProvider(
 	validateSpread(carryoverInclusionProbability)
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
-	diffAmountSpread := maxAmountSpread - minAmountSpread
 	return &autonomousLevelProvider{
 		spread: spread,
 		plateauThresholdPercentage:    plateauThresholdPercentage,
@@ -72,8 +70,7 @@ func MakeAutonomousLevelProvider(
 		minAmountCarryoverSpread:      minAmountCarryoverSpread,
 		maxAmountCarryoverSpread:      maxAmountCarryoverSpread,
 		carryoverInclusionProbability: carryoverInclusionProbability,
-		randGen:          randGen,
-		diffAmountSpread: diffAmountSpread,
+		randGen: randGen,
 	}
 }
 
@@ -128,16 +125,11 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 
 		includeCarryover := p.randGen.Float64() < p.carryoverInclusionProbability
 		if includeCarryover {
-			// take a spread off the amountCarryover, clamping to min/max values
-			amountCarryoverSpread := p.randGen.Float64()
-			if amountCarryoverSpread < p.minAmountCarryoverSpread {
-				amountCarryoverSpread = p.minAmountCarryoverSpread
-			} else if amountCarryoverSpread > p.maxAmountCarryoverSpread {
-				amountCarryoverSpread = p.maxAmountCarryoverSpread
-			}
+			// take a spread off the amountCarryover
+			amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
 			amountCarryover = (1 - amountCarryoverSpread) * amountCarryover
 
-			// include a partial amount of the carryover after we took the spread
+			// include a partial amount of the carryover after we take the spread
 			amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
 			// update amountCarryover to reflect inclusion in the level
 			amountCarryover -= amountCarryoverToInclude
@@ -154,14 +146,17 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 	return levels, nil
 }
 
-// getAmountSpread returns a random value between minAmountSpread (inclusive) and maxAmountSpread (exclusive)
-func (p *autonomousLevelProvider) getAmountSpread() float64 {
+// getRandomSpread returns a random value between the two params (inclusive)
+func (p *autonomousLevelProvider) getRandomSpread(minSpread float64, maxSpread float64) float64 {
 	// generates a float between 0 and 1
 	randFloat := p.randGen.Float64()
-	// reduce to a float between 0 and diffAmountSpread
-	spreadAboveMin := p.diffAmountSpread * randFloat
-	// convert to a float between minAmountSpread and maxAmountSpread
-	return p.minAmountSpread + spreadAboveMin
+
+	// reduce to a float between 0 and diffSpread
+	diffSpread := maxSpread - minSpread
+	spreadAboveMin := diffSpread * randFloat
+
+	// convert to a float between minSpread and maxSpread
+	return minSpread + spreadAboveMin
 }
 
 func (p *autonomousLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (Level, error) {
@@ -183,7 +178,7 @@ func (p *autonomousLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote f
 		targetAmount = (2 * maxAssetQuote * p.spread) / (4 + p.spread)
 	}
 	// since targetAmount needs to be less then what we've set above based on the inequality formula, let's reduce it by 5%
-	targetAmount *= (1 - p.getAmountSpread())
+	targetAmount *= (1 - p.getRandomSpread(p.minAmountSpread, p.maxAmountSpread))
 	level := Level{
 		targetPrice:  targetPrice,
 		targetAmount: targetAmount,
