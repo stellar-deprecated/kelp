@@ -78,8 +78,8 @@ func MakeAutonomousLevelProvider(
 }
 
 func validateSpread(spread float64) {
-	if spread >= 1.0 || spread <= 0.0 {
-		log.Fatalf("spread values need to be between 0 and 1 (exclusive): %.7f\n", spread)
+	if spread > 1.0 || spread < 0.0 {
+		log.Fatalf("spread values need to be inclusively between 0 and 1: %.7f\n", spread)
 	}
 }
 
