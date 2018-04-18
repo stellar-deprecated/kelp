@@ -104,13 +104,20 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		includeLevelUsingConstraint := i < p.ensureFirstNLevels
 		includeLevel := includeLevelUsingConstraint || includeLevelUsingProbability
 		if includeLevel {
+			// include a partial amount of the carryover, update amountCarryover, handle double precision issues while subtracting
+			amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
+			if amountCarryoverToInclude >= amountCarryover {
+				amountCarryoverToInclude = amountCarryover
+				amountCarryover = 0
+			} else {
+				amountCarryover -= amountCarryoverToInclude
+			}
+
 			// include the amountCarryover from previous levels, price of the level remains unchanged
 			levels = append(levels, Level{
 				targetPrice:  level.TargetPrice(),
-				targetAmount: level.TargetAmount() + amountCarryover,
+				targetAmount: level.TargetAmount() + amountCarryoverToInclude,
 			})
-			// reset the amountCarryover
-			amountCarryover = 0
 		} else {
 			// accummulate targetAmount into amountCarryover
 			amountCarryover += level.TargetAmount()
