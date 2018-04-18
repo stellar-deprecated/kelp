@@ -94,56 +94,71 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		}
 
 		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
-		// targetPrice is always quote/base
-		var baseDecreased float64
-		var quoteIncreased float64
-		if p.useMaxQuoteInTargetAmountCalc {
-			// targetAmount is in quote so divide by price (quote/base) to give base
-			baseDecreased = level.TargetAmount() / level.TargetPrice()
-			// targetAmount is in quote so use directly
-			quoteIncreased = level.TargetAmount()
-		} else {
-			// targetAmount is in base so use directly
-			baseDecreased = level.TargetAmount()
-			// targetAmount is in base so multiply by price (quote/base) to give quote
-			quoteIncreased = level.TargetAmount() * level.TargetPrice()
-		}
-		// subtract because we had to sell that many units to reach the next level
-		_maxAssetBase -= baseDecreased
-		// add because we had to buy these many units to reach the next level
-		_maxAssetQuote += quoteIncreased
+		_maxAssetBase, _maxAssetQuote = updateAssetBalances(level, p.useMaxQuoteInTargetAmountCalc, _maxAssetBase, _maxAssetQuote)
 
-		// decide whether to add this level
-		includeLevelUsingProbability := p.randGen.Float64() < p.levelDensity
-		includeLevelUsingConstraint := i < p.ensureFirstNLevels
-		includeLevel := includeLevelUsingConstraint || includeLevelUsingProbability
-		if !includeLevel {
+		if !p.shouldIncludeLevel(i) {
 			// accummulate targetAmount into amountCarryover
 			amountCarryover += level.TargetAmount()
 			continue
 		}
 
-		includeCarryover := p.randGen.Float64() < p.carryoverInclusionProbability
-		if includeCarryover {
-			// take a spread off the amountCarryover
-			amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
-			amountCarryover = (1 - amountCarryoverSpread) * amountCarryover
-
-			// include a partial amount of the carryover after we take the spread
-			amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
-			// update amountCarryover to reflect inclusion in the level
-			amountCarryover -= amountCarryoverToInclude
-			// include the amountCarryover we computed, price of the level remains unchanged
-			level = Level{
-				targetPrice:  level.TargetPrice(),
-				targetAmount: level.TargetAmount() + amountCarryoverToInclude,
-			}
+		if p.shouldIncludeCarryover() {
+			level, amountCarryover = p.computeNewLevelWithCarryover(level, amountCarryover)
 		}
-
-		// always append the level here
 		levels = append(levels, level)
 	}
 	return levels, nil
+}
+
+func (p *autonomousLevelProvider) computeNewLevelWithCarryover(level Level, amountCarryover float64) (Level, float64) {
+	// take a spread off the amountCarryover
+	amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
+	amountCarryover *= (1 - amountCarryoverSpread)
+
+	// include a partial amount of the carryover after we take the spread
+	amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
+	// update amountCarryover to reflect inclusion in the level
+	amountCarryover -= amountCarryoverToInclude
+	// include the amountCarryover we computed, price of the level remains unchanged
+	level = Level{
+		targetPrice:  level.TargetPrice(),
+		targetAmount: level.TargetAmount() + amountCarryoverToInclude,
+	}
+
+	return level, amountCarryover
+}
+
+func updateAssetBalances(level Level, useMaxQuoteInTargetAmountCalc bool, maxAssetBase float64, maxAssetQuote float64) (float64, float64) {
+	// targetPrice is always quote/base
+	var baseDecreased float64
+	var quoteIncreased float64
+	if useMaxQuoteInTargetAmountCalc {
+		// targetAmount is in quote so divide by price (quote/base) to give base
+		baseDecreased = level.TargetAmount() / level.TargetPrice()
+		// targetAmount is in quote so use directly
+		quoteIncreased = level.TargetAmount()
+	} else {
+		// targetAmount is in base so use directly
+		baseDecreased = level.TargetAmount()
+		// targetAmount is in base so multiply by price (quote/base) to give quote
+		quoteIncreased = level.TargetAmount() * level.TargetPrice()
+	}
+	// subtract because we had to sell that many units to reach the next level
+	newMaxAssetBase := maxAssetBase - baseDecreased
+	// add because we had to buy these many units to reach the next level
+	newMaxAssetQuote := maxAssetQuote + quoteIncreased
+
+	return newMaxAssetBase, newMaxAssetQuote
+}
+
+func (p *autonomousLevelProvider) shouldIncludeLevel(levelIndex int16) bool {
+	includeLevelUsingProbability := p.randGen.Float64() < p.levelDensity
+	includeLevelUsingConstraint := levelIndex < p.ensureFirstNLevels
+	return includeLevelUsingConstraint || includeLevelUsingProbability
+}
+
+func (p *autonomousLevelProvider) shouldIncludeCarryover() bool {
+	return p.randGen.Float64() < p.carryoverInclusionProbability
 }
 
 // getRandomSpread returns a random value between the two params (inclusive)
