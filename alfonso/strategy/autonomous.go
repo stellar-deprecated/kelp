@@ -15,7 +15,8 @@ type AutonomousConfig struct {
 	PLATEAU_THRESHOLD_PERCENTAGE float64 `valid:"-"`
 	MIN_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
 	MAX_AMOUNT_SPREAD            float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
-	LEVELS                       int8    `valid:"-"` // number of levels to have on either side
+	MAX_LEVELS                   int16   `valid:"-"` // max number of levels to have on either side
+	LEVEL_DENSITY                float64 `valid:"-"` // value between 0.0 to 1.0 used as a probability
 }
 
 // MakeAutonomousStrategy is a factory method for AutonomousStrategy
@@ -35,7 +36,8 @@ func MakeAutonomousStrategy(
 			false,
 			config.MIN_AMOUNT_SPREAD,
 			config.MAX_AMOUNT_SPREAD,
-			config.LEVELS),
+			config.MAX_LEVELS,
+			config.LEVEL_DENSITY),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -51,7 +53,8 @@ func MakeAutonomousStrategy(
 			true, // real base is passed in as quote so pass in true
 			config.MIN_AMOUNT_SPREAD,
 			config.MAX_AMOUNT_SPREAD,
-			config.LEVELS),
+			config.MAX_LEVELS,
+			config.LEVEL_DENSITY),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,

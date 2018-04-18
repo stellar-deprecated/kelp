@@ -16,7 +16,8 @@ type autonomousLevelProvider struct {
 	useMaxQuoteInTargetAmountCalc bool    // else use maxBase
 	minAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
 	maxAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
-	levels                        int8
+	maxLevels                     int16
+	levelDensity                  float64
 	randGen                       *rand.Rand
 
 	// precomputed before construction
@@ -27,7 +28,7 @@ type autonomousLevelProvider struct {
 var _ Provider = &autonomousLevelProvider{}
 
 // MakeAutonomousLevelProvider is the factory method
-func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64, useMaxQuoteInTargetAmountCalc bool, minAmountSpread float64, maxAmountSpread float64, levels int8) Provider {
+func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage float64, useMaxQuoteInTargetAmountCalc bool, minAmountSpread float64, maxAmountSpread float64, maxLevels int16, levelDensity float64) Provider {
 	validateSpread(minAmountSpread)
 	validateSpread(maxAmountSpread)
 	if minAmountSpread > maxAmountSpread {
@@ -41,7 +42,8 @@ func MakeAutonomousLevelProvider(spread float64, plateauThresholdPercentage floa
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
 		maxAmountSpread:               maxAmountSpread,
-		levels:                        levels,
+		maxLevels:                     maxLevels,
+		levelDensity:                  levelDensity,
 		randGen:                       randGen,
 		diffAmountSpread:              maxAmountSpread - minAmountSpread,
 	}
@@ -57,14 +59,36 @@ func validateSpread(spread float64) {
 func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error) {
 	_maxAssetBase := maxAssetBase
 	_maxAssetQuote := maxAssetQuote
+	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
+	amountCarryover := 0.0
 	levels := []Level{}
-	for i := int8(0); i < p.levels; i++ {
+	for i := int16(0); i < p.maxLevels; i++ {
 		level, e := p.getLevel(_maxAssetBase, _maxAssetQuote)
 		if e != nil {
 			return nil, e
 		}
+
+		// decide whether to add this level
+		includeLevel := p.randGen.Float64() < p.levelDensity
+		if !includeLevel {
+			// accummulate the targetAmount to be included in the next level
+			amountCarryover += level.TargetAmount()
+			// continue, we don't want to add a level or update the _maxAssetBase and _maxAssetQuote because this level will not be created
+			continue
+		}
+
+		// include the amountCarryover from previous levels
+		newTargetAmount := level.TargetAmount() + amountCarryover
+		// reset the amountCarryover
+		amountCarryover = 0
+		// price of the level remains unchanged
+		level = Level{
+			targetPrice:  level.TargetPrice(),
+			targetAmount: newTargetAmount,
+		}
 		levels = append(levels, level)
 
+		// update _maxAssetBase and _maxAssetQuote to account for the change of including the level we just added
 		// targetPrice is always quote/base
 		var baseDecreased float64
 		var quoteIncreased float64
@@ -79,7 +103,6 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 			// targetAmount is in base so multiply by price (quote/base) to give quote
 			quoteIncreased = level.TargetAmount() * level.TargetPrice()
 		}
-
 		// subtract because we had to sell that many units to reach the next level
 		_maxAssetBase -= baseDecreased
 		// add because we had to buy these many units to reach the next level
