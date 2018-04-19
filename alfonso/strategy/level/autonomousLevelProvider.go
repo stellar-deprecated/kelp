@@ -12,7 +12,6 @@ import (
 // for this can always be added later.
 type autonomousLevelProvider struct {
 	spread                        float64
-	plateauThresholdPercentage    float64 // flattens price if any asset has this ratio of the total number of tokens
 	useMaxQuoteInTargetAmountCalc bool    // else use maxBase
 	minAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
 	maxAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
@@ -33,7 +32,6 @@ var _ Provider = &autonomousLevelProvider{}
 // MakeAutonomousLevelProvider is the factory method
 func MakeAutonomousLevelProvider(
 	spread float64,
-	plateauThresholdPercentage float64,
 	useMaxQuoteInTargetAmountCalc bool,
 	minAmountSpread float64,
 	maxAmountSpread float64,
@@ -60,7 +58,6 @@ func MakeAutonomousLevelProvider(
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &autonomousLevelProvider{
 		spread: spread,
-		plateauThresholdPercentage:    plateauThresholdPercentage,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
 		maxAmountSpread:               maxAmountSpread,
@@ -175,16 +172,7 @@ func (p *autonomousLevelProvider) getRandomSpread(minSpread float64, maxSpread f
 }
 
 func (p *autonomousLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (Level, error) {
-	sum := maxAssetQuote + maxAssetBase
-	var centerPrice float64
-	if maxAssetQuote/sum >= p.plateauThresholdPercentage {
-		centerPrice = p.plateauThresholdPercentage / (1 - p.plateauThresholdPercentage)
-	} else if maxAssetBase/sum >= p.plateauThresholdPercentage {
-		centerPrice = (1 - p.plateauThresholdPercentage) / p.plateauThresholdPercentage
-	} else {
-		centerPrice = maxAssetQuote / maxAssetBase
-	}
-
+	centerPrice := maxAssetQuote / maxAssetBase
 	// price always adds the spread
 	targetPrice := centerPrice * (1 + p.spread/2)
 
