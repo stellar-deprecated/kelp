@@ -21,6 +21,8 @@ type autonomousLevelProvider struct {
 	minAmountCarryoverSpread      float64 // the minimum spread % we take off the amountCarryover before placing the orders
 	maxAmountCarryoverSpread      float64 // the maximum spread % we take off the amountCarryover before placing the orders
 	carryoverInclusionProbability float64 // probability of including the carryover at a level that will be added
+	virtualBalanceBase            float64 // virtual balance to use so we can smoothen out the curve
+	virtualBalanceQuote           float64 // virtual balance to use so we can smoothen out the curve
 
 	// precomputed before construction
 	randGen *rand.Rand
@@ -41,6 +43,8 @@ func MakeAutonomousLevelProvider(
 	minAmountCarryoverSpread float64,
 	maxAmountCarryoverSpread float64,
 	carryoverInclusionProbability float64,
+	virtualBalanceBase float64,
+	virtualBalanceQuote float64,
 ) Provider {
 	validateSpread(minAmountSpread)
 	validateSpread(maxAmountSpread)
@@ -67,7 +71,9 @@ func MakeAutonomousLevelProvider(
 		minAmountCarryoverSpread:      minAmountCarryoverSpread,
 		maxAmountCarryoverSpread:      maxAmountCarryoverSpread,
 		carryoverInclusionProbability: carryoverInclusionProbability,
-		randGen: randGen,
+		virtualBalanceBase:            virtualBalanceBase,
+		virtualBalanceQuote:           virtualBalanceQuote,
+		randGen:                       randGen,
 	}
 }
 
@@ -79,8 +85,8 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error) {
-	_maxAssetBase := maxAssetBase
-	_maxAssetQuote := maxAssetQuote
+	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
+	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
 	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
 	amountCarryover := 0.0
 	levels := []Level{}

@@ -20,6 +20,8 @@ type AutonomousConfig struct {
 	MIN_AMOUNT_CARRYOVER_SPREAD     float64 `valid:"-"` // the minimum spread % we take off the amountCarryover before placing the orders
 	MAX_AMOUNT_CARRYOVER_SPREAD     float64 `valid:"-"` // the maximum spread % we take off the amountCarryover before placing the orders
 	CARRYOVER_INCLUSION_PROBABILITY float64 `valid:"-"` // probability of including the carryover at a level that will be added
+	VIRTUAL_BALANCE_BASE            float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
+	VIRTUAL_BALANCE_QUOTE           float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
 }
 
 // MakeAutonomousStrategy is a factory method for AutonomousStrategy
@@ -43,7 +45,9 @@ func MakeAutonomousStrategy(
 			config.ENSURE_FIRST_N_LEVELS,
 			config.MIN_AMOUNT_CARRYOVER_SPREAD,
 			config.MAX_AMOUNT_CARRYOVER_SPREAD,
-			config.CARRYOVER_INCLUSION_PROBABILITY),
+			config.CARRYOVER_INCLUSION_PROBABILITY,
+			config.VIRTUAL_BALANCE_BASE,
+			config.VIRTUAL_BALANCE_QUOTE),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
@@ -63,7 +67,9 @@ func MakeAutonomousStrategy(
 			config.ENSURE_FIRST_N_LEVELS,
 			config.MIN_AMOUNT_CARRYOVER_SPREAD,
 			config.MAX_AMOUNT_CARRYOVER_SPREAD,
-			config.CARRYOVER_INCLUSION_PROBABILITY),
+			config.CARRYOVER_INCLUSION_PROBABILITY,
+			config.VIRTUAL_BALANCE_QUOTE,
+			config.VIRTUAL_BALANCE_BASE),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		true,
