@@ -135,9 +135,13 @@ func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizo
 	// delete existing data entries
 	ops = append(ops, build.ClearData(botKey.FullKey(0), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 	ops = append(ops, build.ClearData(botKey.FullKey(1), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(botKey.FullKey(2), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	if len(botKey.AssetBaseIssuer) > 0 {
+		ops = append(ops, build.ClearData(botKey.FullKey(2), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	}
 	ops = append(ops, build.ClearData(botKey.FullKey(3), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(botKey.FullKey(4), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	if len(botKey.AssetQuoteIssuer) > 0 {
+		ops = append(ops, build.ClearData(botKey.FullKey(4), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	}
 
 	// update timestamp for terminator
 	tsMillisStr := fmt.Sprintf("%d", tsMillis)

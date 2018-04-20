@@ -162,9 +162,13 @@ func (b *Bot) makeManageDataOps(t time.Time) ([]build.TransactionMutator, error)
 	// always write keys in the case where terminator terminates orders for an app that is still running, without these keys the bot would
 	// just write the timestamp which would not allow terminator to terminate these orders as it won't have the bot key
 	ops = append(ops, build.SetData(b.dataKey.FullKey(1), []byte(b.dataKey.AssetBaseCode), tradingSourceAccount))
-	ops = append(ops, build.SetData(b.dataKey.FullKey(2), []byte(b.dataKey.AssetBaseIssuer), tradingSourceAccount))
+	if len(b.dataKey.AssetBaseIssuer) > 0 {
+		ops = append(ops, build.SetData(b.dataKey.FullKey(2), []byte(b.dataKey.AssetBaseIssuer), tradingSourceAccount))
+	}
 	ops = append(ops, build.SetData(b.dataKey.FullKey(3), []byte(b.dataKey.AssetQuoteCode), tradingSourceAccount))
-	ops = append(ops, build.SetData(b.dataKey.FullKey(4), []byte(b.dataKey.AssetQuoteIssuer), tradingSourceAccount))
+	if len(b.dataKey.AssetQuoteIssuer) > 0 {
+		ops = append(ops, build.SetData(b.dataKey.FullKey(4), []byte(b.dataKey.AssetQuoteIssuer), tradingSourceAccount))
+	}
 
 	log.Info("setting data with bot key = " + b.dataKey.String() + " | millis = " + millisStr)
 	return ops, nil
