@@ -92,7 +92,6 @@ func run(cmd *cobra.Command, args []string) {
 		strat,
 		botConfig.TICK_INTERVAL_SECONDS,
 		dataKey,
-		true, // set this to true so we attempt to write the key
 	)
 	// --- end initialization of objects ----
 

@@ -25,7 +25,6 @@ type Bot struct {
 	strat               strategy.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
 	dataKey             *datamodel.BotKey
-	writeUniqueKey      bool
 
 	// uninitialized
 	maxAssetA      float64
@@ -44,7 +43,6 @@ func MakeBot(
 	strat strategy.Strategy,
 	tickIntervalSeconds int32,
 	dataKey *datamodel.BotKey,
-	writeUniqueKey bool,
 ) *Bot {
 	return &Bot{
 		api:                 api,
@@ -55,7 +53,6 @@ func MakeBot(
 		strat:               strat,
 		tickIntervalSeconds: tickIntervalSeconds,
 		dataKey:             dataKey,
-		writeUniqueKey:      writeUniqueKey,
 	}
 }
 
@@ -139,8 +136,6 @@ func (b *Bot) update() {
 			b.deleteAllOffers()
 			return
 		}
-		// TODO 3 - should verify that the async submission actually succeeded before setting to false
-		b.writeUniqueKey = false
 	}
 
 	e = b.strat.PostUpdate()
@@ -164,14 +159,14 @@ func (b *Bot) makeManageDataOps(t time.Time) ([]build.TransactionMutator, error)
 	millisOp := build.SetData(b.dataKey.FullKey(0), millisData, tradingSourceAccount)
 	ops = append(ops, &millisOp)
 
-	if b.writeUniqueKey {
-		ops = append(ops, build.SetData(b.dataKey.FullKey(1), []byte(b.dataKey.AssetBaseCode), tradingSourceAccount))
-		ops = append(ops, build.SetData(b.dataKey.FullKey(2), []byte(b.dataKey.AssetBaseIssuer), tradingSourceAccount))
-		ops = append(ops, build.SetData(b.dataKey.FullKey(3), []byte(b.dataKey.AssetQuoteCode), tradingSourceAccount))
-		ops = append(ops, build.SetData(b.dataKey.FullKey(4), []byte(b.dataKey.AssetQuoteIssuer), tradingSourceAccount))
-	}
-	log.Info("setting data with key = " + b.dataKey.Key() + " | dataKeyPrefix = " + b.dataKey.HashWithPrefix() + " | millis = " + millisStr)
+	// always write keys in the case where terminator terminates orders for an app that is still running, without these keys the bot would
+	// just write the timestamp which would not allow terminator to terminate these orders as it won't have the bot key
+	ops = append(ops, build.SetData(b.dataKey.FullKey(1), []byte(b.dataKey.AssetBaseCode), tradingSourceAccount))
+	ops = append(ops, build.SetData(b.dataKey.FullKey(2), []byte(b.dataKey.AssetBaseIssuer), tradingSourceAccount))
+	ops = append(ops, build.SetData(b.dataKey.FullKey(3), []byte(b.dataKey.AssetQuoteCode), tradingSourceAccount))
+	ops = append(ops, build.SetData(b.dataKey.FullKey(4), []byte(b.dataKey.AssetQuoteIssuer), tradingSourceAccount))
 
+	log.Info("setting data with bot key = " + b.dataKey.String() + " | millis = " + millisStr)
 	return ops, nil
 }
 
