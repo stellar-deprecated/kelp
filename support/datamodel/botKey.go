@@ -24,6 +24,11 @@ type BotKey struct {
 	cachedHash *string
 }
 
+// String impl
+func (k BotKey) String() string {
+	return fmt.Sprintf("BotKey(key=%s, hash=%s)", k.Key(), k.Hash())
+}
+
 // MakeSortedBotKey makes a BotKey by sorting the passed in assets
 func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
 	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string

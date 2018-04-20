@@ -15,7 +15,6 @@ import (
 )
 
 const terminatorKey = "term"
-const botPrefix = "b/"
 
 // Terminator contains the logic to terminate offers
 type Terminator struct {
@@ -58,6 +57,11 @@ type botKeyPair struct {
 	lastUpdated int64
 }
 
+// String impl
+func (kp botKeyPair) String() string {
+	return fmt.Sprintf("botKeyPair(dataKey=%v, lastUpdated=%d)", kp.dataKey, kp.lastUpdated)
+}
+
 func (t *Terminator) run() {
 	account, e := t.api.LoadAccount(t.tradingAccount)
 	if e != nil {
@@ -66,13 +70,11 @@ func (t *Terminator) run() {
 	}
 
 	// m is a map of hashes to botKeyPair(s)
-	m, e := reconstructBotMap(account.Data)
+	botList, e := reconstructBotList(account.Data)
 	if e != nil {
 		log.Error(e)
 		return
 	}
-	log.Info(fmt.Sprintf("Found %d bots", len(m)))
-	log.Info("bots in map: ", m)
 
 	// compute cutoff millis
 	nowMillis := time.Now().UnixNano() / 1000000
@@ -80,9 +82,9 @@ func (t *Terminator) run() {
 	log.Info("cutoff millis: ", cutoffMillis)
 
 	// compute the inactive bots
-	filtered := excludeActiveBots(m, cutoffMillis)
-	log.Info(fmt.Sprintf("Found %d inactive bots", len(filtered)))
-	if len(filtered) == 0 {
+	inactiveBots := excludeActiveBots(botList, cutoffMillis)
+	log.Infof("Found %d inactive bots", len(inactiveBots))
+	if len(inactiveBots) == 0 {
 		// update data to reflect a successful return from terminator
 		newTimestamp := time.Now().UnixNano() / 1000000
 		tsMillisStr := fmt.Sprintf("%d", newTimestamp)
@@ -94,7 +96,6 @@ func (t *Terminator) run() {
 		e = t.txb.SubmitOps(ops)
 		if e != nil {
 			log.Error(e)
-			return
 		}
 		return
 	}
@@ -106,15 +107,14 @@ func (t *Terminator) run() {
 		return
 	}
 
-	// delete the offers of inactive bots
-	for hash, bk := range filtered {
-		log.Info(fmt.Sprintf("working on bot with key: %s | lastUpdated: %d", bk.dataKey.Key(), bk.lastUpdated))
-
+	// delete the offers of inactive bots (don't ever use hash directly)
+	for _, bk := range inactiveBots {
+		log.Infof("working on bot with key: %s", bk)
 		assetA := convertToAsset(bk.dataKey.AssetBaseCode, bk.dataKey.AssetBaseIssuer)
 		assetB := convertToAsset(bk.dataKey.AssetQuoteCode, bk.dataKey.AssetQuoteIssuer)
 		inactiveSellOffers, inactiveBuyOffers := kelp.FilterOffers(offers, assetA, assetB)
 		newTimestamp := time.Now().UnixNano() / 1000000
-		t.deleteOffers(inactiveSellOffers, inactiveBuyOffers, hash, newTimestamp)
+		t.deleteOffers(inactiveSellOffers, inactiveBuyOffers, bk.dataKey, newTimestamp)
 	}
 }
 
@@ -126,19 +126,18 @@ func convertToAsset(code string, issuer string) horizon.Asset {
 }
 
 // deleteOffers deletes passed in offers along with the data for the passed in hash
-func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, hash string, tsMillis int64) {
+func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, botKey datamodel.BotKey, tsMillis int64) {
 	ops := []build.TransactionMutator{}
 	ops = append(ops, t.txb.DeleteAllOffers(sellOffers)...)
 	ops = append(ops, t.txb.DeleteAllOffers(buyOffers)...)
 	numOffers := len(ops)
 
 	// delete existing data entries
-	dataKeyPrefix := botPrefix + hash
-	ops = append(ops, build.ClearData(dataKeyPrefix+"/0", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(dataKeyPrefix+"/1", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(dataKeyPrefix+"/2", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(dataKeyPrefix+"/3", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(dataKeyPrefix+"/4", build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(botKey.FullKey(0), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(botKey.FullKey(1), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(botKey.FullKey(2), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(botKey.FullKey(3), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, build.ClearData(botKey.FullKey(4), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 
 	// update timestamp for terminator
 	tsMillisStr := fmt.Sprintf("%d", tsMillis)
@@ -155,17 +154,17 @@ func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizo
 }
 
 // excludeActiveBots filters out bots that have a lastUpdated timestamp that is greater than or equal to cutoffMillis
-func excludeActiveBots(m map[string]botKeyPair, cutoffMillis int64) map[string]botKeyPair {
-	filtered := make(map[string]botKeyPair)
-	for k, v := range m {
+func excludeActiveBots(botList []botKeyPair, cutoffMillis int64) []botKeyPair {
+	inactive := []botKeyPair{}
+	for _, v := range botList {
 		if v.lastUpdated < cutoffMillis {
-			filtered[k] = v
+			inactive = append(inactive, v)
 		}
 	}
-	return filtered
+	return inactive
 }
 
-func reconstructBotMap(data map[string]string) (map[string]botKeyPair, error) {
+func reconstructBotList(data map[string]string) ([]botKeyPair, error) {
 	m := make(map[string]botKeyPair)
 	for k, v := range data {
 		if !datamodel.IsBotKey(k) {
@@ -183,7 +182,23 @@ func reconstructBotMap(data map[string]string) (map[string]botKeyPair, error) {
 		}
 		m[hash] = currentBotKey
 	}
-	return m, nil
+
+	// convert to a list
+	l := []botKeyPair{}
+	for _, k := range m {
+		l = append(l, k)
+	}
+
+	log.Infof("Found %d bots", len(l))
+	if len(l) > 0 {
+		logLine := "bots in list:\n"
+		for _, k := range l {
+			logLine = logLine + fmt.Sprintf("\t%v\n", k)
+		}
+		log.Info(logLine)
+	}
+
+	return l, nil
 }
 
 func updateBotKey(currentBotKey *botKeyPair, botKeyPart string, value string) error {
