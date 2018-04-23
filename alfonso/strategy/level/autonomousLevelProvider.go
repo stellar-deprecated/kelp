@@ -103,6 +103,10 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
 		_maxAssetBase, _maxAssetQuote = updateAssetBalances(level, p.useMaxQuoteInTargetAmountCalc, _maxAssetBase, _maxAssetQuote)
 
+		// always take a spread off the amountCarryover
+		amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
+		amountCarryover *= (1 - amountCarryoverSpread)
+
 		if !p.shouldIncludeLevel(i) {
 			// accummulate targetAmount into amountCarryover
 			amountCarryover += level.TargetAmount()
@@ -118,11 +122,7 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 }
 
 func (p *autonomousLevelProvider) computeNewLevelWithCarryover(level Level, amountCarryover float64) (Level, float64) {
-	// take a spread off the amountCarryover
-	amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
-	amountCarryover *= (1 - amountCarryoverSpread)
-
-	// include a partial amount of the carryover after we take the spread
+	// include a partial amount of the carryover
 	amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
 	// update amountCarryover to reflect inclusion in the level
 	amountCarryover -= amountCarryoverToInclude
