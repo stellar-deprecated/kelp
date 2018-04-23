@@ -13,6 +13,8 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
+const maxLumenTrust float64 = 100000000000
+
 // Bot represents a market making bot, which contains it's strategy
 // the Bot is meant to contain all the non-strategy specific logic
 type Bot struct {
@@ -29,6 +31,8 @@ type Bot struct {
 	// uninitialized
 	maxAssetA      float64
 	maxAssetB      float64
+	trustAssetA    float64
+	trustAssetB    float64
 	buyingAOffers  []horizon.Offer // quoted A/B
 	sellingAOffers []horizon.Offer // quoted B/A
 }
@@ -92,7 +96,7 @@ func (b *Bot) update() {
 	b.loadExistingOffers()
 
 	// strategy has a chance to set any state it needs
-	e = b.strat.PreUpdate(b.maxAssetA, b.maxAssetB)
+	e = b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.trustAssetA, b.trustAssetB)
 	if e != nil {
 		log.Warn(e)
 		b.deleteAllOffers()
@@ -184,17 +188,31 @@ func (b *Bot) load() {
 
 	var maxA float64
 	var maxB float64
+	var trustA float64
+	var trustB float64
 	for _, balance := range account.Balances {
 		if balance.Asset == b.assetA {
 			maxA = kelp.AmountStringAsFloat(balance.Balance)
-			log.Info("maxA:", maxA)
+			if balance.Asset.Type == "native" {
+				trustA = maxLumenTrust
+			} else {
+				trustA = kelp.AmountStringAsFloat(balance.Limit)
+			}
+			log.Infof("maxA: %.7f, trustA: %.7f\n", maxA, trustA)
 		} else if balance.Asset == b.assetB {
 			maxB = kelp.AmountStringAsFloat(balance.Balance)
-			log.Info("maxB:", maxB)
+			if balance.Asset.Type == "native" {
+				trustB = maxLumenTrust
+			} else {
+				trustB = kelp.AmountStringAsFloat(balance.Limit)
+			}
+			log.Infof("maxB: %.7f, trustB: %.7f\n", maxB, trustB)
 		}
 	}
 	b.maxAssetA = maxA
 	b.maxAssetB = maxB
+	b.trustAssetA = trustA
+	b.trustAssetB = trustB
 }
 
 // get complete list of offers

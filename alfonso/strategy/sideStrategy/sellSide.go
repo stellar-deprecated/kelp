@@ -67,15 +67,24 @@ func (s *SellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.
 }
 
 // PreUpdate impl
-func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64) error {
+func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64) error {
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
+
+	// don't place orders if we have nothing to sell or if we cannot buy the asset in exchange
+	nothingToSell := maxAssetBase == 0
+	lineFull := maxAssetQuote == trustQuote
+	if nothingToSell || lineFull {
+		s.currentLevels = []level.Level{}
+		log.Warnf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
+		return nil
+	}
 
 	// load currentLevels only once here
 	var e error
 	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
 	if e != nil {
-		log.Error("Center price couldn't be loaded! ", e)
+		log.Error("levels couldn't be loaded: ", e)
 		return e
 	}
 	return nil
