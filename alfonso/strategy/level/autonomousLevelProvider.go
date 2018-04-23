@@ -46,6 +46,10 @@ func MakeAutonomousLevelProvider(
 	virtualBalanceBase float64,
 	virtualBalanceQuote float64,
 ) Provider {
+	if minAmountSpread <= 0 {
+		log.Fatalf("minAmountSpread (%.7f) needs to be > 0 for the algorithm to work sustainably\n", minAmountSpread)
+	}
+
 	validateSpread(minAmountSpread)
 	validateSpread(maxAmountSpread)
 	if minAmountSpread > maxAmountSpread {
