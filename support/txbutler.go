@@ -13,7 +13,7 @@ const baseReserve = 0.5
 const operationalBuffer = 2000
 
 type TxButler struct {
-	API                        horizon.Client
+	API                        *horizon.Client
 	SourceAccount              string
 	TradingAccount             string
 	SourceSeed                 string
@@ -38,8 +38,7 @@ func MakeTxButler(
 	fractionalReserveMagnifier int8,
 ) *TxButler {
 	txb := &TxButler{
-		// TODO TxButler needs to take in the reference
-		API:                        *client,
+		API:                        client,
 		SourceSeed:                 sourceSeed,
 		TradingSeed:                tradingSeed,
 		SourceAccount:              sourceAccount,

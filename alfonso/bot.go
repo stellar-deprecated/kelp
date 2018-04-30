@@ -18,8 +18,7 @@ const maxLumenTrust float64 = 100000000000
 // Bot represents a market making bot, which contains it's strategy
 // the Bot is meant to contain all the non-strategy specific logic
 type Bot struct {
-	// TODO make all pointers
-	api                 horizon.Client
+	api                 *horizon.Client
 	assetA              horizon.Asset // TODO call this base and quote
 	assetB              horizon.Asset
 	tradingAccount      string
@@ -39,7 +38,7 @@ type Bot struct {
 
 // MakeBot is the factory method for the Bot struct
 func MakeBot(
-	api horizon.Client,
+	api *horizon.Client,
 	assetA horizon.Asset,
 	assetB horizon.Asset,
 	tradingAccount string,
@@ -219,7 +218,6 @@ func (b *Bot) load() {
 // look at the offers for this pair
 // delete any extra ones
 func (b *Bot) loadExistingOffers() {
-	// TODO 2 pass in reference to horizon.Client
 	offers, e := kelp.LoadAllOffers(b.tradingAccount, b.api)
 	if e != nil {
 		log.Warn(e)

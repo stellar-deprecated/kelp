@@ -102,7 +102,7 @@ func String2Asset(code string, issuer string) horizon.Asset {
 	}
 }
 
-func LoadAllOffers(account string, api horizon.Client) (offersRet []horizon.Offer, err error) {
+func LoadAllOffers(account string, api *horizon.Client) (offersRet []horizon.Offer, err error) {
 	// get what orders are outstanding now
 	offersPage, err := api.LoadAccountOffers(account)
 	if err != nil {
@@ -139,7 +139,7 @@ func FilterOffers(offers []horizon.Offer, sellAsset horizon.Asset, buyAsset hori
 
 // look at the average price 3 target amounts back on each side.
 // TODO: remove own orders form this calculation
-func CalculateCenterPrice(assetA horizon.Asset, assetB horizon.Asset, api horizon.Client) (float64, error) {
+func CalculateCenterPrice(assetA horizon.Asset, assetB horizon.Asset, api *horizon.Client) (float64, error) {
 	// simple for now
 	//log.Info("Center ", assetA, "  :  ", assetB)
 	result, err := api.LoadOrderBook(assetA, assetB)

@@ -100,8 +100,7 @@ func (t *Terminator) run() {
 		return
 	}
 
-	// TODO 2 fix by passing in pointer directly
-	offers, e := kelp.LoadAllOffers(t.tradingAccount, *t.api)
+	offers, e := kelp.LoadAllOffers(t.tradingAccount, t.api)
 	if e != nil {
 		log.Error(e)
 		return

@@ -84,7 +84,7 @@ func run(cmd *cobra.Command, args []string) {
 	dataKey := datamodel.MakeSortedBotKey(assetA, assetB)
 	strat := strategy.StratFactory(txB, &assetA, &assetB, *stratType, *stratConfigPath)
 	bot := MakeBot(
-		*client,
+		client,
 		botConfig.AssetA(),
 		botConfig.AssetB(),
 		botConfig.TradingAccount(),
