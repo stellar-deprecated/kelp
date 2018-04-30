@@ -37,9 +37,8 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 	if e != nil {
 		log.Error("Center price couldn't be loaded! ", e)
 		return nil, e
-	} else {
-		log.Info("Center price: ", centerPrice)
 	}
+	log.Info("Center price: ", centerPrice)
 
 	levels := []Level{}
 	for _, sl := range p.staticLevels {
