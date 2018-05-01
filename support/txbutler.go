@@ -61,29 +61,29 @@ func MakeTxButler(
 }
 
 /*
-func (self *TxButler) SetSeqNum(num string) {
+func (txb *TxButler) SetSeqNum(num string) {
 	s, err := strconv.ParseUint(num, 10, 64)
 	if err != nil {
 		log.Info("SetSeqNum :", num, " failed: ", err)
 		return
 	}
-	self.seqNum = s
-	self.reloadSeqNum = false
+	txb.seqNum = s
+	txb.reloadSeqNum = false
 }
 */
 
-func (self *TxButler) incrementSeqNum() {
-	if self.reloadSeqNum {
+func (txb *TxButler) incrementSeqNum() {
+	if txb.reloadSeqNum {
 		log.Info("reloadSeqNum ")
-		seqNum, err := self.API.SequenceForAccount(self.SourceAccount)
+		seqNum, err := txb.API.SequenceForAccount(txb.SourceAccount)
 		if err != nil {
 			log.Info("error getting seq num ", err)
 			return
 		}
-		self.seqNum = uint64(seqNum)
-		self.reloadSeqNum = false
+		txb.seqNum = uint64(seqNum)
+		txb.reloadSeqNum = false
 	}
-	self.seqNum++
+	txb.seqNum++
 
 }
 
@@ -111,27 +111,27 @@ func (txb *TxButler) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 	return build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID), build.SourceAccount{AddressOrSeed: txb.TradingAccount})
 }
 
-func (self *TxButler) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
+func (txb *TxButler) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
 	//log.Info("modifyBuyOffer: ", offer.ID, " p:", price)
-	return self.ModifySellOffer(offer, 1/price, amount*price)
+	return txb.ModifySellOffer(offer, 1/price, amount*price)
 }
 
-func (self *TxButler) ModifySellOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
+func (txb *TxButler) ModifySellOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
 	//log.Info("modifySellOffer: ", offer.ID, " p:", amount)
-	return self.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount)
+	return txb.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount)
 }
 
-func (self *TxButler) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
+func (txb *TxButler) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	if amount > 0 {
 		//log.Info("createSellOffer: ", price, amount)
-		return self.createModifySellOffer(nil, base, counter, price, amount)
+		return txb.createModifySellOffer(nil, base, counter, price, amount)
 	}
 	log.Info("zero amount ")
 	return nil
 }
 
 // ParseOfferAmount is a convenience method to parse an offer amount created by the txButler
-func (self *TxButler) ParseOfferAmount(amt string) (float64, error) {
+func (txb *TxButler) ParseOfferAmount(amt string) (float64, error) {
 	offerAmt, err := strconv.ParseFloat(amt, 64)
 	if err != nil {
 		log.Info("error parsing offer amount: ", err)
@@ -140,12 +140,12 @@ func (self *TxButler) ParseOfferAmount(amt string) (float64, error) {
 	return offerAmt, nil
 }
 
-func (self *TxButler) minReserve(subentries int32) float64 {
+func (txb *TxButler) minReserve(subentries int32) float64 {
 	return float64(float64(2+subentries) * baseReserve)
 }
 
-func (self *TxButler) lumenBalance() (float64, float64, error) {
-	account, err := self.API.LoadAccount(self.TradingAccount)
+func (txb *TxButler) lumenBalance() (float64, float64, error) {
+	account, err := txb.API.LoadAccount(txb.TradingAccount)
 	if err != nil {
 		log.Info("error loading account to fetch lumen balance: ", err)
 		return -1, -1, nil
@@ -157,17 +157,17 @@ func (self *TxButler) lumenBalance() (float64, float64, error) {
 			if e != nil {
 				log.Info("error parsing native balance: ", e)
 			}
-			return b, self.minReserve(account.SubentryCount), e
+			return b, txb.minReserve(account.SubentryCount), e
 		}
 	}
 	return -1, -1, errors.New("could not find a native lumen balance!")
 }
 
-func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
+func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	if selling.Type == Native {
 		var incrementalXlmAmount float64
 		if offer != nil {
-			offerAmt, err := self.ParseOfferAmount(offer.Amount)
+			offerAmt, err := txb.ParseOfferAmount(offer.Amount)
 			if err != nil {
 				log.Info(err)
 				return nil
@@ -180,24 +180,24 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 		}
 
 		// check if incrementalXlmAmount is within budget
-		bal, minAccountBal, err := self.lumenBalance()
+		bal, minAccountBal, err := txb.lumenBalance()
 		if err != nil {
 			log.Info(err)
 			return nil
 		}
 
-		xlmExposure, err := self.xlmExposure()
+		xlmExposure, err := txb.xlmExposure()
 		if err != nil {
 			log.Info(err)
 			return nil
 		}
 
 		additionalExposure := incrementalXlmAmount >= 0
-		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(self.FractionalReserveMagnifier)) > (bal - minAccountBal - operationalBuffer)
+		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(txb.FractionalReserveMagnifier)) > (bal - minAccountBal - operationalBuffer)
 		if additionalExposure && possibleTerminalExposure {
 			log.Info("not placing offer because we run the risk of running out of lumens | xlmExposure: ", xlmExposure,
 				" | incrementalXlmAmount: ", incrementalXlmAmount, " | bal: ", bal, " | minAccountBal: ", minAccountBal,
-				" | operationalBuffer: ", operationalBuffer, " | fractionalReserveMagnifier: ", self.FractionalReserveMagnifier)
+				" | operationalBuffer: ", operationalBuffer, " | fractionalReserveMagnifier: ", txb.FractionalReserveMagnifier)
 			return nil
 		}
 	}
@@ -209,7 +209,7 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 		Price:   build.Price(stringPrice),
 	}
 
-	//log.Info("sa: ", self.sourceAccount, " ta:", self.tradingAccount, " r:", rate)
+	//log.Info("sa: ", txb.sourceAccount, " ta:", txb.tradingAccount, " r:", rate)
 	mutators := []interface{}{
 		rate,
 		build.Amount(strconv.FormatFloat(float64(amount), 'f', -1, 64)),
@@ -217,40 +217,40 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 	if offer != nil {
 		mutators = append(mutators, build.OfferID(offer.ID))
 	}
-	if self.SourceAccount != self.TradingAccount {
-		mutators = append(mutators, build.SourceAccount{AddressOrSeed: self.TradingAccount})
+	if txb.SourceAccount != txb.TradingAccount {
+		mutators = append(mutators, build.SourceAccount{AddressOrSeed: txb.TradingAccount})
 	}
 	result := build.ManageOffer(false, mutators...)
 	return &result
 }
 
-func (self *TxButler) SubmitOps(ops []build.TransactionMutator) error {
-	self.incrementSeqNum()
+func (txb *TxButler) SubmitOps(ops []build.TransactionMutator) error {
+	txb.incrementSeqNum()
 	muts := []build.TransactionMutator{
-		build.Sequence{Sequence: self.seqNum},
-		self.Network,
-		build.SourceAccount{AddressOrSeed: self.SourceAccount},
+		build.Sequence{Sequence: txb.seqNum},
+		txb.Network,
+		build.SourceAccount{AddressOrSeed: txb.SourceAccount},
 	}
 	muts = append(muts, ops...)
 	tx := build.Transaction(muts...)
 	if tx.Err != nil {
 		return errors.Wrap(tx.Err, "txButler SubmitOps error: ")
 	}
-	go self.signAndSubmit(tx)
+	go txb.signAndSubmit(tx)
 	return nil
 }
 
-func (self *TxButler) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
+func (txb *TxButler) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	//log.Info("createBuyOffer: ", price, amount)
-	return self.CreateSellOffer(counter, base, 1/price, amount*price)
+	return txb.CreateSellOffer(counter, base, 1/price, amount*price)
 }
 
-func (self *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
+func (txb *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 	var txe build.TransactionEnvelopeBuilder
-	if self.SourceSeed != self.TradingSeed {
-		txe = tx.Sign(self.SourceSeed, self.TradingSeed)
+	if txb.SourceSeed != txb.TradingSeed {
+		txe = tx.Sign(txb.SourceSeed, txb.TradingSeed)
 	} else {
-		txe = tx.Sign(self.SourceSeed)
+		txe = tx.Sign(txb.SourceSeed)
 	}
 
 	txeB64, err := txe.Base64()
@@ -260,7 +260,7 @@ func (self *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 	}
 	log.Info("tx: ", txeB64)
 
-	resp, err := self.API.SubmitTransaction(txeB64)
+	resp, err := txb.API.SubmitTransaction(txeB64)
 	if err != nil {
 		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
 			rcs, err := herr.ResultCodes()
@@ -270,7 +270,7 @@ func (self *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
 				log.Info("tx_bad_seq, reloading")
-				self.reloadSeqNum = true
+				txb.reloadSeqNum = true
 			}
 
 			log.Info("tx code: ", rcs.TransactionCode, " opcodes: ", rcs.OperationCodes)
@@ -289,13 +289,13 @@ func (t *TxButler) ResetCachedXlmExposure() {
 	t.cachedXlmExposure = nil
 }
 
-func (self *TxButler) xlmExposure() (float64, error) {
-	if self.cachedXlmExposure != nil {
-		return *self.cachedXlmExposure, nil
+func (txb *TxButler) xlmExposure() (float64, error) {
+	if txb.cachedXlmExposure != nil {
+		return *txb.cachedXlmExposure, nil
 	}
 
 	// uses all offers for this trading account to accommodate sharing by other bots
-	offers, err := LoadAllOffers(self.TradingAccount, self.API)
+	offers, err := LoadAllOffers(txb.TradingAccount, txb.API)
 	if err != nil {
 		log.Info("error computing XLM exposure: ", err)
 		return -1, err
@@ -305,7 +305,7 @@ func (self *TxButler) xlmExposure() (float64, error) {
 	for _, offer := range offers {
 		// only need to compute sum of selling because that's the max XLM we can give up if all our offers are taken
 		if offer.Selling.Type == Native {
-			offerAmt, err := self.ParseOfferAmount(offer.Amount)
+			offerAmt, err := txb.ParseOfferAmount(offer.Amount)
 			if err != nil {
 				return -1, err
 			}
@@ -313,6 +313,6 @@ func (self *TxButler) xlmExposure() (float64, error) {
 		}
 	}
 
-	self.cachedXlmExposure = &sum
+	txb.cachedXlmExposure = &sum
 	return sum, nil
 }
