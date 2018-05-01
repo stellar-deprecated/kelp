@@ -145,7 +145,7 @@ func (txb *TxButler) ParseOfferAmount(amt string) (float64, error) {
 }
 
 func (txb *TxButler) minReserve(subentries int32) float64 {
-	return float64(float64(2+subentries) * baseReserve)
+	return float64(2+subentries) * baseReserve
 }
 
 func (txb *TxButler) lumenBalance() (float64, float64, error) {
@@ -207,7 +207,7 @@ func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon
 		}
 	}
 
-	stringPrice := strconv.FormatFloat(float64(price), 'f', 8, 64)
+	stringPrice := strconv.FormatFloat(price, 'f', 8, 64)
 	rate := build.Rate{
 		Selling: Asset2Asset(selling),
 		Buying:  Asset2Asset(buying),
@@ -217,7 +217,7 @@ func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon
 	//log.Info("sa: ", txb.sourceAccount, " ta:", txb.tradingAccount, " r:", rate)
 	mutators := []interface{}{
 		rate,
-		build.Amount(strconv.FormatFloat(float64(amount), 'f', -1, 64)),
+		build.Amount(strconv.FormatFloat(amount, 'f', -1, 64)),
 	}
 	if offer != nil {
 		mutators = append(mutators, build.OfferID(offer.ID))

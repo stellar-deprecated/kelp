@@ -25,8 +25,8 @@ type BotKey struct {
 }
 
 // String impl
-func (k BotKey) String() string {
-	return fmt.Sprintf("BotKey(key=%s, hash=%s)", k.Key(), k.Hash())
+func (b BotKey) String() string {
+	return fmt.Sprintf("BotKey(key=%s, hash=%s)", b.Key(), b.Hash())
 }
 
 // MakeSortedBotKey makes a BotKey by sorting the passed in assets
@@ -106,7 +106,10 @@ func (b *BotKey) Hash() string {
 	}
 
 	h := sha1.New()
-	h.Write([]byte(b.Key()))
+	_, e := h.Write([]byte(b.Key()))
+	if e != nil {
+		log.Panic(e)
+	}
 	bs := h.Sum(nil)
 	hash := fmt.Sprintf("%x", bs)
 

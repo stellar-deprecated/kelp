@@ -31,9 +31,5 @@ func (c *Config) Init() error {
 	}
 
 	c.sourceAccount, e = kelp.ParseSecret(c.SOURCE_SECRET_SEED)
-	if e != nil {
-		return e
-	}
-
-	return nil
+	return e
 }

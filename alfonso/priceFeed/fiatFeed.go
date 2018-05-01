@@ -37,9 +37,9 @@ func newFiatFeed(url string) *fiatFeed {
 	return m
 }
 
-func (self *fiatFeed) getPrice() (float64, error) {
+func (f *fiatFeed) getPrice() (float64, error) {
 	var ret fiatAPIReturn
-	err := getJSON(self.client, self.url, &ret)
+	err := getJSON(f.client, f.url, &ret)
 	if err != nil {
 		return 0, err
 	}

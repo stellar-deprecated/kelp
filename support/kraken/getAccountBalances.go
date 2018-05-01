@@ -23,7 +23,7 @@ func (k krakenExchange) GetAccountBalances(assetList []assets.Asset) (map[assets
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *number.FromFloat(float64(bal), k.precision)
+		m[a] = *number.FromFloat(bal, k.precision)
 	}
 	return m, nil
 }

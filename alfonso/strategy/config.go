@@ -73,9 +73,5 @@ func (b *BotConfig) Init() error {
 	}
 
 	b.sourceAccount, e = kelp.ParseSecret(b.SOURCE_SECRET_SEED)
-	if e != nil {
-		return e
-	}
-
-	return nil
+	return e
 }

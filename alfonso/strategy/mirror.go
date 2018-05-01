@@ -30,10 +30,6 @@ type MirrorStrategy struct {
 	quoteAsset    *horizon.Asset
 	config        *MirrorConfig
 	exchange      exchange.Exchange
-
-	// uninitialized
-	maxAssetA float64
-	maxAssetB float64
 }
 
 // ensure this implements Strategy

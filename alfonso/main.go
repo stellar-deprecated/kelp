@@ -33,7 +33,11 @@ var fractionalReserveMagnifier = rootCmd.PersistentFlags().Int8("fractionalReser
 func main() {
 	log.SetLevel(log.DebugLevel)
 	rootCmd.Run = run
-	rootCmd.Execute()
+	e := rootCmd.Execute()
+	if e != nil {
+		log.Error(e)
+		os.Exit(1)
+	}
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -78,7 +82,7 @@ func run(cmd *cobra.Command, args []string) {
 	)
 	// --- end initialization of objects ----
 
-	for true {
+	for {
 		bot.Start()
 		log.Info("Restarting strat")
 	}
