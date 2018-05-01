@@ -160,7 +160,7 @@ func (txb *TxButler) lumenBalance() (float64, float64, error) {
 			return b, txb.minReserve(account.SubentryCount), e
 		}
 	}
-	return -1, -1, errors.New("could not find a native lumen balance!")
+	return -1, -1, errors.New("could not find a native lumen balance")
 }
 
 func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
@@ -285,8 +285,8 @@ func (txb *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 }
 
 // ResetCachedXlmExposure resets the cache
-func (t *TxButler) ResetCachedXlmExposure() {
-	t.cachedXlmExposure = nil
+func (txb *TxButler) ResetCachedXlmExposure() {
+	txb.cachedXlmExposure = nil
 }
 
 func (txb *TxButler) xlmExposure() (float64, error) {

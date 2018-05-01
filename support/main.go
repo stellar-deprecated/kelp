@@ -99,9 +99,8 @@ func Asset2Asset2(Asset build.Asset) horizon.Asset {
 func String2Asset(code string, issuer string) horizon.Asset {
 	if code == "XLM" {
 		return Asset2Asset2(build.NativeAsset())
-	} else {
-		return Asset2Asset2(build.CreditAsset(code, issuer))
 	}
+	return Asset2Asset2(build.CreditAsset(code, issuer))
 }
 
 func LoadAllOffers(account string, api *horizon.Client) (offersRet []horizon.Offer, err error) {
