@@ -21,8 +21,8 @@ type BotConfig struct {
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
-	assetA         horizon.Asset
-	assetB         horizon.Asset
+	assetBase      horizon.Asset
+	assetQuote     horizon.Asset
 }
 
 // TradingAccount returns the config's trading account
@@ -38,28 +38,28 @@ func (b *BotConfig) SourceAccount() string {
 	return *b.sourceAccount
 }
 
-// AssetA returns the config's assetA
-func (b *BotConfig) AssetA() horizon.Asset {
-	return b.assetA
+// AssetBase returns the config's assetBase
+func (b *BotConfig) AssetBase() horizon.Asset {
+	return b.assetBase
 }
 
-// AssetB returns the config's assetB
-func (b *BotConfig) AssetB() horizon.Asset {
-	return b.assetB
+// AssetQuote returns the config's assetQuote
+func (b *BotConfig) AssetQuote() horizon.Asset {
+	return b.assetQuote
 }
 
 // Init initializes this config
 func (b *BotConfig) Init() error {
 	if b.ASSET_CODE_A == "XLM" {
-		b.assetA = kelp.Asset2Asset2(build.NativeAsset())
+		b.assetBase = kelp.Asset2Asset2(build.NativeAsset())
 	} else {
-		b.assetA = kelp.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_A, b.ISSUER_A))
+		b.assetBase = kelp.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_A, b.ISSUER_A))
 	}
 
 	if b.ASSET_CODE_B == "XLM" {
-		b.assetB = kelp.Asset2Asset2(build.NativeAsset())
+		b.assetQuote = kelp.Asset2Asset2(build.NativeAsset())
 	} else {
-		b.assetB = kelp.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_B, b.ISSUER_B))
+		b.assetQuote = kelp.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_B, b.ISSUER_B))
 	}
 
 	var e error

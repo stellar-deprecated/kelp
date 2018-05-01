@@ -66,14 +66,14 @@ func run(cmd *cobra.Command, args []string) {
 		*fractionalReserveMagnifier,
 	)
 
-	assetA := botConfig.AssetA()
-	assetB := botConfig.AssetB()
-	dataKey := datamodel.MakeSortedBotKey(assetA, assetB)
-	strat := strategy.StratFactory(txB, &assetA, &assetB, *stratType, *stratConfigPath)
+	assetBase := botConfig.AssetBase()
+	assetQuote := botConfig.AssetQuote()
+	dataKey := datamodel.MakeSortedBotKey(assetBase, assetQuote)
+	strat := strategy.StratFactory(txB, &assetBase, &assetQuote, *stratType, *stratConfigPath)
 	bot := MakeBot(
 		client,
-		botConfig.AssetA(),
-		botConfig.AssetB(),
+		botConfig.AssetBase(),
+		botConfig.AssetQuote(),
 		botConfig.TradingAccount(),
 		txB,
 		strat,

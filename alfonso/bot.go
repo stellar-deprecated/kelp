@@ -19,8 +19,8 @@ const maxLumenTrust float64 = 100000000000
 // the Bot is meant to contain all the non-strategy specific logic
 type Bot struct {
 	api                 *horizon.Client
-	assetA              horizon.Asset // TODO call this base and quote
-	assetB              horizon.Asset
+	assetBase           horizon.Asset
+	assetQuote          horizon.Asset
 	tradingAccount      string
 	txButler            *kelp.TxButler
 	strat               strategy.Strategy // the instance of this bot is bound to this strategy
@@ -39,8 +39,8 @@ type Bot struct {
 // MakeBot is the factory method for the Bot struct
 func MakeBot(
 	api *horizon.Client,
-	assetA horizon.Asset,
-	assetB horizon.Asset,
+	assetBase horizon.Asset,
+	assetQuote horizon.Asset,
 	tradingAccount string,
 	txButler *kelp.TxButler,
 	strat strategy.Strategy,
@@ -49,8 +49,8 @@ func MakeBot(
 ) *Bot {
 	return &Bot{
 		api:                 api,
-		assetA:              assetA,
-		assetB:              assetB,
+		assetBase:           assetBase,
+		assetQuote:          assetQuote,
 		tradingAccount:      tradingAccount,
 		txButler:            txButler,
 		strat:               strat,
@@ -189,7 +189,7 @@ func (b *Bot) load() {
 	var trustA float64
 	var trustB float64
 	for _, balance := range account.Balances {
-		if balance.Asset == b.assetA {
+		if balance.Asset == b.assetBase {
 			maxA = kelp.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == kelp.Native {
 				trustA = maxLumenTrust
@@ -197,7 +197,7 @@ func (b *Bot) load() {
 				trustA = kelp.AmountStringAsFloat(balance.Limit)
 			}
 			log.Infof("maxA: %.7f, trustA: %.7f\n", maxA, trustA)
-		} else if balance.Asset == b.assetB {
+		} else if balance.Asset == b.assetQuote {
 			maxB = kelp.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == kelp.Native {
 				trustB = maxLumenTrust
@@ -222,7 +222,7 @@ func (b *Bot) loadExistingOffers() {
 		log.Warn(e)
 		return
 	}
-	b.sellingAOffers, b.buyingAOffers = kelp.FilterOffers(offers, b.assetA, b.assetB)
+	b.sellingAOffers, b.buyingAOffers = kelp.FilterOffers(offers, b.assetBase, b.assetQuote)
 
 	sort.Sort(kelp.ByPrice(b.buyingAOffers))
 	sort.Sort(kelp.ByPrice(b.sellingAOffers)) // don't need to reverse since the prices are inverse

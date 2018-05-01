@@ -12,8 +12,8 @@ import (
 // StratFactory makes a strategy
 func StratFactory(
 	txButler *kelp.TxButler,
-	assetA *horizon.Asset,
-	assetB *horizon.Asset,
+	assetBase *horizon.Asset,
+	assetQuote *horizon.Asset,
 	stratType string,
 	stratConfigPath string,
 ) Strategy {
@@ -22,22 +22,22 @@ func StratFactory(
 		var cfg SimpleConfig
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
-		return MakeSimpleStrategy(txButler, assetA, assetB, &cfg)
+		return MakeSimpleStrategy(txButler, assetBase, assetQuote, &cfg)
 	case "mirror":
 		var cfg MirrorConfig
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
-		return MakeMirrorStrategy(txButler, assetA, assetB, &cfg)
+		return MakeMirrorStrategy(txButler, assetBase, assetQuote, &cfg)
 	case "sell":
 		var cfg SellConfig
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
-		return MakeSellStrategy(txButler, assetA, assetB, &cfg)
+		return MakeSellStrategy(txButler, assetBase, assetQuote, &cfg)
 	case "autonomous":
 		var cfg AutonomousConfig
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
-		return MakeAutonomousStrategy(txButler, assetA, assetB, &cfg)
+		return MakeAutonomousStrategy(txButler, assetBase, assetQuote, &cfg)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)
