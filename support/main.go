@@ -30,6 +30,7 @@ func (a ByPrice) Less(i, j int) bool {
 	return PriceAsFloat(a[i].Price) < PriceAsFloat(a[j].Price)
 }
 
+// PriceAsFloat converts a string price to a float price
 func PriceAsFloat(price string) float64 {
 	p, err := strconv.ParseFloat(price, 64)
 	if err != nil {
@@ -39,6 +40,7 @@ func PriceAsFloat(price string) float64 {
 	return p
 }
 
+// AmountStringAsFloat converts a string amount to a float amount
 func AmountStringAsFloat(amount string) float64 {
 	if amount == "" {
 		return 0
@@ -51,10 +53,12 @@ func AmountStringAsFloat(amount string) float64 {
 	return p
 }
 
+// FloatEquals returns true if the two floats are equal within the epsilon of error (avoids mismatched equality because of floating point noise)
 func FloatEquals(f1 float64, f2 float64, epsilon float64) bool {
 	return math.Abs(f1-f2) < epsilon
 }
 
+// GetPrice gets the price from an offer
 func GetPrice(offer horizon.Offer) float64 {
 	if int64(offer.PriceR.D) == 0 {
 		return 0.0
@@ -62,6 +66,7 @@ func GetPrice(offer horizon.Offer) float64 {
 	return PriceAsFloat(big.NewRat(int64(offer.PriceR.N), int64(offer.PriceR.D)).FloatString(10))
 }
 
+// GetInvertedPrice gets the inverted price from an offer
 func GetInvertedPrice(offer horizon.Offer) float64 {
 	if int64(offer.PriceR.N) == 0 {
 		return 0.0
@@ -81,6 +86,7 @@ func Asset2Asset(Asset horizon.Asset) build.Asset {
 	return a
 }
 
+// Asset2Asset2 converts a build.Asset to a horizon.Asset
 func Asset2Asset2(Asset build.Asset) horizon.Asset {
 	a := horizon.Asset{}
 
@@ -96,6 +102,7 @@ func Asset2Asset2(Asset build.Asset) horizon.Asset {
 	return a
 }
 
+// String2Asset converts a code:issuer to a horizon.Asset
 func String2Asset(code string, issuer string) horizon.Asset {
 	if code == "XLM" {
 		return Asset2Asset2(build.NativeAsset())
@@ -103,6 +110,7 @@ func String2Asset(code string, issuer string) horizon.Asset {
 	return Asset2Asset2(build.CreditAsset(code, issuer))
 }
 
+// LoadAllOffers loads all the offers for a given account
 func LoadAllOffers(account string, api *horizon.Client) (offersRet []horizon.Offer, err error) {
 	// get what orders are outstanding now
 	offersPage, err := api.LoadAccountOffers(account)

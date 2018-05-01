@@ -12,6 +12,7 @@ import (
 const baseReserve = 0.5
 const operationalBuffer = 2000
 
+// TxButler helps with building and submitting transactions to the Stellar network
 type TxButler struct {
 	API                        *horizon.Client
 	SourceAccount              string
@@ -111,16 +112,19 @@ func (txb *TxButler) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 	return build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID), build.SourceAccount{AddressOrSeed: txb.TradingAccount})
 }
 
+// ModifyBuyOffer modifies a buy offer
 func (txb *TxButler) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
 	//log.Info("modifyBuyOffer: ", offer.ID, " p:", price)
 	return txb.ModifySellOffer(offer, 1/price, amount*price)
 }
 
+// ModifySellOffer modifies a sell offer
 func (txb *TxButler) ModifySellOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
 	//log.Info("modifySellOffer: ", offer.ID, " p:", amount)
 	return txb.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount)
 }
 
+// CreateSellOffer creates a sell offer
 func (txb *TxButler) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	if amount > 0 {
 		//log.Info("createSellOffer: ", price, amount)
@@ -163,6 +167,7 @@ func (txb *TxButler) lumenBalance() (float64, float64, error) {
 	return -1, -1, errors.New("could not find a native lumen balance")
 }
 
+// createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
 func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	if selling.Type == Native {
 		var incrementalXlmAmount float64
@@ -224,6 +229,7 @@ func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon
 	return &result
 }
 
+// SubmitOps submits the passed in operations to the network asynchronously in a single transaction
 func (txb *TxButler) SubmitOps(ops []build.TransactionMutator) error {
 	txb.incrementSeqNum()
 	muts := []build.TransactionMutator{
@@ -240,6 +246,7 @@ func (txb *TxButler) SubmitOps(ops []build.TransactionMutator) error {
 	return nil
 }
 
+// CreateBuyOffer creates a buy offer
 func (txb *TxButler) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	//log.Info("createBuyOffer: ", price, amount)
 	return txb.CreateSellOffer(counter, base, 1/price, amount*price)
