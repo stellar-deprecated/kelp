@@ -118,7 +118,7 @@ func (t *Terminator) run() {
 }
 
 func convertToAsset(code string, issuer string) horizon.Asset {
-	if code == "native" {
+	if code == kelp.Native {
 		return kelp.Asset2Asset2(build.NativeAsset())
 	}
 	return kelp.Asset2Asset2(build.CreditAsset(code, issuer))

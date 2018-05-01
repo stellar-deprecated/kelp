@@ -18,6 +18,9 @@ import (
 
 // Common Utilities needed by various bots
 
+// Native is the string representing the type for the native lumen asset
+const Native = "native"
+
 // ByPrice implements sort.Interface for []horizon.Offer based on the price
 type ByPrice []horizon.Offer
 
@@ -72,7 +75,7 @@ func Asset2Asset(Asset horizon.Asset) build.Asset {
 
 	a.Code = Asset.Code
 	a.Issuer = Asset.Issuer
-	if Asset.Type == "native" {
+	if Asset.Type == Native {
 		a.Native = true
 	}
 	return a
@@ -84,7 +87,7 @@ func Asset2Asset2(Asset build.Asset) horizon.Asset {
 	a.Code = Asset.Code
 	a.Issuer = Asset.Issuer
 	if Asset.Native {
-		a.Type = "native"
+		a.Type = Native
 	} else if len(a.Code) > 4 {
 		a.Type = "credit_alphanum12"
 	} else {

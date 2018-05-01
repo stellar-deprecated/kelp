@@ -152,7 +152,7 @@ func (self *TxButler) lumenBalance() (float64, float64, error) {
 	}
 
 	for _, balance := range account.Balances {
-		if balance.Asset.Type == "native" {
+		if balance.Asset.Type == Native {
 			b, e := strconv.ParseFloat(balance.Balance, 64)
 			if e != nil {
 				log.Info("error parsing native balance: ", e)
@@ -164,7 +164,7 @@ func (self *TxButler) lumenBalance() (float64, float64, error) {
 }
 
 func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
-	if selling.Type == "native" {
+	if selling.Type == Native {
 		var incrementalXlmAmount float64
 		if offer != nil {
 			offerAmt, err := self.ParseOfferAmount(offer.Amount)
@@ -304,7 +304,7 @@ func (self *TxButler) xlmExposure() (float64, error) {
 	var sum float64
 	for _, offer := range offers {
 		// only need to compute sum of selling because that's the max XLM we can give up if all our offers are taken
-		if offer.Selling.Type == "native" {
+		if offer.Selling.Type == Native {
 			offerAmt, err := self.ParseOfferAmount(offer.Amount)
 			if err != nil {
 				return -1, err

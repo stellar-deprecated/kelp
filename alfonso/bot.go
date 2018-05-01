@@ -191,7 +191,7 @@ func (b *Bot) load() {
 	for _, balance := range account.Balances {
 		if balance.Asset == b.assetA {
 			maxA = kelp.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == "native" {
+			if balance.Asset.Type == kelp.Native {
 				trustA = maxLumenTrust
 			} else {
 				trustA = kelp.AmountStringAsFloat(balance.Limit)
@@ -199,7 +199,7 @@ func (b *Bot) load() {
 			log.Infof("maxA: %.7f, trustA: %.7f\n", maxA, trustA)
 		} else if balance.Asset == b.assetB {
 			maxB = kelp.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == "native" {
+			if balance.Asset.Type == kelp.Native {
 				trustB = maxLumenTrust
 			} else {
 				trustB = kelp.AmountStringAsFloat(balance.Limit)
