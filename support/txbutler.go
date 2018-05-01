@@ -270,7 +270,8 @@ func (txb *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 	resp, err := txb.API.SubmitTransaction(txeB64)
 	if err != nil {
 		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
-			rcs, err := herr.ResultCodes()
+			var rcs *horizon.TransactionResultCodes
+			rcs, err = herr.ResultCodes()
 			if err != nil {
 				log.Info("no rc from horizon: ", err)
 				return
@@ -281,13 +282,12 @@ func (txb *TxButler) signAndSubmit(tx *build.TransactionBuilder) {
 			}
 
 			log.Info("tx code: ", rcs.TransactionCode, " opcodes: ", rcs.OperationCodes)
-
 		} else {
 			log.Info("tx failed: ", err)
 		}
-
 		return
 	}
+
 	log.Info("", resp.Hash)
 }
 
