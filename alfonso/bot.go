@@ -88,7 +88,6 @@ func (b *Bot) deleteAllOffers() {
 }
 
 // time to update the order book and possibly readjust your offers
-// TODO make sure we aren't crossing existing orders when we place these
 func (b *Bot) update() {
 	var e error
 	b.load()

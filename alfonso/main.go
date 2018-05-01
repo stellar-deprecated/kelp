@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lightyeario/kelp/support/datamodel"
-
 	"github.com/lightyeario/kelp/alfonso/strategy"
 	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/datamodel"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -20,23 +19,7 @@ Has one data feed
 Has one account it is trading on behalf of
 Has a depth curve it maintains around the price
 treasury management
-
-
-Types of data feed:
-- fixed rate
-- coinmarketcap
-- fiat
-
-
-TODO:
-- should size the orders in proportion to the amount of imbalance on either side
-- When it can't access feed to must cancle orders and wait
-
-
-
-
 */
-
 var rootCmd = &cobra.Command{
 	Use:   "alfonso",
 	Short: "Simple Market Making bot for Stellar",

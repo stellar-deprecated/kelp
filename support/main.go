@@ -59,7 +59,6 @@ func GetPrice(offer horizon.Offer) float64 {
 	return PriceAsFloat(big.NewRat(int64(offer.PriceR.N), int64(offer.PriceR.D)).FloatString(10))
 }
 
-// String returns a string represenation of `p`
 func GetInvertedPrice(offer horizon.Offer) float64 {
 	if int64(offer.PriceR.N) == 0 {
 		return 0.0
@@ -135,42 +134,6 @@ func FilterOffers(offers []horizon.Offer, sellAsset horizon.Asset, buyAsset hori
 		}
 	}
 	return
-}
-
-// look at the average price 3 target amounts back on each side.
-// TODO: remove own orders form this calculation
-func CalculateCenterPrice(assetA horizon.Asset, assetB horizon.Asset, api *horizon.Client) (float64, error) {
-	// simple for now
-	//log.Info("Center ", assetA, "  :  ", assetB)
-	result, err := api.LoadOrderBook(assetA, assetB)
-	if err != nil {
-		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
-			log.Info("error:", herr.Problem)
-		} else {
-			log.Info("Error loading Orderbook: ", err)
-		}
-
-		return 0, err
-	}
-
-	var averageAskPrice float64 = 0
-	for _, ask := range result.Asks {
-
-		averageAskPrice = PriceAsFloat(ask.Price)
-		break
-	}
-
-	var averageBidPrice float64 = 0
-	for _, bid := range result.Bids {
-		p := PriceAsFloat(bid.Price)
-
-		averageBidPrice = p
-		break
-
-	}
-
-	centerPrice := (averageAskPrice + averageBidPrice) / 2
-	return centerPrice, nil
 }
 
 // CheckConfigError checks configs for errors
