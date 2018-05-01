@@ -227,9 +227,9 @@ func (self *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizo
 func (self *TxButler) SubmitOps(ops []build.TransactionMutator) error {
 	self.incrementSeqNum()
 	muts := []build.TransactionMutator{
-		build.Sequence{self.seqNum},
+		build.Sequence{Sequence: self.seqNum},
 		self.Network,
-		build.SourceAccount{self.SourceAccount},
+		build.SourceAccount{AddressOrSeed: self.SourceAccount},
 	}
 	muts = append(muts, ops...)
 	tx := build.Transaction(muts...)
