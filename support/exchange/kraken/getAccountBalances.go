@@ -4,8 +4,8 @@ import (
 	"reflect"
 
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/lightyeario/kelp/support/exchange/assets"
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // GetAccountBalances impl.

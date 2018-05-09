@@ -1,6 +1,6 @@
 package orderbook
 
-import "github.com/lightyeario/kelp/support/exchange/assets"
+import "github.com/lightyeario/kelp/support/exchange/api/assets"
 
 // OrderBook encapsulates the concept of an orderbook on a market
 type OrderBook struct {

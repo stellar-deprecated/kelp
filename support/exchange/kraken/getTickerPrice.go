@@ -1,13 +1,13 @@
 package kraken
 
 import (
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // GetTickerPrice impl.
-func (k krakenExchange) GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]exchange.Ticker, error) {
+func (k krakenExchange) GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]api.Ticker, error) {
 	pairsMap, e := assets.TradingPairs2Strings(k.assetConverter, k.delimiter, pairs)
 	if e != nil {
 		return nil, e
@@ -18,10 +18,10 @@ func (k krakenExchange) GetTickerPrice(pairs []assets.TradingPair) (map[assets.T
 		return nil, e
 	}
 
-	priceResult := map[assets.TradingPair]exchange.Ticker{}
+	priceResult := map[assets.TradingPair]api.Ticker{}
 	for _, p := range pairs {
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
-		priceResult[p] = exchange.Ticker{
+		priceResult[p] = api.Ticker{
 			AskPrice:  number.MustFromString(pairTickerInfo.Ask[0], k.precision),
 			AskVolume: number.MustFromString(pairTickerInfo.Ask[1], k.precision),
 			BidPrice:  number.MustFromString(pairTickerInfo.Bid[0], k.precision),

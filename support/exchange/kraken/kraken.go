@@ -2,12 +2,12 @@ package kraken
 
 import (
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
 )
 
 // ensure that krakenExchange conforms to the Exchange interface
-var _ exchange.Exchange = krakenExchange{}
+var _ api.Exchange = krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
@@ -20,7 +20,7 @@ type krakenExchange struct {
 
 // MakeKrakenExchange is a factory method to make the kraken exchange
 // TODO 2, should take in config file for kraken api keys
-func MakeKrakenExchange() exchange.Exchange {
+func MakeKrakenExchange() api.Exchange {
 	return &krakenExchange{
 		assetConverter: assets.KrakenAssetConverter,
 		api:            krakenapi.New("", ""),

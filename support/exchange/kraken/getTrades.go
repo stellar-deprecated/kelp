@@ -3,19 +3,19 @@ package kraken
 import (
 	"errors"
 
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
 	"github.com/Beldur/kraken-go-api-client"
 
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
-	"github.com/lightyeario/kelp/support/exchange/dates"
-	"github.com/lightyeario/kelp/support/exchange/number"
-	"github.com/lightyeario/kelp/support/exchange/trades"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/dates"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // GetTrades impl.
-func (k krakenExchange) GetTrades(pair *assets.TradingPair, maybeCursor interface{}) (*exchange.TradesResult, error) {
+func (k krakenExchange) GetTrades(pair *assets.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
 	if maybeCursor != nil {
 		mc := maybeCursor.(int64)
 		return k.getTrades(pair, &mc)
@@ -23,7 +23,7 @@ func (k krakenExchange) GetTrades(pair *assets.TradingPair, maybeCursor interfac
 	return k.getTrades(pair, nil)
 }
 
-func (k krakenExchange) getTrades(pair *assets.TradingPair, maybeCursor *int64) (*exchange.TradesResult, error) {
+func (k krakenExchange) getTrades(pair *assets.TradingPair, maybeCursor *int64) (*api.TradesResult, error) {
 	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
@@ -39,7 +39,7 @@ func (k krakenExchange) getTrades(pair *assets.TradingPair, maybeCursor *int64) 
 		return nil, e
 	}
 
-	tradesResult := &exchange.TradesResult{
+	tradesResult := &api.TradesResult{
 		Cursor: tradesResp.Last,
 		Trades: []trades.Trade{},
 	}

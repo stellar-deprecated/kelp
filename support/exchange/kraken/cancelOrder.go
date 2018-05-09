@@ -1,8 +1,8 @@
 package kraken
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
-	"github.com/lightyeario/kelp/support/exchange/trades"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/trades"
 	"github.com/stellar/go/support/log"
 )
 

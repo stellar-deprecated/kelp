@@ -3,8 +3,8 @@ package orderbook
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/dates"
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api/dates"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // OpenOrder represents an open order for a trading account

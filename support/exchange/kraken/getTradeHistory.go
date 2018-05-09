@@ -3,17 +3,17 @@ package kraken
 import (
 	"strconv"
 
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
-	"github.com/lightyeario/kelp/support/exchange/dates"
-	"github.com/lightyeario/kelp/support/exchange/number"
-	"github.com/lightyeario/kelp/support/exchange/trades"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/dates"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // GetTradeHistory impl.
-func (k krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*exchange.TradeHistoryResult, error) {
+func (k krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
 	var mcs *int64
 	if maybeCursorStart != nil {
 		i := maybeCursorStart.(int64)
@@ -29,7 +29,7 @@ func (k krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCurso
 	return k.getTradeHistory(mcs, mce)
 }
 
-func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd *int64) (*exchange.TradeHistoryResult, error) {
+func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
 	input := map[string]string{}
 	if maybeCursorStart != nil {
 		input["start"] = strconv.FormatInt(*maybeCursorStart, 10)
@@ -45,7 +45,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 	krakenResp := resp.(map[string]interface{})
 	krakenTrades := krakenResp["trades"].(map[string]interface{})
 
-	res := exchange.TradeHistoryResult{Trades: []trades.Trade{}}
+	res := api.TradeHistoryResult{Trades: []trades.Trade{}}
 	for _, v := range krakenTrades {
 		m := v.(map[string]interface{})
 		_txid := m["ordertxid"].(string)

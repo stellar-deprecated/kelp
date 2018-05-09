@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lightyeario/kelp/support"
-
-	"github.com/lightyeario/kelp/support/exchange/assets"
+	"github.com/lightyeario/kelp/support/exchange"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
 )
 
 // priceFeed allows you to fetch the price of a feed
@@ -26,7 +25,7 @@ func priceFeedFactory(feedType string, url string) priceFeed {
 	case "exchange":
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
-		exchange := kelp.ExchangeFactory(urlParts[0])
+		exchange := exchange.ExchangeFactory(urlParts[0])
 		tradingPair := assets.TradingPair{
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
 			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),

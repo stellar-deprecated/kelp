@@ -3,7 +3,7 @@ package strategy
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 
 	"github.com/lightyeario/kelp/alfonso/strategy/sideStrategy"
 	kelp "github.com/lightyeario/kelp/support"

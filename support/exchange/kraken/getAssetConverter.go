@@ -1,7 +1,7 @@
 package kraken
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
 )
 
 // GetAssetConverter impl.

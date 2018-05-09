@@ -1,7 +1,7 @@
 package sideStrategy
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )

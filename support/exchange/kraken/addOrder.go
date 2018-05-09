@@ -3,7 +3,7 @@ package kraken
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 )
 
 const pricePrecision = 5

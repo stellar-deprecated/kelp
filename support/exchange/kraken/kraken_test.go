@@ -5,18 +5,18 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/lightyeario/kelp/support/exchange/trades"
+	"github.com/lightyeario/kelp/support/exchange/api/trades"
 
-	"github.com/lightyeario/kelp/support/exchange/number"
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
 	"github.com/stretchr/testify/assert"
 )
 
-var testKrakenExchange exchange.Exchange = krakenExchange{
+var testKrakenExchange api.Exchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",

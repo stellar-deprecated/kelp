@@ -1,12 +1,13 @@
 package strategy
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/number"
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
+	"github.com/lightyeario/kelp/support/exchange"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
 	"github.com/lightyeario/kelp/support"
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -29,7 +30,7 @@ type MirrorStrategy struct {
 	baseAsset     *horizon.Asset
 	quoteAsset    *horizon.Asset
 	config        *MirrorConfig
-	exchange      exchange.Exchange
+	exchange      api.Exchange
 }
 
 // ensure this implements Strategy
@@ -37,7 +38,7 @@ var _ Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
 func MakeMirrorStrategy(txButler *kelp.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
-	exchange := kelp.ExchangeFactory(config.EXCHANGE)
+	exchange := exchange.ExchangeFactory(config.EXCHANGE)
 	orderbookPair := &assets.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),

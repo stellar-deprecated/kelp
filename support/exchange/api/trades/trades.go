@@ -3,9 +3,9 @@ package trades
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // Trade represents a trade on an exchange

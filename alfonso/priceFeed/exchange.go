@@ -3,20 +3,20 @@ package priceFeed
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/assets"
+	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
 )
 
 // encapsulates a priceFeed from an exchange
 type exchangeFeed struct {
-	exchange *exchange.Exchange
+	exchange *api.Exchange
 	pairs    []assets.TradingPair
 }
 
 // ensure that it implements priceFeed
 var _ priceFeed = &exchangeFeed{}
 
-func newExchangeFeed(exchange *exchange.Exchange, pair *assets.TradingPair) *exchangeFeed {
+func newExchangeFeed(exchange *api.Exchange, pair *assets.TradingPair) *exchangeFeed {
 	return &exchangeFeed{
 		exchange: exchange,
 		pairs:    []assets.TradingPair{*pair},

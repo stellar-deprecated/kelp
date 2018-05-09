@@ -5,7 +5,7 @@ import (
 
 	"github.com/lightyeario/kelp/alfonso/strategy/level"
 
-	"github.com/lightyeario/kelp/support/exchange/number"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
 
 	kelp "github.com/lightyeario/kelp/support"
 	"github.com/stellar/go/build"

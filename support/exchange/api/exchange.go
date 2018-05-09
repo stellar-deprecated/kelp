@@ -1,10 +1,10 @@
-package exchange
+package api
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/assets"
-	"github.com/lightyeario/kelp/support/exchange/number"
-	"github.com/lightyeario/kelp/support/exchange/orderbook"
-	"github.com/lightyeario/kelp/support/exchange/trades"
+	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
+	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // Ticker encapsulates all the data for a given Trading Pair
