@@ -17,7 +17,7 @@ type priceFeed interface {
 func priceFeedFactory(feedType string, url string) priceFeed {
 	switch feedType {
 	case "crypto":
-		return newCMCFeed(url)
+		return NewCMCFeed(url)
 	case "fiat":
 		return newFiatFeed(url)
 	case "fixed":

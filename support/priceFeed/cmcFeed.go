@@ -34,22 +34,29 @@ type cmcAPIReturn struct {
 	Price string `json:"price_usd"`
 }
 
-type cmcFeed struct {
+// CmcFeed represents the feed for CoinmarketCap
+type CmcFeed struct {
 	url    string
 	client http.Client
 }
 
 // ensure that it implements priceFeed
-var _ priceFeed = &cmcFeed{}
+var _ priceFeed = &CmcFeed{}
 
-func newCMCFeed(url string) *cmcFeed {
-	m := new(cmcFeed)
+// NewCMCFeed creates a new CMC Feed from a URL
+func NewCMCFeed(url string) *CmcFeed {
+	m := new(CmcFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
 	return m
 }
 
-func (c *cmcFeed) getPrice() (float64, error) {
+// GetPrice merely exposes the getPrice function
+func (c *CmcFeed) GetPrice() (float64, error) {
+	return c.getPrice()
+}
+
+func (c *CmcFeed) getPrice() (float64, error) {
 	var retA []cmcAPIReturn
 	err := getJSON(c.client, c.url, &retA)
 	if err != nil {
