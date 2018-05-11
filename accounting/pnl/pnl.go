@@ -54,6 +54,7 @@ func getTotalNativeValue(address string, cmcRef string) float64 {
 	account := loadAccount(client, address)
 
 	nativeBal := 0.0
+	cryptoBal := 0.0
 	cryptoNativeBal := 0.0
 	for _, b := range account.Balances {
 		bal, e := strconv.ParseFloat(b.Balance, 64)
@@ -64,6 +65,8 @@ func getTotalNativeValue(address string, cmcRef string) float64 {
 		if b.Asset.Type == native {
 			nativeBal = bal
 		} else {
+			cryptoBal = bal
+
 			nativePriceInUSD, e := makeCmcFeed("stellar").GetPrice()
 			if e != nil {
 				log.Fatal(e)
@@ -79,7 +82,7 @@ func getTotalNativeValue(address string, cmcRef string) float64 {
 	}
 	totalNativeValue := nativeBal + cryptoNativeBal
 
-	log.Printf("%s/%s: %.7f XLM\n", address, cmcRef, totalNativeValue)
+	log.Printf("%s: native (%.7f) + %s (%.7f) = %.7f XLM\n", address, nativeBal, cmcRef, cryptoBal, totalNativeValue)
 	return totalNativeValue
 }
 
