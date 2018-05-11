@@ -1,7 +1,7 @@
 package level
 
 import (
-	"github.com/lightyeario/kelp/alfonso/priceFeed"
+	"github.com/lightyeario/kelp/support/priceFeed"
 	"github.com/stellar/go/support/log"
 )
 

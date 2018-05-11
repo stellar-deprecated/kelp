@@ -1,10 +1,10 @@
 package strategy
 
 import (
-	"github.com/lightyeario/kelp/alfonso/priceFeed"
 	"github.com/lightyeario/kelp/alfonso/strategy/level"
 	"github.com/lightyeario/kelp/alfonso/strategy/sideStrategy"
 	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/priceFeed"
 	"github.com/stellar/go/clients/horizon"
 )
 
