@@ -4,10 +4,12 @@ import (
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	tApi "github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // ensure that krakenExchange conforms to the Exchange interface
 var _ api.Exchange = krakenExchange{}
+var _ tApi.Account = krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {

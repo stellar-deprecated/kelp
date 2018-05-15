@@ -11,12 +11,11 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/assets"
 	"github.com/stretchr/testify/assert"
 )
 
-var testKrakenExchange api.Exchange = krakenExchange{
+var testKrakenExchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",

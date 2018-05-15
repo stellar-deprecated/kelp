@@ -34,8 +34,6 @@ type Exchange interface {
 
 	GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]Ticker, error)
 
-	GetAccountBalances(assetList []assets.Asset) (map[assets.Asset]number.Number, error)
-
 	GetOrderBook(pair *assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
 
 	GetTrades(pair *assets.TradingPair, maybeCursor interface{}) (*TradesResult, error)
