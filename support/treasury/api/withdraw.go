@@ -5,6 +5,11 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
+// WithdrawInfo is the result of a GetWithdrawInfo call
+type WithdrawInfo struct {
+	amountToReceive *number.Number // amount that you will receive after any fees is taken (excludes fees charged on the deposit side)
+}
+
 // WithdrawAPI is defined by anything where you can withdraw assets. Examples of this are Exchange and Anchor
 type WithdrawAPI interface {
 	/*
@@ -13,14 +18,10 @@ type WithdrawAPI interface {
 			amountToWithdraw - amount you want deducted from your account
 			address - address you want to withdraw to
 		Output:
-			amountToReceive - amount that you will receive after any fees is taken (excludes fees charged on the deposit side)
-			e - any error
+			WithdrawInfo - details on how to perform the withdrawal
+			error - any error
 	*/
-	GetWithdrawInfo(
-		asset assets.Asset,
-		amountToWithdraw *number.Number,
-		address string,
-	) (amountToReceive *number.Number, e error)
+	GetWithdrawInfo(asset assets.Asset, amountToWithdraw *number.Number, address string) (*WithdrawInfo, error)
 
 	/*
 		Input:
@@ -28,7 +29,7 @@ type WithdrawAPI interface {
 			amountToWithdraw - amount you want deducted from your account (fees will be deducted from here, use GetWithdrawInfo for fee estimate)
 			address - address you want to withdraw to
 		Output:
-			e - any error
+			error - any error
 	*/
 	WithdrawFunds(
 		asset assets.Asset,
