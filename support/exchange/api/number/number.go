@@ -27,6 +27,11 @@ func (n Number) AsString() string {
 	return strconv.FormatFloat(n.AsFloat(), 'f', int(n.Precision()), 64)
 }
 
+// String is the Stringer interface impl.
+func (n Number) String() string {
+	return n.AsString()
+}
+
 // FromFloat makes a Number from a float
 func FromFloat(f float64, precision int8) *Number {
 	return &Number{
