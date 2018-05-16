@@ -18,9 +18,9 @@ type WithdrawAPI interface {
 	*/
 	GetWithdrawInfo(
 		asset assets.Asset,
-		amountToWithdraw number.Number,
+		amountToWithdraw *number.Number,
 		address string,
-	) (amountToReceive number.Number, e error)
+	) (amountToReceive *number.Number, e error)
 
 	/*
 		Input:
@@ -32,7 +32,7 @@ type WithdrawAPI interface {
 	*/
 	WithdrawFunds(
 		asset assets.Asset,
-		amountToWithdraw number.Number,
+		amountToWithdraw *number.Number,
 		address string,
 	) error
 }
