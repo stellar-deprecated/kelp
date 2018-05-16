@@ -143,20 +143,20 @@ func (k krakenExchange) getDepositAddress(asset string, method string, genAddres
 
 func parseDepositAddress(m map[string]interface{}) (*depositAddress, error) {
 	// address
-	address, e := parseString(m, "address")
+	address, e := parseString(m, "address", "DepositAddresses")
 	if e != nil {
 		return nil, e
 	}
 
 	// expiretm
-	expireN, e := parseNumber(m, "expiretm")
+	expireN, e := parseNumber(m, "expiretm", "DepositAddresses")
 	if e != nil {
 		return nil, e
 	}
 	expireTs := int64(expireN.AsFloat())
 
 	// new
-	isNew, e := parseBool(m, "new")
+	isNew, e := parseBool(m, "new", "DepositAddresses")
 	if e != nil {
 		if !strings.HasPrefix(e.Error(), prefixFieldNotFound) {
 			return nil, e
@@ -174,17 +174,17 @@ func parseDepositAddress(m map[string]interface{}) (*depositAddress, error) {
 
 func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	// method
-	method, e := parseString(m, "method")
+	method, e := parseString(m, "method", "DepositMethods")
 	if e != nil {
 		return nil, e
 	}
 
 	// limit
 	var limit *number.Number
-	limB, e := parseBool(m, "limit")
+	limB, e := parseBool(m, "limit", "DepositMethods")
 	if e != nil {
 		// limit is special as it can be a boolean or a number
-		limit, e = parseNumber(m, "limit")
+		limit, e = parseNumber(m, "limit", "DepositMethods")
 		if e != nil {
 			return nil, e
 		}
@@ -196,7 +196,7 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// fee
-	fee, e := parseNumber(m, "fee")
+	fee, e := parseNumber(m, "fee", "DepositMethods")
 	if e != nil {
 		if !strings.HasPrefix(e.Error(), prefixFieldNotFound) {
 			return nil, e
@@ -206,7 +206,7 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// gen-address
-	genAddress, e := parseBool(m, "gen-address")
+	genAddress, e := parseBool(m, "gen-address", "DepositMethods")
 	if e != nil {
 		return nil, e
 	}
@@ -230,7 +230,11 @@ func checkKeyPresent(m map[string]interface{}, key string) (interface{}, error) 
 	return v, nil
 }
 
-func parseString(m map[string]interface{}, key string) (string, error) {
+func makeParseError(field string, dataType string, methodAPI string, value interface{}) error {
+	return fmt.Errorf("could not parse the field '%s' as a %s in the response from %s: value=%v, type=%s", field, dataType, methodAPI, value, reflect.TypeOf(value))
+}
+
+func parseString(m map[string]interface{}, key string, methodAPI string) (string, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return "", e
@@ -238,13 +242,13 @@ func parseString(m map[string]interface{}, key string) (string, error) {
 
 	s, ok := v.(string)
 	if !ok {
-		return "", fmt.Errorf("could not parse the field '%s' as a string in the response from PrepareDeposit: value=%v, type=%s", key, v, reflect.TypeOf(v))
+		return "", makeParseError(key, "string", methodAPI, v)
 	}
 
 	return s, nil
 }
 
-func parseBool(m map[string]interface{}, key string) (bool, error) {
+func parseBool(m map[string]interface{}, key string, methodAPI string) (bool, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return false, e
@@ -252,13 +256,13 @@ func parseBool(m map[string]interface{}, key string) (bool, error) {
 
 	b, ok := v.(bool)
 	if !ok {
-		return false, fmt.Errorf("could not parse the field '%s' as a bool in the response from PrepareDeposit: value=%v, type=%s", key, v, reflect.TypeOf(v))
+		return false, makeParseError(key, "bool", methodAPI, v)
 	}
 
 	return b, nil
 }
 
-func parseNumber(m map[string]interface{}, key string) (*number.Number, error) {
+func parseNumber(m map[string]interface{}, key string, methodAPI string) (*number.Number, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return nil, e
@@ -266,29 +270,29 @@ func parseNumber(m map[string]interface{}, key string) (*number.Number, error) {
 
 	switch v.(type) {
 	case string:
-		return parseStringAsNumber(m, key)
+		return parseStringAsNumber(m, key, methodAPI)
 	case float64:
-		return parseFloatAsNumber(m, key)
+		return parseFloatAsNumber(m, key, methodAPI)
 	default:
-		return nil, fmt.Errorf("could not parse the field '%s' as a number in the response from PrepareDeposit: value=%v, type=%s", key, v, reflect.TypeOf(v))
+		return nil, makeParseError(key, "number", methodAPI, v)
 	}
 }
 
-func parseStringAsNumber(m map[string]interface{}, key string) (*number.Number, error) {
-	s, e := parseString(m, key)
+func parseStringAsNumber(m map[string]interface{}, key string, methodAPI string) (*number.Number, error) {
+	s, e := parseString(m, key, methodAPI)
 	if e != nil {
 		return nil, e
 	}
 
 	n, e := number.FromString(s, numberPrecision)
 	if e != nil {
-		return nil, fmt.Errorf("could not convert the string field '%s' to a number in the response from PrepareDeposit: value=%v, error=%s", key, s, e)
+		return nil, fmt.Errorf("unable to convert the string field '%s' to a number in the response from %s: value=%v, error=%s", key, methodAPI, s, e)
 	}
 
 	return n, nil
 }
 
-func parseFloatAsNumber(m map[string]interface{}, key string) (*number.Number, error) {
+func parseFloatAsNumber(m map[string]interface{}, key string, methodAPI string) (*number.Number, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return nil, e
@@ -296,7 +300,7 @@ func parseFloatAsNumber(m map[string]interface{}, key string) (*number.Number, e
 
 	f, ok := v.(float64)
 	if !ok {
-		return nil, fmt.Errorf("could not parse the field '%s' as a float in the response from PrepareDeposit: value=%v, type=%s", key, v, reflect.TypeOf(v))
+		return nil, makeParseError(key, "float", methodAPI, v)
 	}
 
 	return number.FromFloat(f, numberPrecision), nil
