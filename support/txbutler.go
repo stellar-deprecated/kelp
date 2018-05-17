@@ -10,7 +10,6 @@ import (
 )
 
 const baseReserve = 0.5
-const operationalBuffer = 2000
 
 // TxButler helps with building and submitting transactions to the Stellar network
 type TxButler struct {
@@ -21,6 +20,7 @@ type TxButler struct {
 	TradingSeed                string
 	Network                    build.Network
 	FractionalReserveMagnifier int8
+	operationalBuffer          float64
 	seqNum                     uint64
 	reloadSeqNum               bool
 
@@ -37,6 +37,7 @@ func MakeTxButler(
 	tradingAccount string,
 	network build.Network,
 	fractionalReserveMagnifier int8,
+	operationalBuffer float64,
 ) *TxButler {
 	txb := &TxButler{
 		API:                        client,
@@ -46,6 +47,7 @@ func MakeTxButler(
 		TradingAccount:             tradingAccount,
 		Network:                    network,
 		FractionalReserveMagnifier: fractionalReserveMagnifier,
+		operationalBuffer:          operationalBuffer,
 	}
 
 	//log.Info("init txbutler")
@@ -198,11 +200,11 @@ func (txb *TxButler) createModifySellOffer(offer *horizon.Offer, selling horizon
 		}
 
 		additionalExposure := incrementalXlmAmount >= 0
-		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(txb.FractionalReserveMagnifier)) > (bal - minAccountBal - operationalBuffer)
+		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(txb.FractionalReserveMagnifier)) > (bal - minAccountBal - txb.operationalBuffer)
 		if additionalExposure && possibleTerminalExposure {
 			log.Info("not placing offer because we run the risk of running out of lumens | xlmExposure: ", xlmExposure,
 				" | incrementalXlmAmount: ", incrementalXlmAmount, " | bal: ", bal, " | minAccountBal: ", minAccountBal,
-				" | operationalBuffer: ", operationalBuffer, " | fractionalReserveMagnifier: ", txb.FractionalReserveMagnifier)
+				" | operationalBuffer: ", txb.operationalBuffer, " | fractionalReserveMagnifier: ", txb.FractionalReserveMagnifier)
 			return nil
 		}
 	}

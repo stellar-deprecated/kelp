@@ -52,6 +52,7 @@ func run(cmd *cobra.Command, args []string) {
 		*configFile.tradingAccount,
 		kelp.ParseNetwork(configFile.HORIZON_URL),
 		-1, // not needed here
+		-1, // not needed here
 	)
 	terminator := MakeTerminator(client, txB, *configFile.tradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)
 	// --- end initialization of objects ----
