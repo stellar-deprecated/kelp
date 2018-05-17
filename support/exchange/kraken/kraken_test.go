@@ -20,6 +20,7 @@ var testKrakenExchange = krakenExchange{
 	api:            krakenapi.New("", ""),
 	delimiter:      "",
 	precision:      8,
+	withdrawKeys:   asset2Address2Key{},
 	isSimulated:    true,
 }
 
@@ -161,19 +162,21 @@ func TestCancelOrder(t *testing.T) {
 }
 
 func TestPrepareDeposit(t *testing.T) {
-	var ke = krakenExchange{
-		assetConverter: assets.KrakenAssetConverter,
-		api:            krakenapi.New("", ""),
-		delimiter:      "",
-		precision:      8,
-		isSimulated:    true,
-	}
-
-	result, e := ke.PrepareDeposit(assets.BTC, number.FromFloat(1.0, 7))
+	result, e := testKrakenExchange.PrepareDeposit(assets.BTC, number.FromFloat(1.0, 7))
 	if !assert.NoError(t, e) {
 		return
 	}
 
 	fmt.Printf("fee=%v, address=%v, expireTs=%v\n", result.Fee, result.Address, result.ExpireTs)
+	assert.Fail(t, "force fail")
+}
+
+func TestGetWithdrawInfo(t *testing.T) {
+	result, e := testKrakenExchange.GetWithdrawInfo(assets.BTC, number.FromFloat(1.0, 7), "")
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	fmt.Printf("amountToReceive=%v\n", result.AmountToReceive.AsFloat())
 	assert.Fail(t, "force fail")
 }

@@ -23,7 +23,7 @@ func (k krakenExchange) PrepareDeposit(asset assets.Asset, amount *number.Number
 	}
 
 	if dm.limit != nil && dm.limit.AsFloat() < amount.AsFloat() {
-		return nil, treasury.MakeErrAmountAboveLimit(amount, dm.limit)
+		return nil, treasury.MakeErrDepositAmountAboveLimit(amount, dm.limit)
 	}
 
 	// get any unused address on the account or generate a new address if no existing unused address

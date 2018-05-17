@@ -22,17 +22,17 @@ type DepositAPI interface {
 			amount - amount you want to deposit
 		Output:
 			PrepareDepositResult - contains the deposit instructions
-			error - ErrAmountAboveLimit, ErrTooManyDepositAddresses, or any other error
+			error - ErrDepositAmountAboveLimit, ErrTooManyDepositAddresses, or any other error
 	*/
 	PrepareDeposit(asset assets.Asset, amount *number.Number) (*PrepareDepositResult, error)
 }
 
-// ErrAmountAboveLimit error type
-type ErrAmountAboveLimit error
+// ErrDepositAmountAboveLimit error type
+type ErrDepositAmountAboveLimit error
 
-// MakeErrAmountAboveLimit is a factory method
-func MakeErrAmountAboveLimit(amount *number.Number, limit *number.Number) ErrAmountAboveLimit {
-	return fmt.Errorf("amount (%s) is greater than limit (%s)", amount.AsString(), limit.AsString())
+// MakeErrDepositAmountAboveLimit is a factory method
+func MakeErrDepositAmountAboveLimit(amount *number.Number, limit *number.Number) ErrDepositAmountAboveLimit {
+	return fmt.Errorf("deposit amount (%s) is greater than limit (%s)", amount.AsString(), limit.AsString())
 }
 
 // ErrTooManyDepositAddresses error type
