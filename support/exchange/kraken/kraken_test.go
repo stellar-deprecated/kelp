@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 
 	"github.com/lightyeario/kelp/support/exchange/api/number"
@@ -15,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testKrakenExchange = krakenExchange{
+var testKrakenExchange api.Exchange = krakenExchange{
 	assetConverter: assets.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",

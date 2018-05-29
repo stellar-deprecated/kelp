@@ -13,6 +13,7 @@ import (
 var _ api.Exchange = krakenExchange{}
 var _ tApi.Account = krakenExchange{}
 var _ tApi.DepositAPI = krakenExchange{}
+var _ tApi.WithdrawAPI = krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
