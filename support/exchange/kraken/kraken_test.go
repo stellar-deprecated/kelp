@@ -180,3 +180,13 @@ func TestGetWithdrawInfo(t *testing.T) {
 	fmt.Printf("amountToReceive=%v\n", result.AmountToReceive.AsFloat())
 	assert.Fail(t, "force fail")
 }
+
+func TestWithdrawFunds(t *testing.T) {
+	result, e := testKrakenExchange.WithdrawFunds(assets.XLM, number.FromFloat(0.0000001, 7), "")
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	fmt.Printf("refid=%v\n", result.WithdrawalID)
+	assert.Fail(t, "force fail")
+}

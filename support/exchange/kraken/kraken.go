@@ -29,12 +29,12 @@ type asset2Address2Key map[assets.Asset]map[string]string
 func (m asset2Address2Key) getKey(asset assets.Asset, address string) (string, error) {
 	address2Key, ok := m[asset]
 	if !ok {
-		return "", fmt.Errorf("asset is not registered: %v", asset)
+		return "", fmt.Errorf("asset is not registered in asset2Address2Key: %v", asset)
 	}
 
 	key, ok := address2Key[address]
 	if !ok {
-		return "", fmt.Errorf("address is not registered: %v (asset = %v)", address, asset)
+		return "", fmt.Errorf("address is not registered in asset2Address2Key: %v (asset = %v)", address, asset)
 	}
 
 	return key, nil

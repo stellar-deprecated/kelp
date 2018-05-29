@@ -12,6 +12,11 @@ type WithdrawInfo struct {
 	AmountToReceive *number.Number // amount that you will receive after any fees is taken (excludes fees charged on the deposit side)
 }
 
+// WithdrawFunds is the result of a WithdrawFunds call
+type WithdrawFunds struct {
+	WithdrawalID string
+}
+
 // WithdrawAPI is defined by anything where you can withdraw assets. Examples of this are Exchange and Anchor
 type WithdrawAPI interface {
 	/*
@@ -31,13 +36,14 @@ type WithdrawAPI interface {
 			amountToWithdraw - amount you want deducted from your account (fees will be deducted from here, use GetWithdrawInfo for fee estimate)
 			address - address you want to withdraw to
 		Output:
+		    WithdrawFunds - result of the withdrawal
 			error - any error
 	*/
 	WithdrawFunds(
 		asset assets.Asset,
 		amountToWithdraw *number.Number,
 		address string,
-	) error
+	) (*WithdrawFunds, error)
 }
 
 // ErrWithdrawAmountAboveLimit error type

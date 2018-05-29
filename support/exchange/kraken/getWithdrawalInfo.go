@@ -37,10 +37,10 @@ func (k krakenExchange) GetWithdrawInfo(
 		return nil, e
 	}
 
-	return parseResponse(resp, amountToWithdraw)
+	return parseWithdrawInfoResponse(resp, amountToWithdraw)
 }
 
-func parseResponse(resp interface{}, amountToWithdraw *number.Number) (*treasury.WithdrawInfo, error) {
+func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *number.Number) (*treasury.WithdrawInfo, error) {
 	switch m := resp.(type) {
 	case map[string]interface{}:
 		info, e := parseWithdrawInfo(m)
