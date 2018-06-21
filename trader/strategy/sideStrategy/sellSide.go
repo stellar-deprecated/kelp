@@ -3,7 +3,7 @@ package sideStrategy
 import (
 	"math"
 
-	"github.com/lightyeario/kelp/alfonso/strategy/level"
+	"github.com/lightyeario/kelp/trader/strategy/level"
 
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 

@@ -5,9 +5,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/lightyeario/kelp/alfonso/strategy"
 	kelp "github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/datamodel"
+	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"

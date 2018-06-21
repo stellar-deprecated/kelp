@@ -5,8 +5,8 @@ import (
 
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 
-	"github.com/lightyeario/kelp/alfonso/strategy/sideStrategy"
 	kelp "github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/errors"

@@ -1,9 +1,9 @@
 package strategy
 
 import (
-	"github.com/lightyeario/kelp/alfonso/strategy/level"
-	"github.com/lightyeario/kelp/alfonso/strategy/sideStrategy"
 	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/trader/strategy/level"
+	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
 )
 

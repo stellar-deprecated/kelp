@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lightyeario/kelp/alfonso/strategy"
 	"github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/datamodel"
+	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -21,13 +21,13 @@ Has a depth curve it maintains around the price
 treasury management
 */
 var rootCmd = &cobra.Command{
-	Use:   "alfonso",
+	Use:   "trader",
 	Short: "Simple Market Making bot for Stellar",
 }
-var botConfigPath = rootCmd.PersistentFlags().String("botConf", "./alfonso.cfg", "bot's basic config file path")
+var botConfigPath = rootCmd.PersistentFlags().String("botConf", "./trader.cfg", "trading bot's basic config file path")
 var botConfig BotConfig
 var stratType = rootCmd.PersistentFlags().String("stratType", "simple", "type of strategy to run")
-var stratConfigPath = rootCmd.PersistentFlags().String("stratConf", "./alfonso.cfg", "strategy config file path")
+var stratConfigPath = rootCmd.PersistentFlags().String("stratConf", "./trader.cfg", "strategy config file path")
 var fractionalReserveMagnifier = rootCmd.PersistentFlags().Int8("fractionalReserveMultiplier", 1, "(optional) fractional multiplier for XLM reserves")
 var operationalBuffer = rootCmd.PersistentFlags().Float64("operationalBuffer", 2000, "(optional) operational buffer for min number of lumens needed in XLM reserves")
 
@@ -42,7 +42,7 @@ func main() {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	log.Info("Starting alfonso: v0.2")
+	log.Info("Starting trader: v0.5")
 	err := config.Read(*botConfigPath, &botConfig)
 	kelp.CheckConfigError(botConfig, err)
 	err = botConfig.Init()
