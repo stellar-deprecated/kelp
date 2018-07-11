@@ -1,6 +1,6 @@
 # Market Making For a Stablecoin Using the BuySell Strategy
 
-This guide shows you how to setup a `trader` bot using the [buysell](../../../trader/strategy/simple.go) strategy. In this case we’re configuring it to allow us to perform market making for a stablecoin against another asset, specifically XLM. 
+This guide shows you how to setup a `trader` bot using the [buysell](../../../trader/strategy/buysell.go) strategy. In this case we’re configuring it to allow us to perform market making for a stablecoin against another asset, specifically XLM. 
 
 This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../support/priceFeed/pricefeed.go).
 
@@ -15,7 +15,7 @@ If you have downloaded the correct version for your platform you can run it dire
 
 ## BuySell Strategy Configuration
 
-Use the [sample configuration file for the buysell strategy](../../configs/trader/sample_simple.cfg) as a template. The file has data pre-filled. We will walkthrough the configuration parameters below.
+Use the [sample configuration file for the buysell strategy](../../configs/trader/sample_buysell.cfg) as a template. The file has data pre-filled. We will walkthrough the configuration parameters below.
 
 ### Price Feeds
 
@@ -50,6 +50,6 @@ If you want to use a different trading strategy, you can change the `stratType` 
 
 # Next Steps
 
-After completing this guide successfully, you should have some experience running the `trader` bot using the [**buysell strategy**](../../../trader/strategy/simple.go).
+After completing this guide successfully, you should have some experience running the `trader` bot using the [**buysell strategy**](../../../trader/strategy/buysell.go).
 
-You can play around with the configuration parameters of the [sample configuration file for the buysell strategy](../../configs/trader/sample_simple.cfg), look at some of the other strategies that are available out-of-the-box or [dig into the code](../../../trader/strategy) and _create your own strategy_.
+You can play around with the configuration parameters of the [sample configuration file for the buysell strategy](../../configs/trader/sample_buysell.cfg), look at some of the other strategies that are available out-of-the-box or [dig into the code](../../../trader/strategy) and _create your own strategy_.

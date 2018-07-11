@@ -7,8 +7,8 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
-// AutonomousConfig contains the configuration params for this Strategy
-type AutonomousConfig struct {
+// BalancedConfig contains the configuration params for this Strategy
+type BalancedConfig struct {
 	PRICE_TOLERANCE                 float64 `valid:"-"`
 	AMOUNT_TOLERANCE                float64 `valid:"-"`
 	SPREAD                          float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
@@ -24,18 +24,18 @@ type AutonomousConfig struct {
 	VIRTUAL_BALANCE_QUOTE           float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
 }
 
-// MakeAutonomousStrategy is a factory method for AutonomousStrategy
-func MakeAutonomousStrategy(
+// MakeBalancedStrategy is a factory method for BalancedStrategy
+func MakeBalancedStrategy(
 	txButler *kelp.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	config *AutonomousConfig,
+	config *BalancedConfig,
 ) Strategy {
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
 		txButler,
 		assetBase,
 		assetQuote,
-		level.MakeAutonomousLevelProvider(
+		level.MakeBalancedLevelProvider(
 			config.SPREAD,
 			false,
 			config.MIN_AMOUNT_SPREAD,
@@ -57,7 +57,7 @@ func MakeAutonomousStrategy(
 		txButler,
 		assetQuote,
 		assetBase,
-		level.MakeAutonomousLevelProvider(
+		level.MakeBalancedLevelProvider(
 			config.SPREAD,
 			true, // real base is passed in as quote so pass in true
 			config.MIN_AMOUNT_SPREAD,

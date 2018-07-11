@@ -48,4 +48,4 @@ We've created a [sample config file](../../configs/trader/sample_botConfig.cfg) 
 
 # Next Steps
 
-After successfully completing this guide you will be in a good position to pick a strategy and deploy the bot. You can find a walkthrough of market making for a token using the buysell strategy [here](simple.md)
+After successfully completing this guide you will be in a good position to pick a strategy and deploy the bot. You can find a walkthrough of market making for a token using the buysell strategy [here](buysell.md)

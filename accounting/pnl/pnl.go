@@ -1,7 +1,7 @@
 /*
 Computes the current balance valued in XLM for the given accounts
 
-Makes some assumptions (only works for autonomous bot accounts):
+Makes some assumptions (only works for balanced bot accounts):
 1. only 2 assets per account
 2. one asset is always native XLM
 3. price of the non-native asset is available on coinmarketCap

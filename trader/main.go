@@ -22,11 +22,11 @@ treasury management
 */
 var rootCmd = &cobra.Command{
 	Use:   "trader",
-	Short: "Simple Market Making bot for Stellar",
+	Short: "Market Making bot for Stellar",
 }
 var botConfigPath = rootCmd.PersistentFlags().String("botConf", "./trader.cfg", "trading bot's basic config file path")
 var botConfig BotConfig
-var stratType = rootCmd.PersistentFlags().String("stratType", "simple", "type of strategy to run")
+var stratType = rootCmd.PersistentFlags().String("stratType", "buysell", "type of strategy to run")
 var stratConfigPath = rootCmd.PersistentFlags().String("stratConf", "./trader.cfg", "strategy config file path")
 var fractionalReserveMagnifier = rootCmd.PersistentFlags().Int8("fractionalReserveMultiplier", 1, "(optional) fractional multiplier for XLM reserves")
 var operationalBuffer = rootCmd.PersistentFlags().Float64("operationalBuffer", 2000, "(optional) operational buffer for min number of lumens needed in XLM reserves")

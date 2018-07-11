@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-// autonomousLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
+// balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
 // This strategy does not allow using the balance of a single asset for more strategies other than this one because
 // that would require building in some trade tracking along with asset balance tracking for this strategy. The support
 // for this can always be added later.
-type autonomousLevelProvider struct {
+type balancedLevelProvider struct {
 	spread                        float64
 	useMaxQuoteInTargetAmountCalc bool    // else use maxBase
 	minAmountSpread               float64 // % that we take off the top of each amount order size which effectively serves as our spread when multiple levels are consumed
@@ -29,10 +29,10 @@ type autonomousLevelProvider struct {
 }
 
 // ensure it implements Provider
-var _ Provider = &autonomousLevelProvider{}
+var _ Provider = &balancedLevelProvider{}
 
-// MakeAutonomousLevelProvider is the factory method
-func MakeAutonomousLevelProvider(
+// MakeBalancedLevelProvider is the factory method
+func MakeBalancedLevelProvider(
 	spread float64,
 	useMaxQuoteInTargetAmountCalc bool,
 	minAmountSpread float64,
@@ -64,7 +64,7 @@ func MakeAutonomousLevelProvider(
 	validateSpread(carryoverInclusionProbability)
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return &autonomousLevelProvider{
+	return &balancedLevelProvider{
 		spread: spread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
@@ -88,7 +88,7 @@ func validateSpread(spread float64) {
 }
 
 // GetLevels impl.
-func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error) {
+func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error) {
 	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
 	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
 	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
@@ -121,7 +121,7 @@ func (p *autonomousLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote 
 	return levels, nil
 }
 
-func (p *autonomousLevelProvider) computeNewLevelWithCarryover(level Level, amountCarryover float64) (Level, float64) {
+func (p *balancedLevelProvider) computeNewLevelWithCarryover(level Level, amountCarryover float64) (Level, float64) {
 	// include a partial amount of the carryover
 	amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
 	// update amountCarryover to reflect inclusion in the level
@@ -158,18 +158,18 @@ func updateAssetBalances(level Level, useMaxQuoteInTargetAmountCalc bool, maxAss
 	return newMaxAssetBase, newMaxAssetQuote
 }
 
-func (p *autonomousLevelProvider) shouldIncludeLevel(levelIndex int16) bool {
+func (p *balancedLevelProvider) shouldIncludeLevel(levelIndex int16) bool {
 	includeLevelUsingProbability := p.randGen.Float64() < p.levelDensity
 	includeLevelUsingConstraint := levelIndex < p.ensureFirstNLevels
 	return includeLevelUsingConstraint || includeLevelUsingProbability
 }
 
-func (p *autonomousLevelProvider) shouldIncludeCarryover() bool {
+func (p *balancedLevelProvider) shouldIncludeCarryover() bool {
 	return p.randGen.Float64() < p.carryoverInclusionProbability
 }
 
 // getRandomSpread returns a random value between the two params (inclusive)
-func (p *autonomousLevelProvider) getRandomSpread(minSpread float64, maxSpread float64) float64 {
+func (p *balancedLevelProvider) getRandomSpread(minSpread float64, maxSpread float64) float64 {
 	// generates a float between 0 and 1
 	randFloat := p.randGen.Float64()
 
@@ -181,7 +181,7 @@ func (p *autonomousLevelProvider) getRandomSpread(minSpread float64, maxSpread f
 	return minSpread + spreadAboveMin
 }
 
-func (p *autonomousLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (Level, error) {
+func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (Level, error) {
 	centerPrice := maxAssetQuote / maxAssetBase
 	// price always adds the spread
 	targetPrice := centerPrice * (1 + p.spread/2)

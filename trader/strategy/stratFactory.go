@@ -18,11 +18,11 @@ func StratFactory(
 	stratConfigPath string,
 ) Strategy {
 	switch stratType {
-	case "simple":
-		var cfg SimpleConfig
+	case "buysell":
+		var cfg BuySellConfig
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
-		return MakeSimpleStrategy(txButler, assetBase, assetQuote, &cfg)
+		return MakeBuySellStrategy(txButler, assetBase, assetQuote, &cfg)
 	case "mirror":
 		var cfg MirrorConfig
 		err := config.Read(stratConfigPath, &cfg)
@@ -33,11 +33,11 @@ func StratFactory(
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
 		return MakeSellStrategy(txButler, assetBase, assetQuote, &cfg)
-	case "autonomous":
-		var cfg AutonomousConfig
+	case "balanced":
+		var cfg BalancedConfig
 		err := config.Read(stratConfigPath, &cfg)
 		kelp.CheckConfigError(cfg, err)
-		return MakeAutonomousStrategy(txButler, assetBase, assetQuote, &cfg)
+		return MakeBalancedStrategy(txButler, assetBase, assetQuote, &cfg)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)

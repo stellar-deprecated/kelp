@@ -8,8 +8,8 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
-// SimpleConfig contains the configuration params for this strategy
-type SimpleConfig struct {
+// BuySellConfig contains the configuration params for this strategy
+type BuySellConfig struct {
 	PRICE_TOLERANCE  float64             `valid:"-"`
 	AMOUNT_TOLERANCE float64             `valid:"-"`
 	AMOUNT_OF_A_BASE float64             `valid:"-"` // the size of order to keep on either side
@@ -20,12 +20,12 @@ type SimpleConfig struct {
 	LEVELS           []level.StaticLevel `valid:"-"`
 }
 
-// MakeSimpleStrategy is a factory method
-func MakeSimpleStrategy(
+// MakeBuySellStrategy is a factory method
+func MakeBuySellStrategy(
 	txButler *kelp.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	config *SimpleConfig,
+	config *BuySellConfig,
 ) Strategy {
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
 		txButler,

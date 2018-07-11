@@ -91,14 +91,14 @@ The following [strategies](trader/strategy) are available **out of the box** wit
     - **Who:** An issuer could use Sell to distribute tokens from an ICO pre-sale
     - **Complexity**: Beginner
 
-- [buysell](trader/strategy/simple.go):
+- [buysell](trader/strategy/buysell.go):
 
     - **What:** creates buy and sell offers based on a specific reference price and a pre-specified liquidity depth while maintaining a [spread][spread].
     - **Why:** To make the market for tokens based on a fixed or external reference price.
     - **Who:** Anyone who wants to create liquidity for a stablecoin or [fiat][fiat] token
     - **Complexity:** Beginner
 
-- [balanced](trader/strategy/autonomous.go):
+- [balanced](trader/strategy/balanced.go):
     - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B.
     - **Why:** To let the market surface the _true price_ for one token in terms of another.
     - **Who:** Market makers and traders for tokens that trade only on Stellar 
@@ -149,15 +149,15 @@ It's easier to learn with examples! Take a look through the walkthrough guides a
 ## Walkthrough Guides
 
 - [Setting up a trading account](examples/walkthroughs/trader/account_setup.md): This guide uses an example token, `COUPON`, to show you how to set up your account before deploying the bot.
-- [Market making for a stablecoin](examples/walkthroughs/trader/simple.md): This guide shows you how to use the bot with the _buysell_ strategy.
+- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide shows you how to use the bot with the _buysell_ strategy.
 
 ## Configuration Files
 
 Reference config files are in the [examples folder](examples/). Specifically, the following sample configuration files are included:
 
 - [Sample Sell strategy config file](examples/configs/trader/sample_sell.cfg)
-- [Sample BuySell strategy config file](examples/configs/trader/sample_simple.cfg)
-- [Sample Balanced strategy config file](examples/configs/trader/sample_autonomous.cfg)
+- [Sample BuySell strategy config file](examples/configs/trader/sample_buysell.cfg)
+- [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
 
 # Questions & Improvements
