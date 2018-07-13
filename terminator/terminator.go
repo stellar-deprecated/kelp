@@ -62,7 +62,10 @@ func (kp botKeyPair) String() string {
 	return fmt.Sprintf("botKeyPair(dataKey=%v, lastUpdated=%d)", kp.dataKey, kp.lastUpdated)
 }
 
+// TODO 3 add db-based support, manage-data based support is invalid since we don't write it from trader anymore.
 func (t *Terminator) run() {
+	panic("need to add db-based support, manage-data based support is invalid since we don't write it from trader anymore.")
+
 	account, e := t.api.LoadAccount(t.tradingAccount)
 	if e != nil {
 		log.Error(e)

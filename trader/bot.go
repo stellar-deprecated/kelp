@@ -123,14 +123,6 @@ func (b *Bot) update() {
 		return
 	}
 
-	// append manageDataOps to update timestamp along with the update ops
-	mdOps, e := b.makeManageDataOps(time.Now())
-	if e != nil {
-		log.Warn(e)
-		b.deleteAllOffers()
-		return
-	}
-	ops = append(ops, mdOps...)
 	if len(ops) > 0 {
 		e = b.txButler.SubmitOps(ops)
 		if e != nil {
@@ -146,34 +138,6 @@ func (b *Bot) update() {
 		b.deleteAllOffers()
 		return
 	}
-}
-
-// makeManageDataOps writes data to the account to track when this bot successfully updated its orderbook
-// looks like this: hash=sortedAsset1/sortedAsset2/timeMillis
-func (b *Bot) makeManageDataOps(t time.Time) ([]build.TransactionMutator, error) {
-	ops := []build.TransactionMutator{}
-	tradingSourceAccount := build.SourceAccount{AddressOrSeed: b.tradingAccount}
-
-	// always write timestamp
-	millis := t.UnixNano() / 1000000
-	millisStr := fmt.Sprintf("%d", millis)
-	millisData := []byte(millisStr)
-	millisOp := build.SetData(b.dataKey.FullKey(0), millisData, tradingSourceAccount)
-	ops = append(ops, &millisOp)
-
-	// always write keys in the case where terminator terminates orders for an app that is still running, without these keys the bot would
-	// just write the timestamp which would not allow terminator to terminate these orders as it won't have the bot key
-	ops = append(ops, build.SetData(b.dataKey.FullKey(1), []byte(b.dataKey.AssetBaseCode), tradingSourceAccount))
-	if len(b.dataKey.AssetBaseIssuer) > 0 {
-		ops = append(ops, build.SetData(b.dataKey.FullKey(2), []byte(b.dataKey.AssetBaseIssuer), tradingSourceAccount))
-	}
-	ops = append(ops, build.SetData(b.dataKey.FullKey(3), []byte(b.dataKey.AssetQuoteCode), tradingSourceAccount))
-	if len(b.dataKey.AssetQuoteIssuer) > 0 {
-		ops = append(ops, build.SetData(b.dataKey.FullKey(4), []byte(b.dataKey.AssetQuoteIssuer), tradingSourceAccount))
-	}
-
-	log.Info("setting data with bot key = " + b.dataKey.String() + " | millis = " + millisStr)
-	return ops, nil
 }
 
 func (b *Bot) load() {
