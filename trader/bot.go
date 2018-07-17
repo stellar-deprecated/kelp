@@ -5,8 +5,8 @@ import (
 	"sort"
 	"time"
 
-	kelp "github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/datamodel"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -22,7 +22,7 @@ type Bot struct {
 	assetBase           horizon.Asset
 	assetQuote          horizon.Asset
 	tradingAccount      string
-	txButler            *kelp.TxButler
+	txButler            *utils.TxButler
 	strat               strategy.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
 	dataKey             *datamodel.BotKey
@@ -42,7 +42,7 @@ func MakeBot(
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
 	tradingAccount string,
-	txButler *kelp.TxButler,
+	txButler *utils.TxButler,
 	strat strategy.Strategy,
 	tickIntervalSeconds int32,
 	dataKey *datamodel.BotKey,
@@ -154,19 +154,19 @@ func (b *Bot) load() {
 	var trustB float64
 	for _, balance := range account.Balances {
 		if balance.Asset == b.assetBase {
-			maxA = kelp.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == kelp.Native {
+			maxA = utils.AmountStringAsFloat(balance.Balance)
+			if balance.Asset.Type == utils.Native {
 				trustA = maxLumenTrust
 			} else {
-				trustA = kelp.AmountStringAsFloat(balance.Limit)
+				trustA = utils.AmountStringAsFloat(balance.Limit)
 			}
 			log.Infof("maxA: %.7f, trustA: %.7f\n", maxA, trustA)
 		} else if balance.Asset == b.assetQuote {
-			maxB = kelp.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == kelp.Native {
+			maxB = utils.AmountStringAsFloat(balance.Balance)
+			if balance.Asset.Type == utils.Native {
 				trustB = maxLumenTrust
 			} else {
-				trustB = kelp.AmountStringAsFloat(balance.Limit)
+				trustB = utils.AmountStringAsFloat(balance.Limit)
 			}
 			log.Infof("maxB: %.7f, trustB: %.7f\n", maxB, trustB)
 		}
@@ -181,13 +181,13 @@ func (b *Bot) load() {
 // look at the offers for this pair
 // delete any extra ones
 func (b *Bot) loadExistingOffers() {
-	offers, e := kelp.LoadAllOffers(b.tradingAccount, b.api)
+	offers, e := utils.LoadAllOffers(b.tradingAccount, b.api)
 	if e != nil {
 		log.Warn(e)
 		return
 	}
-	b.sellingAOffers, b.buyingAOffers = kelp.FilterOffers(offers, b.assetBase, b.assetQuote)
+	b.sellingAOffers, b.buyingAOffers = utils.FilterOffers(offers, b.assetBase, b.assetQuote)
 
-	sort.Sort(kelp.ByPrice(b.buyingAOffers))
-	sort.Sort(kelp.ByPrice(b.sellingAOffers)) // don't need to reverse since the prices are inverse
+	sort.Sort(utils.ByPrice(b.buyingAOffers))
+	sort.Sort(utils.ByPrice(b.sellingAOffers)) // don't need to reverse since the prices are inverse
 }

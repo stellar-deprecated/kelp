@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	kelp "github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -32,15 +32,15 @@ func (b BotKey) String() string {
 // MakeSortedBotKey makes a BotKey by sorting the passed in assets
 func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
 	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string
-	if assetA.Type == kelp.Native && assetB.Type == kelp.Native {
+	if assetA.Type == utils.Native && assetB.Type == utils.Native {
 		log.Panic("invalid asset types, both cannot be native")
-	} else if assetA.Type == kelp.Native {
-		assetBaseCode = kelp.Native
+	} else if assetA.Type == utils.Native {
+		assetBaseCode = utils.Native
 		assetBaseIssuer = ""
 		assetQuoteCode = assetB.Code
 		assetQuoteIssuer = assetB.Issuer
-	} else if assetB.Type == kelp.Native {
-		assetBaseCode = kelp.Native
+	} else if assetB.Type == utils.Native {
+		assetBaseCode = utils.Native
 		assetBaseIssuer = ""
 		assetQuoteCode = assetA.Code
 		assetQuoteIssuer = assetA.Issuer

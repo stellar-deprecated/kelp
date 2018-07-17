@@ -6,8 +6,8 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
-	"github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -25,7 +25,7 @@ type MirrorConfig struct {
 
 // MirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type MirrorStrategy struct {
-	txButler      *kelp.TxButler
+	txButler      *utils.TxButler
 	orderbookPair *assets.TradingPair
 	baseAsset     *horizon.Asset
 	quoteAsset    *horizon.Asset
@@ -37,7 +37,7 @@ type MirrorStrategy struct {
 var _ Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
-func MakeMirrorStrategy(txButler *kelp.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
+func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
 	exchange := exchange.ExchangeFactory(config.EXCHANGE)
 	orderbookPair := &assets.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
@@ -93,7 +93,7 @@ func (s MirrorStrategy) UpdateWithOps(
 	log.Info("num. sellOps in this update: ", len(sellOps))
 
 	ops := []build.TransactionMutator{}
-	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= kelp.PriceAsFloat(sellingAOffers[0].Price) {
+	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
 		ops = append(ops, sellOps...)
 		ops = append(ops, buyOps...)
 	} else {
@@ -165,7 +165,7 @@ func doModifyOffer(
 	newPrice := number.FromFloat(price, 6)
 	newVol := number.FromFloat(vol, 6)
 	epsilon := 0.0001
-	sameOrderParams := kelp.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && kelp.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
+	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
 	//log.Info("oldPrice: ", oldPrice.AsString(), " | newPrice: ", newPrice.AsString(), " | oldVol: ", oldVol.AsString(), " | newVol: ", newVol.AsString(), " | sameOrderParams: ", sameOrderParams)
 	if sameOrderParams {
 		return ops

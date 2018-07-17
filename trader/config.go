@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	kelp "github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -51,19 +51,19 @@ func (b *BotConfig) AssetQuote() horizon.Asset {
 // Init initializes this config
 func (b *BotConfig) Init() error {
 	if b.ASSET_CODE_A == "XLM" {
-		b.assetBase = kelp.Asset2Asset2(build.NativeAsset())
+		b.assetBase = utils.Asset2Asset2(build.NativeAsset())
 	} else {
-		b.assetBase = kelp.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_A, b.ISSUER_A))
+		b.assetBase = utils.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_A, b.ISSUER_A))
 	}
 
 	if b.ASSET_CODE_B == "XLM" {
-		b.assetQuote = kelp.Asset2Asset2(build.NativeAsset())
+		b.assetQuote = utils.Asset2Asset2(build.NativeAsset())
 	} else {
-		b.assetQuote = kelp.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_B, b.ISSUER_B))
+		b.assetQuote = utils.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_B, b.ISSUER_B))
 	}
 
 	var e error
-	b.tradingAccount, e = kelp.ParseSecret(b.TRADING_SECRET_SEED)
+	b.tradingAccount, e = utils.ParseSecret(b.TRADING_SECRET_SEED)
 	if e != nil {
 		return e
 	}
@@ -72,6 +72,6 @@ func (b *BotConfig) Init() error {
 		return fmt.Errorf("no trading account specified")
 	}
 
-	b.sourceAccount, e = kelp.ParseSecret(b.SOURCE_SECRET_SEED)
+	b.sourceAccount, e = utils.ParseSecret(b.SOURCE_SECRET_SEED)
 	return e
 }

@@ -3,8 +3,8 @@ package sideStrategy
 import (
 	"fmt"
 
-	kelp "github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -12,7 +12,7 @@ import (
 
 // DeleteSideStrategy is a sideStrategy to delete the orders for a given currency pair on one side of the orderbook
 type DeleteSideStrategy struct {
-	txButler   *kelp.TxButler
+	txButler   *utils.TxButler
 	assetBase  *horizon.Asset
 	assetQuote *horizon.Asset
 }
@@ -22,7 +22,7 @@ var _ SideStrategy = &DeleteSideStrategy{}
 
 // MakeDeleteSideStrategy is a factory method for DeleteSideStrategy
 func MakeDeleteSideStrategy(
-	txButler *kelp.TxButler,
+	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 ) SideStrategy {

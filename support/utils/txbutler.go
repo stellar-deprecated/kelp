@@ -1,4 +1,4 @@
-package kelp
+package utils
 
 import (
 	"strconv"

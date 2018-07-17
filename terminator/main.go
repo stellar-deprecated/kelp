@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -31,7 +31,7 @@ func main() {
 func run(cmd *cobra.Command, args []string) {
 	log.Info("Starting Terminator: v1.0")
 	err := config.Read(*configPath, &configFile)
-	kelp.CheckConfigError(configFile, err)
+	utils.CheckConfigError(configFile, err)
 	err = configFile.Init()
 	if err != nil {
 		log.Error(err)
@@ -44,13 +44,13 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  configFile.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := kelp.MakeTxButler(
+	txB := utils.MakeTxButler(
 		client,
 		configFile.SOURCE_SECRET_SEED,
 		configFile.TRADING_SECRET_SEED,
 		*configFile.sourceAccount,
 		*configFile.tradingAccount,
-		kelp.ParseNetwork(configFile.HORIZON_URL),
+		utils.ParseNetwork(configFile.HORIZON_URL),
 		-1, // not needed here
 		-1, // not needed here
 	)

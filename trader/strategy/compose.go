@@ -5,7 +5,7 @@ import (
 
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 
-	kelp "github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -89,7 +89,7 @@ func (s *ComposeStrategy) UpdateWithOps(
 	}
 
 	// combine ops correctly based on possible crossing offers
-	if newTopBuyPrice != nil && len(sellingAOffers) > 0 && newTopBuyPrice.AsFloat() >= kelp.PriceAsFloat(sellingAOffers[0].Price) {
+	if newTopBuyPrice != nil && len(sellingAOffers) > 0 && newTopBuyPrice.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
 		ops = append(ops, sellOps...)
 		ops = append(ops, buyOps...)
 	} else {

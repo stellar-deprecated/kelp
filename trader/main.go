@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/datamodel"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
@@ -44,7 +44,7 @@ func main() {
 func run(cmd *cobra.Command, args []string) {
 	log.Info("Starting trader: v0.5")
 	err := config.Read(*botConfigPath, &botConfig)
-	kelp.CheckConfigError(botConfig, err)
+	utils.CheckConfigError(botConfig, err)
 	err = botConfig.Init()
 	if err != nil {
 		log.Error(err)
@@ -57,13 +57,13 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  botConfig.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := kelp.MakeTxButler(
+	txB := utils.MakeTxButler(
 		client,
 		botConfig.SOURCE_SECRET_SEED,
 		botConfig.TRADING_SECRET_SEED,
 		botConfig.SourceAccount(),
 		botConfig.TradingAccount(),
-		kelp.ParseNetwork(botConfig.HORIZON_URL),
+		utils.ParseNetwork(botConfig.HORIZON_URL),
 		*fractionalReserveMagnifier,
 		*operationalBuffer,
 	)

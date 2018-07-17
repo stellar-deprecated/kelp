@@ -8,7 +8,7 @@ import (
 
 	"github.com/lightyeario/kelp/support/datamodel"
 
-	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -19,7 +19,7 @@ const terminatorKey = "term"
 // Terminator contains the logic to terminate offers
 type Terminator struct {
 	api                  *horizon.Client
-	txb                  *kelp.TxButler
+	txb                  *utils.TxButler
 	tradingAccount       string
 	tickIntervalSeconds  int32
 	allowInactiveMinutes int32
@@ -28,7 +28,7 @@ type Terminator struct {
 // MakeTerminator is a factory method to make a Terminator
 func MakeTerminator(
 	api *horizon.Client,
-	txb *kelp.TxButler,
+	txb *utils.TxButler,
 	tradingAccount string,
 	tickIntervalSeconds int32,
 	allowInactiveMinutes int32,
@@ -103,7 +103,7 @@ func (t *Terminator) run() {
 		return
 	}
 
-	offers, e := kelp.LoadAllOffers(t.tradingAccount, t.api)
+	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
 	if e != nil {
 		log.Error(e)
 		return
@@ -114,17 +114,17 @@ func (t *Terminator) run() {
 		log.Infof("working on bot with key: %s", bk)
 		assetA := convertToAsset(bk.dataKey.AssetBaseCode, bk.dataKey.AssetBaseIssuer)
 		assetB := convertToAsset(bk.dataKey.AssetQuoteCode, bk.dataKey.AssetQuoteIssuer)
-		inactiveSellOffers, inactiveBuyOffers := kelp.FilterOffers(offers, assetA, assetB)
+		inactiveSellOffers, inactiveBuyOffers := utils.FilterOffers(offers, assetA, assetB)
 		newTimestamp := time.Now().UnixNano() / 1000000
 		t.deleteOffers(inactiveSellOffers, inactiveBuyOffers, bk.dataKey, newTimestamp)
 	}
 }
 
 func convertToAsset(code string, issuer string) horizon.Asset {
-	if code == kelp.Native {
-		return kelp.Asset2Asset2(build.NativeAsset())
+	if code == utils.Native {
+		return utils.Asset2Asset2(build.NativeAsset())
 	}
-	return kelp.Asset2Asset2(build.CreditAsset(code, issuer))
+	return utils.Asset2Asset2(build.CreditAsset(code, issuer))
 }
 
 // deleteOffers deletes passed in offers along with the data for the passed in hash

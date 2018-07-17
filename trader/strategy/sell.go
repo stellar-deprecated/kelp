@@ -1,8 +1,8 @@
 package strategy
 
 import (
-	"github.com/lightyeario/kelp/support"
 	"github.com/lightyeario/kelp/support/priceFeed"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
@@ -23,7 +23,7 @@ type SellConfig struct {
 
 // MakeSellStrategy is a factory method for SellStrategy
 func MakeSellStrategy(
-	txButler *kelp.TxButler,
+	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *SellConfig,

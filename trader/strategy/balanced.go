@@ -1,7 +1,7 @@
 package strategy
 
 import (
-	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
@@ -26,7 +26,7 @@ type BalancedConfig struct {
 
 // MakeBalancedStrategy is a factory method for BalancedStrategy
 func MakeBalancedStrategy(
-	txButler *kelp.TxButler,
+	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *BalancedConfig,

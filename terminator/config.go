@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 )
 
 // Config represents the configuration params for the bot
@@ -21,7 +21,7 @@ type Config struct {
 // Init initializes this config
 func (c *Config) Init() error {
 	var e error
-	c.tradingAccount, e = kelp.ParseSecret(c.TRADING_SECRET_SEED)
+	c.tradingAccount, e = utils.ParseSecret(c.TRADING_SECRET_SEED)
 	if e != nil {
 		return e
 	}
@@ -30,6 +30,6 @@ func (c *Config) Init() error {
 		return fmt.Errorf("no trading account specified")
 	}
 
-	c.sourceAccount, e = kelp.ParseSecret(c.SOURCE_SECRET_SEED)
+	c.sourceAccount, e = utils.ParseSecret(c.SOURCE_SECRET_SEED)
 	return e
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 
-	kelp "github.com/lightyeario/kelp/support"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -15,7 +15,7 @@ import (
 
 // SellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
 type SellSideStrategy struct {
-	txButler            *kelp.TxButler
+	txButler            *utils.TxButler
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
 	levelsProvider      level.Provider
@@ -34,7 +34,7 @@ var _ SideStrategy = &SellSideStrategy{}
 
 // MakeSellSideStrategy is a factory method for SellSideStrategy
 func MakeSellSideStrategy(
-	txButler *kelp.TxButler,
+	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	levelsProvider level.Provider,
@@ -138,8 +138,8 @@ func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	maxAmount := targetAmount + targetAmount*s.amountTolerance
 
 	//check if existing offer needs to be modified
-	curPrice := kelp.GetPrice(offers[index])
-	curAmount := kelp.AmountStringAsFloat(offers[index].Amount)
+	curPrice := utils.GetPrice(offers[index])
+	curAmount := utils.AmountStringAsFloat(offers[index].Amount)
 
 	// existing offer not within tolerances
 	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
