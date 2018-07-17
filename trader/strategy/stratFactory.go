@@ -38,6 +38,8 @@ func StratFactory(
 		err := config.Read(stratConfigPath, &cfg)
 		utils.CheckConfigError(cfg, err)
 		return MakeBalancedStrategy(txButler, assetBase, assetQuote, &cfg)
+	case "delete":
+		return MakeDeleteStrategy(txButler, assetBase, assetQuote)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)

@@ -67,7 +67,7 @@ The Trader Bot places orders on the [Stellar marketplace][stellarx] based on the
 `trader` has three required parameters which are:
 
 - **botConf**: `.cfg` file with the account details as defined [here](trader/config.go).
-- **stratType**: the strategy you want to run (`sell`, `buysell`, `mirror`, `balanced`).
+- **stratType**: the strategy you want to run (`sell`, `buysell`, `balanced`, `mirror`, `delete`).
 - **stratConf**: `.cfg` file specific to your chosen strategy, find the [strategies here](trader/strategy).
 
 Example:
@@ -110,6 +110,13 @@ The following [strategies](trader/strategy) are available **out of the box** wit
     - **Why:** To [hedge][hedge] your position on another exchange whenever a trade is executed to reduce inventory risk while keeping a spread
     - **Who:** Anyone who wants to reduce inventory risk and also has the capacity to take on a higher operational overhead in maintaining the bot system.
     - **Complexity:** Advanced
+
+- [delete](trader/strategy/delete.go):
+
+    - **What:** deletes your offers from both sides of the specified orderbook. _Note: does not need a config file_.
+    - **Why:** To kill the offers placed by the bot. _This is not a trading strategy but is used for operational purposes only_.
+    - **Who:** Anyone managing the operations of the bot who wants to stop all activity by the bot.
+    - **Complexity:** Beginner
 
 ## Price Feeds
 
