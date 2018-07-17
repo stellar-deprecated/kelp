@@ -113,7 +113,7 @@ The following [strategies](trader/strategy) are available **out of the box** wit
 
 - [delete](trader/strategy/delete.go):
 
-    - **What:** deletes your offers from both sides of the specified orderbook. _Note: does not need a config file_.
+    - **What:** deletes your offers from both sides of the specified orderbook. _Note: does not need a strategy-specific config file_.
     - **Why:** To kill the offers placed by the bot. _This is not a trading strategy but is used for operational purposes only_.
     - **Who:** Anyone managing the operations of the bot who wants to stop all activity by the bot.
     - **Complexity:** Beginner
