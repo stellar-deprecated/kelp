@@ -36,10 +36,10 @@ var _ Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
 func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
-	exchange := exchange.ExchangeFactory(config.EXCHANGE)
+	xc := exchange.ExchangeFactory(config.EXCHANGE)
 	orderbookPair := &model.TradingPair{
-		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
-		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
+		Base:  xc.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
+		Quote: xc.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
 	}
 	return &MirrorStrategy{
 		txButler:      txButler,
@@ -47,7 +47,7 @@ func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quot
 		baseAsset:     baseAsset,
 		quoteAsset:    quoteAsset,
 		config:        config,
-		exchange:      exchange,
+		exchange:      xc,
 	}
 }
 
