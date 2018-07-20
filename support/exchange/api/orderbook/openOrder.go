@@ -3,8 +3,8 @@ package orderbook
 import (
 	"fmt"
 
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api/dates"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // OpenOrder represents an open order for a trading account
@@ -13,7 +13,7 @@ type OpenOrder struct {
 	ID             string
 	StartTime      *dates.Timestamp
 	ExpireTime     *dates.Timestamp
-	VolumeExecuted *number.Number
+	VolumeExecuted *model.Number
 }
 
 // String is the stringer function

@@ -8,7 +8,6 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
 	"github.com/Beldur/kraken-go-api-client"
@@ -135,8 +134,8 @@ func TestAddOrder(t *testing.T) {
 		Pair:        &model.TradingPair{Base: model.REP, Quote: model.ETH},
 		OrderAction: orderbook.ActionBuy,
 		OrderType:   orderbook.TypeLimit,
-		Price:       number.FromFloat(0.00001, 5),
-		Volume:      number.FromFloat(0.3145, 5),
+		Price:       model.FromFloat(0.00001, 5),
+		Volume:      model.FromFloat(0.3145, 5),
 	})
 	if !assert.NoError(t, e) {
 		return
@@ -163,7 +162,7 @@ func TestCancelOrder(t *testing.T) {
 }
 
 func TestPrepareDeposit(t *testing.T) {
-	result, e := testKrakenExchange.PrepareDeposit(model.BTC, number.FromFloat(1.0, 7))
+	result, e := testKrakenExchange.PrepareDeposit(model.BTC, model.FromFloat(1.0, 7))
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -173,7 +172,7 @@ func TestPrepareDeposit(t *testing.T) {
 }
 
 func TestGetWithdrawInfo(t *testing.T) {
-	result, e := testKrakenExchange.GetWithdrawInfo(model.BTC, number.FromFloat(1.0, 7), "")
+	result, e := testKrakenExchange.GetWithdrawInfo(model.BTC, model.FromFloat(1.0, 7), "")
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -183,7 +182,7 @@ func TestGetWithdrawInfo(t *testing.T) {
 }
 
 func TestWithdrawFunds(t *testing.T) {
-	result, e := testKrakenExchange.WithdrawFunds(model.XLM, number.FromFloat(0.0000001, 7), "")
+	result, e := testKrakenExchange.WithdrawFunds(model.XLM, model.FromFloat(0.0000001, 7), "")
 	if !assert.NoError(t, e) {
 		return
 	}

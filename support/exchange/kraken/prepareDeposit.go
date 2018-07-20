@@ -6,12 +6,11 @@ import (
 	"strings"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // PrepareDeposit impl.
-func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *number.Number) (*treasury.PrepareDepositResult, error) {
+func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) (*treasury.PrepareDepositResult, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
 	if e != nil {
 		return nil, e
@@ -71,8 +70,8 @@ func keepOnlyNew(addressList []depositAddress) []depositAddress {
 
 type depositMethod struct {
 	method     string
-	limit      *number.Number
-	fee        *number.Number
+	limit      *model.Number
+	fee        *model.Number
 	genAddress bool
 }
 
@@ -178,7 +177,7 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// limit
-	var limit *number.Number
+	var limit *model.Number
 	limB, e := parseBool(m, "limit", "DepositMethods")
 	if e != nil {
 		// limit is special as it can be a boolean or a number

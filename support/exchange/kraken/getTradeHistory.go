@@ -8,7 +8,6 @@ import (
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/dates"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
@@ -68,13 +67,13 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 				Pair:        pair,
 				OrderAction: orderbook.OrderActionFromString(_type),
 				OrderType:   orderbook.OrderTypeFromString(_ordertype),
-				Price:       number.MustFromString(_price, k.precision),
-				Volume:      number.MustFromString(_vol, k.precision),
+				Price:       model.MustFromString(_price, k.precision),
+				Volume:      model.MustFromString(_vol, k.precision),
 				Timestamp:   ts,
 			},
 			TransactionID: orderbook.MakeTransactionID(_txid),
-			Cost:          number.MustFromString(_cost, k.precision),
-			Fee:           number.MustFromString(_fee, k.precision),
+			Cost:          model.MustFromString(_cost, k.precision),
+			Fee:           model.MustFromString(_fee, k.precision),
 		})
 	}
 	return &res, nil

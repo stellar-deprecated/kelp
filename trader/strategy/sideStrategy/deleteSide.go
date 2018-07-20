@@ -3,7 +3,7 @@ package sideStrategy
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -50,7 +50,7 @@ func (s *DeleteSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float
 }
 
 // UpdateWithOps impl
-func (s *DeleteSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *number.Number, e error) {
+func (s *DeleteSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	return []build.TransactionMutator{}, nil, nil
 }
 

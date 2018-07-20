@@ -3,7 +3,7 @@ package strategy
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/model"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
@@ -74,7 +74,7 @@ func (s *ComposeStrategy) UpdateWithOps(
 ) ([]build.TransactionMutator, error) {
 	// buy side, flip newTopBuyPrice because it will be inverted from this parent strategy's context of base/quote
 	buyOps, newTopBuyPriceInverted, e1 := s.buyStrat.UpdateWithOps(buyingAOffers)
-	newTopBuyPrice := number.Invert(newTopBuyPriceInverted)
+	newTopBuyPrice := model.Invert(newTopBuyPriceInverted)
 	// sell side
 	sellOps, _, e2 := s.sellStrat.UpdateWithOps(sellingAOffers)
 

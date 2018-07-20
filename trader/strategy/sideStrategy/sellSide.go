@@ -5,7 +5,7 @@ import (
 
 	"github.com/lightyeario/kelp/trader/strategy/level"
 
-	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/model"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
@@ -91,12 +91,12 @@ func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 }
 
 // UpdateWithOps impl
-func (s *SellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *number.Number, e error) {
+func (s *SellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	newTopOffer = nil
 	for i := len(s.currentLevels) - 1; i >= 0; i-- {
 		op := s.updateSellLevel(offers, i)
 		if op != nil {
-			offer, e := number.FromString(op.MO.Price.String(), 7)
+			offer, e := model.FromString(op.MO.Price.String(), 7)
 			if e != nil {
 				return nil, nil, e
 			}

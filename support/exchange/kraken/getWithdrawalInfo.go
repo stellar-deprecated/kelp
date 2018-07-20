@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // GetWithdrawInfo impl.
 func (k krakenExchange) GetWithdrawInfo(
 	asset model.Asset,
-	amountToWithdraw *number.Number,
+	amountToWithdraw *model.Number,
 	address string,
 ) (*treasury.WithdrawInfo, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
@@ -40,7 +39,7 @@ func (k krakenExchange) GetWithdrawInfo(
 	return parseWithdrawInfoResponse(resp, amountToWithdraw)
 }
 
-func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *number.Number) (*treasury.WithdrawInfo, error) {
+func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *model.Number) (*treasury.WithdrawInfo, error) {
 	switch m := resp.(type) {
 	case map[string]interface{}:
 		info, e := parseWithdrawInfo(m)
@@ -61,9 +60,9 @@ func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *number.Number
 }
 
 type withdrawInfo struct {
-	limit  *number.Number
-	fee    *number.Number
-	amount *number.Number
+	limit  *model.Number
+	fee    *model.Number
+	amount *model.Number
 }
 
 func parseWithdrawInfo(m map[string]interface{}) (*withdrawInfo, error) {

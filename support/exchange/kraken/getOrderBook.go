@@ -5,7 +5,6 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api/dates"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 )
 
@@ -34,8 +33,8 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   orderbook.TypeLimit,
-			Price:       number.FromFloat(item.Price, k.precision),
-			Volume:      number.FromFloat(item.Amount, k.precision),
+			Price:       model.FromFloat(item.Price, k.precision),
+			Volume:      model.FromFloat(item.Amount, k.precision),
 			Timestamp:   dates.MakeTimestamp(item.Ts),
 		})
 	}

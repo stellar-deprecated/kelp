@@ -3,7 +3,6 @@ package kraken
 import (
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // GetTickerPrice impl.
@@ -22,10 +21,10 @@ func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tra
 	for _, p := range pairs {
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = api.Ticker{
-			AskPrice:  number.MustFromString(pairTickerInfo.Ask[0], k.precision),
-			AskVolume: number.MustFromString(pairTickerInfo.Ask[1], k.precision),
-			BidPrice:  number.MustFromString(pairTickerInfo.Bid[0], k.precision),
-			BidVolume: number.MustFromString(pairTickerInfo.Bid[1], k.precision),
+			AskPrice:  model.MustFromString(pairTickerInfo.Ask[0], k.precision),
+			AskVolume: model.MustFromString(pairTickerInfo.Ask[1], k.precision),
+			BidPrice:  model.MustFromString(pairTickerInfo.Bid[0], k.precision),
+			BidVolume: model.MustFromString(pairTickerInfo.Bid[1], k.precision),
 		}
 	}
 

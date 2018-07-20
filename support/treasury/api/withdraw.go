@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // WithdrawInfo is the result of a GetWithdrawInfo call
 type WithdrawInfo struct {
-	AmountToReceive *number.Number // amount that you will receive after any fees is taken (excludes fees charged on the deposit side)
+	AmountToReceive *model.Number // amount that you will receive after any fees is taken (excludes fees charged on the deposit side)
 }
 
 // WithdrawFunds is the result of a WithdrawFunds call
@@ -28,7 +27,7 @@ type WithdrawAPI interface {
 			WithdrawInfo - details on how to perform the withdrawal
 			error - ErrWithdrawAmountAboveLimit, ErrWithdrawAmountInvalid, or any other error
 	*/
-	GetWithdrawInfo(asset model.Asset, amountToWithdraw *number.Number, address string) (*WithdrawInfo, error)
+	GetWithdrawInfo(asset model.Asset, amountToWithdraw *model.Number, address string) (*WithdrawInfo, error)
 
 	/*
 		Input:
@@ -41,7 +40,7 @@ type WithdrawAPI interface {
 	*/
 	WithdrawFunds(
 		asset model.Asset,
-		amountToWithdraw *number.Number,
+		amountToWithdraw *model.Number,
 		address string,
 	) (*WithdrawFunds, error)
 }
@@ -50,7 +49,7 @@ type WithdrawAPI interface {
 type ErrWithdrawAmountAboveLimit error
 
 // MakeErrWithdrawAmountAboveLimit is a factory method
-func MakeErrWithdrawAmountAboveLimit(amount *number.Number, limit *number.Number) ErrWithdrawAmountAboveLimit {
+func MakeErrWithdrawAmountAboveLimit(amount *model.Number, limit *model.Number) ErrWithdrawAmountAboveLimit {
 	return fmt.Errorf("withdraw amount (%s) is greater than limit (%s)", amount.AsString(), limit.AsString())
 }
 
@@ -58,6 +57,6 @@ func MakeErrWithdrawAmountAboveLimit(amount *number.Number, limit *number.Number
 type ErrWithdrawAmountInvalid error
 
 // MakeErrWithdrawAmountInvalid is a factory method
-func MakeErrWithdrawAmountInvalid(amountToWithdraw *number.Number, fee *number.Number) ErrWithdrawAmountInvalid {
+func MakeErrWithdrawAmountInvalid(amountToWithdraw *model.Number, fee *model.Number) ErrWithdrawAmountInvalid {
 	return fmt.Errorf("amountToWithdraw is invalid: %s, fee: %s", amountToWithdraw.AsString(), fee.AsString())
 }

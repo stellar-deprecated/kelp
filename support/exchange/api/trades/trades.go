@@ -5,15 +5,15 @@ import (
 
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
-	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/model"
 )
 
 // Trade represents a trade on an exchange
 type Trade struct {
 	orderbook.Order
 	TransactionID *orderbook.TransactionID
-	Cost          *number.Number
-	Fee           *number.Number
+	Cost          *model.Number
+	Fee           *model.Number
 }
 
 func (t Trade) String() string {

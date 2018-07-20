@@ -5,7 +5,6 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api/dates"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // TransactionID is typed for the concept of a transaction ID
@@ -27,8 +26,8 @@ type Order struct {
 	Pair        *model.TradingPair
 	OrderAction OrderAction
 	OrderType   OrderType
-	Price       *number.Number
-	Volume      *number.Number
+	Price       *model.Number
+	Volume      *model.Number
 	Timestamp   *dates.Timestamp
 }
 

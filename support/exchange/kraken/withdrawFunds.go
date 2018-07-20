@@ -5,14 +5,13 @@ import (
 	"reflect"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // WithdrawFunds impl.
 func (k krakenExchange) WithdrawFunds(
 	asset model.Asset,
-	amountToWithdraw *number.Number,
+	amountToWithdraw *model.Number,
 	address string,
 ) (*treasury.WithdrawFunds, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)

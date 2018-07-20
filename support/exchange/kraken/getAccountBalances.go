@@ -5,17 +5,16 @@ import (
 
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // GetAccountBalances impl.
-func (k krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]number.Number, error) {
+func (k krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
 	balanceResponse, e := k.api.Balance()
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[model.Asset]number.Number{}
+	m := map[model.Asset]model.Number{}
 	for _, a := range assetList {
 		krakenAssetString, e := k.assetConverter.ToString(a)
 		if e != nil {
@@ -23,7 +22,7 @@ func (k krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.A
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *number.FromFloat(bal, k.precision)
+		m[a] = *model.FromFloat(bal, k.precision)
 	}
 	return m, nil
 }

@@ -2,17 +2,16 @@ package api
 
 import (
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // Ticker encapsulates all the data for a given Trading Pair
 type Ticker struct {
-	AskPrice  *number.Number
-	AskVolume *number.Number
-	BidPrice  *number.Number
-	BidVolume *number.Number
+	AskPrice  *model.Number
+	AskVolume *model.Number
+	BidPrice  *model.Number
+	BidVolume *model.Number
 }
 
 // TradesResult is the result of a GetTrades call

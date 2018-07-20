@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lightyeario/kelp/support/exchange/api/number"
+	"github.com/lightyeario/kelp/model"
 )
 
 const numberPrecision = 10
@@ -51,7 +51,7 @@ func parseBool(m map[string]interface{}, key string, methodAPI string) (bool, er
 	return b, nil
 }
 
-func parseNumber(m map[string]interface{}, key string, methodAPI string) (*number.Number, error) {
+func parseNumber(m map[string]interface{}, key string, methodAPI string) (*model.Number, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return nil, e
@@ -67,13 +67,13 @@ func parseNumber(m map[string]interface{}, key string, methodAPI string) (*numbe
 	}
 }
 
-func parseStringAsNumber(m map[string]interface{}, key string, methodAPI string) (*number.Number, error) {
+func parseStringAsNumber(m map[string]interface{}, key string, methodAPI string) (*model.Number, error) {
 	s, e := parseString(m, key, methodAPI)
 	if e != nil {
 		return nil, e
 	}
 
-	n, e := number.FromString(s, numberPrecision)
+	n, e := model.FromString(s, numberPrecision)
 	if e != nil {
 		return nil, fmt.Errorf("unable to convert the string field '%s' to a number in the response from %s: value=%v, error=%s", key, methodAPI, s, e)
 	}
@@ -81,7 +81,7 @@ func parseStringAsNumber(m map[string]interface{}, key string, methodAPI string)
 	return n, nil
 }
 
-func parseFloatAsNumber(m map[string]interface{}, key string, methodAPI string) (*number.Number, error) {
+func parseFloatAsNumber(m map[string]interface{}, key string, methodAPI string) (*model.Number, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return nil, e
@@ -92,5 +92,5 @@ func parseFloatAsNumber(m map[string]interface{}, key string, methodAPI string) 
 		return nil, makeParseError(key, "float", methodAPI, v)
 	}
 
-	return number.FromFloat(f, numberPrecision), nil
+	return model.FromFloat(f, numberPrecision), nil
 }

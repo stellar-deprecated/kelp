@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
 // PrepareDepositResult is the result of a PrepareDeposit call
 type PrepareDepositResult struct {
-	Fee      *number.Number // fee that will be deducted from your deposit, i.e. amount available is depositAmount - fee
-	Address  string         // address you should send the funds to
-	ExpireTs int64          // expire time as a unix timestamp, 0 if it does not expire
+	Fee      *model.Number // fee that will be deducted from your deposit, i.e. amount available is depositAmount - fee
+	Address  string        // address you should send the funds to
+	ExpireTs int64         // expire time as a unix timestamp, 0 if it does not expire
 }
 
 // DepositAPI is defined by anything where you can deposit model. Examples of this are Exchange and Anchor
@@ -24,14 +23,14 @@ type DepositAPI interface {
 			PrepareDepositResult - contains the deposit instructions
 			error - ErrDepositAmountAboveLimit, ErrTooManyDepositAddresses, or any other error
 	*/
-	PrepareDeposit(asset model.Asset, amount *number.Number) (*PrepareDepositResult, error)
+	PrepareDeposit(asset model.Asset, amount *model.Number) (*PrepareDepositResult, error)
 }
 
 // ErrDepositAmountAboveLimit error type
 type ErrDepositAmountAboveLimit error
 
 // MakeErrDepositAmountAboveLimit is a factory method
-func MakeErrDepositAmountAboveLimit(amount *number.Number, limit *number.Number) ErrDepositAmountAboveLimit {
+func MakeErrDepositAmountAboveLimit(amount *model.Number, limit *model.Number) ErrDepositAmountAboveLimit {
 	return fmt.Errorf("deposit amount (%s) is greater than limit (%s)", amount.AsString(), limit.AsString())
 }
 
