@@ -17,7 +17,7 @@ type WithdrawFunds struct {
 	WithdrawalID string
 }
 
-// WithdrawAPI is defined by anything where you can withdraw assets. Examples of this are Exchange and Anchor
+// WithdrawAPI is defined by anything where you can withdraw model. Examples of this are Exchange and Anchor
 type WithdrawAPI interface {
 	/*
 		Input:
@@ -28,7 +28,7 @@ type WithdrawAPI interface {
 			WithdrawInfo - details on how to perform the withdrawal
 			error - ErrWithdrawAmountAboveLimit, ErrWithdrawAmountInvalid, or any other error
 	*/
-	GetWithdrawInfo(asset assets.Asset, amountToWithdraw *number.Number, address string) (*WithdrawInfo, error)
+	GetWithdrawInfo(asset model.Asset, amountToWithdraw *number.Number, address string) (*WithdrawInfo, error)
 
 	/*
 		Input:
@@ -40,7 +40,7 @@ type WithdrawAPI interface {
 			error - any error
 	*/
 	WithdrawFunds(
-		asset assets.Asset,
+		asset model.Asset,
 		amountToWithdraw *number.Number,
 		address string,
 	) (*WithdrawFunds, error)

@@ -24,7 +24,7 @@ func MakeTransactionID(s string) *TransactionID {
 
 // Order represents an order in the orderbook
 type Order struct {
-	Pair        *assets.TradingPair
+	Pair        *model.TradingPair
 	OrderAction OrderAction
 	OrderType   OrderType
 	Price       *number.Number

@@ -12,7 +12,7 @@ import (
 
 // GetWithdrawInfo impl.
 func (k krakenExchange) GetWithdrawInfo(
-	asset assets.Asset,
+	asset model.Asset,
 	amountToWithdraw *number.Number,
 	address string,
 ) (*treasury.WithdrawInfo, error) {

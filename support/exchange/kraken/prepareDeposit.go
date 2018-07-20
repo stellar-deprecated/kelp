@@ -11,7 +11,7 @@ import (
 )
 
 // PrepareDeposit impl.
-func (k krakenExchange) PrepareDeposit(asset assets.Asset, amount *number.Number) (*treasury.PrepareDepositResult, error) {
+func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *number.Number) (*treasury.PrepareDepositResult, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
 	if e != nil {
 		return nil, e

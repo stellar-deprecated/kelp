@@ -10,16 +10,16 @@ import (
 // encapsulates a priceFeed from an exchange
 type exchangeFeed struct {
 	exchange *api.Exchange
-	pairs    []assets.TradingPair
+	pairs    []model.TradingPair
 }
 
 // ensure that it implements priceFeed
 var _ priceFeed = &exchangeFeed{}
 
-func newExchangeFeed(exchange *api.Exchange, pair *assets.TradingPair) *exchangeFeed {
+func newExchangeFeed(exchange *api.Exchange, pair *model.TradingPair) *exchangeFeed {
 	return &exchangeFeed{
 		exchange: exchange,
-		pairs:    []assets.TradingPair{*pair},
+		pairs:    []model.TradingPair{*pair},
 	}
 }
 

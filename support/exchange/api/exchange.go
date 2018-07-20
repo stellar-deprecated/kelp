@@ -30,17 +30,17 @@ type TradeHistoryResult struct {
 type Exchange interface {
 	GetPrecision() int8
 
-	GetAssetConverter() *assets.AssetConverter
+	GetAssetConverter() *model.AssetConverter
 
-	GetTickerPrice(pairs []assets.TradingPair) (map[assets.TradingPair]Ticker, error)
+	GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]Ticker, error)
 
-	GetOrderBook(pair *assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
+	GetOrderBook(pair *model.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
 
-	GetTrades(pair *assets.TradingPair, maybeCursor interface{}) (*TradesResult, error)
+	GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 
-	GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error)
+	GetOpenOrders() (map[model.TradingPair][]orderbook.OpenOrder, error)
 
 	AddOrder(order *orderbook.Order) (*orderbook.TransactionID, error)
 

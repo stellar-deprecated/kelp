@@ -15,7 +15,7 @@ import (
 )
 
 // GetTrades impl.
-func (k krakenExchange) GetTrades(pair *assets.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
+func (k krakenExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
 	if maybeCursor != nil {
 		mc := maybeCursor.(int64)
 		return k.getTrades(pair, &mc)
@@ -23,7 +23,7 @@ func (k krakenExchange) GetTrades(pair *assets.TradingPair, maybeCursor interfac
 	return k.getTrades(pair, nil)
 }
 
-func (k krakenExchange) getTrades(pair *assets.TradingPair, maybeCursor *int64) (*api.TradesResult, error) {
+func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (*api.TradesResult, error) {
 	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e

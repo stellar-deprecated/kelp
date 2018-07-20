@@ -11,7 +11,7 @@ import (
 
 // WithdrawFunds impl.
 func (k krakenExchange) WithdrawFunds(
-	asset assets.Asset,
+	asset model.Asset,
 	amountToWithdraw *number.Number,
 	address string,
 ) (*treasury.WithdrawFunds, error) {

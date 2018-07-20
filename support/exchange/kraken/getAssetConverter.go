@@ -5,6 +5,6 @@ import (
 )
 
 // GetAssetConverter impl.
-func (k krakenExchange) GetAssetConverter() *assets.AssetConverter {
+func (k krakenExchange) GetAssetConverter() *model.AssetConverter {
 	return k.assetConverter
 }

@@ -7,5 +7,5 @@ import (
 
 // Account allows you to access key account functions
 type Account interface {
-	GetAccountBalances(assetList []assets.Asset) (map[assets.Asset]number.Number, error)
+	GetAccountBalances(assetList []model.Asset) (map[model.Asset]number.Number, error)
 }

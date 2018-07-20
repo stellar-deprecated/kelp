@@ -17,7 +17,7 @@ import (
 )
 
 var testKrakenExchange api.Exchange = krakenExchange{
-	assetConverter: assets.KrakenAssetConverter,
+	assetConverter: model.KrakenAssetConverter,
 	api:            krakenapi.New("", ""),
 	delimiter:      "",
 	precision:      8,
@@ -26,8 +26,8 @@ var testKrakenExchange api.Exchange = krakenExchange{
 }
 
 func TestGetTickerPrice(t *testing.T) {
-	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
-	pairs := []assets.TradingPair{pair}
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
+	pairs := []model.TradingPair{pair}
 
 	m, e := testKrakenExchange.GetTickerPrice(pairs)
 	if !assert.NoError(t, e) {
@@ -40,13 +40,13 @@ func TestGetTickerPrice(t *testing.T) {
 }
 
 func TestGetAccountBalances(t *testing.T) {
-	assetList := []assets.Asset{
-		assets.USD,
-		assets.XLM,
-		assets.BTC,
-		assets.LTC,
-		assets.ETH,
-		assets.REP,
+	assetList := []model.Asset{
+		model.USD,
+		model.XLM,
+		model.BTC,
+		model.LTC,
+		model.ETH,
+		model.REP,
 	}
 	m, e := testKrakenExchange.GetAccountBalances(assetList)
 	if !assert.NoError(t, e) {
@@ -68,7 +68,7 @@ func TestGetAccountBalances(t *testing.T) {
 }
 
 func TestGetOrderBook(t *testing.T) {
-	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
 	ob, e := testKrakenExchange.GetOrderBook(&pair, 10)
 	if !assert.NoError(t, e) {
 		return
@@ -83,7 +83,7 @@ func TestGetOrderBook(t *testing.T) {
 }
 
 func TestGetTrades(t *testing.T) {
-	pair := assets.TradingPair{Base: assets.XLM, Quote: assets.BTC}
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
 	trades, e := testKrakenExchange.GetTrades(&pair, nil)
 	if !assert.NoError(t, e) {
 		return
@@ -132,7 +132,7 @@ func TestGetOpenOrders(t *testing.T) {
 
 func TestAddOrder(t *testing.T) {
 	txID, e := testKrakenExchange.AddOrder(&orderbook.Order{
-		Pair:        &assets.TradingPair{Base: assets.REP, Quote: assets.ETH},
+		Pair:        &model.TradingPair{Base: model.REP, Quote: model.ETH},
 		OrderAction: orderbook.ActionBuy,
 		OrderType:   orderbook.TypeLimit,
 		Price:       number.FromFloat(0.00001, 5),
@@ -163,7 +163,7 @@ func TestCancelOrder(t *testing.T) {
 }
 
 func TestPrepareDeposit(t *testing.T) {
-	result, e := testKrakenExchange.PrepareDeposit(assets.BTC, number.FromFloat(1.0, 7))
+	result, e := testKrakenExchange.PrepareDeposit(model.BTC, number.FromFloat(1.0, 7))
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -173,7 +173,7 @@ func TestPrepareDeposit(t *testing.T) {
 }
 
 func TestGetWithdrawInfo(t *testing.T) {
-	result, e := testKrakenExchange.GetWithdrawInfo(assets.BTC, number.FromFloat(1.0, 7), "")
+	result, e := testKrakenExchange.GetWithdrawInfo(model.BTC, number.FromFloat(1.0, 7), "")
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -183,7 +183,7 @@ func TestGetWithdrawInfo(t *testing.T) {
 }
 
 func TestWithdrawFunds(t *testing.T) {
-	result, e := testKrakenExchange.WithdrawFunds(assets.XLM, number.FromFloat(0.0000001, 7), "")
+	result, e := testKrakenExchange.WithdrawFunds(model.XLM, number.FromFloat(0.0000001, 7), "")
 	if !assert.NoError(t, e) {
 		return
 	}

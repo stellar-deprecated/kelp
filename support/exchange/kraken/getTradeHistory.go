@@ -58,7 +58,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		_cost := m["cost"].(string)
 		_fee := m["fee"].(string)
 		_pair := m["pair"].(string)
-		pair, e := assets.TradingPairFromString(4, k.assetConverter, _pair)
+		pair, e := model.TradingPairFromString(4, k.assetConverter, _pair)
 		if e != nil {
 			return nil, e
 		}

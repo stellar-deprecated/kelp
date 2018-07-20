@@ -26,7 +26,7 @@ func priceFeedFactory(feedType string, url string) priceFeed {
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
 		exchange := exchange.ExchangeFactory(urlParts[0])
-		tradingPair := assets.TradingPair{
+		tradingPair := model.TradingPair{
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
 			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),
 		}

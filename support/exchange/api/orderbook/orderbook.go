@@ -4,7 +4,7 @@ import "github.com/lightyeario/kelp/model/assets"
 
 // OrderBook encapsulates the concept of an orderbook on a market
 type OrderBook struct {
-	pair *assets.TradingPair
+	pair *model.TradingPair
 	asks []Order
 	bids []Order
 }
@@ -20,7 +20,7 @@ func (o OrderBook) Bids() []Order {
 }
 
 // MakeOrderBook creates a new OrderBook from the asks and the bids
-func MakeOrderBook(pair *assets.TradingPair, asks []Order, bids []Order) *OrderBook {
+func MakeOrderBook(pair *model.TradingPair, asks []Order, bids []Order) *OrderBook {
 	return &OrderBook{
 		pair: pair,
 		asks: asks,

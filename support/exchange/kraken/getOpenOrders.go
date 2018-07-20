@@ -10,23 +10,23 @@ import (
 )
 
 // GetOpenOrders impl.
-func (k krakenExchange) GetOpenOrders() (map[assets.TradingPair][]orderbook.OpenOrder, error) {
+func (k krakenExchange) GetOpenOrders() (map[model.TradingPair][]orderbook.OpenOrder, error) {
 	openOrdersResponse, e := k.api.OpenOrders(map[string]string{})
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[assets.TradingPair][]orderbook.OpenOrder{}
+	m := map[model.TradingPair][]orderbook.OpenOrder{}
 	for ID, o := range openOrdersResponse.Open {
 		// for some reason the open orders API returns the normal codes for assets
-		pair, e := assets.TradingPairFromString(3, assets.Display, o.Description.AssetPair)
+		pair, e := model.TradingPairFromString(3, model.Display, o.Description.AssetPair)
 		if e != nil {
 			return nil, e
 		}
 		if _, ok := m[*pair]; !ok {
 			m[*pair] = []orderbook.OpenOrder{}
 		}
-		if _, ok := m[assets.TradingPair{Base: pair.Quote, Quote: pair.Base}]; ok {
+		if _, ok := m[model.TradingPair{Base: pair.Quote, Quote: pair.Base}]; ok {
 			return nil, fmt.Errorf("open orders are listed with repeated base/quote pairs for %s", *pair)
 		}
 

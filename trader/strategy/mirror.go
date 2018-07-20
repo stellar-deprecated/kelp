@@ -26,7 +26,7 @@ type MirrorConfig struct {
 // MirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type MirrorStrategy struct {
 	txButler      *utils.TxButler
-	orderbookPair *assets.TradingPair
+	orderbookPair *model.TradingPair
 	baseAsset     *horizon.Asset
 	quoteAsset    *horizon.Asset
 	config        *MirrorConfig
@@ -39,7 +39,7 @@ var _ Strategy = &MirrorStrategy{}
 // MakeMirrorStrategy is a factory method
 func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
 	exchange := exchange.ExchangeFactory(config.EXCHANGE)
-	orderbookPair := &assets.TradingPair{
+	orderbookPair := &model.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
 	}

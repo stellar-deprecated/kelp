@@ -10,7 +10,7 @@ import (
 )
 
 // GetOrderBook impl.
-func (k krakenExchange) GetOrderBook(pair *assets.TradingPair, maxCount int32) (*orderbook.OrderBook, error) {
+func (k krakenExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*orderbook.OrderBook, error) {
 	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
@@ -27,7 +27,7 @@ func (k krakenExchange) GetOrderBook(pair *assets.TradingPair, maxCount int32) (
 	return ob, nil
 }
 
-func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *assets.TradingPair, orderAction orderbook.OrderAction) []orderbook.Order {
+func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.TradingPair, orderAction orderbook.OrderAction) []orderbook.Order {
 	orders := []orderbook.Order{}
 	for _, item := range obi {
 		orders = append(orders, orderbook.Order{

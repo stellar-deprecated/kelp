@@ -14,7 +14,7 @@ type PrepareDepositResult struct {
 	ExpireTs int64          // expire time as a unix timestamp, 0 if it does not expire
 }
 
-// DepositAPI is defined by anything where you can deposit assets. Examples of this are Exchange and Anchor
+// DepositAPI is defined by anything where you can deposit model. Examples of this are Exchange and Anchor
 type DepositAPI interface {
 	/*
 		Input:
@@ -24,7 +24,7 @@ type DepositAPI interface {
 			PrepareDepositResult - contains the deposit instructions
 			error - ErrDepositAmountAboveLimit, ErrTooManyDepositAddresses, or any other error
 	*/
-	PrepareDeposit(asset assets.Asset, amount *number.Number) (*PrepareDepositResult, error)
+	PrepareDeposit(asset model.Asset, amount *number.Number) (*PrepareDepositResult, error)
 }
 
 // ErrDepositAmountAboveLimit error type

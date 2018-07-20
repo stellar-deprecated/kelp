@@ -9,13 +9,13 @@ import (
 )
 
 // GetAccountBalances impl.
-func (k krakenExchange) GetAccountBalances(assetList []assets.Asset) (map[assets.Asset]number.Number, error) {
+func (k krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]number.Number, error) {
 	balanceResponse, e := k.api.Balance()
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[assets.Asset]number.Number{}
+	m := map[model.Asset]number.Number{}
 	for _, a := range assetList {
 		krakenAssetString, e := k.assetConverter.ToString(a)
 		if e != nil {

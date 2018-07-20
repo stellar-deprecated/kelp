@@ -17,7 +17,7 @@ var _ tApi.WithdrawAPI = krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
-	assetConverter *assets.AssetConverter
+	assetConverter *model.AssetConverter
 	api            *krakenapi.KrakenApi
 	delimiter      string
 	precision      int8
@@ -25,9 +25,9 @@ type krakenExchange struct {
 	isSimulated    bool // will simulate add and cancel orders if this is true
 }
 
-type asset2Address2Key map[assets.Asset]map[string]string
+type asset2Address2Key map[model.Asset]map[string]string
 
-func (m asset2Address2Key) getKey(asset assets.Asset, address string) (string, error) {
+func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, error) {
 	address2Key, ok := m[asset]
 	if !ok {
 		return "", fmt.Errorf("asset is not registered in asset2Address2Key: %v", asset)
@@ -45,7 +45,7 @@ func (m asset2Address2Key) getKey(asset assets.Asset, address string) (string, e
 // TODO 2, should take in config file for kraken api keys + withdrawalKeys mapping
 func MakeKrakenExchange() api.Exchange {
 	return &krakenExchange{
-		assetConverter: assets.KrakenAssetConverter,
+		assetConverter: model.KrakenAssetConverter,
 		api:            krakenapi.New("", ""),
 		delimiter:      "",
 		withdrawKeys:   asset2Address2Key{},
