@@ -70,20 +70,20 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 
 func getAction(tInfo krakenapi.TradeInfo) (orderbook.OrderAction, error) {
 	if tInfo.Buy {
-		return orderbook.ActionBuy, nil
+		return orderbook.OrderActionBuy, nil
 	} else if tInfo.Sell {
-		return orderbook.ActionSell, nil
+		return orderbook.OrderActionSell, nil
 	}
 
-	// return ActionBuy as nil value
-	return orderbook.ActionBuy, errors.New("unidentified trade action")
+	// return OrderActionBuy as nil value
+	return orderbook.OrderActionBuy, errors.New("unidentified trade action")
 }
 
 func getOrderType(tInfo krakenapi.TradeInfo) (orderbook.OrderType, error) {
 	if tInfo.Market {
-		return orderbook.TypeMarket, nil
+		return orderbook.OrderTypeMarket, nil
 	} else if tInfo.Limit {
-		return orderbook.TypeLimit, nil
+		return orderbook.OrderTypeLimit, nil
 	}
 	return -1, errors.New("unidentified trade action")
 }

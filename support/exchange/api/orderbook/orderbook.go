@@ -9,35 +9,35 @@ import (
 // OrderAction is the action of buy / sell
 type OrderAction bool
 
-// ActionBuy and ActionSell are the two actions
+// OrderActionBuy and OrderActionSell are the two actions
 const (
-	ActionBuy  OrderAction = false
-	ActionSell OrderAction = true
+	OrderActionBuy  OrderAction = false
+	OrderActionSell OrderAction = true
 )
 
 // IsBuy returns true for buy actions
 func (a OrderAction) IsBuy() bool {
-	return a == ActionBuy
+	return a == OrderActionBuy
 }
 
 // IsSell returns true for sell actions
 func (a OrderAction) IsSell() bool {
-	return a == ActionSell
+	return a == OrderActionSell
 }
 
 // String is the stringer function
 func (a OrderAction) String() string {
-	if a == ActionBuy {
+	if a == OrderActionBuy {
 		return "buy"
-	} else if a == ActionSell {
+	} else if a == OrderActionSell {
 		return "sell"
 	}
 	return "error, unrecognized order action"
 }
 
 var orderActionMap = map[string]OrderAction{
-	"buy":  ActionBuy,
-	"sell": ActionSell,
+	"buy":  OrderActionBuy,
+	"sell": OrderActionSell,
 }
 
 // OrderActionFromString is a convenience to convert from common strings to the corresponding OrderAction
@@ -50,33 +50,33 @@ type OrderType int8
 
 // These are the available order types
 const (
-	TypeMarket OrderType = 0
-	TypeLimit  OrderType = 1
+	OrderTypeMarket OrderType = 0
+	OrderTypeLimit  OrderType = 1
 )
 
 // IsMarket returns true for market orders
 func (o OrderType) IsMarket() bool {
-	return o == TypeMarket
+	return o == OrderTypeMarket
 }
 
 // IsLimit returns true for limit orders
 func (o OrderType) IsLimit() bool {
-	return o == TypeLimit
+	return o == OrderTypeLimit
 }
 
 // String is the stringer function
 func (o OrderType) String() string {
-	if o == TypeMarket {
+	if o == OrderTypeMarket {
 		return "market"
-	} else if o == TypeLimit {
+	} else if o == OrderTypeLimit {
 		return "limit"
 	}
 	return "error, unrecognized order type"
 }
 
 var orderTypeMap = map[string]OrderType{
-	"market": TypeMarket,
-	"limit":  TypeLimit,
+	"market": OrderTypeMarket,
+	"limit":  OrderTypeLimit,
 }
 
 // OrderTypeFromString is a convenience to convert from common strings to the corresponding OrderType
@@ -132,7 +132,7 @@ func MakeOrderBook(pair *model.TradingPair, asks []Order, bids []Order) *OrderBo
 	}
 }
 
-// TransactionID is typed for the concept of a transaction ID
+// TransactionID is typed for the concept of a transaction ID of an order
 type TransactionID string
 
 // String is the stringer function

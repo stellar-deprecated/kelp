@@ -132,8 +132,8 @@ func TestGetOpenOrders(t *testing.T) {
 func TestAddOrder(t *testing.T) {
 	txID, e := testKrakenExchange.AddOrder(&orderbook.Order{
 		Pair:        &model.TradingPair{Base: model.REP, Quote: model.ETH},
-		OrderAction: orderbook.ActionBuy,
-		OrderType:   orderbook.TypeLimit,
+		OrderAction: orderbook.OrderActionBuy,
+		OrderType:   orderbook.OrderTypeLimit,
 		Price:       model.FromFloat(0.00001, 5),
 		Volume:      model.FromFloat(0.3145, 5),
 	})

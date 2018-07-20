@@ -19,8 +19,8 @@ func (k krakenExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*
 		return nil, e
 	}
 
-	asks := k.readOrders(krakenob.Asks, pair, orderbook.ActionSell)
-	bids := k.readOrders(krakenob.Bids, pair, orderbook.ActionBuy)
+	asks := k.readOrders(krakenob.Asks, pair, orderbook.OrderActionSell)
+	bids := k.readOrders(krakenob.Bids, pair, orderbook.OrderActionBuy)
 	ob := orderbook.MakeOrderBook(pair, asks, bids)
 	return ob, nil
 }
@@ -31,7 +31,7 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 		orders = append(orders, orderbook.Order{
 			Pair:        pair,
 			OrderAction: orderAction,
-			OrderType:   orderbook.TypeLimit,
+			OrderType:   orderbook.OrderTypeLimit,
 			Price:       model.FromFloat(item.Price, k.precision),
 			Volume:      model.FromFloat(item.Amount, k.precision),
 			Timestamp:   model.MakeTimestamp(item.Ts),
