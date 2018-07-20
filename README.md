@@ -135,7 +135,7 @@ Each strategy you implement needs a configuration file. The format of the config
 
 Exchange integrations provide data to trading strategies and allow you to [hedge][hedge] your positions on different exchanges. The following [exchange integrations](support/exchange) are available **out of the box** with Kelp:
 
-- [sdex](support/txbutler.go): The [Stellar Decentralized Exchange][sdex]
+- [sdex](support/utils/txbutler.go): The [Stellar Decentralized Exchange][sdex]
 - [kraken](support/exchange/kraken): [Kraken][kraken]
 
 ## Extensions
