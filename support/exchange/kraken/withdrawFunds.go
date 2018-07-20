@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // WithdrawFunds impl.
@@ -13,7 +13,7 @@ func (k krakenExchange) WithdrawFunds(
 	asset model.Asset,
 	amountToWithdraw *model.Number,
 	address string,
-) (*treasury.WithdrawFunds, error) {
+) (*api.WithdrawFunds, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
 	if e != nil {
 		return nil, e
@@ -38,14 +38,14 @@ func (k krakenExchange) WithdrawFunds(
 	return parseWithdrawResponse(resp)
 }
 
-func parseWithdrawResponse(resp interface{}) (*treasury.WithdrawFunds, error) {
+func parseWithdrawResponse(resp interface{}) (*api.WithdrawFunds, error) {
 	switch m := resp.(type) {
 	case map[string]interface{}:
 		refid, e := parseString(m, "refid", "Withdraw")
 		if e != nil {
 			return nil, e
 		}
-		return &treasury.WithdrawFunds{
+		return &api.WithdrawFunds{
 			WithdrawalID: refid,
 		}, nil
 	default:

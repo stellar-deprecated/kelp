@@ -1,4 +1,4 @@
-package treasury
+package api
 
 import (
 	"github.com/lightyeario/kelp/model"

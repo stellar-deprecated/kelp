@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // GetWithdrawInfo impl.
@@ -14,7 +14,7 @@ func (k krakenExchange) GetWithdrawInfo(
 	asset model.Asset,
 	amountToWithdraw *model.Number,
 	address string,
-) (*treasury.WithdrawInfo, error) {
+) (*api.WithdrawInfo, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
 	if e != nil {
 		return nil, e
@@ -39,7 +39,7 @@ func (k krakenExchange) GetWithdrawInfo(
 	return parseWithdrawInfoResponse(resp, amountToWithdraw)
 }
 
-func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *model.Number) (*treasury.WithdrawInfo, error) {
+func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *model.Number) (*api.WithdrawInfo, error) {
 	switch m := resp.(type) {
 	case map[string]interface{}:
 		info, e := parseWithdrawInfo(m)
@@ -47,13 +47,13 @@ func parseWithdrawInfoResponse(resp interface{}, amountToWithdraw *model.Number)
 			return nil, e
 		}
 		if info.limit != nil && info.limit.AsFloat() < amountToWithdraw.AsFloat() {
-			return nil, treasury.MakeErrWithdrawAmountAboveLimit(amountToWithdraw, info.limit)
+			return nil, api.MakeErrWithdrawAmountAboveLimit(amountToWithdraw, info.limit)
 		}
 		if info.fee != nil && info.fee.AsFloat() >= amountToWithdraw.AsFloat() {
-			return nil, treasury.MakeErrWithdrawAmountInvalid(amountToWithdraw, info.fee)
+			return nil, api.MakeErrWithdrawAmountInvalid(amountToWithdraw, info.fee)
 		}
 
-		return &treasury.WithdrawInfo{AmountToReceive: info.amount}, nil
+		return &api.WithdrawInfo{AmountToReceive: info.amount}, nil
 	default:
 		return nil, fmt.Errorf("could not parse response type from WithdrawInfo: %s", reflect.TypeOf(m))
 	}

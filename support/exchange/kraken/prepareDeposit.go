@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/treasury/api"
 )
 
 // PrepareDeposit impl.
-func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) (*treasury.PrepareDepositResult, error) {
+func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) (*api.PrepareDepositResult, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
 	if e != nil {
 		return nil, e
@@ -22,7 +22,7 @@ func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) 
 	}
 
 	if dm.limit != nil && dm.limit.AsFloat() < amount.AsFloat() {
-		return nil, treasury.MakeErrDepositAmountAboveLimit(amount, dm.limit)
+		return nil, api.MakeErrDepositAmountAboveLimit(amount, dm.limit)
 	}
 
 	// get any unused address on the account or generate a new address if no existing unused address
@@ -31,7 +31,7 @@ func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) 
 		addressList, e := k.getDepositAddress(krakenAsset, dm.method, generateNewAddress)
 		if e != nil {
 			if strings.Contains(e.Error(), "EFunding:Too many addresses") {
-				return nil, treasury.MakeErrTooManyDepositAddresses()
+				return nil, api.MakeErrTooManyDepositAddresses()
 			}
 			return nil, e
 		}
@@ -41,7 +41,7 @@ func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) 
 
 		if len(addressList) > 0 {
 			earliestAddress := addressList[len(addressList)-1]
-			return &treasury.PrepareDepositResult{
+			return &api.PrepareDepositResult{
 				Fee:      dm.fee,
 				Address:  earliestAddress.address,
 				ExpireTs: earliestAddress.expireTs,
