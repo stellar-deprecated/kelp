@@ -1,4 +1,4 @@
-package datamodel
+package model
 
 import (
 	"crypto/sha1"

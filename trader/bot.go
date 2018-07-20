@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/lightyeario/kelp/support/datamodel"
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/stellar/go/build"
@@ -25,7 +25,7 @@ type Bot struct {
 	txButler            *utils.TxButler
 	strat               strategy.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
-	dataKey             *datamodel.BotKey
+	dataKey             *model.BotKey
 
 	// uninitialized
 	maxAssetA      float64
@@ -45,7 +45,7 @@ func MakeBot(
 	txButler *utils.TxButler,
 	strat strategy.Strategy,
 	tickIntervalSeconds int32,
-	dataKey *datamodel.BotKey,
+	dataKey *model.BotKey,
 ) *Bot {
 	return &Bot{
 		api:                 api,

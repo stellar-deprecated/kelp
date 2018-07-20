@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lightyeario/kelp/support/datamodel"
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/spf13/cobra"
@@ -70,7 +70,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	assetBase := botConfig.AssetBase()
 	assetQuote := botConfig.AssetQuote()
-	dataKey := datamodel.MakeSortedBotKey(assetBase, assetQuote)
+	dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 	strat := strategy.StratFactory(txB, &assetBase, &assetQuote, *stratType, *stratConfigPath)
 	bot := MakeBot(
 		client,

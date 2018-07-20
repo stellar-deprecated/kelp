@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lightyeario/kelp/support/datamodel"
-
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -51,9 +50,9 @@ func (t *Terminator) StartService() {
 	}
 }
 
-// botKeyPair is a pair of the datamodel.BotKey and the time the bot was last updated
+// botKeyPair is a pair of the model.BotKey and the time the bot was last updated
 type botKeyPair struct {
-	dataKey     datamodel.BotKey
+	dataKey     model.BotKey
 	lastUpdated int64
 }
 
@@ -128,7 +127,7 @@ func convertToAsset(code string, issuer string) horizon.Asset {
 }
 
 // deleteOffers deletes passed in offers along with the data for the passed in hash
-func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, botKey datamodel.BotKey, tsMillis int64) {
+func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, botKey model.BotKey, tsMillis int64) {
 	ops := []build.TransactionMutator{}
 	ops = append(ops, t.txb.DeleteAllOffers(sellOffers)...)
 	ops = append(ops, t.txb.DeleteAllOffers(buyOffers)...)
@@ -173,11 +172,11 @@ func excludeActiveBots(botList []botKeyPair, cutoffMillis int64) []botKeyPair {
 func reconstructBotList(data map[string]string) ([]botKeyPair, error) {
 	m := make(map[string]botKeyPair)
 	for k, v := range data {
-		if !datamodel.IsBotKey(k) {
+		if !model.IsBotKey(k) {
 			continue
 		}
 
-		hash, botKeyPart := datamodel.SplitDataKey(k)
+		hash, botKeyPart := model.SplitDataKey(k)
 		currentBotKey, ok := m[hash]
 		if !ok {
 			currentBotKey = botKeyPair{}
