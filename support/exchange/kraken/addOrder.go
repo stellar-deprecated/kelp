@@ -3,14 +3,14 @@ package kraken
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
+	"github.com/lightyeario/kelp/model"
 )
 
 const pricePrecision = 5
 const volPrecision = 5
 
 // AddOrder impl.
-func (k krakenExchange) AddOrder(order *orderbook.Order) (*orderbook.TransactionID, error) {
+func (k krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
 	pairStr, e := order.Pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
@@ -42,7 +42,7 @@ func (k krakenExchange) AddOrder(order *orderbook.Order) (*orderbook.Transaction
 
 	// expected case for production orders
 	if len(resp.TransactionIds) == 1 {
-		return orderbook.MakeTransactionID(resp.TransactionIds[0]), nil
+		return model.MakeTransactionID(resp.TransactionIds[0]), nil
 	}
 
 	if len(resp.TransactionIds) > 1 {

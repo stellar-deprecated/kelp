@@ -8,8 +8,6 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
-
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/model"
 	"github.com/stretchr/testify/assert"
@@ -130,10 +128,10 @@ func TestGetOpenOrders(t *testing.T) {
 }
 
 func TestAddOrder(t *testing.T) {
-	txID, e := testKrakenExchange.AddOrder(&orderbook.Order{
+	txID, e := testKrakenExchange.AddOrder(&model.Order{
 		Pair:        &model.TradingPair{Base: model.REP, Quote: model.ETH},
-		OrderAction: orderbook.OrderActionBuy,
-		OrderType:   orderbook.OrderTypeLimit,
+		OrderAction: model.OrderActionBuy,
+		OrderType:   model.OrderTypeLimit,
 		Price:       model.FromFloat(0.00001, 5),
 		Volume:      model.FromFloat(0.3145, 5),
 	})
@@ -149,7 +147,7 @@ func TestAddOrder(t *testing.T) {
 
 func TestCancelOrder(t *testing.T) {
 	// need to add some transactionID here to run this test
-	txID := orderbook.MakeTransactionID("")
+	txID := model.MakeTransactionID("")
 	result, e := testKrakenExchange.CancelOrder(txID)
 	if !assert.NoError(t, e) {
 		return

@@ -3,8 +3,6 @@ package kraken
 import (
 	"strconv"
 
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
-
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
@@ -62,15 +60,15 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		}
 
 		res.Trades = append(res.Trades, trades.Trade{
-			Order: orderbook.Order{
+			Order: model.Order{
 				Pair:        pair,
-				OrderAction: orderbook.OrderActionFromString(_type),
-				OrderType:   orderbook.OrderTypeFromString(_ordertype),
+				OrderAction: model.OrderActionFromString(_type),
+				OrderType:   model.OrderTypeFromString(_ordertype),
 				Price:       model.MustFromString(_price, k.precision),
 				Volume:      model.MustFromString(_vol, k.precision),
 				Timestamp:   ts,
 			},
-			TransactionID: orderbook.MakeTransactionID(_txid),
+			TransactionID: model.MakeTransactionID(_txid),
 			Cost:          model.MustFromString(_cost, k.precision),
 			Fee:           model.MustFromString(_fee, k.precision),
 		})

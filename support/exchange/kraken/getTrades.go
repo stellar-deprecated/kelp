@@ -3,8 +3,6 @@ package kraken
 import (
 	"errors"
 
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
-
 	"github.com/Beldur/kraken-go-api-client"
 
 	"github.com/lightyeario/kelp/model"
@@ -52,7 +50,7 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 		}
 
 		tradesResult.Trades = append(tradesResult.Trades, trades.Trade{
-			Order: orderbook.Order{
+			Order: model.Order{
 				Pair:        pair,
 				OrderAction: action,
 				OrderType:   orderType,
@@ -68,22 +66,22 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 	return tradesResult, nil
 }
 
-func getAction(tInfo krakenapi.TradeInfo) (orderbook.OrderAction, error) {
+func getAction(tInfo krakenapi.TradeInfo) (model.OrderAction, error) {
 	if tInfo.Buy {
-		return orderbook.OrderActionBuy, nil
+		return model.OrderActionBuy, nil
 	} else if tInfo.Sell {
-		return orderbook.OrderActionSell, nil
+		return model.OrderActionSell, nil
 	}
 
 	// return OrderActionBuy as nil value
-	return orderbook.OrderActionBuy, errors.New("unidentified trade action")
+	return model.OrderActionBuy, errors.New("unidentified trade action")
 }
 
-func getOrderType(tInfo krakenapi.TradeInfo) (orderbook.OrderType, error) {
+func getOrderType(tInfo krakenapi.TradeInfo) (model.OrderType, error) {
 	if tInfo.Market {
-		return orderbook.OrderTypeMarket, nil
+		return model.OrderTypeMarket, nil
 	} else if tInfo.Limit {
-		return orderbook.OrderTypeLimit, nil
+		return model.OrderTypeLimit, nil
 	}
 	return -1, errors.New("unidentified trade action")
 }

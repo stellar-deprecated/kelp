@@ -3,15 +3,13 @@ package trades
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
-
 	"github.com/lightyeario/kelp/model"
 )
 
 // Trade represents a trade on an exchange
 type Trade struct {
-	orderbook.Order
-	TransactionID *orderbook.TransactionID
+	model.Order
+	TransactionID *model.TransactionID
 	Cost          *model.Number
 	Fee           *model.Number
 }

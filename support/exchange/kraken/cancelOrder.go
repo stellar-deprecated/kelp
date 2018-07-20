@@ -1,13 +1,13 @@
 package kraken
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 	"github.com/stellar/go/support/log"
 )
 
 // CancelOrder impl.
-func (k krakenExchange) CancelOrder(txID *orderbook.TransactionID) (trades.CancelOrderResult, error) {
+func (k krakenExchange) CancelOrder(txID *model.TransactionID) (trades.CancelOrderResult, error) {
 	resp, e := k.api.CancelOrder(txID.String())
 	if e != nil {
 		return trades.CancelResultFailed, e

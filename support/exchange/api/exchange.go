@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
@@ -33,15 +32,15 @@ type Exchange interface {
 
 	GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]Ticker, error)
 
-	GetOrderBook(pair *model.TradingPair, maxCount int32) (*orderbook.OrderBook, error)
+	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)
 
 	GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 
-	GetOpenOrders() (map[model.TradingPair][]orderbook.OpenOrder, error)
+	GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error)
 
-	AddOrder(order *orderbook.Order) (*orderbook.TransactionID, error)
+	AddOrder(order *model.Order) (*model.TransactionID, error)
 
-	CancelOrder(txID *orderbook.TransactionID) (trades.CancelOrderResult, error)
+	CancelOrder(txID *model.TransactionID) (trades.CancelOrderResult, error)
 }

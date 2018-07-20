@@ -4,7 +4,6 @@ import (
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
@@ -105,7 +104,7 @@ func (s MirrorStrategy) UpdateWithOps(
 
 func (s *MirrorStrategy) updateLevels(
 	oldOffers []horizon.Offer,
-	newOrders []orderbook.Order,
+	newOrders []model.Order,
 	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
 	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder,
 	priceMultiplier float64,
@@ -144,7 +143,7 @@ func (s *MirrorStrategy) updateLevels(
 
 func doModifyOffer(
 	oldOffer horizon.Offer,
-	newOrder orderbook.Order,
+	newOrder model.Order,
 	priceMultiplier float64,
 	volumeDivideBy float64,
 	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,

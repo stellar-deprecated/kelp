@@ -1,9 +1,7 @@
-package orderbook
+package model
 
 import (
 	"fmt"
-
-	"github.com/lightyeario/kelp/model"
 )
 
 // OrderAction is the action of buy / sell
@@ -86,12 +84,12 @@ func OrderTypeFromString(s string) OrderType {
 
 // Order represents an order in the orderbook
 type Order struct {
-	Pair        *model.TradingPair
+	Pair        *TradingPair
 	OrderAction OrderAction
 	OrderType   OrderType
-	Price       *model.Number
-	Volume      *model.Number
-	Timestamp   *model.Timestamp
+	Price       *Number
+	Volume      *Number
+	Timestamp   *Timestamp
 }
 
 // String is the stringer function
@@ -108,7 +106,7 @@ func (o Order) String() string {
 
 // OrderBook encapsulates the concept of an orderbook on a market
 type OrderBook struct {
-	pair *model.TradingPair
+	pair *TradingPair
 	asks []Order
 	bids []Order
 }
@@ -124,7 +122,7 @@ func (o OrderBook) Bids() []Order {
 }
 
 // MakeOrderBook creates a new OrderBook from the asks and the bids
-func MakeOrderBook(pair *model.TradingPair, asks []Order, bids []Order) *OrderBook {
+func MakeOrderBook(pair *TradingPair, asks []Order, bids []Order) *OrderBook {
 	return &OrderBook{
 		pair: pair,
 		asks: asks,
@@ -150,9 +148,9 @@ func MakeTransactionID(s string) *TransactionID {
 type OpenOrder struct {
 	Order
 	ID             string
-	StartTime      *model.Timestamp
-	ExpireTime     *model.Timestamp
-	VolumeExecuted *model.Number
+	StartTime      *Timestamp
+	ExpireTime     *Timestamp
+	VolumeExecuted *Number
 }
 
 // String is the stringer function
