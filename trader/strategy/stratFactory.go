@@ -3,6 +3,7 @@ package strategy
 import (
 	"os"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -16,7 +17,7 @@ func StratFactory(
 	assetQuote *horizon.Asset,
 	stratType string,
 	stratConfigPath string,
-) Strategy {
+) api.Strategy {
 	switch stratType {
 	case "buysell":
 		var cfg BuySellConfig

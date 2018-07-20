@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
@@ -30,7 +31,7 @@ func MakeBalancedStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *BalancedConfig,
-) Strategy {
+) api.Strategy {
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
 		txButler,
 		assetBase,

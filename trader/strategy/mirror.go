@@ -32,10 +32,10 @@ type MirrorStrategy struct {
 }
 
 // ensure this implements Strategy
-var _ Strategy = &MirrorStrategy{}
+var _ api.Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
-func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) Strategy {
+func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) api.Strategy {
 	xc := exchange.ExchangeFactory(config.EXCHANGE)
 	orderbookPair := &model.TradingPair{
 		Base:  xc.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),

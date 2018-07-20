@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
@@ -11,7 +12,7 @@ func MakeDeleteStrategy(
 	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-) Strategy {
+) api.Strategy {
 	return MakeComposeStrategy(
 		assetBase,
 		assetQuote,

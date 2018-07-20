@@ -1,4 +1,4 @@
-package strategy
+package api
 
 import (
 	"github.com/stellar/go/build"

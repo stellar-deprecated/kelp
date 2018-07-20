@@ -5,9 +5,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
-	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -23,7 +23,7 @@ type Bot struct {
 	assetQuote          horizon.Asset
 	tradingAccount      string
 	txButler            *utils.TxButler
-	strat               strategy.Strategy // the instance of this bot is bound to this strategy
+	strat               api.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
 	dataKey             *model.BotKey
 
@@ -43,7 +43,7 @@ func MakeBot(
 	assetQuote horizon.Asset,
 	tradingAccount string,
 	txButler *utils.TxButler,
-	strat strategy.Strategy,
+	strat api.Strategy,
 	tickIntervalSeconds int32,
 	dataKey *model.BotKey,
 ) *Bot {

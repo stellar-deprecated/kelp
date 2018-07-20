@@ -144,7 +144,7 @@ Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
 
 These interfaces make it easy to create extensions:
-- [Strategy](trader/strategy/strategy.go) - API for a strategy used by the `trader` bot
+- [Strategy](api/strategy.go) - API for a strategy used by the `trader` bot
 - [SideStrategy](trader/strategy/sideStrategy/sideStrategy.go) - API for a strategy that is applied to a single side of the orderbook. Can be used in conjunction with [compose.go](trader/strategy/compose.go) to build a Strategy using principles of [composition][composition].
 - [PriceFeed](support/priceFeed/pricefeed.go#L13) - API for price of an asset
 - [Exchange](api/exchange.go#L30) - API for crypto exchanges

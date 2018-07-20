@@ -3,6 +3,7 @@ package strategy
 import (
 	"fmt"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 
 	"github.com/lightyeario/kelp/support/utils"
@@ -21,7 +22,7 @@ type ComposeStrategy struct {
 }
 
 // ensure it implements Strategy
-var _ Strategy = &ComposeStrategy{}
+var _ api.Strategy = &ComposeStrategy{}
 
 // MakeComposeStrategy is a factory method for ComposeStrategy
 func MakeComposeStrategy(
@@ -29,7 +30,7 @@ func MakeComposeStrategy(
 	assetQuote *horizon.Asset,
 	buyStrat sideStrategy.SideStrategy,
 	sellStrat sideStrategy.SideStrategy,
-) Strategy {
+) api.Strategy {
 	return &ComposeStrategy{
 		assetBase:  assetBase,
 		assetQuote: assetQuote,
