@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/lightyeario/kelp/model/assets"
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/treasury/api"
 )

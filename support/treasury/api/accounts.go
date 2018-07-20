@@ -1,7 +1,7 @@
 package treasury
 
 import (
-	"github.com/lightyeario/kelp/model/assets"
+	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
