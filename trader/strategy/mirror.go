@@ -6,7 +6,7 @@ import (
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
-	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/model/assets"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"

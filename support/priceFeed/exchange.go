@@ -3,8 +3,8 @@ package priceFeed
 import (
 	"fmt"
 
+	"github.com/lightyeario/kelp/model/assets"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/assets"
 )
 
 // encapsulates a priceFeed from an exchange

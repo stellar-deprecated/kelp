@@ -5,8 +5,8 @@ import (
 
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 
+	"github.com/lightyeario/kelp/model/assets"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/assets"
 	"github.com/lightyeario/kelp/support/exchange/api/dates"
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"

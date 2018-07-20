@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/lightyeario/kelp/model/assets"
 	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/api/assets"
 )
 
 // priceFeed allows you to fetch the price of a feed

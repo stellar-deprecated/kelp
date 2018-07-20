@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/lightyeario/kelp/support/exchange/api/assets"
+	"github.com/lightyeario/kelp/model/assets"
 	"github.com/lightyeario/kelp/support/exchange/api/number"
 )
 
