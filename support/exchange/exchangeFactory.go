@@ -1,7 +1,7 @@
 package exchange
 
 import (
-	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/exchange/kraken"
 )
 

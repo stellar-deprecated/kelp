@@ -1,8 +1,8 @@
 package kraken
 
 import (
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api"
 )
 
 // GetTickerPrice impl.

@@ -1,9 +1,9 @@
 package strategy
 
 import (
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange"
-	"github.com/lightyeario/kelp/support/exchange/api"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"

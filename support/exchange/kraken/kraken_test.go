@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/lightyeario/kelp/support/exchange/api"
+	"github.com/lightyeario/kelp/api"
 
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/model"

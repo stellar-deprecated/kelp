@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Beldur/kraken-go-api-client"
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api"
 	tApi "github.com/lightyeario/kelp/support/treasury/api"
 )
 

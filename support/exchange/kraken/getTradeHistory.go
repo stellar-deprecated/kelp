@@ -3,8 +3,8 @@ package kraken
 import (
 	"strconv"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api"
 )
 
 // GetTradeHistory impl.
