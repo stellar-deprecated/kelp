@@ -163,3 +163,47 @@ func (o OpenOrder) String() string {
 		o.VolumeExecuted.AsString(),
 	)
 }
+
+// CancelOrderResult is the result of a CancelOrder call
+type CancelOrderResult int8
+
+// These are the available types
+const (
+	CancelResultCancelSuccessful CancelOrderResult = 0
+	CancelResultPending          CancelOrderResult = 1
+	CancelResultFailed           CancelOrderResult = 2
+)
+
+// String is the stringer function
+func (r CancelOrderResult) String() string {
+	if r == CancelResultCancelSuccessful {
+		return "cancelled"
+	} else if r == CancelResultPending {
+		return "pending"
+	} else if r == CancelResultFailed {
+		return "failed"
+	}
+	return "error, unrecognized CancelOrderResult"
+}
+
+// Trade represents a trade on an exchange
+type Trade struct {
+	Order
+	TransactionID *TransactionID
+	Cost          *Number
+	Fee           *Number
+}
+
+func (t Trade) String() string {
+	return fmt.Sprintf("Trades[txid: %s, ts: %d, pair: %s, action: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
+		*t.TransactionID,
+		t.Timestamp,
+		*t.Pair,
+		t.OrderAction,
+		t.OrderType,
+		t.Price.AsString(),
+		t.Volume.AsString(),
+		t.Cost.AsString(),
+		t.Fee.AsString(),
+	)
+}

@@ -7,7 +7,6 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // GetTrades impl.
@@ -37,7 +36,7 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 
 	tradesResult := &api.TradesResult{
 		Cursor: tradesResp.Last,
-		Trades: []trades.Trade{},
+		Trades: []model.Trade{},
 	}
 	for _, tInfo := range tradesResp.Trades {
 		action, e := getAction(tInfo)
@@ -49,7 +48,7 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 			return nil, e
 		}
 
-		tradesResult.Trades = append(tradesResult.Trades, trades.Trade{
+		tradesResult.Trades = append(tradesResult.Trades, model.Trade{
 			Order: model.Order{
 				Pair:        pair,
 				OrderAction: action,

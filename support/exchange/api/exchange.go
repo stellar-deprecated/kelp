@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // Ticker encapsulates all the data for a given Trading Pair
@@ -16,12 +15,12 @@ type Ticker struct {
 // TradesResult is the result of a GetTrades call
 type TradesResult struct {
 	Cursor interface{}
-	Trades []trades.Trade
+	Trades []model.Trade
 }
 
 // TradeHistoryResult is the result of a GetTradeHistory call
 type TradeHistoryResult struct {
-	Trades []trades.Trade
+	Trades []model.Trade
 }
 
 // Exchange is the interface we use as a generic API to all crypto exchanges
@@ -42,5 +41,5 @@ type Exchange interface {
 
 	AddOrder(order *model.Order) (*model.TransactionID, error)
 
-	CancelOrder(txID *model.TransactionID) (trades.CancelOrderResult, error)
+	CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error)
 }

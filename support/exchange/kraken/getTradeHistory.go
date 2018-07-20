@@ -5,7 +5,6 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
 // GetTradeHistory impl.
@@ -41,7 +40,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 	krakenResp := resp.(map[string]interface{})
 	krakenTrades := krakenResp["trades"].(map[string]interface{})
 
-	res := api.TradeHistoryResult{Trades: []trades.Trade{}}
+	res := api.TradeHistoryResult{Trades: []model.Trade{}}
 	for _, v := range krakenTrades {
 		m := v.(map[string]interface{})
 		_txid := m["ordertxid"].(string)
@@ -59,7 +58,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 			return nil, e
 		}
 
-		res.Trades = append(res.Trades, trades.Trade{
+		res.Trades = append(res.Trades, model.Trade{
 			Order: model.Order{
 				Pair:        pair,
 				OrderAction: model.OrderActionFromString(_type),

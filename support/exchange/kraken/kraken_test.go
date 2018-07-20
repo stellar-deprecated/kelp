@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/trades"
 
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/model"
@@ -154,7 +153,7 @@ func TestCancelOrder(t *testing.T) {
 	}
 
 	fmt.Printf("result from cancel order (transactionID=%s): %s\n", txID.String(), result.String())
-	assert.Equal(t, trades.CancelResultCancelSuccessful, result)
+	assert.Equal(t, model.CancelResultCancelSuccessful, result)
 
 	assert.Fail(t, "force fail")
 }
