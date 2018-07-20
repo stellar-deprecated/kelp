@@ -1,4 +1,4 @@
-package dates
+package model
 
 // Timestamp is millis since epoch
 type Timestamp int64

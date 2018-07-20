@@ -7,7 +7,6 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/dates"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
@@ -49,7 +48,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		m := v.(map[string]interface{})
 		_txid := m["ordertxid"].(string)
 		_time := m["time"].(float64)
-		ts := dates.MakeTimestamp(int64(_time))
+		ts := model.MakeTimestamp(int64(_time))
 		_type := m["type"].(string)
 		_ordertype := m["ordertype"].(string)
 		_price := m["price"].(string)

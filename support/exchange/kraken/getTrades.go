@@ -9,7 +9,6 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange/api"
-	"github.com/lightyeario/kelp/support/exchange/api/dates"
 	"github.com/lightyeario/kelp/support/exchange/api/trades"
 )
 
@@ -59,7 +58,7 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 				OrderType:   orderType,
 				Price:       model.FromFloat(tInfo.PriceFloat, k.precision),
 				Volume:      model.FromFloat(tInfo.VolumeFloat, k.precision),
-				Timestamp:   dates.MakeTimestamp(tInfo.Time),
+				Timestamp:   model.MakeTimestamp(tInfo.Time),
 			},
 			// TransactionID unavailable
 			// Cost unavailable

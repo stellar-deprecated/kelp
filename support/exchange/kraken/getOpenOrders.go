@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/dates"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 )
 
@@ -36,11 +35,11 @@ func (k krakenExchange) GetOpenOrders() (map[model.TradingPair][]orderbook.OpenO
 				OrderType:   orderbook.OrderTypeFromString(o.Description.OrderType),
 				Price:       model.MustFromString(o.Description.PrimaryPrice, k.precision),
 				Volume:      model.MustFromString(o.Volume, k.precision),
-				Timestamp:   dates.MakeTimestamp(int64(o.OpenTime)),
+				Timestamp:   model.MakeTimestamp(int64(o.OpenTime)),
 			},
 			ID:             ID,
-			StartTime:      dates.MakeTimestamp(int64(o.StartTime)),
-			ExpireTime:     dates.MakeTimestamp(int64(o.ExpireTime)),
+			StartTime:      model.MakeTimestamp(int64(o.StartTime)),
+			ExpireTime:     model.MakeTimestamp(int64(o.ExpireTime)),
 			VolumeExecuted: model.FromFloat(o.VolumeExecuted, k.precision),
 		})
 	}

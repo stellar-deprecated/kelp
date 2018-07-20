@@ -4,7 +4,6 @@ import (
 	"github.com/Beldur/kraken-go-api-client"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/dates"
 	"github.com/lightyeario/kelp/support/exchange/api/orderbook"
 )
 
@@ -35,7 +34,7 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 			OrderType:   orderbook.TypeLimit,
 			Price:       model.FromFloat(item.Price, k.precision),
 			Volume:      model.FromFloat(item.Amount, k.precision),
-			Timestamp:   dates.MakeTimestamp(item.Ts),
+			Timestamp:   model.MakeTimestamp(item.Ts),
 		})
 	}
 	return orders

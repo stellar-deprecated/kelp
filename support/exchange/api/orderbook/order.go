@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/dates"
 )
 
 // TransactionID is typed for the concept of a transaction ID
@@ -28,7 +27,7 @@ type Order struct {
 	OrderType   OrderType
 	Price       *model.Number
 	Volume      *model.Number
-	Timestamp   *dates.Timestamp
+	Timestamp   *model.Timestamp
 }
 
 // String is the stringer function

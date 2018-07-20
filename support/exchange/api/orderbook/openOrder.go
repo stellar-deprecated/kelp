@@ -4,15 +4,14 @@ import (
 	"fmt"
 
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange/api/dates"
 )
 
 // OpenOrder represents an open order for a trading account
 type OpenOrder struct {
 	Order
 	ID             string
-	StartTime      *dates.Timestamp
-	ExpireTime     *dates.Timestamp
+	StartTime      *model.Timestamp
+	ExpireTime     *model.Timestamp
 	VolumeExecuted *model.Number
 }
 
