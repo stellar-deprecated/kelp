@@ -3,11 +3,10 @@ package sideStrategy
 import (
 	"math"
 
-	"github.com/lightyeario/kelp/trader/strategy/level"
-
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-
 	"github.com/lightyeario/kelp/support/utils"
+	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -30,7 +29,7 @@ type SellSideStrategy struct {
 }
 
 // ensure it implements SideStrategy
-var _ SideStrategy = &SellSideStrategy{}
+var _ api.SideStrategy = &SellSideStrategy{}
 
 // MakeSellSideStrategy is a factory method for SellSideStrategy
 func MakeSellSideStrategy(
@@ -41,7 +40,7 @@ func MakeSellSideStrategy(
 	priceTolerance float64,
 	amountTolerance float64,
 	divideAmountByPrice bool,
-) SideStrategy {
+) api.SideStrategy {
 	return &SellSideStrategy{
 		txButler:            txButler,
 		assetBase:           assetBase,

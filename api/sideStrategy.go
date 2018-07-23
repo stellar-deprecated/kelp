@@ -1,4 +1,4 @@
-package sideStrategy
+package api
 
 import (
 	"github.com/lightyeario/kelp/model"

@@ -7,7 +7,6 @@ import (
 	"github.com/lightyeario/kelp/model"
 
 	"github.com/lightyeario/kelp/support/utils"
-	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/errors"
@@ -17,8 +16,8 @@ import (
 type ComposeStrategy struct {
 	assetBase  *horizon.Asset
 	assetQuote *horizon.Asset
-	buyStrat   sideStrategy.SideStrategy
-	sellStrat  sideStrategy.SideStrategy
+	buyStrat   api.SideStrategy
+	sellStrat  api.SideStrategy
 }
 
 // ensure it implements Strategy
@@ -28,8 +27,8 @@ var _ api.Strategy = &ComposeStrategy{}
 func MakeComposeStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	buyStrat sideStrategy.SideStrategy,
-	sellStrat sideStrategy.SideStrategy,
+	buyStrat api.SideStrategy,
+	sellStrat api.SideStrategy,
 ) api.Strategy {
 	return &ComposeStrategy{
 		assetBase:  assetBase,

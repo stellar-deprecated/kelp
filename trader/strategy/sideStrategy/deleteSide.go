@@ -3,6 +3,7 @@ package sideStrategy
 import (
 	"fmt"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
@@ -18,14 +19,14 @@ type DeleteSideStrategy struct {
 }
 
 // ensure it implements SideStrategy
-var _ SideStrategy = &DeleteSideStrategy{}
+var _ api.SideStrategy = &DeleteSideStrategy{}
 
 // MakeDeleteSideStrategy is a factory method for DeleteSideStrategy
 func MakeDeleteSideStrategy(
 	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-) SideStrategy {
+) api.SideStrategy {
 	return &DeleteSideStrategy{
 		txButler:   txButler,
 		assetBase:  assetBase,
