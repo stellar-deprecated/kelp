@@ -144,8 +144,7 @@ Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
 
 These interfaces make it easy to create extensions:
-- [Strategy](api/strategy.go) - API for a strategy used by the `trader` bot
-- [SideStrategy](api/sideStrategy.go) - API for a strategy that is applied to a single side of the orderbook. Can be used in conjunction with [compose.go](trader/strategy/compose.go) to build a Strategy using principles of [composition][composition].
+- [Strategy](api/strategy.go#L10) - API for a strategy used by the `trader` bot
 - [PriceFeed](support/priceFeed/pricefeed.go#L13) - API for price of an asset
 - [Exchange](api/exchange.go#L30) - API for crypto exchanges
 
@@ -196,4 +195,3 @@ Reference config files are in the [examples folder](examples/). Specifically, th
 [currencylayer]: https://currencylayer.com/
 [kraken]: https://www.kraken.com/
 [stackexchange]: https://stellar.stackexchange.com/
-[composition]: https://en.wikipedia.org/wiki/Object_composition
