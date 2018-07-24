@@ -1,20 +1,14 @@
-package priceFeed
+package plugins
 
 import (
-	"encoding/json"
-	"net/http"
 	"strings"
 
+	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/exchange"
 )
 
-// priceFeed allows you to fetch the price of a feed
-type priceFeed interface {
-	getPrice() (float64, error)
-}
-
-func priceFeedFactory(feedType string, url string) priceFeed {
+func makePriceFeed(feedType string, url string) api.PriceFeed {
 	switch feedType {
 	case "crypto":
 		return NewCMCFeed(url)
@@ -35,12 +29,10 @@ func priceFeedFactory(feedType string, url string) priceFeed {
 	return nil
 }
 
-func getJSON(client http.Client, url string, target interface{}) error {
-	r, err := client.Get(url)
-	if err != nil {
-		return err
+// MakeFeedPair is the factory method that we expose
+func MakeFeedPair(dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) *api.FeedPair {
+	return &api.FeedPair{
+		FeedA: makePriceFeed(dataTypeA, dataFeedAUrl),
+		FeedB: makePriceFeed(dataTypeB, dataFeedBUrl),
 	}
-	defer r.Body.Close()
-
-	return json.NewDecoder(r.Body).Decode(target)
 }

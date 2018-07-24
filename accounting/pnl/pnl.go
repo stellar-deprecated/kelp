@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lightyeario/kelp/support/priceFeed"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -99,6 +99,6 @@ func loadAccount(client *horizon.Client, address string) horizon.Account {
 	return account
 }
 
-func makeCmcFeed(cmcRef string) *priceFeed.CmcFeed {
-	return priceFeed.NewCMCFeed(fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", cmcRef))
+func makeCmcFeed(cmcRef string) *plugins.CmcFeed {
+	return plugins.NewCMCFeed(fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", cmcRef))
 }

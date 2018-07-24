@@ -120,12 +120,12 @@ The following [strategies](trader/strategy) are available **out of the box** wit
 
 ## Price Feeds
 
-Price Feeds fetch the price of an asset from an external source. The following [price feeds](support/priceFeed) are available **out of the box** with Kelp:
+Price Feeds fetch the price of an asset from an external source. The following price feeds are available **out of the box** with Kelp:
 
-- [coinmarketcap](support/priceFeed/cmcFeed.go): fetches the price of tokens from [CoinMarketCap][cmc]
-- [fiat](support/priceFeed/fiatFeed.go): fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
-- [exchange](support/priceFeed/exchange.go): fetches the price from an exchange
-- [fixed](support/priceFeed/fixedFeed.go): sets the price to a constant
+- [coinmarketcap](plugins/cmcFeed.go): fetches the price of tokens from [CoinMarketCap][cmc]
+- [fiat](plugins/fiatFeed.go): fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
+- [exchange](plugins/exchange.go): fetches the price from an exchange
+- [fixed](plugins/fixedFeed.go): sets the price to a constant
 
 ## Configuration Files
 
@@ -145,7 +145,7 @@ You can create new flavors of the following components: Strategies, PriceFeeds, 
 
 These interfaces make it easy to create extensions:
 - [Strategy](api/strategy.go#L10) - API for a strategy used by the `trader` bot
-- [PriceFeed](support/priceFeed/pricefeed.go#L13) - API for price of an asset
+- [PriceFeed](api/pricefeed.go#L13) - API for price of an asset
 - [Exchange](api/exchange.go#L30) - API for crypto exchanges
 
 # Examples

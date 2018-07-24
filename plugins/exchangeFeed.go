@@ -1,4 +1,4 @@
-package priceFeed
+package plugins
 
 import (
 	"fmt"
@@ -13,8 +13,8 @@ type exchangeFeed struct {
 	pairs    []model.TradingPair
 }
 
-// ensure that it implements priceFeed
-var _ priceFeed = &exchangeFeed{}
+// ensure that it implements PriceFeed
+var _ api.PriceFeed = &exchangeFeed{}
 
 func newExchangeFeed(exchange *api.Exchange, pair *model.TradingPair) *exchangeFeed {
 	return &exchangeFeed{
@@ -23,7 +23,8 @@ func newExchangeFeed(exchange *api.Exchange, pair *model.TradingPair) *exchangeF
 	}
 }
 
-func (f *exchangeFeed) getPrice() (float64, error) {
+// GetPrice impl
+func (f *exchangeFeed) GetPrice() (float64, error) {
 	ex := *f.exchange
 	m, e := ex.GetTickerPrice(f.pairs)
 	if e != nil {

@@ -1,9 +1,12 @@
-package priceFeed
+package plugins
 
 import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/support/utils"
 	//"github.com/stellar/go/support/log"
 )
 
@@ -40,8 +43,8 @@ type CmcFeed struct {
 	client http.Client
 }
 
-// ensure that it implements priceFeed
-var _ priceFeed = &CmcFeed{}
+// ensure that it implements PriceFeed
+var _ api.PriceFeed = &CmcFeed{}
 
 // NewCMCFeed creates a new CMC Feed from a URL
 func NewCMCFeed(url string) *CmcFeed {
@@ -51,14 +54,10 @@ func NewCMCFeed(url string) *CmcFeed {
 	return m
 }
 
-// GetPrice merely exposes the getPrice function
+// GetPrice impl
 func (c *CmcFeed) GetPrice() (float64, error) {
-	return c.getPrice()
-}
-
-func (c *CmcFeed) getPrice() (float64, error) {
 	var retA []cmcAPIReturn
-	err := getJSON(c.client, c.url, &retA)
+	err := utils.GetJSON(c.client, c.url, &retA)
 	if err != nil {
 		return 0, err
 	}

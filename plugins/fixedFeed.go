@@ -1,4 +1,4 @@
-package priceFeed
+package plugins
 
 import (
 	"strconv"
@@ -20,6 +20,7 @@ func newFixedFeed(url string) *fixedFeed {
 	return m
 }
 
-func (f *fixedFeed) getPrice() (float64, error) {
+// GetPrice impl
+func (f *fixedFeed) GetPrice() (float64, error) {
 	return f.price, nil
 }

@@ -1,8 +1,11 @@
-package priceFeed
+package plugins
 
 import (
 	"net/http"
 	"time"
+
+	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/support/utils"
 )
 
 /*
@@ -25,8 +28,8 @@ type fiatFeed struct {
 	client http.Client
 }
 
-// ensure that it implements priceFeed
-var _ priceFeed = &fiatFeed{}
+// ensure that it implements PriceFeed
+var _ api.PriceFeed = &fiatFeed{}
 
 func newFiatFeed(url string) *fiatFeed {
 	//log.Info("newFiatFeed: ", url)
@@ -37,9 +40,10 @@ func newFiatFeed(url string) *fiatFeed {
 	return m
 }
 
-func (f *fiatFeed) getPrice() (float64, error) {
+// GetPrice impl
+func (f *fiatFeed) GetPrice() (float64, error) {
 	var ret fiatAPIReturn
-	err := getJSON(f.client, f.url, &ret)
+	err := utils.GetJSON(f.client, f.url, &ret)
 	if err != nil {
 		return 0, err
 	}

@@ -2,7 +2,7 @@
 
 This guide shows you how to setup a `trader` bot using the [buysell](../../../trader/strategy/buysell.go) strategy. In this case we’re configuring it to allow us to perform market making for a stablecoin against another asset, specifically XLM. 
 
-This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../support/priceFeed/pricefeed.go).
+This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../api/pricefeed.go).
 
 ## Account Setup
 

@@ -2,7 +2,7 @@ package strategy
 
 import (
 	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/support/priceFeed"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
@@ -29,7 +29,7 @@ func MakeSellStrategy(
 	assetQuote *horizon.Asset,
 	config *SellConfig,
 ) api.Strategy {
-	pf := priceFeed.MakeFeedPair(
+	pf := plugins.MakeFeedPair(
 		config.DATA_TYPE_A,
 		config.DATA_FEED_A_URL,
 		config.DATA_TYPE_B,

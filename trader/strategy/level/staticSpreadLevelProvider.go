@@ -2,7 +2,6 @@ package level
 
 import (
 	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/support/priceFeed"
 	"github.com/stellar/go/support/log"
 )
 
@@ -17,14 +16,14 @@ type StaticLevel struct {
 type staticSpreadLevelProvider struct {
 	staticLevels []StaticLevel
 	amountOfBase float64
-	pf           *priceFeed.FeedPair
+	pf           *api.FeedPair
 }
 
 // ensure it implements the LevelProvider interface
 var _ api.LevelProvider = &staticSpreadLevelProvider{}
 
 // MakeStaticSpreadLevelProvider is a factory method
-func MakeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase float64, pf *priceFeed.FeedPair) api.LevelProvider {
+func MakeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase float64, pf *api.FeedPair) api.LevelProvider {
 	return &staticSpreadLevelProvider{
 		staticLevels: staticLevels,
 		amountOfBase: amountOfBase,

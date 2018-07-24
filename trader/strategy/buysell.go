@@ -2,7 +2,7 @@ package strategy
 
 import (
 	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/support/priceFeed"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
@@ -35,7 +35,7 @@ func MakeBuySellStrategy(
 		level.MakeStaticSpreadLevelProvider(
 			config.LEVELS,
 			config.AMOUNT_OF_A_BASE,
-			priceFeed.MakeFeedPair(
+			plugins.MakeFeedPair(
 				config.DATA_TYPE_A,
 				config.DATA_FEED_A_URL,
 				config.DATA_TYPE_B,
@@ -54,7 +54,7 @@ func MakeBuySellStrategy(
 		level.MakeStaticSpreadLevelProvider(
 			config.LEVELS,
 			config.AMOUNT_OF_A_BASE,
-			priceFeed.MakeFeedPair(
+			plugins.MakeFeedPair(
 				config.DATA_TYPE_B,
 				config.DATA_FEED_B_URL,
 				config.DATA_TYPE_A,
