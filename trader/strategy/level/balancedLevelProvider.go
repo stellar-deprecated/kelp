@@ -4,6 +4,8 @@ import (
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/lightyeario/kelp/api"
 )
 
 // balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
@@ -28,8 +30,8 @@ type balancedLevelProvider struct {
 	randGen *rand.Rand
 }
 
-// ensure it implements Provider
-var _ Provider = &balancedLevelProvider{}
+// ensure it implements LevelProvider
+var _ api.LevelProvider = &balancedLevelProvider{}
 
 // MakeBalancedLevelProvider is the factory method
 func MakeBalancedLevelProvider(
@@ -45,7 +47,7 @@ func MakeBalancedLevelProvider(
 	carryoverInclusionProbability float64,
 	virtualBalanceBase float64,
 	virtualBalanceQuote float64,
-) Provider {
+) api.LevelProvider {
 	if minAmountSpread <= 0 {
 		log.Fatalf("minAmountSpread (%.7f) needs to be > 0 for the algorithm to work sustainably\n", minAmountSpread)
 	}
@@ -88,12 +90,12 @@ func validateSpread(spread float64) {
 }
 
 // GetLevels impl.
-func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]Level, error) {
+func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
 	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
 	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
 	amountCarryover := 0.0
-	levels := []Level{}
+	levels := []api.Level{}
 	for i := int16(0); i < p.maxLevels; i++ {
 		level, e := p.getLevel(_maxAssetBase, _maxAssetQuote)
 		if e != nil {
@@ -109,7 +111,7 @@ func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 
 		if !p.shouldIncludeLevel(i) {
 			// accummulate targetAmount into amountCarryover
-			amountCarryover += level.TargetAmount()
+			amountCarryover += level.Amount
 			continue
 		}
 
@@ -121,34 +123,34 @@ func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	return levels, nil
 }
 
-func (p *balancedLevelProvider) computeNewLevelWithCarryover(level Level, amountCarryover float64) (Level, float64) {
+func (p *balancedLevelProvider) computeNewLevelWithCarryover(level api.Level, amountCarryover float64) (api.Level, float64) {
 	// include a partial amount of the carryover
 	amountCarryoverToInclude := p.randGen.Float64() * amountCarryover
 	// update amountCarryover to reflect inclusion in the level
 	amountCarryover -= amountCarryoverToInclude
 	// include the amountCarryover we computed, price of the level remains unchanged
-	level = Level{
-		targetPrice:  level.TargetPrice(),
-		targetAmount: level.TargetAmount() + amountCarryoverToInclude,
+	level = api.Level{
+		Price:  level.Price,
+		Amount: level.Amount + amountCarryoverToInclude,
 	}
 
 	return level, amountCarryover
 }
 
-func updateAssetBalances(level Level, useMaxQuoteInTargetAmountCalc bool, maxAssetBase float64, maxAssetQuote float64) (float64, float64) {
+func updateAssetBalances(level api.Level, useMaxQuoteInTargetAmountCalc bool, maxAssetBase float64, maxAssetQuote float64) (float64, float64) {
 	// targetPrice is always quote/base
 	var baseDecreased float64
 	var quoteIncreased float64
 	if useMaxQuoteInTargetAmountCalc {
 		// targetAmount is in quote so divide by price (quote/base) to give base
-		baseDecreased = level.TargetAmount() / level.TargetPrice()
+		baseDecreased = level.Amount / level.Price
 		// targetAmount is in quote so use directly
-		quoteIncreased = level.TargetAmount()
+		quoteIncreased = level.Amount
 	} else {
 		// targetAmount is in base so use directly
-		baseDecreased = level.TargetAmount()
+		baseDecreased = level.Amount
 		// targetAmount is in base so multiply by price (quote/base) to give quote
-		quoteIncreased = level.TargetAmount() * level.TargetPrice()
+		quoteIncreased = level.Amount * level.Price
 	}
 	// subtract because we had to sell that many units to reach the next level
 	newMaxAssetBase := maxAssetBase - baseDecreased
@@ -181,7 +183,7 @@ func (p *balancedLevelProvider) getRandomSpread(minSpread float64, maxSpread flo
 	return minSpread + spreadAboveMin
 }
 
-func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (Level, error) {
+func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (api.Level, error) {
 	centerPrice := maxAssetQuote / maxAssetBase
 	// price always adds the spread
 	targetPrice := centerPrice * (1 + p.spread/2)
@@ -192,9 +194,9 @@ func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote flo
 	}
 	// since targetAmount needs to be less then what we've set above based on the inequality formula, let's reduce it by 5%
 	targetAmount *= (1 - p.getRandomSpread(p.minAmountSpread, p.maxAmountSpread))
-	level := Level{
-		targetPrice:  targetPrice,
-		targetAmount: targetAmount,
+	level := api.Level{
+		Price:  targetPrice,
+		Amount: targetAmount,
 	}
 	return level, nil
 }

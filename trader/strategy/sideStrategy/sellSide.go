@@ -6,7 +6,6 @@ import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
-	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -17,13 +16,13 @@ type SellSideStrategy struct {
 	txButler            *utils.TxButler
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
-	levelsProvider      level.Provider
+	levelsProvider      api.LevelProvider
 	priceTolerance      float64
 	amountTolerance     float64
 	divideAmountByPrice bool
 
 	// uninitialized
-	currentLevels []level.Level // levels for current iteration
+	currentLevels []api.Level // levels for current iteration
 	maxAssetBase  float64
 	maxAssetQuote float64
 }
@@ -36,7 +35,7 @@ func MakeSellSideStrategy(
 	txButler *utils.TxButler,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	levelsProvider level.Provider,
+	levelsProvider api.LevelProvider,
 	priceTolerance float64,
 	amountTolerance float64,
 	divideAmountByPrice bool,
@@ -74,7 +73,7 @@ func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	nothingToSell := maxAssetBase == 0
 	lineFull := maxAssetQuote == trustQuote
 	if nothingToSell || lineFull {
-		s.currentLevels = []level.Level{}
+		s.currentLevels = []api.Level{}
 		log.Warnf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
 		return nil
 	}
@@ -118,8 +117,8 @@ func (s *SellSideStrategy) PostUpdate() error {
 
 // Selling Base
 func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *build.ManageOfferBuilder {
-	targetPrice := s.currentLevels[index].TargetPrice()
-	targetAmount := s.currentLevels[index].TargetAmount()
+	targetPrice := s.currentLevels[index].Price
+	targetAmount := s.currentLevels[index].Amount
 	if s.divideAmountByPrice {
 		targetAmount /= targetPrice
 	}
