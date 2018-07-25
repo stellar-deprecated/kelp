@@ -28,7 +28,7 @@ type MirrorStrategy struct {
 	baseAsset     *horizon.Asset
 	quoteAsset    *horizon.Asset
 	config        *MirrorConfig
-	exchange      api.Exchange
+	tradeAPI      api.TradeAPI
 }
 
 // ensure this implements Strategy
@@ -36,10 +36,10 @@ var _ api.Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
 func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) api.Strategy {
-	xc := plugins.MakeExchange(config.EXCHANGE)
+	exchange := plugins.MakeExchange(config.EXCHANGE)
 	orderbookPair := &model.TradingPair{
-		Base:  xc.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
-		Quote: xc.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
+		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
+		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
 	}
 	return &MirrorStrategy{
 		txButler:      txButler,
@@ -47,7 +47,7 @@ func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quot
 		baseAsset:     baseAsset,
 		quoteAsset:    quoteAsset,
 		config:        config,
-		exchange:      xc,
+		tradeAPI:      api.TradeAPI(exchange),
 	}
 }
 
@@ -66,7 +66,7 @@ func (s MirrorStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.exchange.GetOrderBook(s.orderbookPair, s.config.ORDERBOOK_DEPTH)
+	ob, e := s.tradeAPI.GetOrderBook(s.orderbookPair, s.config.ORDERBOOK_DEPTH)
 	if e != nil {
 		return nil, e
 	}

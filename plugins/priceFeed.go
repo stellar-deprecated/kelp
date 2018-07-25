@@ -19,12 +19,13 @@ func MakePriceFeed(feedType string, url string) api.PriceFeed {
 	case "exchange":
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
-		xc := MakeExchange(urlParts[0])
+		exchange := MakeExchange(urlParts[0])
 		tradingPair := model.TradingPair{
-			Base:  xc.GetAssetConverter().MustFromString(urlParts[1]),
-			Quote: xc.GetAssetConverter().MustFromString(urlParts[2]),
+			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
+			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),
 		}
-		return newExchangeFeed(&xc, &tradingPair)
+		tradeAPI := api.TradeAPI(exchange)
+		return newExchangeFeed(&tradeAPI, &tradingPair)
 	}
 	return nil
 }

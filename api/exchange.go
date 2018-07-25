@@ -23,8 +23,8 @@ type TradeHistoryResult struct {
 	Trades []model.Trade
 }
 
-// Exchange is the interface we use as a generic API to all crypto exchanges
-type Exchange interface {
+// TradeAPI is the interface we use as a generic API for trading on any crypto exchange
+type TradeAPI interface {
 	GetPrecision() int8
 
 	GetAssetConverter() *model.AssetConverter
@@ -42,4 +42,12 @@ type Exchange interface {
 	AddOrder(order *model.Order) (*model.TransactionID, error)
 
 	CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error)
+}
+
+// Exchange is the interface we use as a generic API for all crypto exchanges
+type Exchange interface {
+	Account
+	TradeAPI
+	DepositAPI
+	WithdrawAPI
 }
