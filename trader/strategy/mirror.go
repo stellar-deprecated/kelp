@@ -3,7 +3,7 @@ package strategy
 import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange"
+	"github.com/lightyeario/kelp/plugins"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
@@ -36,7 +36,7 @@ var _ api.Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
 func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) api.Strategy {
-	xc := exchange.ExchangeFactory(config.EXCHANGE)
+	xc := plugins.MakeExchange(config.EXCHANGE)
 	orderbookPair := &model.TradingPair{
 		Base:  xc.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: xc.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),

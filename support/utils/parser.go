@@ -1,4 +1,4 @@
-package kraken
+package utils
 
 import (
 	"fmt"
@@ -8,12 +8,12 @@ import (
 )
 
 const numberPrecision = 10
-const prefixFieldNotFound = "could not find field in map of PrepareDeposit"
+const PrefixFieldNotFound = "could not find field in map of PrepareDeposit"
 
 func checkKeyPresent(m map[string]interface{}, key string) (interface{}, error) {
 	v, ok := m[key]
 	if !ok {
-		return nil, fmt.Errorf("%s: %s", prefixFieldNotFound, key)
+		return nil, fmt.Errorf("%s: %s", PrefixFieldNotFound, key)
 	}
 
 	return v, nil
@@ -23,7 +23,8 @@ func makeParseError(field string, dataType string, methodAPI string, value inter
 	return fmt.Errorf("could not parse the field '%s' as a %s in the response from %s: value=%v, type=%s", field, dataType, methodAPI, value, reflect.TypeOf(value))
 }
 
-func parseString(m map[string]interface{}, key string, methodAPI string) (string, error) {
+// ParseString helps to parse a string value out of the map
+func ParseString(m map[string]interface{}, key string, methodAPI string) (string, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return "", e
@@ -37,7 +38,8 @@ func parseString(m map[string]interface{}, key string, methodAPI string) (string
 	return s, nil
 }
 
-func parseBool(m map[string]interface{}, key string, methodAPI string) (bool, error) {
+// ParseBool helps to parse a bool value out of the map
+func ParseBool(m map[string]interface{}, key string, methodAPI string) (bool, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return false, e
@@ -51,7 +53,8 @@ func parseBool(m map[string]interface{}, key string, methodAPI string) (bool, er
 	return b, nil
 }
 
-func parseNumber(m map[string]interface{}, key string, methodAPI string) (*model.Number, error) {
+// ParseNumber helps to parse a model.Number value out of the map
+func ParseNumber(m map[string]interface{}, key string, methodAPI string) (*model.Number, error) {
 	v, e := checkKeyPresent(m, key)
 	if e != nil {
 		return nil, e
@@ -68,7 +71,7 @@ func parseNumber(m map[string]interface{}, key string, methodAPI string) (*model
 }
 
 func parseStringAsNumber(m map[string]interface{}, key string, methodAPI string) (*model.Number, error) {
-	s, e := parseString(m, key, methodAPI)
+	s, e := ParseString(m, key, methodAPI)
 	if e != nil {
 		return nil, e
 	}

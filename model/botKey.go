@@ -6,11 +6,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
 const botDataKeyPrefix = "b/"
+const native = "native"
 
 // BotKey is a unique key to identify a bot
 type BotKey struct {
@@ -32,15 +32,15 @@ func (b BotKey) String() string {
 // MakeSortedBotKey makes a BotKey by sorting the passed in assets
 func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
 	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string
-	if assetA.Type == utils.Native && assetB.Type == utils.Native {
+	if assetA.Type == native && assetB.Type == native {
 		log.Panic("invalid asset types, both cannot be native")
-	} else if assetA.Type == utils.Native {
-		assetBaseCode = utils.Native
+	} else if assetA.Type == native {
+		assetBaseCode = native
 		assetBaseIssuer = ""
 		assetQuoteCode = assetB.Code
 		assetQuoteIssuer = assetB.Issuer
-	} else if assetB.Type == utils.Native {
-		assetBaseCode = utils.Native
+	} else if assetB.Type == native {
+		assetBaseCode = native
 		assetBaseIssuer = ""
 		assetQuoteCode = assetA.Code
 		assetQuoteIssuer = assetA.Issuer

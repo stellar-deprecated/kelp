@@ -1,4 +1,4 @@
-package kraken
+package plugins
 
 import (
 	"fmt"

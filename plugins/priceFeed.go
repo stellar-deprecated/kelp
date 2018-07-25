@@ -5,7 +5,6 @@ import (
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/exchange"
 )
 
 func makePriceFeed(feedType string, url string) api.PriceFeed {
@@ -19,7 +18,7 @@ func makePriceFeed(feedType string, url string) api.PriceFeed {
 	case "exchange":
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
-		xc := exchange.ExchangeFactory(urlParts[0])
+		xc := MakeExchange(urlParts[0])
 		tradingPair := model.TradingPair{
 			Base:  xc.GetAssetConverter().MustFromString(urlParts[1]),
 			Quote: xc.GetAssetConverter().MustFromString(urlParts[2]),

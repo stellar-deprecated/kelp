@@ -1,4 +1,4 @@
-package kraken
+package plugins
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/support/log"
 )
 
@@ -475,15 +476,15 @@ type withdrawInfo struct {
 
 func parseWithdrawInfo(m map[string]interface{}) (*withdrawInfo, error) {
 	// limit
-	limit, e := parseNumber(m, "limit", "WithdrawInfo")
+	limit, e := utils.ParseNumber(m, "limit", "WithdrawInfo")
 	if e != nil {
 		return nil, e
 	}
 
 	// fee
-	fee, e := parseNumber(m, "fee", "WithdrawInfo")
+	fee, e := utils.ParseNumber(m, "fee", "WithdrawInfo")
 	if e != nil {
-		if !strings.HasPrefix(e.Error(), prefixFieldNotFound) {
+		if !strings.HasPrefix(e.Error(), utils.PrefixFieldNotFound) {
 			return nil, e
 		}
 		// fee may be missing in which case it's null
@@ -491,7 +492,7 @@ func parseWithdrawInfo(m map[string]interface{}) (*withdrawInfo, error) {
 	}
 
 	// amount
-	amount, e := parseNumber(m, "amount", "WithdrawInfo")
+	amount, e := utils.ParseNumber(m, "amount", "WithdrawInfo")
 	if e != nil {
 		return nil, e
 	}
@@ -634,22 +635,22 @@ func (k krakenExchange) getDepositAddress(asset string, method string, genAddres
 
 func parseDepositAddress(m map[string]interface{}) (*depositAddress, error) {
 	// address
-	address, e := parseString(m, "address", "DepositAddresses")
+	address, e := utils.ParseString(m, "address", "DepositAddresses")
 	if e != nil {
 		return nil, e
 	}
 
 	// expiretm
-	expireN, e := parseNumber(m, "expiretm", "DepositAddresses")
+	expireN, e := utils.ParseNumber(m, "expiretm", "DepositAddresses")
 	if e != nil {
 		return nil, e
 	}
 	expireTs := int64(expireN.AsFloat())
 
 	// new
-	isNew, e := parseBool(m, "new", "DepositAddresses")
+	isNew, e := utils.ParseBool(m, "new", "DepositAddresses")
 	if e != nil {
-		if !strings.HasPrefix(e.Error(), prefixFieldNotFound) {
+		if !strings.HasPrefix(e.Error(), utils.PrefixFieldNotFound) {
 			return nil, e
 		}
 		// new may be missing in which case it's false
@@ -665,17 +666,17 @@ func parseDepositAddress(m map[string]interface{}) (*depositAddress, error) {
 
 func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	// method
-	method, e := parseString(m, "method", "DepositMethods")
+	method, e := utils.ParseString(m, "method", "DepositMethods")
 	if e != nil {
 		return nil, e
 	}
 
 	// limit
 	var limit *model.Number
-	limB, e := parseBool(m, "limit", "DepositMethods")
+	limB, e := utils.ParseBool(m, "limit", "DepositMethods")
 	if e != nil {
 		// limit is special as it can be a boolean or a number
-		limit, e = parseNumber(m, "limit", "DepositMethods")
+		limit, e = utils.ParseNumber(m, "limit", "DepositMethods")
 		if e != nil {
 			return nil, e
 		}
@@ -687,9 +688,9 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// fee
-	fee, e := parseNumber(m, "fee", "DepositMethods")
+	fee, e := utils.ParseNumber(m, "fee", "DepositMethods")
 	if e != nil {
-		if !strings.HasPrefix(e.Error(), prefixFieldNotFound) {
+		if !strings.HasPrefix(e.Error(), utils.PrefixFieldNotFound) {
 			return nil, e
 		}
 		// fee may be missing in which case it's null
@@ -697,7 +698,7 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// gen-address
-	genAddress, e := parseBool(m, "gen-address", "DepositMethods")
+	genAddress, e := utils.ParseBool(m, "gen-address", "DepositMethods")
 	if e != nil {
 		return nil, e
 	}
@@ -743,7 +744,7 @@ func (k krakenExchange) WithdrawFunds(
 func parseWithdrawResponse(resp interface{}) (*api.WithdrawFunds, error) {
 	switch m := resp.(type) {
 	case map[string]interface{}:
-		refid, e := parseString(m, "refid", "Withdraw")
+		refid, e := utils.ParseString(m, "refid", "Withdraw")
 		if e != nil {
 			return nil, e
 		}
