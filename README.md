@@ -41,7 +41,7 @@ To learn more about the Stellar protocol check out [this community video][sdex e
 
 # Be Smart and Go Slow
 
-_Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Period. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you **lose** money very fast. So be smart and go slow._
+_Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you **lose** money very fast. So be smart and go slow._
 
 # Getting Started
 
@@ -124,7 +124,7 @@ Price Feeds fetch the price of an asset from an external source. The following p
 
 - [coinmarketcap](plugins/cmcFeed.go): fetches the price of tokens from [CoinMarketCap][cmc]
 - [fiat](plugins/fiatFeed.go): fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
-- [exchange](plugins/exchange.go): fetches the price from an exchange
+- [exchange](plugins/exchange.go): fetches the price from an exchange you specify, such as Kraken or Poloniex
 - [fixed](plugins/fixedFeed.go): sets the price to a constant
 
 ## Configuration Files
@@ -155,7 +155,7 @@ It's easier to learn with examples! Take a look through the walkthrough guides a
 ## Walkthrough Guides
 
 - [Setting up a trading account](examples/walkthroughs/trader/account_setup.md): This guide uses an example token, `COUPON`, to show you how to set up your account before deploying the bot.
-- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide shows you how to use the bot with the _buysell_ strategy.
+- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the _buysell_ strategy to provide liquidity for a stablecoin. 
 
 ## Configuration Files
 
