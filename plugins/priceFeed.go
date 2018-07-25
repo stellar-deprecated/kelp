@@ -7,10 +7,11 @@ import (
 	"github.com/lightyeario/kelp/model"
 )
 
-func makePriceFeed(feedType string, url string) api.PriceFeed {
+// MakePriceFeed makes a PriceFeed
+func MakePriceFeed(feedType string, url string) api.PriceFeed {
 	switch feedType {
 	case "crypto":
-		return NewCMCFeed(url)
+		return newCMCFeed(url)
 	case "fiat":
 		return newFiatFeed(url)
 	case "fixed":
@@ -31,7 +32,7 @@ func makePriceFeed(feedType string, url string) api.PriceFeed {
 // MakeFeedPair is the factory method that we expose
 func MakeFeedPair(dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) *api.FeedPair {
 	return &api.FeedPair{
-		FeedA: makePriceFeed(dataTypeA, dataFeedAUrl),
-		FeedB: makePriceFeed(dataTypeB, dataFeedBUrl),
+		FeedA: MakePriceFeed(dataTypeA, dataFeedAUrl),
+		FeedB: MakePriceFeed(dataTypeB, dataFeedBUrl),
 	}
 }
