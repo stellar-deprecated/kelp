@@ -2,7 +2,7 @@ package strategy
 
 import (
 	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
@@ -27,13 +27,13 @@ type BalancedConfig struct {
 
 // MakeBalancedStrategy is a factory method for BalancedStrategy
 func MakeBalancedStrategy(
-	txButler *utils.TxButler,
+	sdex *plugins.SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *BalancedConfig,
 ) api.Strategy {
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
-		txButler,
+		sdex,
 		assetBase,
 		assetQuote,
 		level.MakeBalancedLevelProvider(
@@ -55,7 +55,7 @@ func MakeBalancedStrategy(
 	)
 	// switch sides of base/quote here for buy side
 	buySideStrategy := sideStrategy.MakeSellSideStrategy(
-		txButler,
+		sdex,
 		assetQuote,
 		assetBase,
 		level.MakeBalancedLevelProvider(

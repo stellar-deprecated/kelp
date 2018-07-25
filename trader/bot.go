@@ -7,6 +7,7 @@ import (
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -22,7 +23,7 @@ type Bot struct {
 	assetBase           horizon.Asset
 	assetQuote          horizon.Asset
 	tradingAccount      string
-	txButler            *utils.TxButler
+	sdex                *plugins.SDEX
 	strat               api.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
 	dataKey             *model.BotKey
@@ -42,7 +43,7 @@ func MakeBot(
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
 	tradingAccount string,
-	txButler *utils.TxButler,
+	sdex *plugins.SDEX,
 	strat api.Strategy,
 	tickIntervalSeconds int32,
 	dataKey *model.BotKey,
@@ -52,7 +53,7 @@ func MakeBot(
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
 		tradingAccount:      tradingAccount,
-		txButler:            txButler,
+		sdex:                sdex,
 		strat:               strat,
 		tickIntervalSeconds: tickIntervalSeconds,
 		dataKey:             dataKey,
@@ -72,14 +73,14 @@ func (b *Bot) Start() {
 func (b *Bot) deleteAllOffers() {
 	dOps := []build.TransactionMutator{}
 
-	dOps = append(dOps, b.txButler.DeleteAllOffers(b.sellingAOffers)...)
+	dOps = append(dOps, b.sdex.DeleteAllOffers(b.sellingAOffers)...)
 	b.sellingAOffers = []horizon.Offer{}
-	dOps = append(dOps, b.txButler.DeleteAllOffers(b.buyingAOffers)...)
+	dOps = append(dOps, b.sdex.DeleteAllOffers(b.buyingAOffers)...)
 	b.buyingAOffers = []horizon.Offer{}
 
 	log.Info(fmt.Sprintf("deleting %d offers", len(dOps)))
 	if len(dOps) > 0 {
-		e := b.txButler.SubmitOps(dOps)
+		e := b.sdex.SubmitOps(dOps)
 		if e != nil {
 			log.Warn(e)
 			return
@@ -105,7 +106,7 @@ func (b *Bot) update() {
 	var pruneOps []build.TransactionMutator
 	pruneOps, b.buyingAOffers, b.sellingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers, b.sellingAOffers)
 	if len(pruneOps) > 0 {
-		e = b.txButler.SubmitOps(pruneOps)
+		e = b.sdex.SubmitOps(pruneOps)
 		if e != nil {
 			log.Warn(e)
 			b.deleteAllOffers()
@@ -115,7 +116,7 @@ func (b *Bot) update() {
 
 	// reset cached xlm exposure here so we only compute it once per update
 	// TODO 2 - calculate this here and pass it in
-	b.txButler.ResetCachedXlmExposure()
+	b.sdex.ResetCachedXlmExposure()
 	ops, e := b.strat.UpdateWithOps(b.buyingAOffers, b.sellingAOffers)
 	if e != nil {
 		log.Warn(e)
@@ -124,7 +125,7 @@ func (b *Bot) update() {
 	}
 
 	if len(ops) > 0 {
-		e = b.txButler.SubmitOps(ops)
+		e = b.sdex.SubmitOps(ops)
 		if e != nil {
 			log.Warn(e)
 			b.deleteAllOffers()

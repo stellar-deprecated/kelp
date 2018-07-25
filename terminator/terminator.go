@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -18,7 +19,7 @@ const terminatorKey = "term"
 // Terminator contains the logic to terminate offers
 type Terminator struct {
 	api                  *horizon.Client
-	txb                  *utils.TxButler
+	sdex                 *plugins.SDEX
 	tradingAccount       string
 	tickIntervalSeconds  int32
 	allowInactiveMinutes int32
@@ -27,14 +28,14 @@ type Terminator struct {
 // MakeTerminator is a factory method to make a Terminator
 func MakeTerminator(
 	api *horizon.Client,
-	txb *utils.TxButler,
+	sdex *plugins.SDEX,
 	tradingAccount string,
 	tickIntervalSeconds int32,
 	allowInactiveMinutes int32,
 ) *Terminator {
 	return &Terminator{
 		api:                  api,
-		txb:                  txb,
+		sdex:                 sdex,
 		tradingAccount:       tradingAccount,
 		tickIntervalSeconds:  tickIntervalSeconds,
 		allowInactiveMinutes: allowInactiveMinutes,
@@ -95,7 +96,7 @@ func (t *Terminator) run() {
 		}
 
 		log.Info("updating delete timestamp to ", tsMillisStr)
-		e = t.txb.SubmitOps(ops)
+		e = t.sdex.SubmitOps(ops)
 		if e != nil {
 			log.Error(e)
 		}
@@ -129,8 +130,8 @@ func convertToAsset(code string, issuer string) horizon.Asset {
 // deleteOffers deletes passed in offers along with the data for the passed in hash
 func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, botKey model.BotKey, tsMillis int64) {
 	ops := []build.TransactionMutator{}
-	ops = append(ops, t.txb.DeleteAllOffers(sellOffers)...)
-	ops = append(ops, t.txb.DeleteAllOffers(buyOffers)...)
+	ops = append(ops, t.sdex.DeleteAllOffers(sellOffers)...)
+	ops = append(ops, t.sdex.DeleteAllOffers(buyOffers)...)
 	numOffers := len(ops)
 
 	// delete existing data entries
@@ -150,7 +151,7 @@ func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizo
 
 	log.Info(fmt.Sprintf("deleting %d offers and 5 data entries, updating delete timestamp to %s", numOffers, tsMillisStr))
 	if len(ops) > 0 {
-		e := t.txb.SubmitOps(ops)
+		e := t.sdex.SubmitOps(ops)
 		if e != nil {
 			log.Error(e)
 			return

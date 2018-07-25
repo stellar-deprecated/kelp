@@ -3,7 +3,6 @@ package strategy
 import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/plugins"
-	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy/level"
 	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
@@ -24,7 +23,7 @@ type SellConfig struct {
 
 // MakeSellStrategy is a factory method for SellStrategy
 func MakeSellStrategy(
-	txButler *utils.TxButler,
+	sdex *plugins.SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *SellConfig,
@@ -36,7 +35,7 @@ func MakeSellStrategy(
 		config.DATA_FEED_B_URL,
 	)
 	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
-		txButler,
+		sdex,
 		assetBase,
 		assetQuote,
 		level.MakeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE, pf),
@@ -45,7 +44,7 @@ func MakeSellStrategy(
 		config.DIVIDE_AMOUNT_BY_PRICE,
 	)
 	// switch sides of base/quote here for the delete side
-	deleteSideStrategy := sideStrategy.MakeDeleteSideStrategy(txButler, assetQuote, assetBase)
+	deleteSideStrategy := sideStrategy.MakeDeleteSideStrategy(sdex, assetQuote, assetBase)
 
 	return MakeComposeStrategy(
 		assetBase,

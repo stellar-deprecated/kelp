@@ -23,7 +23,7 @@ type MirrorConfig struct {
 
 // MirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type MirrorStrategy struct {
-	txButler      *utils.TxButler
+	sdex          *plugins.SDEX
 	orderbookPair *model.TradingPair
 	baseAsset     *horizon.Asset
 	quoteAsset    *horizon.Asset
@@ -35,14 +35,14 @@ type MirrorStrategy struct {
 var _ api.Strategy = &MirrorStrategy{}
 
 // MakeMirrorStrategy is a factory method
-func MakeMirrorStrategy(txButler *utils.TxButler, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) api.Strategy {
+func MakeMirrorStrategy(sdex *plugins.SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) api.Strategy {
 	exchange := plugins.MakeExchange(config.EXCHANGE)
 	orderbookPair := &model.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
 	}
 	return &MirrorStrategy{
-		txButler:      txButler,
+		sdex:          sdex,
 		orderbookPair: orderbookPair,
 		baseAsset:     baseAsset,
 		quoteAsset:    quoteAsset,
@@ -74,8 +74,8 @@ func (s MirrorStrategy) UpdateWithOps(
 	buyOps := s.updateLevels(
 		buyingAOffers,
 		ob.Bids(),
-		s.txButler.ModifyBuyOffer,
-		s.txButler.CreateBuyOffer,
+		s.sdex.ModifyBuyOffer,
+		s.sdex.CreateBuyOffer,
 		(1 - s.config.PER_LEVEL_SPREAD),
 		true,
 	)
@@ -83,8 +83,8 @@ func (s MirrorStrategy) UpdateWithOps(
 	sellOps := s.updateLevels(
 		sellingAOffers,
 		ob.Asks(),
-		s.txButler.ModifySellOffer,
-		s.txButler.CreateSellOffer,
+		s.sdex.ModifySellOffer,
+		s.sdex.CreateSellOffer,
 		(1 + s.config.PER_LEVEL_SPREAD),
 		false,
 	)
@@ -134,7 +134,7 @@ func (s *MirrorStrategy) updateLevels(
 
 		// delete remaining prior offers
 		for i := offset - 1; i >= 0; i-- {
-			op := s.txButler.DeleteOffer(oldOffers[i])
+			op := s.sdex.DeleteOffer(oldOffers[i])
 			ops = append(ops, op)
 		}
 	}

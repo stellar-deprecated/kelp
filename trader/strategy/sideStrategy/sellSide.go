@@ -5,6 +5,7 @@ import (
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -13,7 +14,7 @@ import (
 
 // SellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
 type SellSideStrategy struct {
-	txButler            *utils.TxButler
+	sdex                *plugins.SDEX
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
 	levelsProvider      api.LevelProvider
@@ -32,7 +33,7 @@ var _ api.SideStrategy = &SellSideStrategy{}
 
 // MakeSellSideStrategy is a factory method for SellSideStrategy
 func MakeSellSideStrategy(
-	txButler *utils.TxButler,
+	sdex *plugins.SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	levelsProvider api.LevelProvider,
@@ -41,7 +42,7 @@ func MakeSellSideStrategy(
 	divideAmountByPrice bool,
 ) api.SideStrategy {
 	return &SellSideStrategy{
-		txButler:            txButler,
+		sdex:                sdex,
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
 		levelsProvider:      levelsProvider,
@@ -55,7 +56,7 @@ func MakeSellSideStrategy(
 func (s *SellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
 	pruneOps := []build.TransactionMutator{}
 	for i := len(s.currentLevels); i < len(offers); i++ {
-		pOp := s.txButler.DeleteOffer(offers[i])
+		pOp := s.sdex.DeleteOffer(offers[i])
 		pruneOps = append(pruneOps, &pOp)
 	}
 	if len(offers) > len(s.currentLevels) {
@@ -127,7 +128,7 @@ func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	if len(offers) <= index {
 		// no existing offer at this index
 		log.Info("create sell: target:", targetPrice, " ta:", targetAmount)
-		return s.txButler.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
+		return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
 	}
 
 	highestPrice := targetPrice + targetPrice*s.priceTolerance
@@ -144,7 +145,7 @@ func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
 	if priceTrigger || amountTrigger {
 		log.Info("mod sell curPrice: ", curPrice, ", highPrice: ", highestPrice, ", lowPrice: ", lowestPrice, ", curAmt: ", curAmount, ", minAmt: ", minAmount, ", maxAmt: ", maxAmount)
-		return s.txButler.ModifySellOffer(offers[index], targetPrice, targetAmount)
+		return s.sdex.ModifySellOffer(offers[index], targetPrice, targetAmount)
 	}
 	return nil
 }

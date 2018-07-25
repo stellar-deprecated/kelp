@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -12,7 +13,7 @@ import (
 
 // StratFactory makes a strategy
 func StratFactory(
-	txButler *utils.TxButler,
+	sdex *plugins.SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	stratType string,
@@ -23,24 +24,24 @@ func StratFactory(
 		var cfg BuySellConfig
 		err := config.Read(stratConfigPath, &cfg)
 		utils.CheckConfigError(cfg, err)
-		return MakeBuySellStrategy(txButler, assetBase, assetQuote, &cfg)
+		return MakeBuySellStrategy(sdex, assetBase, assetQuote, &cfg)
 	case "mirror":
 		var cfg MirrorConfig
 		err := config.Read(stratConfigPath, &cfg)
 		utils.CheckConfigError(cfg, err)
-		return MakeMirrorStrategy(txButler, assetBase, assetQuote, &cfg)
+		return MakeMirrorStrategy(sdex, assetBase, assetQuote, &cfg)
 	case "sell":
 		var cfg SellConfig
 		err := config.Read(stratConfigPath, &cfg)
 		utils.CheckConfigError(cfg, err)
-		return MakeSellStrategy(txButler, assetBase, assetQuote, &cfg)
+		return MakeSellStrategy(sdex, assetBase, assetQuote, &cfg)
 	case "balanced":
 		var cfg BalancedConfig
 		err := config.Read(stratConfigPath, &cfg)
 		utils.CheckConfigError(cfg, err)
-		return MakeBalancedStrategy(txButler, assetBase, assetQuote, &cfg)
+		return MakeBalancedStrategy(sdex, assetBase, assetQuote, &cfg)
 	case "delete":
-		return MakeDeleteStrategy(txButler, assetBase, assetQuote)
+		return MakeDeleteStrategy(sdex, assetBase, assetQuote)
 	}
 
 	log.Errorf("invalid strategy type: %s", stratType)

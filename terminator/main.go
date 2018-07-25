@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
@@ -44,7 +45,7 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  configFile.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := utils.MakeTxButler(
+	txB := plugins.MakeSDEX(
 		client,
 		configFile.SOURCE_SECRET_SEED,
 		configFile.TRADING_SECRET_SEED,

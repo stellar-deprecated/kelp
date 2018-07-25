@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader/strategy"
 	"github.com/spf13/cobra"
@@ -57,7 +58,7 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  botConfig.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := utils.MakeTxButler(
+	txB := plugins.MakeSDEX(
 		client,
 		botConfig.SOURCE_SECRET_SEED,
 		botConfig.TRADING_SECRET_SEED,

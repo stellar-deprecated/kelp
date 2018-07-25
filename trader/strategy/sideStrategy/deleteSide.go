@@ -5,7 +5,7 @@ import (
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/lightyeario/kelp/plugins"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
@@ -13,7 +13,7 @@ import (
 
 // DeleteSideStrategy is a sideStrategy to delete the orders for a given currency pair on one side of the orderbook
 type DeleteSideStrategy struct {
-	txButler   *utils.TxButler
+	sdex       *plugins.SDEX
 	assetBase  *horizon.Asset
 	assetQuote *horizon.Asset
 }
@@ -23,12 +23,12 @@ var _ api.SideStrategy = &DeleteSideStrategy{}
 
 // MakeDeleteSideStrategy is a factory method for DeleteSideStrategy
 func MakeDeleteSideStrategy(
-	txButler *utils.TxButler,
+	sdex *plugins.SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 ) api.SideStrategy {
 	return &DeleteSideStrategy{
-		txButler:   txButler,
+		sdex:       sdex,
 		assetBase:  assetBase,
 		assetQuote: assetQuote,
 	}
@@ -39,7 +39,7 @@ func (s *DeleteSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]buil
 	log.Info(fmt.Sprintf("deleteSideStrategy: deleting %d offers", len(offers)))
 	pruneOps := []build.TransactionMutator{}
 	for i := 0; i < len(offers); i++ {
-		pOp := s.txButler.DeleteOffer(offers[i])
+		pOp := s.sdex.DeleteOffer(offers[i])
 		pruneOps = append(pruneOps, &pOp)
 	}
 	return pruneOps, []horizon.Offer{}
