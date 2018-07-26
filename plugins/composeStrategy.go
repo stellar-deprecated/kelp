@@ -1,4 +1,4 @@
-package strategy
+package plugins
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ import (
 	"github.com/stellar/go/support/errors"
 )
 
-// ComposeStrategy is a strategy that is composed of two sub-strategies
-type ComposeStrategy struct {
+// composeStrategy is a strategy that is composed of two sub-strategies
+type composeStrategy struct {
 	assetBase  *horizon.Asset
 	assetQuote *horizon.Asset
 	buyStrat   api.SideStrategy
@@ -21,16 +21,16 @@ type ComposeStrategy struct {
 }
 
 // ensure it implements Strategy
-var _ api.Strategy = &ComposeStrategy{}
+var _ api.Strategy = &composeStrategy{}
 
-// MakeComposeStrategy is a factory method for ComposeStrategy
-func MakeComposeStrategy(
+// makeComposeStrategy is a factory method for composeStrategy
+func makeComposeStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	buyStrat api.SideStrategy,
 	sellStrat api.SideStrategy,
 ) api.Strategy {
-	return &ComposeStrategy{
+	return &composeStrategy{
 		assetBase:  assetBase,
 		assetQuote: assetQuote,
 		buyStrat:   buyStrat,
@@ -39,7 +39,7 @@ func MakeComposeStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *ComposeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+func (s *composeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
 	pruneOps1, newBuyingAOffers := s.buyStrat.PruneExistingOffers(buyingAOffers)
 	pruneOps2, newSellingAOffers := s.sellStrat.PruneExistingOffers(sellingAOffers)
 	pruneOps1 = append(pruneOps1, pruneOps2...)
@@ -47,7 +47,7 @@ func (s *ComposeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sel
 }
 
 // PreUpdate impl
-func (s *ComposeStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64) error {
+func (s *composeStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64) error {
 	// swap assets (base/quote) for buying strategy
 	e1 := s.buyStrat.PreUpdate(maxAssetQuote, maxAssetBase, trustQuote, trustBase)
 	// assets maintain same ordering for selling
@@ -68,7 +68,7 @@ func (s *ComposeStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64,
 }
 
 // UpdateWithOps impl
-func (s *ComposeStrategy) UpdateWithOps(
+func (s *composeStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
@@ -100,6 +100,6 @@ func (s *ComposeStrategy) UpdateWithOps(
 }
 
 // PostUpdate impl
-func (s *ComposeStrategy) PostUpdate() error {
+func (s *composeStrategy) PostUpdate() error {
 	return nil
 }

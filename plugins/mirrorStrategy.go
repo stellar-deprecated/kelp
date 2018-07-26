@@ -1,9 +1,8 @@
-package strategy
+package plugins
 
 import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/plugins"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
@@ -11,8 +10,8 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
-// MirrorConfig contains the configuration params for this strategy
-type MirrorConfig struct {
+// mirrorConfig contains the configuration params for this strategy
+type mirrorConfig struct {
 	EXCHANGE         string  `valid:"-"`
 	EXCHANGE_BASE    string  `valid:"-"`
 	EXCHANGE_QUOTE   string  `valid:"-"`
@@ -21,27 +20,27 @@ type MirrorConfig struct {
 	PER_LEVEL_SPREAD float64 `valid:"-"`
 }
 
-// MirrorStrategy is a strategy to mirror the orderbook of a given exchange
-type MirrorStrategy struct {
-	sdex          *plugins.SDEX
+// mirrorStrategy is a strategy to mirror the orderbook of a given exchange
+type mirrorStrategy struct {
+	sdex          *SDEX
 	orderbookPair *model.TradingPair
 	baseAsset     *horizon.Asset
 	quoteAsset    *horizon.Asset
-	config        *MirrorConfig
+	config        *mirrorConfig
 	tradeAPI      api.TradeAPI
 }
 
 // ensure this implements Strategy
-var _ api.Strategy = &MirrorStrategy{}
+var _ api.Strategy = &mirrorStrategy{}
 
-// MakeMirrorStrategy is a factory method
-func MakeMirrorStrategy(sdex *plugins.SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *MirrorConfig) api.Strategy {
-	exchange := plugins.MakeExchange(config.EXCHANGE)
+// makeMirrorStrategy is a factory method
+func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) api.Strategy {
+	exchange := MakeExchange(config.EXCHANGE)
 	orderbookPair := &model.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
 	}
-	return &MirrorStrategy{
+	return &mirrorStrategy{
 		sdex:          sdex,
 		orderbookPair: orderbookPair,
 		baseAsset:     baseAsset,
@@ -52,17 +51,17 @@ func MakeMirrorStrategy(sdex *plugins.SDEX, baseAsset *horizon.Asset, quoteAsset
 }
 
 // PruneExistingOffers deletes any extra offers
-func (s MirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+func (s mirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
 	return []build.TransactionMutator{}, buyingAOffers, sellingAOffers
 }
 
 // PreUpdate changes the strategy's state in prepration for the update
-func (s *MirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error {
+func (s *mirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error {
 	return nil
 }
 
 // UpdateWithOps builds the operations we want performed on the account
-func (s MirrorStrategy) UpdateWithOps(
+func (s mirrorStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
@@ -102,7 +101,7 @@ func (s MirrorStrategy) UpdateWithOps(
 	return ops, nil
 }
 
-func (s *MirrorStrategy) updateLevels(
+func (s *mirrorStrategy) updateLevels(
 	oldOffers []horizon.Offer,
 	newOrders []model.Order,
 	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
@@ -177,6 +176,6 @@ func doModifyOffer(
 }
 
 // PostUpdate changes the strategy's state after the update has taken place
-func (s *MirrorStrategy) PostUpdate() error {
+func (s *mirrorStrategy) PostUpdate() error {
 	return nil
 }

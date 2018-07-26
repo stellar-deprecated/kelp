@@ -1,20 +1,19 @@
-package sideStrategy
+package plugins
 
 import (
 	"math"
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/log"
 )
 
-// SellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
-type SellSideStrategy struct {
-	sdex                *plugins.SDEX
+// sellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
+type sellSideStrategy struct {
+	sdex                *SDEX
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
 	levelsProvider      api.LevelProvider
@@ -29,11 +28,11 @@ type SellSideStrategy struct {
 }
 
 // ensure it implements SideStrategy
-var _ api.SideStrategy = &SellSideStrategy{}
+var _ api.SideStrategy = &sellSideStrategy{}
 
-// MakeSellSideStrategy is a factory method for SellSideStrategy
-func MakeSellSideStrategy(
-	sdex *plugins.SDEX,
+// makeSellSideStrategy is a factory method for sellSideStrategy
+func makeSellSideStrategy(
+	sdex *SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	levelsProvider api.LevelProvider,
@@ -41,7 +40,7 @@ func MakeSellSideStrategy(
 	amountTolerance float64,
 	divideAmountByPrice bool,
 ) api.SideStrategy {
-	return &SellSideStrategy{
+	return &sellSideStrategy{
 		sdex:                sdex,
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
@@ -53,7 +52,7 @@ func MakeSellSideStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *SellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
+func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
 	pruneOps := []build.TransactionMutator{}
 	for i := len(s.currentLevels); i < len(offers); i++ {
 		pOp := s.sdex.DeleteOffer(offers[i])
@@ -66,7 +65,7 @@ func (s *SellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.
 }
 
 // PreUpdate impl
-func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64) error {
+func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64) error {
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
 
@@ -90,7 +89,7 @@ func (s *SellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 }
 
 // UpdateWithOps impl
-func (s *SellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
+func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	newTopOffer = nil
 	for i := len(s.currentLevels) - 1; i >= 0; i-- {
 		op := s.updateSellLevel(offers, i)
@@ -112,12 +111,12 @@ func (s *SellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 }
 
 // PostUpdate impl
-func (s *SellSideStrategy) PostUpdate() error {
+func (s *sellSideStrategy) PostUpdate() error {
 	return nil
 }
 
 // Selling Base
-func (s *SellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *build.ManageOfferBuilder {
+func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *build.ManageOfferBuilder {
 	targetPrice := s.currentLevels[index].Price
 	targetAmount := s.currentLevels[index].Amount
 	if s.divideAmountByPrice {

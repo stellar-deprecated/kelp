@@ -1,20 +1,20 @@
-package level
+package plugins
 
 import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/stellar/go/support/log"
 )
 
-// StaticLevel represents a layer in the orderbook defined statically
+// staticLevel represents a layer in the orderbook defined statically
 // extracted here because it's shared by strategy and sideStrategy where strategy depeneds on sideStrategy
-type StaticLevel struct {
+type staticLevel struct {
 	SPREAD float64 `valid:"-"`
 	AMOUNT float64 `valid:"-"`
 }
 
 // staticSpreadLevelProvider provides a fixed number of levels using a static percentage spread
 type staticSpreadLevelProvider struct {
-	staticLevels []StaticLevel
+	staticLevels []staticLevel
 	amountOfBase float64
 	pf           *api.FeedPair
 }
@@ -22,8 +22,8 @@ type staticSpreadLevelProvider struct {
 // ensure it implements the LevelProvider interface
 var _ api.LevelProvider = &staticSpreadLevelProvider{}
 
-// MakeStaticSpreadLevelProvider is a factory method
-func MakeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase float64, pf *api.FeedPair) api.LevelProvider {
+// makeStaticSpreadLevelProvider is a factory method
+func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, pf *api.FeedPair) api.LevelProvider {
 	return &staticSpreadLevelProvider{
 		staticLevels: staticLevels,
 		amountOfBase: amountOfBase,

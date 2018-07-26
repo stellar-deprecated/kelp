@@ -1,4 +1,4 @@
-package level
+package plugins
 
 import (
 	"log"
@@ -33,8 +33,8 @@ type balancedLevelProvider struct {
 // ensure it implements LevelProvider
 var _ api.LevelProvider = &balancedLevelProvider{}
 
-// MakeBalancedLevelProvider is the factory method
-func MakeBalancedLevelProvider(
+// makeBalancedLevelProvider is the factory method
+func makeBalancedLevelProvider(
 	spread float64,
 	useMaxQuoteInTargetAmountCalc bool,
 	minAmountSpread float64,

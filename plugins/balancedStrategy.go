@@ -1,15 +1,12 @@
-package strategy
+package plugins
 
 import (
 	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/plugins"
-	"github.com/lightyeario/kelp/trader/strategy/level"
-	"github.com/lightyeario/kelp/trader/strategy/sideStrategy"
 	"github.com/stellar/go/clients/horizon"
 )
 
-// BalancedConfig contains the configuration params for this Strategy
-type BalancedConfig struct {
+// balancedConfig contains the configuration params for this Strategy
+type balancedConfig struct {
 	PRICE_TOLERANCE                 float64 `valid:"-"`
 	AMOUNT_TOLERANCE                float64 `valid:"-"`
 	SPREAD                          float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
@@ -25,18 +22,18 @@ type BalancedConfig struct {
 	VIRTUAL_BALANCE_QUOTE           float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
 }
 
-// MakeBalancedStrategy is a factory method for BalancedStrategy
-func MakeBalancedStrategy(
-	sdex *plugins.SDEX,
+// makeBalancedStrategy is a factory method for balancedStrategy
+func makeBalancedStrategy(
+	sdex *SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	config *BalancedConfig,
+	config *balancedConfig,
 ) api.Strategy {
-	sellSideStrategy := sideStrategy.MakeSellSideStrategy(
+	sellSideStrategy := makeSellSideStrategy(
 		sdex,
 		assetBase,
 		assetQuote,
-		level.MakeBalancedLevelProvider(
+		makeBalancedLevelProvider(
 			config.SPREAD,
 			false,
 			config.MIN_AMOUNT_SPREAD,
@@ -54,11 +51,11 @@ func MakeBalancedStrategy(
 		false,
 	)
 	// switch sides of base/quote here for buy side
-	buySideStrategy := sideStrategy.MakeSellSideStrategy(
+	buySideStrategy := makeSellSideStrategy(
 		sdex,
 		assetQuote,
 		assetBase,
-		level.MakeBalancedLevelProvider(
+		makeBalancedLevelProvider(
 			config.SPREAD,
 			true, // real base is passed in as quote so pass in true
 			config.MIN_AMOUNT_SPREAD,
@@ -76,7 +73,7 @@ func MakeBalancedStrategy(
 		true,
 	)
 
-	return MakeComposeStrategy(
+	return makeComposeStrategy(
 		assetBase,
 		assetQuote,
 		buySideStrategy,
