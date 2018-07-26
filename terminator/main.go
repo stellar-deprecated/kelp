@@ -45,7 +45,7 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  configFile.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := plugins.MakeSDEX(
+	sdex := plugins.MakeSDEX(
 		client,
 		configFile.SOURCE_SECRET_SEED,
 		configFile.TRADING_SECRET_SEED,
@@ -55,7 +55,7 @@ func run(cmd *cobra.Command, args []string) {
 		-1, // not needed here
 		-1, // not needed here
 	)
-	terminator := MakeTerminator(client, txB, *configFile.tradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)
+	terminator := MakeTerminator(client, sdex, *configFile.tradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)
 	// --- end initialization of objects ----
 
 	for {

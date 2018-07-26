@@ -50,7 +50,7 @@ func run(cmd *cobra.Command, args []string) {
 		URL:  botConfig.HORIZON_URL,
 		HTTP: http.DefaultClient,
 	}
-	txB := plugins.MakeSDEX(
+	sdex := plugins.MakeSDEX(
 		client,
 		botConfig.SOURCE_SECRET_SEED,
 		botConfig.TRADING_SECRET_SEED,
@@ -64,13 +64,13 @@ func run(cmd *cobra.Command, args []string) {
 	assetBase := botConfig.AssetBase()
 	assetQuote := botConfig.AssetQuote()
 	dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-	strat := plugins.MakeStrategy(txB, &assetBase, &assetQuote, *stratType, *stratConfigPath)
+	strat := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *stratType, *stratConfigPath)
 	bot := MakeBot(
 		client,
 		botConfig.AssetBase(),
 		botConfig.AssetQuote(),
 		botConfig.TradingAccount(),
-		txB,
+		sdex,
 		strat,
 		botConfig.TICK_INTERVAL_SECONDS,
 		dataKey,
