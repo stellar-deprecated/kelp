@@ -31,7 +31,7 @@ We go through the necessary steps required by the issuer to issue us `10,000 COU
 
 ## Config Setup
 
-You will need to set up your `botConfig` file which describes the accounts used by the bot. You need to set the following fields: 
+You will need to set up your `trader.cfg` file which describes the accounts used by the bot. You need to set the following fields: 
 
 - `TRADING_SECRET_SEED`: **secret key** for the `Trading Account`.
 - `SOURCE_SECRET_SEED`: If you have specified a `Source Account` fill in the **secret key** here.
@@ -44,7 +44,7 @@ You will need to set up your `botConfig` file which describes the accounts used 
 
 Note: The bot automatically determines the `account address` from the `secret key` so you don't need to enter that anywhere.
 
-We've created a [sample config file](../../configs/trader/sample_botConfig.cfg) - take a look! 
+We've created a [sample config file](../../configs/trader/sample_trader.cfg) - take a look! 
 
 # Next Steps
 

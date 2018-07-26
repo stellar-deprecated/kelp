@@ -66,13 +66,13 @@ The Trader Bot places orders on the [Stellar marketplace][stellarx] based on the
 
 `trader` has three required parameters which are:
 
-- **botConf**: `.cfg` file with the account details, [sample file here](examples/configs/trader/sample_botConfig.cfg).
+- **botConf**: `.cfg` file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
 - **stratType**: the strategy you want to run (`sell`, `buysell`, `balanced`, `mirror`, `delete`).
 - **stratConf**: `.cfg` file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
 Example:
 
-`trader --botConf traderConf.cfg --stratType buysell --stratConf buysell.cfg`
+`trader --botConf trader.cfg --stratType buysell --stratConf buysell.cfg`
 
 # Components
 

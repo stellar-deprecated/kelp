@@ -25,7 +25,6 @@ var rootCmd = &cobra.Command{
 	Short: "Market Making bot for Stellar",
 }
 var botConfigPath = rootCmd.PersistentFlags().String("botConf", "./trader.cfg", "trading bot's basic config file path")
-var botConfig BotConfig
 var stratType = rootCmd.PersistentFlags().String("stratType", "buysell", "type of strategy to run")
 var stratConfigPath = rootCmd.PersistentFlags().String("stratConf", "./trader.cfg", "strategy config file path")
 var fractionalReserveMagnifier = rootCmd.PersistentFlags().Int8("fractionalReserveMultiplier", 1, "(optional) fractional multiplier for XLM reserves")
@@ -43,6 +42,7 @@ func main() {
 
 func run(cmd *cobra.Command, args []string) {
 	log.Info("Starting trader: v0.5")
+	var botConfig BotConfig
 	err := config.Read(*botConfigPath, &botConfig)
 	utils.CheckConfigError(botConfig, err)
 	err = botConfig.Init()

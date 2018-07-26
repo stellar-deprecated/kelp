@@ -6,7 +6,7 @@ This strategy buys low and sells high with a pre-defined [spread](https://en.wik
 
 ## Account Setup
 
-You should first go through the [Account Setup guide](account_setup.md) to set up your Stellar accounts and the necessary configuration file, botConfig. This introduces the `COUPON` token that we will use through the rest of this walkthrough.
+You should first go through the [Account Setup guide](account_setup.md) to set up your Stellar accounts and the necessary configuration file, `trader.cfg`. This introduces the `COUPON` token that we will use through the rest of this walkthrough.
 
 ## Install Bots
 
