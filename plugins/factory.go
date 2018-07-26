@@ -10,6 +10,15 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
+// MakeExchange is a factory method to make an exchange based on a given type
+func MakeExchange(exchangeType string) api.Exchange {
+	switch exchangeType {
+	case "kraken":
+		return makeKrakenExchange()
+	}
+	return nil
+}
+
 // MakeStrategy makes a strategy
 func MakeStrategy(
 	sdex *SDEX,
