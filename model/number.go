@@ -32,38 +32,38 @@ func (n Number) String() string {
 	return n.AsString()
 }
 
-// FromFloat makes a Number from a float
-func FromFloat(f float64, precision int8) *Number {
+// NumberFromFloat makes a Number from a float
+func NumberFromFloat(f float64, precision int8) *Number {
 	return &Number{
 		value:     toFixed(f, precision),
 		precision: precision,
 	}
 }
 
-// FromString makes a Number from a string, by calling FromFloat
-func FromString(s string, precision int8) (*Number, error) {
+// NumberFromString makes a Number from a string, by calling NumberFromFloat
+func NumberFromString(s string, precision int8) (*Number, error) {
 	parsed, e := strconv.ParseFloat(s, 64)
 	if e != nil {
 		return nil, e
 	}
-	return FromFloat(parsed, precision), nil
+	return NumberFromFloat(parsed, precision), nil
 }
 
-// MustFromString panics when there's an error
-func MustFromString(s string, precision int8) *Number {
-	parsed, e := FromString(s, precision)
+// MustNumberFromString panics when there's an error
+func MustNumberFromString(s string, precision int8) *Number {
+	parsed, e := NumberFromString(s, precision)
 	if e != nil {
 		log.Panic(e)
 	}
 	return parsed
 }
 
-// Invert inverts a number, returns nil if the original number is nil, preserves precision
-func Invert(n *Number) *Number {
+// InvertNumber inverts a number, returns nil if the original number is nil, preserves precision
+func InvertNumber(n *Number) *Number {
 	if n == nil {
 		return nil
 	}
-	return FromFloat(1/n.AsFloat(), n.Precision())
+	return NumberFromFloat(1/n.AsFloat(), n.Precision())
 }
 
 func round(num float64) int {

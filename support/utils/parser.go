@@ -76,7 +76,7 @@ func parseStringAsNumber(m map[string]interface{}, key string, methodAPI string)
 		return nil, e
 	}
 
-	n, e := model.FromString(s, numberPrecision)
+	n, e := model.NumberFromString(s, numberPrecision)
 	if e != nil {
 		return nil, fmt.Errorf("unable to convert the string field '%s' to a number in the response from %s: value=%v, error=%s", key, methodAPI, s, e)
 	}
@@ -95,5 +95,5 @@ func parseFloatAsNumber(m map[string]interface{}, key string, methodAPI string) 
 		return nil, makeParseError(key, "float", methodAPI, v)
 	}
 
-	return model.FromFloat(f, numberPrecision), nil
+	return model.NumberFromFloat(f, numberPrecision), nil
 }

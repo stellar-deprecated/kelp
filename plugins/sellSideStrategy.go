@@ -94,7 +94,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 	for i := len(s.currentLevels) - 1; i >= 0; i-- {
 		op := s.updateSellLevel(offers, i)
 		if op != nil {
-			offer, e := model.FromString(op.MO.Price.String(), 7)
+			offer, e := model.NumberFromString(op.MO.Price.String(), 7)
 			if e != nil {
 				return nil, nil, e
 			}

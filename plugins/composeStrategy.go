@@ -74,7 +74,7 @@ func (s *composeStrategy) UpdateWithOps(
 ) ([]build.TransactionMutator, error) {
 	// buy side, flip newTopBuyPrice because it will be inverted from this parent strategy's context of base/quote
 	buyOps, newTopBuyPriceInverted, e1 := s.buyStrat.UpdateWithOps(buyingAOffers)
-	newTopBuyPrice := model.Invert(newTopBuyPriceInverted)
+	newTopBuyPrice := model.InvertNumber(newTopBuyPriceInverted)
 	// sell side
 	sellOps, _, e2 := s.sellStrat.UpdateWithOps(sellingAOffers)
 

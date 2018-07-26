@@ -152,15 +152,15 @@ func doModifyOffer(
 	price := newOrder.Price.AsFloat() * priceMultiplier
 	vol := newOrder.Volume.AsFloat() / volumeDivideBy
 
-	oldPrice := model.MustFromString(oldOffer.Price, 6)
-	oldVol := model.MustFromString(oldOffer.Amount, 6)
+	oldPrice := model.MustNumberFromString(oldOffer.Price, 6)
+	oldVol := model.MustNumberFromString(oldOffer.Amount, 6)
 	if hackPriceInvertForBuyOrderChangeCheck {
 		// we want to multiply oldVol by the original oldPrice so we can get the correct oldVol, since ModifyBuyOffer multiplies price * vol
-		oldVol = model.FromFloat(oldVol.AsFloat()*oldPrice.AsFloat(), 6)
-		oldPrice = model.FromFloat(1/oldPrice.AsFloat(), 6)
+		oldVol = model.NumberFromFloat(oldVol.AsFloat()*oldPrice.AsFloat(), 6)
+		oldPrice = model.NumberFromFloat(1/oldPrice.AsFloat(), 6)
 	}
-	newPrice := model.FromFloat(price, 6)
-	newVol := model.FromFloat(vol, 6)
+	newPrice := model.NumberFromFloat(price, 6)
+	newVol := model.NumberFromFloat(vol, 6)
 	epsilon := 0.0001
 	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
 	//log.Info("oldPrice: ", oldPrice.AsString(), " | newPrice: ", newPrice.AsString(), " | oldVol: ", oldVol.AsString(), " | newVol: ", newVol.AsString(), " | sameOrderParams: ", sameOrderParams)

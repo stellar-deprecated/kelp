@@ -131,8 +131,8 @@ func TestAddOrder(t *testing.T) {
 		Pair:        &model.TradingPair{Base: model.REP, Quote: model.ETH},
 		OrderAction: model.OrderActionBuy,
 		OrderType:   model.OrderTypeLimit,
-		Price:       model.FromFloat(0.00001, 5),
-		Volume:      model.FromFloat(0.3145, 5),
+		Price:       model.NumberFromFloat(0.00001, 5),
+		Volume:      model.NumberFromFloat(0.3145, 5),
 	})
 	if !assert.NoError(t, e) {
 		return
@@ -159,7 +159,7 @@ func TestCancelOrder(t *testing.T) {
 }
 
 func TestPrepareDeposit(t *testing.T) {
-	result, e := testKrakenExchange.PrepareDeposit(model.BTC, model.FromFloat(1.0, 7))
+	result, e := testKrakenExchange.PrepareDeposit(model.BTC, model.NumberFromFloat(1.0, 7))
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -169,7 +169,7 @@ func TestPrepareDeposit(t *testing.T) {
 }
 
 func TestGetWithdrawInfo(t *testing.T) {
-	result, e := testKrakenExchange.GetWithdrawInfo(model.BTC, model.FromFloat(1.0, 7), "")
+	result, e := testKrakenExchange.GetWithdrawInfo(model.BTC, model.NumberFromFloat(1.0, 7), "")
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -179,7 +179,7 @@ func TestGetWithdrawInfo(t *testing.T) {
 }
 
 func TestWithdrawFunds(t *testing.T) {
-	result, e := testKrakenExchange.WithdrawFunds(model.XLM, model.FromFloat(0.0000001, 7), "")
+	result, e := testKrakenExchange.WithdrawFunds(model.XLM, model.NumberFromFloat(0.0000001, 7), "")
 	if !assert.NoError(t, e) {
 		return
 	}

@@ -142,7 +142,7 @@ func (k krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.A
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *model.FromFloat(bal, k.precision)
+		m[a] = *model.NumberFromFloat(bal, k.precision)
 	}
 	return m, nil
 }
@@ -184,14 +184,14 @@ func (k krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder
 				Pair:        pair,
 				OrderAction: model.OrderActionFromString(o.Description.Type),
 				OrderType:   model.OrderTypeFromString(o.Description.OrderType),
-				Price:       model.MustFromString(o.Description.PrimaryPrice, k.precision),
-				Volume:      model.MustFromString(o.Volume, k.precision),
+				Price:       model.MustNumberFromString(o.Description.PrimaryPrice, k.precision),
+				Volume:      model.MustNumberFromString(o.Volume, k.precision),
 				Timestamp:   model.MakeTimestamp(int64(o.OpenTime)),
 			},
 			ID:             ID,
 			StartTime:      model.MakeTimestamp(int64(o.StartTime)),
 			ExpireTime:     model.MakeTimestamp(int64(o.ExpireTime)),
-			VolumeExecuted: model.FromFloat(o.VolumeExecuted, k.precision),
+			VolumeExecuted: model.NumberFromFloat(o.VolumeExecuted, k.precision),
 		})
 	}
 	return m, nil
@@ -222,8 +222,8 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   model.OrderTypeLimit,
-			Price:       model.FromFloat(item.Price, k.precision),
-			Volume:      model.FromFloat(item.Amount, k.precision),
+			Price:       model.NumberFromFloat(item.Price, k.precision),
+			Volume:      model.NumberFromFloat(item.Amount, k.precision),
 			Timestamp:   model.MakeTimestamp(item.Ts),
 		})
 	}
@@ -251,10 +251,10 @@ func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tra
 	for _, p := range pairs {
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = api.Ticker{
-			AskPrice:  model.MustFromString(pairTickerInfo.Ask[0], k.precision),
-			AskVolume: model.MustFromString(pairTickerInfo.Ask[1], k.precision),
-			BidPrice:  model.MustFromString(pairTickerInfo.Bid[0], k.precision),
-			BidVolume: model.MustFromString(pairTickerInfo.Bid[1], k.precision),
+			AskPrice:  model.MustNumberFromString(pairTickerInfo.Ask[0], k.precision),
+			AskVolume: model.MustNumberFromString(pairTickerInfo.Ask[1], k.precision),
+			BidPrice:  model.MustNumberFromString(pairTickerInfo.Bid[0], k.precision),
+			BidVolume: model.MustNumberFromString(pairTickerInfo.Bid[1], k.precision),
 		}
 	}
 
@@ -327,13 +327,13 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 				Pair:        pair,
 				OrderAction: model.OrderActionFromString(_type),
 				OrderType:   model.OrderTypeFromString(_ordertype),
-				Price:       model.MustFromString(_price, k.precision),
-				Volume:      model.MustFromString(_vol, k.precision),
+				Price:       model.MustNumberFromString(_price, k.precision),
+				Volume:      model.MustNumberFromString(_vol, k.precision),
 				Timestamp:   ts,
 			},
 			TransactionID: model.MakeTransactionID(_txid),
-			Cost:          model.MustFromString(_cost, k.precision),
-			Fee:           model.MustFromString(_fee, k.precision),
+			Cost:          model.MustNumberFromString(_cost, k.precision),
+			Fee:           model.MustNumberFromString(_fee, k.precision),
 		})
 	}
 	return &res, nil
@@ -383,8 +383,8 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 				Pair:        pair,
 				OrderAction: action,
 				OrderType:   orderType,
-				Price:       model.FromFloat(tInfo.PriceFloat, k.precision),
-				Volume:      model.FromFloat(tInfo.VolumeFloat, k.precision),
+				Price:       model.NumberFromFloat(tInfo.PriceFloat, k.precision),
+				Volume:      model.NumberFromFloat(tInfo.VolumeFloat, k.precision),
 				Timestamp:   model.MakeTimestamp(tInfo.Time),
 			},
 			// TransactionID unavailable
