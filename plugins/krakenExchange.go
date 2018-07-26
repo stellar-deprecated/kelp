@@ -43,9 +43,9 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 	return key, nil
 }
 
-// MakeKrakenExchange is a factory method to make the kraken exchange
+// makeKrakenExchange is a factory method to make the kraken exchange
 // TODO 2, should take in config file for kraken api keys + withdrawalKeys mapping
-func MakeKrakenExchange() api.Exchange {
+func makeKrakenExchange() api.Exchange {
 	return &krakenExchange{
 		assetConverter: model.KrakenAssetConverter,
 		api:            krakenapi.New("", ""),

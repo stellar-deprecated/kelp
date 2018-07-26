@@ -8,7 +8,7 @@ import (
 func MakeExchange(exchangeType string) api.Exchange {
 	switch exchangeType {
 	case "kraken":
-		return MakeKrakenExchange()
+		return makeKrakenExchange()
 	}
 	return nil
 }
