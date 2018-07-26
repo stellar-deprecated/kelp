@@ -16,8 +16,7 @@ import (
 
 const maxLumenTrust float64 = 100000000000
 
-// Bot represents a market making bot, which contains it's strategy
-// the Bot is meant to contain all the non-strategy specific logic
+// Bot represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Bot struct {
 	api                 *horizon.Client
 	assetBase           horizon.Asset
@@ -69,7 +68,7 @@ func (b *Bot) Start() {
 	}
 }
 
-// deletes all offers for this bot (not all offers on the account)
+// deletes all offers for the bot (not all offers on the account)
 func (b *Bot) deleteAllOffers() {
 	dOps := []build.TransactionMutator{}
 
@@ -88,7 +87,7 @@ func (b *Bot) deleteAllOffers() {
 	}
 }
 
-// time to update the order book and possibly readjust your offers
+// time to update the order book and possibly readjust the offers
 func (b *Bot) update() {
 	var e error
 	b.load()
@@ -178,9 +177,6 @@ func (b *Bot) load() {
 	b.trustAssetB = trustB
 }
 
-// get complete list of offers
-// look at the offers for this pair
-// delete any extra ones
 func (b *Bot) loadExistingOffers() {
 	offers, e := utils.LoadAllOffers(b.tradingAccount, b.api)
 	if e != nil {

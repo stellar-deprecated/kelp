@@ -13,13 +13,6 @@ import (
 	"github.com/stellar/go/support/log"
 )
 
-/*
-Trades one pair.
-Has one data feed
-Has one account it is trading on behalf of
-Has a depth curve it maintains around the price
-treasury management
-*/
 var rootCmd = &cobra.Command{
 	Use:   "trader",
 	Short: "Market Making bot for Stellar",
