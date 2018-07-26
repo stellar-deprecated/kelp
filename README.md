@@ -33,7 +33,7 @@ To learn more about the Stellar protocol check out [this community video][sdex e
       * [Price Feeds](#price-feeds)
       * [Configuration Files](#configuration-files)
       * [Exchanges](#exchanges)
-      * [Extensions](#extensions)
+      * [Plugins](#plugins)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
@@ -47,7 +47,7 @@ _Whenever you trade on Stellar, you are trading with volatile assets, in volatil
 
 To get started with Kelp, either download the pre-compiled binary for your platform from the [Github Releases Page][github-releases] or [compile Kelp from source](#compile-from-source).
 
-There is **one** binary associated with this project: [`trader`](trader). Once the binary is downloaded, run the bot by following the instructions in [Running the Trader Bot](#running-the-trader-bot).
+There is **one** binary associated with this project: `trader`. Once the binary is downloaded, run the bot by following the instructions in [Running the Trader Bot](#running-the-trader-bot).
 
 ## Compile from Source
 
@@ -66,9 +66,9 @@ The Trader Bot places orders on the [Stellar marketplace][stellarx] based on the
 
 `trader` has three required parameters which are:
 
-- **botConf**: `.cfg` file with the account details as defined [here](trader/config.go).
+- **botConf**: `.cfg` file with the account details, [sample file here](examples/configs/trader/sample_botConfig.cfg).
 - **stratType**: the strategy you want to run (`sell`, `buysell`, `balanced`, `mirror`, `delete`).
-- **stratConf**: `.cfg` file specific to your chosen strategy, find the [strategies here](trader/strategy).
+- **stratConf**: `.cfg` file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
 Example:
 
@@ -76,42 +76,42 @@ Example:
 
 # Components
 
-Kelp includes an assortment of strategies, price feeds, and extensions you can build around. Kelp also enables you to create your own trading strategies.
+Kelp includes an assortment of strategies, price feeds, and plugins you can use to customize your bot. Kelp also enables you to create your own trading strategies.
 
 ## Strategies
 
 Strategies are at the core of the **trader bot**. Without them it's just lazy, capable of nothing, thinking of nothing, doing nothing, like our friend [scooter][scooter video] here. The strategies give your bot purpose. Each approaches the market in a different way and is designed to achieve a particular goal.
 
-The following [strategies](trader/strategy) are available **out of the box** with Kelp:
+The following strategies are available **out of the box** with Kelp:
 
-- [sell](trader/strategy/sell.go):
+- [sell](plugins/sellStrategy.go):
 
     - **What:** creates sell offers based on a reference price with a pre-specified liquidity depth
     - **Why:** To sell tokens at a fixed price or at a price that changes based on an external reference price
     - **Who:** An issuer could use Sell to distribute tokens from an ICO pre-sale
     - **Complexity**: Beginner
 
-- [buysell](trader/strategy/buysell.go):
+- [buysell](plugins/buysellStrategy.go):
 
     - **What:** creates buy and sell offers based on a specific reference price and a pre-specified liquidity depth while maintaining a [spread][spread].
     - **Why:** To make the market for tokens based on a fixed or external reference price.
     - **Who:** Anyone who wants to create liquidity for a stablecoin or [fiat][fiat] token
     - **Complexity:** Beginner
 
-- [balanced](trader/strategy/balanced.go):
+- [balanced](plugins/balancedStrategy.go):
     - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B.
     - **Why:** To let the market surface the _true price_ for one token in terms of another.
     - **Who:** Market makers and traders for tokens that trade only on Stellar 
     - **Complexity:** Intermediate
 
-- [mirror](trader/strategy/mirror.go):
+- [mirror](plugins/mirrorStrategy.go):
 
     - **What:** mirrors an orderbook from another exchange by placing the same orders on Stellar after including a [spread][spread]. _Note: covering your trades on the backing exchange is not currently supported out-of-the-box_.
     - **Why:** To [hedge][hedge] your position on another exchange whenever a trade is executed to reduce inventory risk while keeping a spread
     - **Who:** Anyone who wants to reduce inventory risk and also has the capacity to take on a higher operational overhead in maintaining the bot system.
     - **Complexity:** Advanced
 
-- [delete](trader/strategy/delete.go):
+- [delete](plugins/deleteStrategy.go):
 
     - **What:** deletes your offers from both sides of the specified orderbook. _Note: does not need a strategy-specific config file_.
     - **Why:** To kill the offers placed by the bot. _This is not a trading strategy but is used for operational purposes only_.
@@ -122,35 +122,37 @@ The following [strategies](trader/strategy) are available **out of the box** wit
 
 Price Feeds fetch the price of an asset from an external source. The following price feeds are available **out of the box** with Kelp:
 
-- [coinmarketcap](plugins/cmcFeed.go): fetches the price of tokens from [CoinMarketCap][cmc]
-- [fiat](plugins/fiatFeed.go): fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
-- [exchange](plugins/exchange.go): fetches the price from an exchange you specify, such as Kraken or Poloniex
-- [fixed](plugins/fixedFeed.go): sets the price to a constant
+- coinmarketcap: fetches the price of tokens from [CoinMarketCap][cmc]
+- fiat: fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
+- exchange: fetches the price from an exchange you specify, such as Kraken or Poloniex
+- fixed: sets the price to a constant
 
 ## Configuration Files
 
-Each strategy you implement needs a configuration file. The format of the configuration file is specific to the selected strategy. You can use these files to customize parameters for your chosen strategy. For more details, check out the [examples section](#configuration-files) of the readme.
+Each strategy you implement needs a configuration file. The format of the configuration file is specific to the selected strategy. You can use these files to customize parameters for your chosen strategy.
+
+For more details, check out the [examples section](#configuration-files) of the readme.
 
 ## Exchanges
 
 Exchange integrations provide data to trading strategies and allow you to [hedge][hedge] your positions on different exchanges. The following [exchange integrations](plugins) are available **out of the box** with Kelp:
 
-- [sdex](support/utils/txbutler.go): The [Stellar Decentralized Exchange][sdex]
-- [kraken](plugins/kraken.go): [Kraken][kraken]
+- [sdex](plugins/sdex.go): The [Stellar Decentralized Exchange][sdex]
+- [kraken](plugins/krakenExchange.go): [Kraken][kraken]
 
-## Extensions
+## Plugins
 
 Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
 
-These interfaces make it easy to create extensions:
-- [Strategy](api/strategy.go#L10) - API for a strategy used by the `trader` bot
-- [PriceFeed](api/pricefeed.go#L13) - API for price of an asset
-- [Exchange](api/exchange.go#L30) - API for crypto exchanges
+These interfaces make it easy to create plugins:
+- [Strategy](api/strategy.go) - API for a strategy used by the `trader` bot
+- [PriceFeed](api/priceFeed.go) - API for price of an asset
+- [Exchange](api/exchange.go) - API for crypto exchanges
 
 # Examples
 
-It's easier to learn with examples! Take a look through the walkthrough guides and sample configuration files below.
+It's easier to learn with examples! Take a look at the walkthrough guides and sample configuration files below.
 
 ## Walkthrough Guides
 
@@ -159,7 +161,7 @@ It's easier to learn with examples! Take a look through the walkthrough guides a
 
 ## Configuration Files
 
-Reference config files are in the [examples folder](examples/). Specifically, the following sample configuration files are included:
+Reference config files are in the [examples folder](examples/configs/trader). Specifically, the following sample configuration files are included:
 
 - [Sample Sell strategy config file](examples/configs/trader/sample_sell.cfg)
 - [Sample BuySell strategy config file](examples/configs/trader/sample_buysell.cfg)
