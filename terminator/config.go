@@ -1,4 +1,4 @@
-package main
+package terminator
 
 import (
 	"fmt"
@@ -14,22 +14,22 @@ type Config struct {
 	TICK_INTERVAL_SECONDS  int32  `valid:"-"`
 	HORIZON_URL            string `valid:"-"`
 
-	tradingAccount *string
-	sourceAccount  *string // can be nil
+	TradingAccount *string
+	SourceAccount  *string // can be nil
 }
 
 // Init initializes this config
 func (c *Config) Init() error {
 	var e error
-	c.tradingAccount, e = utils.ParseSecret(c.TRADING_SECRET_SEED)
+	c.TradingAccount, e = utils.ParseSecret(c.TRADING_SECRET_SEED)
 	if e != nil {
 		return e
 	}
 	// trading account should never be nil
-	if c.tradingAccount == nil {
+	if c.TradingAccount == nil {
 		return fmt.Errorf("no trading account specified")
 	}
 
-	c.sourceAccount, e = utils.ParseSecret(c.SOURCE_SECRET_SEED)
+	c.SourceAccount, e = utils.ParseSecret(c.SOURCE_SECRET_SEED)
 	return e
 }

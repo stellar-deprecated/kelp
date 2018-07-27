@@ -6,6 +6,7 @@ import (
 
 	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
+	"github.com/lightyeario/kelp/terminator"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -17,7 +18,7 @@ var rootCmd = &cobra.Command{
 	Short: "Monitors a Stellar Account and terminates offers across all inactive bots",
 }
 var configPath = rootCmd.PersistentFlags().String("conf", "./terminator.cfg", "service's basic config file path")
-var configFile Config
+var configFile terminator.Config
 
 func main() {
 	log.SetLevel(log.DebugLevel)
@@ -38,9 +39,9 @@ func run(cmd *cobra.Command, args []string) {
 		log.Error(err)
 		os.Exit(1)
 	}
-	log.Info("Started Terminator for account: ", *configFile.tradingAccount)
+	log.Info("Started Terminator for account: ", *configFile.TradingAccount)
 
-	// start the initialization of objects
+	// --- start initialization of objects ----
 	client := &horizon.Client{
 		URL:  configFile.HORIZON_URL,
 		HTTP: http.DefaultClient,
@@ -49,13 +50,13 @@ func run(cmd *cobra.Command, args []string) {
 		client,
 		configFile.SOURCE_SECRET_SEED,
 		configFile.TRADING_SECRET_SEED,
-		*configFile.sourceAccount,
-		*configFile.tradingAccount,
+		*configFile.SourceAccount,
+		*configFile.TradingAccount,
 		utils.ParseNetwork(configFile.HORIZON_URL),
 		-1, // not needed here
 		-1, // not needed here
 	)
-	terminator := MakeTerminator(client, sdex, *configFile.tradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)
+	terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)
 	// --- end initialization of objects ----
 
 	for {

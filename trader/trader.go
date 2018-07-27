@@ -1,4 +1,4 @@
-package main
+package trader
 
 import (
 	"fmt"
@@ -16,8 +16,8 @@ import (
 
 const maxLumenTrust float64 = 100000000000
 
-// Bot represents a market making bot, which is composed of various parts include the strategy and various APIs.
-type Bot struct {
+// Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
+type Trader struct {
 	api                 *horizon.Client
 	assetBase           horizon.Asset
 	assetQuote          horizon.Asset
@@ -36,7 +36,7 @@ type Bot struct {
 	sellingAOffers []horizon.Offer // quoted B/A
 }
 
-// MakeBot is the factory method for the Bot struct
+// MakeBot is the factory method for the Trader struct
 func MakeBot(
 	api *horizon.Client,
 	assetBase horizon.Asset,
@@ -46,8 +46,8 @@ func MakeBot(
 	strat api.Strategy,
 	tickIntervalSeconds int32,
 	dataKey *model.BotKey,
-) *Bot {
-	return &Bot{
+) *Trader {
+	return &Trader{
 		api:                 api,
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
@@ -60,26 +60,26 @@ func MakeBot(
 }
 
 // Start starts the bot with the injected strategy
-func (b *Bot) Start() {
+func (t *Trader) Start() {
 	for {
-		b.update()
-		log.Info(fmt.Sprintf("sleeping for %d seconds...", b.tickIntervalSeconds))
-		time.Sleep(time.Duration(b.tickIntervalSeconds) * time.Second)
+		t.update()
+		log.Info(fmt.Sprintf("sleeping for %d seconds...", t.tickIntervalSeconds))
+		time.Sleep(time.Duration(t.tickIntervalSeconds) * time.Second)
 	}
 }
 
 // deletes all offers for the bot (not all offers on the account)
-func (b *Bot) deleteAllOffers() {
+func (t *Trader) deleteAllOffers() {
 	dOps := []build.TransactionMutator{}
 
-	dOps = append(dOps, b.sdex.DeleteAllOffers(b.sellingAOffers)...)
-	b.sellingAOffers = []horizon.Offer{}
-	dOps = append(dOps, b.sdex.DeleteAllOffers(b.buyingAOffers)...)
-	b.buyingAOffers = []horizon.Offer{}
+	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
+	t.sellingAOffers = []horizon.Offer{}
+	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
+	t.buyingAOffers = []horizon.Offer{}
 
 	log.Info(fmt.Sprintf("deleting %d offers", len(dOps)))
 	if len(dOps) > 0 {
-		e := b.sdex.SubmitOps(dOps)
+		e := t.sdex.SubmitOps(dOps)
 		if e != nil {
 			log.Warn(e)
 			return
@@ -88,61 +88,61 @@ func (b *Bot) deleteAllOffers() {
 }
 
 // time to update the order book and possibly readjust the offers
-func (b *Bot) update() {
+func (t *Trader) update() {
 	var e error
-	b.load()
-	b.loadExistingOffers()
+	t.load()
+	t.loadExistingOffers()
 
 	// strategy has a chance to set any state it needs
-	e = b.strat.PreUpdate(b.maxAssetA, b.maxAssetB, b.trustAssetA, b.trustAssetB)
+	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
 		log.Warn(e)
-		b.deleteAllOffers()
+		t.deleteAllOffers()
 		return
 	}
 
 	// delete excess offers
 	var pruneOps []build.TransactionMutator
-	pruneOps, b.buyingAOffers, b.sellingAOffers = b.strat.PruneExistingOffers(b.buyingAOffers, b.sellingAOffers)
+	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	if len(pruneOps) > 0 {
-		e = b.sdex.SubmitOps(pruneOps)
+		e = t.sdex.SubmitOps(pruneOps)
 		if e != nil {
 			log.Warn(e)
-			b.deleteAllOffers()
+			t.deleteAllOffers()
 			return
 		}
 	}
 
 	// reset cached xlm exposure here so we only compute it once per update
 	// TODO 2 - calculate this here and pass it in
-	b.sdex.ResetCachedXlmExposure()
-	ops, e := b.strat.UpdateWithOps(b.buyingAOffers, b.sellingAOffers)
+	t.sdex.ResetCachedXlmExposure()
+	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	if e != nil {
 		log.Warn(e)
-		b.deleteAllOffers()
+		t.deleteAllOffers()
 		return
 	}
 
 	if len(ops) > 0 {
-		e = b.sdex.SubmitOps(ops)
+		e = t.sdex.SubmitOps(ops)
 		if e != nil {
 			log.Warn(e)
-			b.deleteAllOffers()
+			t.deleteAllOffers()
 			return
 		}
 	}
 
-	e = b.strat.PostUpdate()
+	e = t.strat.PostUpdate()
 	if e != nil {
 		log.Warn(e)
-		b.deleteAllOffers()
+		t.deleteAllOffers()
 		return
 	}
 }
 
-func (b *Bot) load() {
+func (t *Trader) load() {
 	// load the maximum amounts we can offer for each asset
-	account, e := b.api.LoadAccount(b.tradingAccount)
+	account, e := t.api.LoadAccount(t.tradingAccount)
 	if e != nil {
 		log.Info(e)
 		return
@@ -153,7 +153,7 @@ func (b *Bot) load() {
 	var trustA float64
 	var trustB float64
 	for _, balance := range account.Balances {
-		if balance.Asset == b.assetBase {
+		if balance.Asset == t.assetBase {
 			maxA = utils.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == utils.Native {
 				trustA = maxLumenTrust
@@ -161,7 +161,7 @@ func (b *Bot) load() {
 				trustA = utils.AmountStringAsFloat(balance.Limit)
 			}
 			log.Infof("maxA: %.7f, trustA: %.7f\n", maxA, trustA)
-		} else if balance.Asset == b.assetQuote {
+		} else if balance.Asset == t.assetQuote {
 			maxB = utils.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == utils.Native {
 				trustB = maxLumenTrust
@@ -171,20 +171,20 @@ func (b *Bot) load() {
 			log.Infof("maxB: %.7f, trustB: %.7f\n", maxB, trustB)
 		}
 	}
-	b.maxAssetA = maxA
-	b.maxAssetB = maxB
-	b.trustAssetA = trustA
-	b.trustAssetB = trustB
+	t.maxAssetA = maxA
+	t.maxAssetB = maxB
+	t.trustAssetA = trustA
+	t.trustAssetB = trustB
 }
 
-func (b *Bot) loadExistingOffers() {
-	offers, e := utils.LoadAllOffers(b.tradingAccount, b.api)
+func (t *Trader) loadExistingOffers() {
+	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
 	if e != nil {
 		log.Warn(e)
 		return
 	}
-	b.sellingAOffers, b.buyingAOffers = utils.FilterOffers(offers, b.assetBase, b.assetQuote)
+	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)
 
-	sort.Sort(utils.ByPrice(b.buyingAOffers))
-	sort.Sort(utils.ByPrice(b.sellingAOffers)) // don't need to reverse since the prices are inverse
+	sort.Sort(utils.ByPrice(t.buyingAOffers))
+	sort.Sort(utils.ByPrice(t.sellingAOffers)) // don't need to reverse since the prices are inverse
 }
