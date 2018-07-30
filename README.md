@@ -162,7 +162,7 @@ These interfaces make it easy to create plugins:
 ## Directory Structure
 
 The folders are organized to make it easy to find code and streamline development flow.
-Each folder is it's own package **without any sub-packages**.
+Each folder is its own package **without any sub-packages**.
 
     github.com/lightyeario/kelp
     ├── api/            # API interfaces live here (strategy, exchange, price feeds, etc.)
