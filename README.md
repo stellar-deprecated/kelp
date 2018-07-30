@@ -34,6 +34,7 @@ To learn more about the Stellar protocol check out [this community video][sdex e
       * [Configuration Files](#configuration-files)
       * [Exchanges](#exchanges)
       * [Plugins](#plugins)
+      * [Directory Structure](#directory-structure)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
@@ -157,6 +158,23 @@ These interfaces make it easy to create plugins:
 - [Strategy](api/strategy.go) - API for a strategy
 - [PriceFeed](api/priceFeed.go) - API for price of an asset
 - [Exchange](api/exchange.go) - API for crypto exchanges
+
+## Directory Structure
+
+The folders are organized to make it easy to find code and streamline development flow.
+Each folder is it's own package **without any sub-packages**.
+
+    github.com/lightyeario/kelp
+    ├── api/            # API interfaces live here (strategy, exchange, price feeds, etc.)
+    ├── cmd/            # Cobra commands (trade, exchanges, strategies, etc.)
+    ├── examples/       # Sample config files and walkthroughs
+    ├── model/          # Low-level structs (dates, orderbook, etc.)
+    ├── plugins/        # Implementations of API interfaces (sell strategy, kraken, etc.)
+    ├── support/        # Helper functions and utils
+    ├── trader/         # Trader bot logic; uses other top-level packages like api, plugins, etc.
+    ├── glide.yaml      # Glide dependencies
+    ├── main.go         # main function for our kelp binary
+    └── ...
 
 # Examples
 
