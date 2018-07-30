@@ -10,7 +10,7 @@ In our scenario, our bot holds `COUPON` and XLM. If more traders buy `COUPON` fr
 
 You should first go through the [Account Setup guide](account_setup.md) to set up your Stellar accounts and the necessary configuration file, `trader.cfg`. 
 
-**The account needs to be funded with equivalent values of both assets. For example, assuming 1 `COUPON` = $5 then the bot should be funded with 10,000 `COUPON` and $50,000. It is important to use a reliable and trusted source when picking the initial value of both assets.**
+**The account needs to be funded with equivalent values of both assets. For example, assuming 1 `XLM` = 3 `COUPON` then the bot should be funded with 10,000 `XLM` and 30,000 `COUPON`. It is important to use a reliable and trusted source when picking the initial value for both assets.**
 
 ## Install Bots
 
