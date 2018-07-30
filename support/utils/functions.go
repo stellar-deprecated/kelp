@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -195,4 +196,14 @@ func GetJSON(client http.Client, url string, target interface{}) error {
 	defer r.Body.Close()
 
 	return json.NewDecoder(r.Body).Decode(target)
+}
+
+// GetSortedKeys gets the keys of the map after sorting
+func GetSortedKeys(m map[string]string) []string {
+	keys := []string{}
+	for name := range m {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	return keys
 }

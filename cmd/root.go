@@ -37,5 +37,6 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(tradeCmd)
 	RootCmd.AddCommand(strategiesCmd)
+	RootCmd.AddCommand(exchanagesCmd)
 	RootCmd.AddCommand(terminateCmd)
 }

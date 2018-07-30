@@ -61,15 +61,6 @@ var strategies = map[string]strategyContainer{
 	},
 }
 
-// MakeExchange is a factory method to make an exchange based on a given type
-func MakeExchange(exchangeType string) api.Exchange {
-	switch exchangeType {
-	case "kraken":
-		return makeKrakenExchange()
-	}
-	return nil
-}
-
 // MakeStrategy makes a strategy
 func MakeStrategy(
 	sdex *SDEX,
@@ -92,6 +83,39 @@ func Strategies() map[string]string {
 	m := make(map[string]string, len(strategies))
 	for s := range strategies {
 		m[s] = strategies[s].description
+	}
+	return m
+}
+
+type exchangeContainer struct {
+	description string
+	makeFn      func() api.Exchange
+}
+
+// exchanges is a map of all the exchange integrations available
+var exchanges = map[string]exchangeContainer{
+	"kraken": exchangeContainer{
+		description: "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
+		makeFn:      makeKrakenExchange,
+	},
+}
+
+// MakeExchange is a factory method to make an exchange based on a given type
+func MakeExchange(exchangeType string) api.Exchange {
+	if exchange, ok := exchanges[exchangeType]; ok {
+		return exchange.makeFn()
+	}
+
+	log.Errorf("invalid exchange type: %s", exchangeType)
+	os.Exit(1)
+	return nil
+}
+
+// Exchanges returns the list of exchanges along with the description
+func Exchanges() map[string]string {
+	m := make(map[string]string, len(exchanges))
+	for name := range exchanges {
+		m[name] = exchanges[name].description
 	}
 	return m
 }
