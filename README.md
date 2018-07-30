@@ -54,23 +54,23 @@ To compile Kelp from source:
 3. Clone the repo into `$GOPATH/src/github.com/lightyeario/kelp`: `git clone git@github.com:lightyeario/kelp.git`
 4. Change to the kelp directory and install the dependencies: `glide install`
 5. Build the binaries: `go install github.com/lightyeario/kelp/...`
-6. Confirm _one new binary_ in `$GOPATH/bin`: `kelp`.
+6. Confirm _one new binary_ in `$GOPATH/bin`: `kelp`
 
 ## Running Kelp
 
 Kelp places orders on the [Stellar marketplace][stellarx] based on the selected strategy. Configuration files specify the Stellar account and strategy details.
 
 These are the following commands available from the `kelp` binary:
-- exchanges   Lists the available exchange integrations
-- strategies  Lists the available strategies
-- trade       Trades with a specific strategy against the Stellar universal marketplace.
-- help        Help about any command
+- `exchanges`: Lists the available exchange integrations
+- `strategies`: Lists the available strategies
+- `trade`: Trades with a specific strategy against the Stellar universal marketplace.
+- `help`: Help about any command
 
 The `trade` command has three parameters which are:
 
-- **botConf**: `.cfg` file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
-- **stratType**: the strategy you want to run (`sell`, `buysell`, `balanced`, `mirror`, `delete`).
-- **stratConf**: `.cfg` file specific to your chosen strategy, [sample files here](examples/configs/trader/).
+- **botConf**: _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
+- **stratType**: the strategy you want to run (_sell_, _buysell_, _balanced_, _mirror_, _delete_).
+- **stratConf**: _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
 Here's an example of how to start the trading bot with the _buysell_ strategy:
 
