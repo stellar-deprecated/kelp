@@ -24,10 +24,10 @@ To learn more about the Stellar protocol check out [this community video][sdex e
 
 # Table of Contents
 
-   * [Be Smart and Go Slow](#be-smart-and-go-slow)
    * [Getting Started](#getting-started)
       * [Compile from Source](#compile-from-source)
       * [Running the Trader Bot](#running-the-trader-bot)
+      * [Be Smart and Go Slow](#be-smart-and-go-slow)
    * [Components](#components)
       * [Strategies](#strategies)
       * [Price Feeds](#price-feeds)
@@ -38,10 +38,6 @@ To learn more about the Stellar protocol check out [this community video][sdex e
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
    * [Questions &amp; Improvements](#questions--improvements)
-
-# Be Smart and Go Slow
-
-_Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you **lose** money very fast. So be smart and go slow._
 
 # Getting Started
 
@@ -73,6 +69,10 @@ The Trader Bot places orders on the [Stellar marketplace][stellarx] based on the
 Example:
 
 `trader --botConf trader.cfg --stratType buysell --stratConf buysell.cfg`
+
+## Be Smart and Go Slow
+
+_Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you **lose** money very fast. So be smart and go slow._
 
 # Components
 

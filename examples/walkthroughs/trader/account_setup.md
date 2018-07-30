@@ -19,7 +19,9 @@ This walkthrough runs on the Stellar Test network. In order to create and fund t
 
 ## Create Trustlines
 
-Only the **Trader Account** needs to **trust** the assets that the bot will be trading. We created a [trustline](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#change-trust) from the **Trader Account** (`GCB7WIQ3TILJLPOT4E7YMOYF6A5TKYRWK3ZHJ5UR6UKD7D7NJVWNWIQV`) to the `COUPON` asset issued by `GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI`. 
+For a Stellar account to trade or hold a particular asset, it must first establish a **trustline** to it. Since only your **Trader Account** will actually trade or hold assets, only it needs trustlines. 
+
+In our case, before we can fund our Trader Account with our example token, `COUPON`, we need to create a trustline to it. The public address of `COUPON`'s issuer is `GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI`.
 
 You can find this transaction [here](https://horizon-testnet.stellar.org/transactions/288d3ada33fac916b30fadc73d1bf0eacf99d8556a8b4a183dfcc2470e2c05a8).
 
@@ -48,4 +50,4 @@ We've created a [sample config file](../../configs/trader/sample_trader.cfg) - t
 
 # Next Steps
 
-After successfully completing this guide you will be in a good position to pick a strategy and deploy the bot. You can find a walkthrough of market making for a token using the buysell strategy [here](buysell.md)
+After taking the steps above you will be in a good position to pick a strategy and deploy your bot. Try using it to [make a market for a stablecoin](buysell.md) or to [create liquidity for a stellar-based token](balanced.md).
