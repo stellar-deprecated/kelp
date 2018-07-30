@@ -28,17 +28,17 @@ func requiredFlag(flag string) {
 
 func init() {
 	var botConfigPath = tradeCmd.Flags().String("botConf", "./trader.cfg", "(required) trading bot's basic config file path")
-	var stratType = tradeCmd.Flags().String("stratType", "buysell", "(required) type of strategy to run")
+	var strategy = tradeCmd.Flags().String("strategy", "buysell", "(required) type of strategy to run")
 	var stratConfigPath = tradeCmd.Flags().String("stratConf", "./buysell.cfg", "strategy config file path")
 	var fractionalReserveMagnifier = tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
 	var operationalBuffer = tradeCmd.Flags().Float64("operationalBuffer", 2000, "operational buffer for min number of lumens needed in XLM reserves")
 
 	requiredFlag("botConf")
-	requiredFlag("stratType")
+	requiredFlag("strategy")
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
 		log.SetLevel(log.DebugLevel)
-		log.Info("Starting Kelp trader: v0.5")
+		log.Info("Starting Kelp Trader: v0.6")
 
 		var botConfig trader.BotConfig
 		err := config.Read(*botConfigPath, &botConfig)
@@ -69,14 +69,14 @@ func init() {
 		assetBase := botConfig.AssetBase()
 		assetQuote := botConfig.AssetQuote()
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-		strategy := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *stratType, *stratConfigPath)
+		strat := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath)
 		bot := trader.MakeBot(
 			client,
 			botConfig.AssetBase(),
 			botConfig.AssetQuote(),
 			botConfig.TradingAccount(),
 			sdex,
-			strategy,
+			strat,
 			botConfig.TICK_INTERVAL_SECONDS,
 			dataKey,
 		)

@@ -66,14 +66,14 @@ func MakeStrategy(
 	sdex *SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	stratType string,
+	strategy string,
 	stratConfigPath string,
 ) api.Strategy {
-	if strategy, ok := strategies[stratType]; ok {
-		return strategy.makeFn(sdex, assetBase, assetQuote, stratConfigPath)
+	if strat, ok := strategies[strategy]; ok {
+		return strat.makeFn(sdex, assetBase, assetQuote, stratConfigPath)
 	}
 
-	log.Errorf("invalid strategy type: %s", stratType)
+	log.Errorf("invalid strategy type: %s", strategy)
 	os.Exit(1)
 	return nil
 }

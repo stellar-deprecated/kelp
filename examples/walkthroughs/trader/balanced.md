@@ -63,8 +63,9 @@ the last asset will be valued at _infinity_ by the bot if you set these values t
 Assuming your botConfig is called `trader.cfg` and your strategy config is called `balanced.cfg`, you can run `kelp` with the following command:
 
 ```
-kelp trade --botConf trader.cfg --stratType balanced --stratConf balanced.cfg
+kelp trade --botConf trader.cfg --strategy balanced --stratConf balanced.cfg
 ```
+If you want to use a different trading strategy, you can change the `strategy` and provide the relevant config file for your chosen strategy.
 
 # Next Steps
 
