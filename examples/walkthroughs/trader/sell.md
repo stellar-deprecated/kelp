@@ -1,6 +1,6 @@
 # ICO Sale 
 
-This guide shows you how to setup a `trader` bot using the [sell](../../../plugins/sellStrategy.go) strategy. We'll configure it to make a market for native tokens we plan to sell in an upcoming hypothetical ICO. This strategy creates sell offers based on a reference price with a pre-specified liquidity depth.  
+This guide shows you how to setup the `kelp` bot using the [sell](../../../plugins/sellStrategy.go) strategy. We'll configure it to make a market for native tokens we plan to sell in an upcoming hypothetical ICO. This strategy creates sell offers based on a reference price with a pre-specified liquidity depth.  
 
 In our example the tokens are priced against XLM (`native`). XLM is the native currency in the Stellar network and acts as a bridge (i.e. facilitator) in transactions that involve two different assets. Therefore, it has less [counterparty risk] (https://www.investopedia.com/terms/c/counterpartyrisk.asp). Most assets have a liquid market against XLM and by pricing your asset against XLM you are opening up your asset to be traded against any other asset on the network via [path payments] (https://www.stellar.org/developers/horizon/reference/endpoints/path-finding.html).
 
@@ -10,7 +10,7 @@ First go through the [Account Setup guide](account_setup.md) to set up your Stel
 
 ## Install Bots
 
-Download the pre-compiled binaries for the **trader bot** for your platform from the [Github Releases Page](https://github.com/lightyeario/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
+Download the pre-compiled binaries for **kelp** for your platform from the [Github Releases Page](https://github.com/lightyeario/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
 
 ## Sell Strategy Configuration
 
@@ -41,18 +41,18 @@ A Level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that
 - **AMOUNT**: specifies the order size in multiples of the Base Unit described above. This `AMOUNT` is multiplied by the `AMOUNT_OF_A_BASE` field to give the final amount. The amount for the quote asset is derived using this value and the computed price at the indicated `SPREAD` level.
 - **SPREAD**: represents the distance from center price as a percentage specified as a decimal number (0 < spread < 1.00). The bid/ask spread will be 2x what is specified at each level in the config.
 
-## Run the Trader Bot
+## Run Kelp
 
-Assuming your botConfig is called `traderConf.cfg` and your strategy config is called `sell.cfg`, you can run the `trader` bot with the following command:
+Assuming your botConfig is called `trader.cfg` and your strategy config is called `sell.cfg`, you can run `kelp`  with the following command:
 
 ```
-trader --botConf traderConf.cfg --stratType sell --stratConf sell.cfg
+kelp trade --botConf trader.cfg --stratType sell --stratConf sell.cfg
 ```
 
 If you want to use a different trading strategy, you can change the `stratType` and provide the relevant config file for your chosen strategy.
 
 # Next Steps
 
-After taking the steps above you should be able to run the `trader` bot using the [**sell strategy**](../../../trader/strategy/sell.go).
+After taking the steps above you should be able to run `kelp` using the [**sell strategy**](../../../plugins/sellStrategy.go).
 
-You can also play around with the configuration parameters of the [sample configuration file for the sell strategy](../../configs/trader/sample_sell.cfg), look at some of the other strategies that are available out-of-the-box or [dig into the code](../../../trader/strategy) and _create your own strategy_.
+You can also play around with the configuration parameters of the [sample configuration file for the sell strategy](../../configs/trader/sample_sell.cfg), look at some of the other strategies that are available out-of-the-box or dig into the code and _create your own strategy_.

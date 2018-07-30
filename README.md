@@ -26,7 +26,7 @@ To learn more about the Stellar protocol check out [this community video][sdex e
 
    * [Getting Started](#getting-started)
       * [Compile from Source](#compile-from-source)
-      * [Running the Trader Bot](#running-the-trader-bot)
+      * [Running Kelp](#running-kelp)
       * [Be Smart and Go Slow](#be-smart-and-go-slow)
    * [Components](#components)
       * [Strategies](#strategies)
@@ -43,7 +43,7 @@ To learn more about the Stellar protocol check out [this community video][sdex e
 
 To get started with Kelp, either download the pre-compiled binary for your platform from the [Github Releases Page][github-releases] or [compile Kelp from source](#compile-from-source).
 
-There is **one** binary associated with this project: `trader`. Once the binary is downloaded, run the bot by following the instructions in [Running the Trader Bot](#running-the-trader-bot).
+There is **one** binary associated with this project: `kelp`. Once the binary is downloaded, run the bot by following the instructions in [Running Kelp](#running-kelp).
 
 ## Compile from Source
 
@@ -54,21 +54,29 @@ To compile Kelp from source:
 3. Clone the repo into `$GOPATH/src/github.com/lightyeario/kelp`: `git clone git@github.com:lightyeario/kelp.git`
 4. Change to the kelp directory and install the dependencies: `glide install`
 5. Build the binaries: `go install github.com/lightyeario/kelp/...`
-6. Confirm _one new binary_ in `$GOPATH/bin`: `trader`.
+6. Confirm _one new binary_ in `$GOPATH/bin`: `kelp`.
 
-## Running the Trader Bot
+## Running Kelp
 
-The Trader Bot places orders on the [Stellar marketplace][stellarx] based on the selected strategy. Configuration files specify the Stellar account and strategy details.
+Kelp places orders on the [Stellar marketplace][stellarx] based on the selected strategy. Configuration files specify the Stellar account and strategy details.
 
-`trader` has three required parameters which are:
+These are the following commands available from the `kelp` binary:
+- exchanges   Lists the available exchange integrations
+- strategies  Lists the available strategies
+- trade       Trades with a specific strategy against the Stellar universal marketplace.
+- help        Help about any command
+
+The `trade` command has three parameters which are:
 
 - **botConf**: `.cfg` file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
 - **stratType**: the strategy you want to run (`sell`, `buysell`, `balanced`, `mirror`, `delete`).
 - **stratConf**: `.cfg` file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
-Example:
+Here's an example of how to start the trading bot with the _buysell_ strategy:
 
-`trader --botConf trader.cfg --stratType buysell --stratConf buysell.cfg`
+`kelp trade --botConf trader.cfg --stratType buysell --stratConf buysell.cfg`
+
+If you are ever stuck, just invoke the `kelp` binary directly or type `kelp help [command]` for help with a specific command.
 
 ## Be Smart and Go Slow
 
@@ -80,7 +88,7 @@ Kelp includes an assortment of strategies, price feeds, and plugins you can use 
 
 ## Strategies
 
-Strategies are at the core of the **trader bot**. Without them it's just lazy, capable of nothing, thinking of nothing, doing nothing, like our friend [scooter][scooter video] here. The strategies give your bot purpose. Each approaches the market in a different way and is designed to achieve a particular goal.
+Strategies are at the core of Kelp. Without them it's just lazy, capable of nothing, thinking of nothing, doing nothing, like our friend [scooter][scooter video] here. The strategies give your bot purpose. Each approaches the market in a different way and is designed to achieve a particular goal.
 
 The following strategies are available **out of the box** with Kelp:
 
@@ -146,7 +154,7 @@ Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
 
 These interfaces make it easy to create plugins:
-- [Strategy](api/strategy.go) - API for a strategy used by the `trader` bot
+- [Strategy](api/strategy.go) - API for a strategy
 - [PriceFeed](api/priceFeed.go) - API for price of an asset
 - [Exchange](api/exchange.go) - API for crypto exchanges
 

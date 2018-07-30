@@ -1,6 +1,6 @@
 # Create Liquidity For a Stellar-based Token
 
-This guide shows you how to setup a `trader` bot using the [balanced](../../../trader/strategy/balanced.go) strategy. We'll configure it create liquity for a `COUPON` token which only trades on the Stellar network. 
+This guide shows you how to setup the `kelp` bot using the [balanced](../../../plugins/balancedStrategy.go) strategy. We'll configure it create liquity for a `COUPON` token which only trades on the Stellar network. 
 
 The bot dynamically prices two tokens based on their relative demand. It operates with the understanding that both of the assets it holds are equal in value until. When someone buys the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency) from the bot, the bot will have less units of the base asset and more units of the counter asset. It will assume that the base asset is now more valuable than the counter asset and will raise the price of the base asset relative to the counter asset. As such, it will effectively raise the price of the base asset against the counter asset. 
 
@@ -14,7 +14,7 @@ You should first go through the [Account Setup guide](account_setup.md) to set u
 
 ## Install Bots
 
-Download the pre-compiled binaries for the **trader bot** for your platform from the [Github Releases Page](https://github.com/lightyeario/kelp/releases).
+Download the pre-compiled binaries for **kelp** for your platform from the [Github Releases Page](https://github.com/lightyeario/kelp/releases).
 If you have downloaded the correct version for your platform you can run it directly.
 
 ## Balanced Strategy Configuration
@@ -58,16 +58,16 @@ the last asset will be valued at _infinity_ by the bot if you set these values t
 - **`VIRTUAL_BALANCE_BASE`**: a decimal value 
 - **`VIRTUAL_BALANCE_QUOTE`**: a decimal value 
 
-## Run the Trader Bot
+## Run Kelp
 
-Assuming your botConfig is called `trader.cfg` and your strategy config is called `balanced.cfg`, you can run the `trader` bot with the following command:
+Assuming your botConfig is called `trader.cfg` and your strategy config is called `balanced.cfg`, you can run `kelp` with the following command:
 
 ```
-trader --botConf trader.cfg --stratType balanced --stratConf balanced.cfg
+kelp trade --botConf trader.cfg --stratType balanced --stratConf balanced.cfg
 ```
 
 # Next Steps
 
-After taking the steps above you should be able to run the `trader` bot using the [**balanced strategy**](../../../trader/strategy/balanced.go).
+After taking the steps above you should be able to run `kelp` using the [**balanced strategy**](../../../plugins/balancedStrategy.go).
 
-You can also play around with the configuration parameters of the [sample configuration file for the balanced strategy](../../configs/trader/sample_balanced.cfg), look at some of the other strategies that are available out-of-the-box or [dig into the code](../../../trader/strategy) and _create your own strategy_.
+You can also play around with the configuration parameters of the [sample configuration file for the balanced strategy](../../configs/trader/sample_balanced.cfg), look at some of the other strategies that are available out-of-the-box or dig into the code and _create your own strategy_.

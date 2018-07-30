@@ -1,6 +1,6 @@
 # How To Make a Market for a Stablecoin
 
-This guide shows you how to setup a `trader` bot using the [buysell](../../../trader/strategy/buysell.go) strategy. We'll configure it to make a market for a stablecoin against against the XLM asset.
+This guide shows you how to setup the `kelp` bot using the [buysell](../../../plugins/buysellStrategy.go) strategy. We'll configure it to make a market for a stablecoin against against the XLM asset.
 
 This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../api/pricefeed.go).
 
@@ -10,7 +10,7 @@ You should first go through the [Account Setup guide](account_setup.md) to set u
 
 ## Install Bots
 
-Download the pre-compiled binaries for the **trader bot** for your platform from the [Github Releases Page](https://github.com/lightyeario/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
+Download the pre-compiled binaries for **kelp** for your platform from the [Github Releases Page](https://github.com/lightyeario/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
 
 ## BuySell Strategy Configuration
 
@@ -40,16 +40,16 @@ A Level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that
 `AMOUNT_OF_A_BASE` allows you to scale the order size levels set in the next section of the configuration. Trade amounts are specified in **units of the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency)** (i.e. `ASSET_CODE_A`).
 
 
-## Run the Trader Bot
+## Run Kelp
 
-Assuming your botConfig is called `traderConf.cfg` and your strategy config is called `buysell.cfg`, you can run the `trader` bot with the following command:
+Assuming your botConfig is called `trader.cfg` and your strategy config is called `buysell.cfg`, you can run `kelp` with the following command:
 ```
-trader --botConf traderConf.cfg --stratType buysell --stratConf buysell.cfg
+kelp trade --botConf trader.cfg --stratType buysell --stratConf buysell.cfg
 ```
 If you want to use a different trading strategy, you can change the `stratType` and provide the relevant config file for your chosen strategy.
 
 # Next Steps
 
-After taking the steps above you should be able to run the `trader` bot using the [**buysell strategy**](../../../plugins/buysellStrategy.go).
+After taking the steps above you should be able to run `kelp` using the [**buysell strategy**](../../../plugins/buysellStrategy.go).
 
-You can also play around with the configuration parameters of the [sample configuration file for the buysell strategy](../../configs/trader/sample_buysell.cfg), look at some of the other strategies that are available out-of-the-box or [dig into the code](../../../trader/strategy) and _create your own strategy_.
+You can also play around with the configuration parameters of the [sample configuration file for the buysell strategy](../../configs/trader/sample_buysell.cfg), look at some of the other strategies that are available out-of-the-box or dig into the code and _create your own strategy_.
