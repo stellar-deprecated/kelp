@@ -53,9 +53,12 @@ To compile Kelp from source:
 
 1. [Download][golang-download] and [setup][golang-setup] Golang.
 2. [Install Glide][glide-install] for dependency management.
-3. Clone the repo into `$GOPATH/src/github.com/lightyeario/kelp`: `git clone git@github.com:lightyeario/kelp.git`
-4. Change to the kelp directory and install the dependencies: `glide install`
-5. Build the binaries: `go install github.com/lightyeario/kelp/...`
+3. Clone the repo into `$GOPATH/src/github.com/lightyeario/kelp`:
+    * `git clone git@github.com:lightyeario/kelp.git`
+4. Change to the kelp directory and install the dependencies:
+    * `glide install`
+5. Build the binaries:
+    * `go install github.com/lightyeario/kelp/...`
 6. Confirm _one new binary_ in `$GOPATH/bin`: `kelp`
 
 ## Running Kelp
