@@ -38,6 +38,7 @@ To learn more about the Stellar protocol check out [this community video][sdex e
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
+   * [Contributing](#contributing)
    * [Questions &amp; Improvements](#questions--improvements)
 
 # Getting Started
@@ -194,6 +195,10 @@ Reference config files are in the [examples folder](examples/configs/trader). Sp
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
 
+# Contributing
+
+See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
+
 # Questions & Improvements
 
 - Ask questions on the [Stellar StackExchange][stackexchange]; use the `kelp` tag
@@ -223,3 +228,4 @@ Reference config files are in the [examples folder](examples/configs/trader). Sp
 [currencylayer]: https://currencylayer.com/
 [kraken]: https://www.kraken.com/
 [stackexchange]: https://stellar.stackexchange.com/
+[cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
