@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -16,6 +17,11 @@ type sellConfig struct {
 	AMOUNT_OF_A_BASE       float64       `valid:"-"` // the size of order
 	DIVIDE_AMOUNT_BY_PRICE bool          `valid:"-"` // whether we want to divide the amount by the price, usually true if this is on the buy side
 	LEVELS                 []staticLevel `valid:"-"`
+}
+
+// String impl.
+func (c sellConfig) String() string {
+	return utils.StructString(c, nil)
 }
 
 // makeSellStrategy is a factory method for SellStrategy

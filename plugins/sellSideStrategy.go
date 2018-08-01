@@ -126,7 +126,7 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 
 	if len(offers) <= index {
 		// no existing offer at this index
-		log.Printf("sell,create,target=%.7f,ta=%.7f\n", targetPrice, targetAmount)
+		log.Printf("sell,create,p=%.7f,a=%.7f\n", targetPrice, targetAmount)
 		return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
 	}
 

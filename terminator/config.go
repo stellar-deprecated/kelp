@@ -18,6 +18,14 @@ type Config struct {
 	SourceAccount  *string // can be nil
 }
 
+// String impl.
+func (c Config) String() string {
+	return utils.StructString(c, map[string]func(interface{}) interface{}{
+		"SOURCE_SECRET_SEED":  utils.SecretKey2PublicKey,
+		"TRADING_SECRET_SEED": utils.SecretKey2PublicKey,
+	})
+}
+
 // Init initializes this config
 func (c *Config) Init() error {
 	var e error

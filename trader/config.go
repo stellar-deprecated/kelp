@@ -25,6 +25,14 @@ type BotConfig struct {
 	assetQuote     horizon.Asset
 }
 
+// String impl.
+func (b BotConfig) String() string {
+	return utils.StructString(b, map[string]func(interface{}) interface{}{
+		"SOURCE_SECRET_SEED":  utils.SecretKey2PublicKey,
+		"TRADING_SECRET_SEED": utils.SecretKey2PublicKey,
+	})
+}
+
 // TradingAccount returns the config's trading account
 func (b *BotConfig) TradingAccount() string {
 	return *b.tradingAccount

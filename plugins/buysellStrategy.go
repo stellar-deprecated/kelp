@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -15,6 +16,11 @@ type buySellConfig struct {
 	DATA_TYPE_B      string        `valid:"-"`
 	DATA_FEED_B_URL  string        `valid:"-"`
 	LEVELS           []staticLevel `valid:"-"`
+}
+
+// String impl.
+func (c buySellConfig) String() string {
+	return utils.StructString(c, nil)
 }
 
 // makeBuySellStrategy is a factory method

@@ -20,6 +20,11 @@ type mirrorConfig struct {
 	PER_LEVEL_SPREAD float64 `valid:"-"`
 }
 
+// String impl.
+func (c mirrorConfig) String() string {
+	return utils.StructString(c, nil)
+}
+
 // mirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type mirrorStrategy struct {
 	sdex          *SDEX

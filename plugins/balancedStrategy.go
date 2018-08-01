@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -20,6 +21,11 @@ type balancedConfig struct {
 	CARRYOVER_INCLUSION_PROBABILITY float64 `valid:"-"` // probability of including the carryover at a level that will be added
 	VIRTUAL_BALANCE_BASE            float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
 	VIRTUAL_BALANCE_QUOTE           float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
+}
+
+// String impl.
+func (c balancedConfig) String() string {
+	return utils.StructString(c, nil)
 }
 
 // makeBalancedStrategy is a factory method for balancedStrategy

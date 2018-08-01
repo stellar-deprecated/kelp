@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math"
 	"math/big"
@@ -11,11 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
-	"github.com/stellar/go/support/config"
 )
 
 // Common Utilities needed by various bots
@@ -146,20 +143,6 @@ func FilterOffers(offers []horizon.Offer, sellAsset horizon.Asset, buyAsset hori
 		}
 	}
 	return
-}
-
-// CheckConfigError checks configs for errors
-func CheckConfigError(cfg interface{}, e error) {
-	fmt.Printf("Result: %+v\n", cfg)
-
-	if e != nil {
-		switch cause := errors.Cause(e).(type) {
-		case *config.InvalidConfigError:
-			log.Fatalf("config error: %v\n", cause)
-		default:
-			log.Fatal(e)
-		}
-	}
 }
 
 // ParseSecret returns the address from the secret
