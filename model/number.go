@@ -53,7 +53,7 @@ func NumberFromString(s string, precision int8) (*Number, error) {
 func MustNumberFromString(s string, precision int8) *Number {
 	parsed, e := NumberFromString(s, precision)
 	if e != nil {
-		log.Panic(e)
+		log.Fatal(e)
 	}
 	return parsed
 }

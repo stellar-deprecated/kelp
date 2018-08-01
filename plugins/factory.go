@@ -1,13 +1,12 @@
 package plugins
 
 import (
-	"os"
+	"log"
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
-	"github.com/stellar/go/support/log"
 )
 
 type strategyContainer struct {
@@ -73,8 +72,7 @@ func MakeStrategy(
 		return strat.makeFn(sdex, assetBase, assetQuote, stratConfigPath)
 	}
 
-	log.Errorf("invalid strategy type: %s", strategy)
-	os.Exit(1)
+	log.Fatalf("invalid strategy type: %s\n", strategy)
 	return nil
 }
 
@@ -106,8 +104,7 @@ func MakeExchange(exchangeType string) api.Exchange {
 		return exchange.makeFn()
 	}
 
-	log.Errorf("invalid exchange type: %s", exchangeType)
-	os.Exit(1)
+	log.Fatalf("invalid exchange type: %s\n", exchangeType)
 	return nil
 }
 

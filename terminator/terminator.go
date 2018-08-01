@@ -3,6 +3,7 @@ package terminator
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/log"
 )
 
 const terminatorKey = "term"
@@ -46,7 +46,7 @@ func MakeTerminator(
 func (t *Terminator) StartService() {
 	for {
 		t.run()
-		log.Info(fmt.Sprintf("sleeping for %d seconds...", t.tickIntervalSeconds))
+		log.Printf("sleeping for %d seconds...\n", t.tickIntervalSeconds)
 		time.Sleep(time.Duration(t.tickIntervalSeconds) * time.Second)
 	}
 }
@@ -68,25 +68,25 @@ func (t *Terminator) run() {
 
 	account, e := t.api.LoadAccount(t.tradingAccount)
 	if e != nil {
-		log.Error(e)
+		log.Println(e)
 		return
 	}
 
 	// m is a map of hashes to botKeyPair(s)
 	botList, e := reconstructBotList(account.Data)
 	if e != nil {
-		log.Error(e)
+		log.Println(e)
 		return
 	}
 
 	// compute cutoff millis
 	nowMillis := time.Now().UnixNano() / 1000000
 	cutoffMillis := nowMillis - (int64(t.allowInactiveMinutes) * 60 * 1000)
-	log.Info("cutoff millis: ", cutoffMillis)
+	log.Printf("cutoff millis: %d\n", cutoffMillis)
 
 	// compute the inactive bots
 	inactiveBots := excludeActiveBots(botList, cutoffMillis)
-	log.Infof("Found %d inactive bots", len(inactiveBots))
+	log.Printf("Found %d inactive bots\n", len(inactiveBots))
 	if len(inactiveBots) == 0 {
 		// update data to reflect a successful return from terminator
 		newTimestamp := time.Now().UnixNano() / 1000000
@@ -95,23 +95,23 @@ func (t *Terminator) run() {
 			build.SetData(terminatorKey, []byte(tsMillisStr), build.SourceAccount{AddressOrSeed: t.tradingAccount}),
 		}
 
-		log.Info("updating delete timestamp to ", tsMillisStr)
+		log.Printf("updating delete timestamp to %s\n", tsMillisStr)
 		e = t.sdex.SubmitOps(ops)
 		if e != nil {
-			log.Error(e)
+			log.Println(e)
 		}
 		return
 	}
 
 	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
 	if e != nil {
-		log.Error(e)
+		log.Println(e)
 		return
 	}
 
 	// delete the offers of inactive bots (don't ever use hash directly)
 	for _, bk := range inactiveBots {
-		log.Infof("working on bot with key: %s", bk)
+		log.Printf("working on bot with key: %+v\n", bk)
 		assetA := convertToAsset(bk.dataKey.AssetBaseCode, bk.dataKey.AssetBaseIssuer)
 		assetB := convertToAsset(bk.dataKey.AssetQuoteCode, bk.dataKey.AssetQuoteIssuer)
 		inactiveSellOffers, inactiveBuyOffers := utils.FilterOffers(offers, assetA, assetB)
@@ -149,11 +149,11 @@ func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizo
 	tsMillisStr := fmt.Sprintf("%d", tsMillis)
 	ops = append(ops, build.SetData(terminatorKey, []byte(tsMillisStr), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
 
-	log.Info(fmt.Sprintf("deleting %d offers and 5 data entries, updating delete timestamp to %s", numOffers, tsMillisStr))
+	log.Printf("deleting %d offers and 5 data entries, updating delete timestamp to %s\n", numOffers, tsMillisStr)
 	if len(ops) > 0 {
 		e := t.sdex.SubmitOps(ops)
 		if e != nil {
-			log.Error(e)
+			log.Println(e)
 			return
 		}
 	}
@@ -195,13 +195,13 @@ func reconstructBotList(data map[string]string) ([]botKeyPair, error) {
 		l = append(l, k)
 	}
 
-	log.Infof("Found %d bots", len(l))
+	log.Printf("Found %d bots\n", len(l))
 	if len(l) > 0 {
 		logLine := "bots in list:\n"
 		for _, k := range l {
 			logLine = logLine + fmt.Sprintf("\t%v\n", k)
 		}
-		log.Info(logLine)
+		log.Println(logLine)
 	}
 
 	return l, nil

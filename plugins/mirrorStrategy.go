@@ -1,13 +1,13 @@
 package plugins
 
 import (
+	"log"
+
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/log"
 )
 
 // mirrorConfig contains the configuration params for this strategy
@@ -78,7 +78,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		(1 - s.config.PER_LEVEL_SPREAD),
 		true,
 	)
-	log.Info("num. buyOps in this update: ", len(buyOps))
+	log.Printf("num. buyOps in this update: %d\n", len(buyOps))
 	sellOps := s.updateLevels(
 		sellingAOffers,
 		ob.Asks(),
@@ -87,7 +87,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		(1 + s.config.PER_LEVEL_SPREAD),
 		false,
 	)
-	log.Info("num. sellOps in this update: ", len(sellOps))
+	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
 
 	ops := []build.TransactionMutator{}
 	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
@@ -163,7 +163,6 @@ func doModifyOffer(
 	newVol := model.NumberFromFloat(vol, 6)
 	epsilon := 0.0001
 	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
-	//log.Info("oldPrice: ", oldPrice.AsString(), " | newPrice: ", newPrice.AsString(), " | oldVol: ", oldVol.AsString(), " | newVol: ", newVol.AsString(), " | sameOrderParams: ", sameOrderParams)
 	if sameOrderParams {
 		return ops
 	}

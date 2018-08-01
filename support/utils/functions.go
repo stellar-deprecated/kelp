@@ -3,10 +3,10 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"math/big"
 	"net/http"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,7 +16,6 @@ import (
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/support/config"
-	"github.com/stellar/go/support/log"
 )
 
 // Common Utilities needed by various bots
@@ -37,7 +36,7 @@ func (a ByPrice) Less(i, j int) bool {
 func PriceAsFloat(price string) float64 {
 	p, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		log.Error("Error parsing price", price)
+		log.Printf("Error parsing price: %s | %s\n", price, err)
 		return 0
 	}
 	return p
@@ -50,7 +49,7 @@ func AmountStringAsFloat(amount string) float64 {
 	}
 	p, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		log.Error("Error parsing amount", amount)
+		log.Printf("Error parsing amount: %s | %s\n", amount, err)
 		return 0
 	}
 	return p
@@ -118,14 +117,14 @@ func LoadAllOffers(account string, api *horizon.Client) (offersRet []horizon.Off
 	// get what orders are outstanding now
 	offersPage, err := api.LoadAccountOffers(account)
 	if err != nil {
-		log.Error("Can't load offers ", err)
+		log.Printf("Can't load offers: %s\n", err)
 		return
 	}
 	offersRet = offersPage.Embedded.Records
 	for len(offersPage.Embedded.Records) > 0 {
 		offersPage, err = api.LoadAccountOffers(account, horizon.At(offersPage.Links.Next.Href))
 		if err != nil {
-			log.Error("Can't load offers ", err)
+			log.Printf("Can't load offers: %s\n", err)
 			return
 		}
 		offersRet = append(offersRet, offersPage.Embedded.Records...)
@@ -156,11 +155,10 @@ func CheckConfigError(cfg interface{}, e error) {
 	if e != nil {
 		switch cause := errors.Cause(e).(type) {
 		case *config.InvalidConfigError:
-			log.Error("config file: ", cause)
+			log.Fatalf("config error: %v\n", cause)
 		default:
-			log.Error(e)
+			log.Fatal(e)
 		}
-		os.Exit(1)
 	}
 }
 

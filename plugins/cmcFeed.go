@@ -7,7 +7,6 @@ import (
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
-	//"github.com/stellar/go/support/log"
 )
 
 /*

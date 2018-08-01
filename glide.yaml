@@ -15,4 +15,3 @@ import:
   - clients/horizon
   - support/config
   - support/errors
-  - support/log

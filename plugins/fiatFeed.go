@@ -32,7 +32,6 @@ type fiatFeed struct {
 var _ api.PriceFeed = &fiatFeed{}
 
 func newFiatFeed(url string) *fiatFeed {
-	//log.Info("newFiatFeed: ", url)
 	m := new(fiatFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
@@ -49,7 +48,6 @@ func (f *fiatFeed) GetPrice() (float64, error) {
 	}
 	var pA float64
 	for _, value := range ret.Quotes {
-		//log.Info("value:", value)
 		pA = value
 	}
 

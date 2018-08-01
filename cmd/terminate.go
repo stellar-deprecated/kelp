@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"log"
 	"net/http"
-	"os"
 
 	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
-	"github.com/stellar/go/support/log"
 )
 
 var terminateCmd = &cobra.Command{
@@ -23,18 +22,16 @@ func init() {
 	var configPath = terminateCmd.Flags().String("conf", "./terminator.cfg", "service's basic config file path")
 
 	terminateCmd.Run = func(ccmd *cobra.Command, args []string) {
-		log.SetLevel(log.DebugLevel)
-		log.Info("Starting Terminator: v1.0")
+		log.Println("Starting Terminator: v1.0")
 
 		var configFile terminator.Config
 		err := config.Read(*configPath, &configFile)
 		utils.CheckConfigError(configFile, err)
 		err = configFile.Init()
 		if err != nil {
-			log.Error(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
-		log.Info("Started Terminator for account: ", *configFile.TradingAccount)
+		log.Println("Started Terminator for account: ", *configFile.TradingAccount)
 
 		// --- start initialization of objects ----
 		client := &horizon.Client{
@@ -56,7 +53,7 @@ func init() {
 
 		for {
 			terminator.StartService()
-			log.Info("Restarting terminator service")
+			log.Println("Restarting terminator service")
 		}
 	}
 }

@@ -2,9 +2,7 @@ package model
 
 import (
 	"errors"
-	"os"
-
-	"github.com/stellar/go/support/log"
+	"log"
 )
 
 // Asset is typed and enlists the allowed assets that are understood by the bot
@@ -62,8 +60,7 @@ func (c AssetConverter) FromString(s string) (Asset, error) {
 func (c AssetConverter) MustFromString(s string) Asset {
 	a, e := c.FromString(s)
 	if e != nil {
-		log.Info(e)
-		os.Exit(1)
+		log.Fatal(e)
 	}
 	return a
 }

@@ -3,6 +3,7 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
-	"github.com/stellar/go/support/log"
 )
 
 // ensure that krakenExchange conforms to the Exchange interface
@@ -112,7 +112,7 @@ func (k krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrde
 	}
 
 	if resp.Count > 1 {
-		log.Info("warning: count from a cancelled order is greater than 1", resp.Count)
+		log.Printf("warning: count from a cancelled order is greater than 1: %d\n", resp.Count)
 	}
 
 	// TODO 2 - need to figure out whether count = 0 could also mean that it is pending cancellation

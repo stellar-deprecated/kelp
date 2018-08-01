@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"log"
 	"math"
 
 	"github.com/lightyeario/kelp/api"
@@ -8,7 +9,6 @@ import (
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/log"
 )
 
 // sellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
@@ -74,7 +74,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	lineFull := maxAssetQuote == trustQuote
 	if nothingToSell || lineFull {
 		s.currentLevels = []api.Level{}
-		log.Warnf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
+		log.Printf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	var e error
 	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
 	if e != nil {
-		log.Error("levels couldn't be loaded: ", e)
+		log.Printf("levels couldn't be loaded: %s\n", e)
 		return e
 	}
 	return nil
@@ -126,7 +126,7 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 
 	if len(offers) <= index {
 		// no existing offer at this index
-		log.Info("create sell: target:", targetPrice, " ta:", targetAmount)
+		log.Printf("sell,create,target=%.7f,ta=%.7f\n", targetPrice, targetAmount)
 		return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
 	}
 
@@ -143,7 +143,8 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
 	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
 	if priceTrigger || amountTrigger {
-		log.Info("mod sell curPrice: ", curPrice, ", highPrice: ", highestPrice, ", lowPrice: ", lowestPrice, ", curAmt: ", curAmount, ", minAmt: ", minAmount, ", maxAmt: ", maxAmount)
+		log.Printf("sell,modify,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
+			curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
 		return s.sdex.ModifySellOffer(offers[index], targetPrice, targetAmount)
 	}
 	return nil

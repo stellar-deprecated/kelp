@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"log"
 	"net/http"
-	"os"
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
-	"github.com/stellar/go/support/log"
 )
 
 var tradeCmd = &cobra.Command{
@@ -37,18 +36,16 @@ func init() {
 	requiredFlag("strategy")
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
-		log.SetLevel(log.DebugLevel)
-		log.Info("Starting Kelp Trader: v0.6")
+		log.Println("Starting Kelp Trader: v0.6")
 
 		var botConfig trader.BotConfig
 		err := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, err)
 		err = botConfig.Init()
 		if err != nil {
-			log.Error(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
-		log.Info("Trading ", botConfig.ASSET_CODE_A, " for ", botConfig.ASSET_CODE_B)
+		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
 
 		// --- start initialization of objects ----
 		client := &horizon.Client{
@@ -84,7 +81,7 @@ func init() {
 
 		for {
 			bot.Start()
-			log.Info("Restarting the trader bot...")
+			log.Println("Restarting the trader bot...")
 		}
 	}
 }

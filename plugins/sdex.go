@@ -1,13 +1,13 @@
 package plugins
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/log"
 )
 
 const baseReserve = 0.5
@@ -51,44 +51,30 @@ func MakeSDEX(
 		operationalBuffer:          operationalBuffer,
 	}
 
-	//log.Info("init txbutler")
-	log.Info("Using network passphrase: ", sdex.Network.Passphrase)
+	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
 
 	if sdex.SourceAccount == "" {
 		sdex.SourceAccount = sdex.TradingAccount
 		sdex.SourceSeed = sdex.TradingSeed
-		log.Info("No Source Account Set")
+		log.Println("No Source Account Set")
 	}
 	sdex.reloadSeqNum = true
 
 	return sdex
 }
 
-/*
-func (sdex *SDEX) SetSeqNum(num string) {
-	s, err := strconv.ParseUint(num, 10, 64)
-	if err != nil {
-		log.Info("SetSeqNum :", num, " failed: ", err)
-		return
-	}
-	sdex.seqNum = s
-	sdex.reloadSeqNum = false
-}
-*/
-
 func (sdex *SDEX) incrementSeqNum() {
 	if sdex.reloadSeqNum {
-		log.Info("reloadSeqNum ")
+		log.Println("reloading sequence number")
 		seqNum, err := sdex.API.SequenceForAccount(sdex.SourceAccount)
 		if err != nil {
-			log.Info("error getting seq num ", err)
+			log.Printf("error getting seq num: %s\n", err)
 			return
 		}
 		sdex.seqNum = uint64(seqNum)
 		sdex.reloadSeqNum = false
 	}
 	sdex.seqNum++
-
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
@@ -117,23 +103,20 @@ func (sdex *SDEX) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 
 // ModifyBuyOffer modifies a buy offer
 func (sdex *SDEX) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
-	//log.Info("modifyBuyOffer: ", offer.ID, " p:", price)
 	return sdex.ModifySellOffer(offer, 1/price, amount*price)
 }
 
 // ModifySellOffer modifies a sell offer
 func (sdex *SDEX) ModifySellOffer(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder {
-	//log.Info("modifySellOffer: ", offer.ID, " p:", amount)
 	return sdex.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount)
 }
 
 // CreateSellOffer creates a sell offer
 func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	if amount > 0 {
-		//log.Info("createSellOffer: ", price, amount)
 		return sdex.createModifySellOffer(nil, base, counter, price, amount)
 	}
-	log.Info("zero amount ")
+	log.Println("error: cannot place sell order, zero amount")
 	return nil
 }
 
@@ -141,7 +124,7 @@ func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, pri
 func (sdex *SDEX) ParseOfferAmount(amt string) (float64, error) {
 	offerAmt, err := strconv.ParseFloat(amt, 64)
 	if err != nil {
-		log.Info("error parsing offer amount: ", err)
+		log.Printf("error parsing offer amount: %s\n", err)
 		return -1, err
 	}
 	return offerAmt, nil
@@ -154,7 +137,7 @@ func (sdex *SDEX) minReserve(subentries int32) float64 {
 func (sdex *SDEX) lumenBalance() (float64, float64, error) {
 	account, err := sdex.API.LoadAccount(sdex.TradingAccount)
 	if err != nil {
-		log.Info("error loading account to fetch lumen balance: ", err)
+		log.Printf("error loading account to fetch lumen balance: %s\n", err)
 		return -1, -1, nil
 	}
 
@@ -162,7 +145,7 @@ func (sdex *SDEX) lumenBalance() (float64, float64, error) {
 		if balance.Asset.Type == utils.Native {
 			b, e := strconv.ParseFloat(balance.Balance, 64)
 			if e != nil {
-				log.Info("error parsing native balance: ", e)
+				log.Printf("error parsing native balance: %s\n", e)
 			}
 			return b, sdex.minReserve(account.SubentryCount), e
 		}
@@ -177,7 +160,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		if offer != nil {
 			offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
 			if err != nil {
-				log.Info(err)
+				log.Println(err)
 				return nil
 			}
 			// modifying an offer will not increase the min reserve but will affect the xlm exposure
@@ -190,22 +173,22 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		// check if incrementalXlmAmount is within budget
 		bal, minAccountBal, err := sdex.lumenBalance()
 		if err != nil {
-			log.Info(err)
+			log.Println(err)
 			return nil
 		}
 
 		xlmExposure, err := sdex.xlmExposure()
 		if err != nil {
-			log.Info(err)
+			log.Println(err)
 			return nil
 		}
 
 		additionalExposure := incrementalXlmAmount >= 0
 		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(sdex.FractionalReserveMagnifier)) > (bal - minAccountBal - sdex.operationalBuffer)
 		if additionalExposure && possibleTerminalExposure {
-			log.Info("not placing offer because we run the risk of running out of lumens | xlmExposure: ", xlmExposure,
-				" | incrementalXlmAmount: ", incrementalXlmAmount, " | bal: ", bal, " | minAccountBal: ", minAccountBal,
-				" | operationalBuffer: ", sdex.operationalBuffer, " | fractionalReserveMagnifier: ", sdex.FractionalReserveMagnifier)
+			log.Println("not placing offer because we run the risk of running out of lumens | xlmExposure:", xlmExposure,
+				"| incrementalXlmAmount:", incrementalXlmAmount, "| bal:", bal, "| minAccountBal:", minAccountBal,
+				"| operationalBuffer:", sdex.operationalBuffer, "| fractionalReserveMagnifier:", sdex.FractionalReserveMagnifier)
 			return nil
 		}
 	}
@@ -217,7 +200,6 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		Price:   build.Price(stringPrice),
 	}
 
-	//log.Info("sa: ", sdex.sourceAccount, " ta:", sdex.tradingAccount, " r:", rate)
 	mutators := []interface{}{
 		rate,
 		build.Amount(strconv.FormatFloat(amount, 'f', -1, 64)),
@@ -251,7 +233,6 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 
 // CreateBuyOffer creates a buy offer
 func (sdex *SDEX) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
-	//log.Info("createBuyOffer: ", price, amount)
 	return sdex.CreateSellOffer(counter, base, 1/price, amount*price)
 }
 
@@ -265,10 +246,10 @@ func (sdex *SDEX) signAndSubmit(tx *build.TransactionBuilder) {
 
 	txeB64, err := txe.Base64()
 	if err != nil {
-		log.Error("", err)
+		log.Println(err)
 		return
 	}
-	log.Info("tx: ", txeB64)
+	log.Printf("tx: %s\n", txeB64)
 
 	resp, err := sdex.API.SubmitTransaction(txeB64)
 	if err != nil {
@@ -276,22 +257,22 @@ func (sdex *SDEX) signAndSubmit(tx *build.TransactionBuilder) {
 			var rcs *horizon.TransactionResultCodes
 			rcs, err = herr.ResultCodes()
 			if err != nil {
-				log.Info("no rc from horizon: ", err)
+				log.Printf("no rc from horizon: %s\n", err)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
-				log.Info("tx_bad_seq, reloading")
+				log.Println("tx_bad_seq, reloading")
 				sdex.reloadSeqNum = true
 			}
 
-			log.Info("tx code: ", rcs.TransactionCode, " opcodes: ", rcs.OperationCodes)
+			log.Println("tx code:", rcs.TransactionCode, "opcodes:", rcs.OperationCodes)
 		} else {
-			log.Info("tx failed: ", err)
+			log.Printf("tx failed: %s\n", err)
 		}
 		return
 	}
 
-	log.Info("", resp.Hash)
+	log.Printf("tx-hash: %s\n", resp.Hash)
 }
 
 // ResetCachedXlmExposure resets the cache
@@ -307,7 +288,7 @@ func (sdex *SDEX) xlmExposure() (float64, error) {
 	// uses all offers for this trading account to accommodate sharing by other bots
 	offers, err := utils.LoadAllOffers(sdex.TradingAccount, sdex.API)
 	if err != nil {
-		log.Info("error computing XLM exposure: ", err)
+		log.Printf("error computing XLM exposure: %s\n", err)
 		return -1, err
 	}
 

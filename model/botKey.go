@@ -33,7 +33,7 @@ func (b BotKey) String() string {
 func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
 	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string
 	if assetA.Type == native && assetB.Type == native {
-		log.Panic("invalid asset types, both cannot be native")
+		log.Fatal("invalid asset types, both cannot be native")
 	} else if assetA.Type == native {
 		assetBaseCode = native
 		assetBaseIssuer = ""
@@ -108,7 +108,7 @@ func (b *BotKey) Hash() string {
 	h := sha1.New()
 	_, e := h.Write([]byte(b.Key()))
 	if e != nil {
-		log.Panic(e)
+		log.Fatal(e)
 	}
 	bs := h.Sum(nil)
 	hash := fmt.Sprintf("%x", bs)

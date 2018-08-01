@@ -1,7 +1,7 @@
 package trader
 
 import (
-	"fmt"
+	"log"
 	"sort"
 	"time"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/log"
 )
 
 const maxLumenTrust float64 = 100000000000
@@ -62,8 +61,9 @@ func MakeBot(
 // Start starts the bot with the injected strategy
 func (t *Trader) Start() {
 	for {
+		log.Println("----------------------------------------------------------------------------------------------------")
 		t.update()
-		log.Info(fmt.Sprintf("sleeping for %d seconds...", t.tickIntervalSeconds))
+		log.Printf("sleeping for %d seconds...\n", t.tickIntervalSeconds)
 		time.Sleep(time.Duration(t.tickIntervalSeconds) * time.Second)
 	}
 }
@@ -77,11 +77,11 @@ func (t *Trader) deleteAllOffers() {
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
 	t.buyingAOffers = []horizon.Offer{}
 
-	log.Info(fmt.Sprintf("deleting %d offers", len(dOps)))
+	log.Printf("deleting %d offers\n", len(dOps))
 	if len(dOps) > 0 {
 		e := t.sdex.SubmitOps(dOps)
 		if e != nil {
-			log.Warn(e)
+			log.Println(e)
 			return
 		}
 	}
@@ -96,7 +96,7 @@ func (t *Trader) update() {
 	// strategy has a chance to set any state it needs
 	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
-		log.Warn(e)
+		log.Println(e)
 		t.deleteAllOffers()
 		return
 	}
@@ -107,7 +107,7 @@ func (t *Trader) update() {
 	if len(pruneOps) > 0 {
 		e = t.sdex.SubmitOps(pruneOps)
 		if e != nil {
-			log.Warn(e)
+			log.Println(e)
 			t.deleteAllOffers()
 			return
 		}
@@ -118,7 +118,7 @@ func (t *Trader) update() {
 	t.sdex.ResetCachedXlmExposure()
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	if e != nil {
-		log.Warn(e)
+		log.Println(e)
 		t.deleteAllOffers()
 		return
 	}
@@ -126,7 +126,7 @@ func (t *Trader) update() {
 	if len(ops) > 0 {
 		e = t.sdex.SubmitOps(ops)
 		if e != nil {
-			log.Warn(e)
+			log.Println(e)
 			t.deleteAllOffers()
 			return
 		}
@@ -134,7 +134,7 @@ func (t *Trader) update() {
 
 	e = t.strat.PostUpdate()
 	if e != nil {
-		log.Warn(e)
+		log.Println(e)
 		t.deleteAllOffers()
 		return
 	}
@@ -144,7 +144,7 @@ func (t *Trader) load() {
 	// load the maximum amounts we can offer for each asset
 	account, e := t.api.LoadAccount(t.tradingAccount)
 	if e != nil {
-		log.Info(e)
+		log.Println(e)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (t *Trader) load() {
 			} else {
 				trustA = utils.AmountStringAsFloat(balance.Limit)
 			}
-			log.Infof("maxA: %.7f, trustA: %.7f\n", maxA, trustA)
+			log.Printf("maxA=%.7f,trustA=%.7f\n", maxA, trustA)
 		} else if balance.Asset == t.assetQuote {
 			maxB = utils.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == utils.Native {
@@ -168,7 +168,7 @@ func (t *Trader) load() {
 			} else {
 				trustB = utils.AmountStringAsFloat(balance.Limit)
 			}
-			log.Infof("maxB: %.7f, trustB: %.7f\n", maxB, trustB)
+			log.Printf("maxB=%.7f,trustB=%.7f\n", maxB, trustB)
 		}
 	}
 	t.maxAssetA = maxA
@@ -180,7 +180,7 @@ func (t *Trader) load() {
 func (t *Trader) loadExistingOffers() {
 	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
 	if e != nil {
-		log.Warn(e)
+		log.Println(e)
 		return
 	}
 	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)

@@ -1,8 +1,9 @@
 package plugins
 
 import (
+	"log"
+
 	"github.com/lightyeario/kelp/api"
-	"github.com/stellar/go/support/log"
 )
 
 // staticLevel represents a layer in the orderbook defined statically
@@ -35,10 +36,10 @@ func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase floa
 func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	centerPrice, e := p.pf.GetCenterPrice()
 	if e != nil {
-		log.Error("Center price couldn't be loaded! ", e)
+		log.Printf("error: center price couldn't be loaded! | %s\n", e)
 		return nil, e
 	}
-	log.Info("Center price: ", centerPrice)
+	log.Printf("center price: %.7f\n", centerPrice)
 
 	levels := []api.Level{}
 	for _, sl := range p.staticLevels {
