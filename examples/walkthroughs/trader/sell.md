@@ -2,7 +2,7 @@
 
 This guide shows you how to setup the `kelp` bot using the [sell](../../../plugins/sellStrategy.go) strategy. We'll configure it to make a market for native tokens we plan to sell in an upcoming hypothetical ICO. This strategy creates sell offers based on a reference price with a pre-specified liquidity depth.  
 
-In our example the tokens are priced against XLM (`native`). XLM is the native currency in the Stellar network and acts as a bridge (i.e. facilitator) in transactions that involve two different assets. Therefore, it has less [counterparty risk] (https://www.investopedia.com/terms/c/counterpartyrisk.asp). Most assets have a liquid market against XLM and by pricing your asset against XLM you are opening up your asset to be traded against any other asset on the network via [path payments] (https://www.stellar.org/developers/horizon/reference/endpoints/path-finding.html).
+In our example the tokens are priced against XLM (`native`). XLM is the native currency in the Stellar network and acts as a bridge (i.e. facilitator) in transactions that involve two different assets. Therefore, it has less [counterparty risk](https://www.investopedia.com/terms/c/counterpartyrisk.asp). Most assets have a liquid market against XLM and by pricing your asset against XLM you are opening up your asset to be traded against any other asset on the network via [path payments](https://www.stellar.org/developers/horizon/reference/endpoints/path-finding.html) .
 
 ## Account Setup
 
