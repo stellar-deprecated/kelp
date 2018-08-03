@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -39,19 +40,22 @@ func init() {
 		log.Println("Starting Kelp Trader: v0.6")
 
 		var botConfig trader.BotConfig
-		err := config.Read(*botConfigPath, &botConfig)
-		utils.CheckConfigError(botConfig, err, *botConfigPath)
-		err = botConfig.Init()
-		if err != nil {
-			log.Fatal(err)
+		e := config.Read(*botConfigPath, &botConfig)
+		utils.CheckConfigError(botConfig, e, *botConfigPath)
+		e = botConfig.Init()
+		if e != nil {
+			log.Println()
+			log.Fatal(e)
 		}
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
 
-		// --- start initialization of objects ----
 		client := &horizon.Client{
 			URL:  botConfig.HORIZON_URL,
 			HTTP: http.DefaultClient,
 		}
+		validateTrustlines(client, &botConfig)
+
+		// --- start initialization of objects ----
 		sdex := plugins.MakeSDEX(
 			client,
 			botConfig.SOURCE_SECRET_SEED,
@@ -83,5 +87,33 @@ func init() {
 			bot.Start()
 			log.Println("Restarting the trader bot...")
 		}
+	}
+}
+
+func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
+	account, e := client.LoadAccount(botConfig.TradingAccount())
+	if e != nil {
+		log.Println()
+		log.Fatal(e)
+	}
+
+	missingTrustlines := []string{}
+	if botConfig.ISSUER_A != "" {
+		balance := utils.GetCreditBalance(account, botConfig.ASSET_CODE_A, botConfig.ISSUER_A)
+		if balance == nil {
+			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.ASSET_CODE_A, botConfig.ISSUER_A))
+		}
+	}
+
+	if botConfig.ISSUER_B != "" {
+		balance := utils.GetCreditBalance(account, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
+		if balance == nil {
+			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.ASSET_CODE_B, botConfig.ISSUER_B))
+		}
+	}
+
+	if len(missingTrustlines) > 0 {
+		log.Println()
+		log.Fatalf("error: your trading account does not have the required trustlines: %v\n", missingTrustlines)
 	}
 }

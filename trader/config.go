@@ -8,6 +8,8 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
+const XLM = "XLM"
+
 // BotConfig represents the configuration params for the bot
 type BotConfig struct {
 	SOURCE_SECRET_SEED    string `valid:"-"`
@@ -58,28 +60,48 @@ func (b *BotConfig) AssetQuote() horizon.Asset {
 
 // Init initializes this config
 func (b *BotConfig) Init() error {
-	if b.ASSET_CODE_A == "XLM" {
-		b.assetBase = utils.Asset2Asset2(build.NativeAsset())
-	} else {
-		b.assetBase = utils.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_A, b.ISSUER_A))
+	if b.ASSET_CODE_A == b.ASSET_CODE_B && b.ISSUER_A == b.ISSUER_B {
+		return fmt.Errorf("error: both assets cannot be the same '%s:%s'", b.ASSET_CODE_A, b.ISSUER_A)
 	}
 
-	if b.ASSET_CODE_B == "XLM" {
-		b.assetQuote = utils.Asset2Asset2(build.NativeAsset())
-	} else {
-		b.assetQuote = utils.Asset2Asset2(build.CreditAsset(b.ASSET_CODE_B, b.ISSUER_B))
+	asset, e := parseAsset(b.ASSET_CODE_A, b.ISSUER_A, "A")
+	if e != nil {
+		return e
 	}
+	b.assetBase = *asset
 
-	var e error
+	asset, e = parseAsset(b.ASSET_CODE_B, b.ISSUER_B, "B")
+	if e != nil {
+		return e
+	}
+	b.assetQuote = *asset
+
 	b.tradingAccount, e = utils.ParseSecret(b.TRADING_SECRET_SEED)
 	if e != nil {
 		return e
 	}
-	// trading account should never be nil
 	if b.tradingAccount == nil {
 		return fmt.Errorf("no trading account specified")
 	}
 
 	b.sourceAccount, e = utils.ParseSecret(b.SOURCE_SECRET_SEED)
 	return e
+}
+
+func parseAsset(code string, issuer string, letter string) (*horizon.Asset, error) {
+	if code != XLM && issuer == "" {
+		return nil, fmt.Errorf("error: ISSUER_%s can only be empty if ASSET_CODE_%s is '%s'", letter, letter, XLM)
+	}
+
+	if code == XLM && issuer != "" {
+		return nil, fmt.Errorf("error: ISSUER_%s needs to be empty if ASSET_CODE_%s is '%s'", letter, letter, XLM)
+	}
+
+	if code == XLM {
+		asset := utils.Asset2Asset2(build.NativeAsset())
+		return &asset, nil
+	}
+
+	asset := utils.Asset2Asset2(build.CreditAsset(code, issuer))
+	return &asset, nil
 }

@@ -188,3 +188,13 @@ func GetSortedKeys(m map[string]string) []string {
 	sort.Strings(keys)
 	return keys
 }
+
+// GetCreditBalance is a drop-in for the function in the GoSDK, we want it to return nil if there's no balance (as opposed to "0")
+func GetCreditBalance(a horizon.Account, code string, issuer string) *string {
+	for _, balance := range a.Balances {
+		if balance.Asset.Code == code && balance.Asset.Issuer == issuer {
+			return &balance.Balance
+		}
+	}
+	return nil
+}

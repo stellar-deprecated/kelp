@@ -76,7 +76,7 @@ func MakeStrategy(
 ) api.Strategy {
 	if strat, ok := strategies[strategy]; ok {
 		if strat.needsConfig && stratConfigPath == "" {
-			log.Println("")
+			log.Println()
 			log.Fatalf("error: the '%s' strategy needs a config file\n", strategy)
 		}
 		return strat.makeFn(sdex, assetBase, assetQuote, stratConfigPath)

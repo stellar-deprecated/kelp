@@ -12,7 +12,7 @@ import (
 func CheckConfigError(cfg fmt.Stringer, e error, filename string) {
 	if e != nil {
 		log.Println(e)
-		log.Println("")
+		log.Println()
 		log.Fatalf("error: could not parse the config file '%s'. Check that the correct type of file was passed in.\n", filename)
 	}
 
