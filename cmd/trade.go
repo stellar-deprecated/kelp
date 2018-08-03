@@ -30,7 +30,7 @@ func init() {
 	var strategy = tradeCmd.Flags().String("strategy", "buysell", "(required) type of strategy to run")
 	var stratConfigPath = tradeCmd.Flags().String("stratConf", "./buysell.cfg", "strategy config file path")
 	var fractionalReserveMagnifier = tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
-	var operationalBuffer = tradeCmd.Flags().Float64("operationalBuffer", 2000, "operational buffer for min number of lumens needed in XLM reserves")
+	var operationalBuffer = tradeCmd.Flags().Float64("operationalBuffer", 20, "operational buffer for min number of lumens needed in XLM reserves")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
