@@ -1,12 +1,12 @@
 # How To Make a Market for a Stablecoin
 
-This guide shows you how to setup the `kelp` bot using the [buysell](../../../plugins/buysellStrategy.go) strategy. We'll configure it to make a market for a stablecoin against against the XLM asset.
+This guide shows you how to setup the **kelp** bot using the [buysell](../../../plugins/buysellStrategy.go) strategy. We'll configure it to make a market for a stablecoin against the XLM asset.
 
 This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../api/pricefeed.go).
 
 ## Account Setup
 
-You should first go through the [Account Setup guide](account_setup.md) to set up your Stellar accounts and the necessary configuration file, `trader.cfg`. This introduces the `COUPON` token that we will use through the rest of this walkthrough.
+First, go through the [Account Setup guide](account_setup.md) to set up your Stellar accounts and the necessary configuration file, `trader.cfg`. This introduces the `COUPON` token that we will use through the rest of this walkthrough.
 
 ## Install Bots
 
@@ -26,19 +26,18 @@ We always want to price our stablecoin at Kraken's XLM/USD price. Since that's a
 
 ### Tolerances
 
-For the purposes of this walkthrough, we set the `PRICE_TOLERANCE` and `AMOUNT_TOLERANCE` thresholds for our bot to be as small as possible, because we want it to make a lot of trades. We set the value for both fields to `0.001` which means that a _0.1% change in price or amount will trigger the bot to refresh its orders_. In practice, you should set any value you're comfortable with. 
+For the purposes of this walkthrough, we set the `PRICE_TOLERANCE` and `AMOUNT_TOLERANCE` thresholds for our bot to be as small as possible because we want it to make a lot of trades. We set the value for both fields to `0.001` which means that a _0.1% change in price or amount will trigger the bot to refresh its orders_. In practice, you should set any value you're comfortable with. 
 
 ### Levels
 
-A Level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that sits in the orderbook. Each level has an `AMOUNT` and a `SPREAD` as part of its configuration. The bot creates mirrored orders on both the buy side and the sell side for each level configured.
+A level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that sits in the orderbook. Each level has an `AMOUNT` and a `SPREAD` as part of its configuration. The bot creates mirrored orders on both the buy side and the sell side for each level configured.
 
 ![level screenshot](https://imgur.com/BxpOMGI.png "Levels Screenshot")
 
-- **SPREAD**: represents the distance from center price as a percentage specified as a decimal number (0 < spread < 1.00). The bid/ask spread will be 2x what is specified at each level in the config.
-- **AMOUNT**: specifies the order size in multiples of the Base Unit described above. This `AMOUNT` is multiplied by the `AMOUNT_OF_A_BASE` field to give the final amount. The amount for the quote asset is derived using this value and the computed price at this level. 
+`AMOUNT_OF_A_BASE` allows you to scale the order size levels explained below. Trade amounts are specified in **units of the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency)** (i.e. `ASSET_CODE_A`).
 
-`AMOUNT_OF_A_BASE` allows you to scale the order size levels set in the next section of the configuration. Trade amounts are specified in **units of the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency)** (i.e. `ASSET_CODE_A`).
-
+- **SPREAD**: represents the distance from center price as a percentage specified as a decimal number (0 < spread < 1.00). The [bid/ask spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) will be 2x what is specified at each level in the config.
+- **AMOUNT**: specifies the order size in multiples of the base unit described above. This `AMOUNT` is multiplied by the `AMOUNT_OF_A_BASE` field to give the final amount. The amount for the quote asset is derived using this value and the computed price at this level. 
 
 ## Run Kelp
 
@@ -46,10 +45,7 @@ Assuming your botConfig is called `trader.cfg` and your strategy config is calle
 ```
 kelp trade --botConf trader.cfg --strategy buysell --stratConf buysell.cfg
 ```
-If you want to use a different trading strategy, you can change the `strategy` and provide the relevant config file for your chosen strategy.
 
-# Next Steps
-
-After taking the steps above you should be able to run `kelp` using the [**buysell strategy**](../../../plugins/buysellStrategy.go).
+# Above and Beyond
 
 You can also play around with the configuration parameters of the [sample configuration file for the buysell strategy](../../configs/trader/sample_buysell.cfg), look at some of the other strategies that are available out-of-the-box or dig into the code and _create your own strategy_.

@@ -36,12 +36,12 @@ We go through the necessary steps required by the issuer to issue us `10,000 COU
 You will need to set up your `trader.cfg` file which describes the accounts used by the bot. You need to set the following fields: 
 
 - `TRADING_SECRET_SEED`: **secret key** for the `Trading Account`.
-- `SOURCE_SECRET_SEED`: If you have specified a `Source Account` fill in the **secret key** here.
+- `SOURCE_SECRET_SEED`: if you have specified a `Source Account` fill in the **secret key** here.
 - `ASSET_CODE_A`: **asset code for the** [**base asset**](https://en.wikipedia.org/wiki/Currency_pair#Base_currency), in our case it's `XLM`.
-- `ISSUER_A`: Issuer account for the **base asset**. In our case our base asset is the native `XLM` asset so we do not specify this field (this only applies to the native asset, XLM).
+- `ISSUER_A`: issuer account for the **base asset**. In our case our base asset is the native `XLM` asset so we do not specify this field (this only applies to the native asset, XLM).
 - `ASSET_CODE_B`: **asset code for the** [**quote asset**](https://en.wikipedia.org/wiki/Currency_pair), in our case this is `COUPON`.
 - `ISSUER_B`: issuer account for the **quote asset**. In our case this is `GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI`.
-- `TICK_INTERVAL_SECONDS`: How often you want the bot to run in seconds. In our case the bot runs every 300 seconds (5 minutes).
+- `TICK_INTERVAL_SECONDS`: how often you want the bot to run in seconds. In our case the bot runs every 300 seconds (5 minutes).
 - `HORIZON_URL`: **url for your horizon instance**. In our case we want to use the test network so we put in `https://horizon-testnet.stellar.org`.
 
 Note: The bot automatically determines the `account address` from the `secret key` so you don't need to enter that anywhere.
