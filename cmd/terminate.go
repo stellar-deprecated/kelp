@@ -26,7 +26,7 @@ func init() {
 
 		var configFile terminator.Config
 		err := config.Read(*configPath, &configFile)
-		utils.CheckConfigError(configFile, err)
+		utils.CheckConfigError(configFile, err, *configPath)
 		err = configFile.Init()
 		if err != nil {
 			log.Fatal(err)

@@ -28,7 +28,7 @@ func requiredFlag(flag string) {
 func init() {
 	var botConfigPath = tradeCmd.Flags().String("botConf", "./trader.cfg", "(required) trading bot's basic config file path")
 	var strategy = tradeCmd.Flags().String("strategy", "buysell", "(required) type of strategy to run")
-	var stratConfigPath = tradeCmd.Flags().String("stratConf", "./buysell.cfg", "strategy config file path")
+	var stratConfigPath = tradeCmd.Flags().String("stratConf", "", "strategy config file path")
 	var fractionalReserveMagnifier = tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
 	var operationalBuffer = tradeCmd.Flags().Float64("operationalBuffer", 20, "operational buffer for min number of lumens needed in XLM reserves")
 
@@ -40,7 +40,7 @@ func init() {
 
 		var botConfig trader.BotConfig
 		err := config.Read(*botConfigPath, &botConfig)
-		utils.CheckConfigError(botConfig, err)
+		utils.CheckConfigError(botConfig, err, *botConfigPath)
 		err = botConfig.Init()
 		if err != nil {
 			log.Fatal(err)

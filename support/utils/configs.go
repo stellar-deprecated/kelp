@@ -6,25 +6,19 @@ import (
 	"log"
 	"reflect"
 	"strings"
-
-	"github.com/pkg/errors"
-	"github.com/stellar/go/support/config"
 )
 
 // CheckConfigError checks configs for errors
-func CheckConfigError(cfg fmt.Stringer, e error) {
+func CheckConfigError(cfg fmt.Stringer, e error, filename string) {
+	if e != nil {
+		log.Println(e)
+		log.Println("")
+		log.Fatalf("error: could not parse the config file '%s'. Check that the correct type of file was passed in.\n", filename)
+	}
+
 	log.Println("configs:")
 	for _, line := range strings.Split(strings.TrimSuffix(cfg.String(), "\n"), "\n") {
 		log.Printf("     %s", line)
-	}
-
-	if e != nil {
-		switch cause := errors.Cause(e).(type) {
-		case *config.InvalidConfigError:
-			log.Fatalf("config error: %v\n", cause)
-		default:
-			log.Fatal(e)
-		}
 	}
 }
 
