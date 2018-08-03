@@ -20,7 +20,7 @@ Kelp is pre-configured to:
 - Price and trade custom [stablecoins][stablecoin]
 - Mimic order books from other exchanges
 
-To learn more about the Stellar protocol check out [this community video][sdex explainer video]. You can also search [Stellar's Q&A][stellar q&a].
+To learn more about the Stellar protocol check out [this video created by Lumenauts][sdex explainer video]. You can also search [Stellar's Q&A][stellar q&a].
 
 # Table of Contents
 
@@ -97,34 +97,34 @@ Strategies are at the core of Kelp. Without them it's just lazy, capable of noth
 
 The following strategies are available **out of the box** with Kelp:
 
-- [sell](plugins/sellStrategy.go):
+- sell ([source](plugins/sellStrategy.go)):
 
     - **What:** creates sell offers based on a reference price with a pre-specified liquidity depth
     - **Why:** To sell tokens at a fixed price or at a price that changes based on an external reference price
     - **Who:** An issuer could use Sell to distribute tokens from an ICO pre-sale
     - **Complexity**: Beginner
 
-- [buysell](plugins/buysellStrategy.go):
+- buysell ([source](plugins/buysellStrategy.go)):
 
     - **What:** creates buy and sell offers based on a specific reference price and a pre-specified liquidity depth while maintaining a [spread][spread].
     - **Why:** To make the market for tokens based on a fixed or external reference price.
     - **Who:** Anyone who wants to create liquidity for a stablecoin or [fiat][fiat] token
     - **Complexity:** Beginner
 
-- [balanced](plugins/balancedStrategy.go):
+- balanced ([source](plugins/balancedStrategy.go)):
     - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B.
     - **Why:** To let the market surface the _true price_ for one token in terms of another.
     - **Who:** Market makers and traders for tokens that trade only on Stellar 
     - **Complexity:** Intermediate
 
-- [mirror](plugins/mirrorStrategy.go):
+- mirror ([source](plugins/mirrorStrategy.go)):
 
     - **What:** mirrors an orderbook from another exchange by placing the same orders on Stellar after including a [spread][spread]. _Note: covering your trades on the backing exchange is not currently supported out-of-the-box_.
     - **Why:** To [hedge][hedge] your position on another exchange whenever a trade is executed to reduce inventory risk while keeping a spread
     - **Who:** Anyone who wants to reduce inventory risk and also has the capacity to take on a higher operational overhead in maintaining the bot system.
     - **Complexity:** Advanced
 
-- [delete](plugins/deleteStrategy.go):
+- delete ([source](plugins/deleteStrategy.go)):
 
     - **What:** deletes your offers from both sides of the specified orderbook. _Note: does not need a strategy-specific config file_.
     - **Why:** To kill the offers placed by the bot. _This is not a trading strategy but is used for operational purposes only_.
@@ -150,8 +150,8 @@ For more details, check out the [examples section](#configuration-files) of the 
 
 Exchange integrations provide data to trading strategies and allow you to [hedge][hedge] your positions on different exchanges. The following [exchange integrations](plugins) are available **out of the box** with Kelp:
 
-- [sdex](plugins/sdex.go): The [Stellar Decentralized Exchange][sdex]
-- [kraken](plugins/krakenExchange.go): [Kraken][kraken]
+- sdex ([source](plugins/sdex.go)): The [Stellar Decentralized Exchange][sdex]
+- kraken ([source](plugins/krakenExchange.go)): [Kraken][kraken]
 
 ## Plugins
 
@@ -159,9 +159,9 @@ Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
 
 These interfaces make it easy to create plugins:
-- [Strategy](api/strategy.go) - API for a strategy
-- [PriceFeed](api/priceFeed.go) - API for price of an asset
-- [Exchange](api/exchange.go) - API for crypto exchanges
+- Strategy ([source](api/strategy.go)) - API for a strategy
+- PriceFeed ([source](api/priceFeed.go)) - API for price of an asset
+- Exchange ([source](api/exchange.go)) - API for crypto exchanges
 
 ## Directory Structure
 
