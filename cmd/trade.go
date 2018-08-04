@@ -32,6 +32,7 @@ func init() {
 	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
 	fractionalReserveMagnifier := tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "operational buffer for min number of lumens needed in XLM reserves")
+	dryMode := tradeCmd.Flags().BoolP("dry", "d", false, "perform a dry-run of the bot, it does not place any trades")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -65,6 +66,7 @@ func init() {
 			utils.ParseNetwork(botConfig.HORIZON_URL),
 			*fractionalReserveMagnifier,
 			*operationalBuffer,
+			*dryMode,
 		)
 
 		assetBase := botConfig.AssetBase()

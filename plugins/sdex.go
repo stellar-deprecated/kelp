@@ -22,16 +22,17 @@ type SDEX struct {
 	Network                    build.Network
 	FractionalReserveMagnifier int8
 	operationalBuffer          float64
-	seqNum                     uint64
-	reloadSeqNum               bool
+	dryRun                     bool
 
 	// uninitialized
+	seqNum            uint64
+	reloadSeqNum      bool
 	cachedXlmExposure *float64
 }
 
 // MakeSDEX is a factory method for SDEX
 func MakeSDEX(
-	client *horizon.Client,
+	api *horizon.Client,
 	sourceSeed string,
 	tradingSeed string,
 	sourceAccount string,
@@ -39,9 +40,10 @@ func MakeSDEX(
 	network build.Network,
 	fractionalReserveMagnifier int8,
 	operationalBuffer float64,
+	dryRun bool,
 ) *SDEX {
 	sdex := &SDEX{
-		API:                        client,
+		API:                        api,
 		SourceSeed:                 sourceSeed,
 		TradingSeed:                tradingSeed,
 		SourceAccount:              sourceAccount,
@@ -49,6 +51,7 @@ func MakeSDEX(
 		Network:                    network,
 		FractionalReserveMagnifier: fractionalReserveMagnifier,
 		operationalBuffer:          operationalBuffer,
+		dryRun:                     dryRun,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
@@ -227,7 +230,11 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 	if tx.Err != nil {
 		return errors.Wrap(tx.Err, "SubmitOps error: ")
 	}
-	go sdex.signAndSubmit(tx)
+
+	if !sdex.dryRun {
+		go sdex.signAndSubmit(tx)
+	}
+
 	return nil
 }
 
