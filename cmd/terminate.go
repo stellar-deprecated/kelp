@@ -14,12 +14,12 @@ import (
 
 var terminateCmd = &cobra.Command{
 	Hidden: true,
-	Use:    "terminator",
+	Use:    "terminate",
 	Short:  "Monitors a Stellar Account and terminates offers across all inactive bots",
 }
 
 func init() {
-	var configPath = terminateCmd.Flags().String("conf", "./terminator.cfg", "service's basic config file path")
+	configPath := terminateCmd.Flags().StringP("conf", "c", "./terminator.cfg", "service's basic config file path")
 
 	terminateCmd.Run = func(ccmd *cobra.Command, args []string) {
 		log.Println("Starting Terminator: v1.0")

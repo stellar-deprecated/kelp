@@ -27,11 +27,11 @@ func requiredFlag(flag string) {
 }
 
 func init() {
-	var botConfigPath = tradeCmd.Flags().String("botConf", "./trader.cfg", "(required) trading bot's basic config file path")
-	var strategy = tradeCmd.Flags().String("strategy", "buysell", "(required) type of strategy to run")
-	var stratConfigPath = tradeCmd.Flags().String("stratConf", "", "strategy config file path")
-	var fractionalReserveMagnifier = tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
-	var operationalBuffer = tradeCmd.Flags().Float64("operationalBuffer", 20, "operational buffer for min number of lumens needed in XLM reserves")
+	botConfigPath := tradeCmd.Flags().StringP("botConf", "c", "./trader.cfg", "(required) trading bot's basic config file path")
+	strategy := tradeCmd.Flags().StringP("strategy", "s", "buysell", "(required) type of strategy to run")
+	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
+	fractionalReserveMagnifier := tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
+	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "operational buffer for min number of lumens needed in XLM reserves")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
