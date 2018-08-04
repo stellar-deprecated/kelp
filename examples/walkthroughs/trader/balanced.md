@@ -1,6 +1,6 @@
 # Create Liquidity For a Stellar-based Token
 
-This guide shows you how to setup the **kelp** bot using the [balanced](../../../plugins/balancedStrategy.go) strategy. We'll configure it create liquidity for a `COUPON` token which only trades on the Stellar network. 
+This guide shows you how to setup the **kelp** bot using the [balanced](../../../plugins/balancedStrategy.go) strategy. We'll configure it to create liquidity for a `COUPON` token which only trades on the Stellar network. 
 
 The bot dynamically prices two tokens based on their relative demand. It operates with the understanding that both of the assets it holds are equal in value. When someone buys the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency) from the bot, the bot will have less units of the base asset and more units of the counter asset. It will assume that the base asset is now more valuable than the counter asset and will raise the price of the base asset relative to the counter asset. 
 
@@ -18,7 +18,7 @@ Download the pre-compiled binaries for **kelp** for your platform from the [Gith
 
 ## Balanced Strategy Configuration
 
-Use the [sample configuration file for the balanced strategy](../../configs/trader/sample_balanced.cfg) as a template. We will walkthrough the configuration parameters below.
+Use the [sample configuration file for the balanced strategy](../../configs/trader/sample_balanced.cfg) as a template. We will walk through the configuration parameters below.
 
 ### Tolerances
 
@@ -48,11 +48,11 @@ The `amountCarryoverSpread` determines how much of the `amountCarryover` should 
 
 ### Virtual Balance 
 
-_These parameters are dangerous. It is recommended to set these parameters to `0.0`_ 
+_These parameters are dangerous. It is recommended to set these parameters to `0.0`_.
 
 Setting a virtual balance for any of the two assets fools the bot into thinking that it has a bigger balance in its account for that asset. Doing so will result in the bot setting the levels with a smoother pricing curve. 
 
-If you set these values to `0.0` and the bot happens to sell all but the last unit of the asset, the last asset will be valued at _infinity_ by the bot. It will be almost impossible for the bot to sell the last unit; however, if you set this value to be > `0.0` the bot will eventually run out of the asset that has a virtual balance set. When this occurs, the bot gets stuck and the behavior is _undefined_. 
+If you set these values to `0.0` and the bot happens to sell all but the last unit of the asset, the last asset will be valued at _infinity_ by the bot and it will be almost impossible for the bot to sell the last unit. However, if you set this value to be > `0.0` the bot will eventually run out of the asset that has a virtual balance set and the bot will get stuck. The behavior of the bot in this state is _undefined_. 
 
 The virtual balance combined with the actual balance the bot has in its account will be used to compute the _total balance_ for that asset. The _total balance_ for a particular asset is used when computing the relative the price between the assets using the ratio of their balances. 
 
