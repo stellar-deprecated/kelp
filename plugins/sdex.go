@@ -240,7 +240,7 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 
 	// submit
 	if !sdex.simMode {
-		log.Println("submitting tx XDR to network")
+		log.Println("submitting tx XDR to network (async)")
 		go sdex.submit(txeB64)
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode")
@@ -271,22 +271,21 @@ func (sdex *SDEX) submit(txeB64 string) {
 			var rcs *horizon.TransactionResultCodes
 			rcs, err = herr.ResultCodes()
 			if err != nil {
-				log.Printf("no rc from horizon: %s\n", err)
+				log.Printf("(async) error: no result codes from horizon: %s\n", err)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
-				log.Println("tx_bad_seq, reloading")
+				log.Println("(async) error: tx_bad_seq, setting flag to reload seq number")
 				sdex.reloadSeqNum = true
 			}
-
-			log.Println("tx code:", rcs.TransactionCode, "opcodes:", rcs.OperationCodes)
+			log.Println("(async) error: result code details: tx code =", rcs.TransactionCode, ", opcodes =", rcs.OperationCodes)
 		} else {
-			log.Printf("tx failed: %s\n", err)
+			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
 		}
 		return
 	}
 
-	log.Printf("tx-hash: %s\n", resp.Hash)
+	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
 }
 
 // ResetCachedXlmExposure resets the cache
