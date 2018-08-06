@@ -22,7 +22,7 @@ type SDEX struct {
 	Network                    build.Network
 	FractionalReserveMagnifier int8
 	operationalBuffer          float64
-	dryRun                     bool
+	simMode                    bool
 
 	// uninitialized
 	seqNum            uint64
@@ -40,7 +40,7 @@ func MakeSDEX(
 	network build.Network,
 	fractionalReserveMagnifier int8,
 	operationalBuffer float64,
-	dryRun bool,
+	simMode bool,
 ) *SDEX {
 	sdex := &SDEX{
 		API:                        api,
@@ -51,7 +51,7 @@ func MakeSDEX(
 		Network:                    network,
 		FractionalReserveMagnifier: fractionalReserveMagnifier,
 		operationalBuffer:          operationalBuffer,
-		dryRun:                     dryRun,
+		simMode:                    simMode,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
@@ -231,8 +231,10 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 		return errors.Wrap(tx.Err, "SubmitOps error: ")
 	}
 
-	if !sdex.dryRun {
+	if !sdex.simMode {
 		go sdex.signAndSubmit(tx)
+	} else {
+		log.Println("not placing orders in simulation mode")
 	}
 
 	return nil
