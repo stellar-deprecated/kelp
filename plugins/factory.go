@@ -22,7 +22,7 @@ type StrategyContainer struct {
 var strategies = map[string]StrategyContainer{
 	"buysell": StrategyContainer{
 		SortOrder:   1,
-		Description: "creates buy and sell offers based on a reference price with a pre-specified liquidity depth",
+		Description: "Creates buy and sell offers based on a reference price with a pre-specified liquidity depth",
 		NeedsConfig: true,
 		Complexity:  "Beginner",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
@@ -34,7 +34,7 @@ var strategies = map[string]StrategyContainer{
 	},
 	"mirror": StrategyContainer{
 		SortOrder:   4,
-		Description: "mirrors an orderbook from another exchange by placing the same orders on Stellar",
+		Description: "Mirrors an orderbook from another exchange by placing the same orders on Stellar",
 		NeedsConfig: true,
 		Complexity:  "Advanced",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
@@ -46,7 +46,7 @@ var strategies = map[string]StrategyContainer{
 	},
 	"sell": StrategyContainer{
 		SortOrder:   0,
-		Description: "creates sell offers based on a reference price with a pre-specified liquidity depth",
+		Description: "Creates sell offers based on a reference price with a pre-specified liquidity depth",
 		NeedsConfig: true,
 		Complexity:  "Beginner",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
@@ -58,7 +58,7 @@ var strategies = map[string]StrategyContainer{
 	},
 	"balanced": StrategyContainer{
 		SortOrder:   3,
-		Description: "dynamically prices two tokens based on their relative demand",
+		Description: "Dynamically prices two tokens based on their relative demand",
 		NeedsConfig: true,
 		Complexity:  "Intermediate",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
@@ -70,7 +70,7 @@ var strategies = map[string]StrategyContainer{
 	},
 	"delete": StrategyContainer{
 		SortOrder:   2,
-		Description: "deletes all orders for the configured orderbook",
+		Description: "Deletes all orders for the configured orderbook",
 		NeedsConfig: false,
 		Complexity:  "Beginner",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
