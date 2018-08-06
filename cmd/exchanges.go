@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/lightyeario/kelp/plugins"
-	"github.com/lightyeario/kelp/support/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -16,9 +16,20 @@ var exchanagesCmd = &cobra.Command{
 
 func init() {
 	exchanagesCmd.Run = func(ccmd *cobra.Command, args []string) {
+		fmt.Printf("  Exchange\tDescription\n")
+		fmt.Printf("  --------------------------------------------------------------------------------\n")
 		exchanges := plugins.Exchanges()
-		for _, name := range utils.GetSortedKeys(exchanges) {
-			fmt.Printf("  %-15s %s\n", name, exchanges[name])
+		for _, name := range sortedExchangeKeys(exchanges) {
+			fmt.Printf("  %-14s%s\n", name, exchanges[name])
 		}
 	}
+}
+
+func sortedExchangeKeys(m map[string]string) []string {
+	keys := []string{}
+	for name := range m {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	return keys
 }

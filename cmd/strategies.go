@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/lightyeario/kelp/plugins"
-	"github.com/lightyeario/kelp/support/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -16,9 +15,22 @@ var strategiesCmd = &cobra.Command{
 
 func init() {
 	strategiesCmd.Run = func(ccmd *cobra.Command, args []string) {
+		fmt.Printf("  Strategy\tComplexity\tNeeds Config\tDescription\n")
+		fmt.Printf("  --------------------------------------------------------------------------------\n")
 		strategies := plugins.Strategies()
-		for _, name := range utils.GetSortedKeys(strategies) {
-			fmt.Printf("  %-15s %s\n", name, strategies[name])
+		for _, name := range sortedStrategyKeys(strategies) {
+			fmt.Printf("  %-14s%s\t%v\t\t%s\n", name, strategies[name].Complexity, strategies[name].NeedsConfig, strategies[name].Description)
 		}
 	}
+}
+
+func sortedStrategyKeys(m map[string]plugins.StrategyContainer) []string {
+	keys := make([]string, len(m))
+	for k, v := range m {
+		if len(keys[v.SortOrder]) > 0 && keys[v.SortOrder] != k {
+			panic(fmt.Errorf("invalid sort order specified for strategies, SortOrder that was repeated: %d", v.SortOrder))
+		}
+		keys[v.SortOrder] = k
+	}
+	return keys
 }

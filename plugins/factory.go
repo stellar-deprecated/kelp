@@ -9,17 +9,22 @@ import (
 	"github.com/stellar/go/support/config"
 )
 
-type strategyContainer struct {
-	description string
-	needsConfig bool
+// StrategyContainer contains the strategy factory method along with some metadata
+type StrategyContainer struct {
+	SortOrder   uint8
+	Description string
+	NeedsConfig bool
+	Complexity  string
 	makeFn      func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy
 }
 
 // strategies is a map of all the strategies available
-var strategies = map[string]strategyContainer{
-	"buysell": strategyContainer{
-		description: "creates buy and sell offers based on a reference price with a pre-specified liquidity depth",
-		needsConfig: true,
+var strategies = map[string]StrategyContainer{
+	"buysell": StrategyContainer{
+		SortOrder:   1,
+		Description: "creates buy and sell offers based on a reference price with a pre-specified liquidity depth",
+		NeedsConfig: true,
+		Complexity:  "Beginner",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
 			var cfg buySellConfig
 			err := config.Read(stratConfigPath, &cfg)
@@ -27,9 +32,11 @@ var strategies = map[string]strategyContainer{
 			return makeBuySellStrategy(sdex, assetBase, assetQuote, &cfg)
 		},
 	},
-	"mirror": strategyContainer{
-		description: "mirrors an orderbook from another exchange by placing the same orders on Stellar",
-		needsConfig: true,
+	"mirror": StrategyContainer{
+		SortOrder:   4,
+		Description: "mirrors an orderbook from another exchange by placing the same orders on Stellar",
+		NeedsConfig: true,
+		Complexity:  "Advanced",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
 			var cfg mirrorConfig
 			err := config.Read(stratConfigPath, &cfg)
@@ -37,9 +44,11 @@ var strategies = map[string]strategyContainer{
 			return makeMirrorStrategy(sdex, assetBase, assetQuote, &cfg)
 		},
 	},
-	"sell": strategyContainer{
-		description: "creates sell offers based on a reference price with a pre-specified liquidity depth",
-		needsConfig: true,
+	"sell": StrategyContainer{
+		SortOrder:   0,
+		Description: "creates sell offers based on a reference price with a pre-specified liquidity depth",
+		NeedsConfig: true,
+		Complexity:  "Beginner",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
 			var cfg sellConfig
 			err := config.Read(stratConfigPath, &cfg)
@@ -47,9 +56,11 @@ var strategies = map[string]strategyContainer{
 			return makeSellStrategy(sdex, assetBase, assetQuote, &cfg)
 		},
 	},
-	"balanced": strategyContainer{
-		description: "dynamically prices two tokens based on their relative demand",
-		needsConfig: true,
+	"balanced": StrategyContainer{
+		SortOrder:   3,
+		Description: "dynamically prices two tokens based on their relative demand",
+		NeedsConfig: true,
+		Complexity:  "Intermediate",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
 			var cfg balancedConfig
 			err := config.Read(stratConfigPath, &cfg)
@@ -57,9 +68,11 @@ var strategies = map[string]strategyContainer{
 			return makeBalancedStrategy(sdex, assetBase, assetQuote, &cfg)
 		},
 	},
-	"delete": strategyContainer{
-		description: "deletes all orders for the configured orderbook",
-		needsConfig: false,
+	"delete": StrategyContainer{
+		SortOrder:   2,
+		Description: "deletes all orders for the configured orderbook",
+		NeedsConfig: false,
+		Complexity:  "Beginner",
 		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
 			return makeDeleteStrategy(sdex, assetBase, assetQuote)
 		},
@@ -75,7 +88,7 @@ func MakeStrategy(
 	stratConfigPath string,
 ) api.Strategy {
 	if strat, ok := strategies[strategy]; ok {
-		if strat.needsConfig && stratConfigPath == "" {
+		if strat.NeedsConfig && stratConfigPath == "" {
 			log.Println()
 			log.Fatalf("error: the '%s' strategy needs a config file\n", strategy)
 		}
@@ -86,13 +99,9 @@ func MakeStrategy(
 	return nil
 }
 
-// Strategies returns the list of strategies along with the description
-func Strategies() map[string]string {
-	m := make(map[string]string, len(strategies))
-	for s := range strategies {
-		m[s] = strategies[s].description
-	}
-	return m
+// Strategies returns the list of strategies along with metadata
+func Strategies() map[string]StrategyContainer {
+	return strategies
 }
 
 type exchangeContainer struct {
