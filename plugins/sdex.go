@@ -231,10 +231,19 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 		return errors.Wrap(tx.Err, "SubmitOps error: ")
 	}
 
+	// convert to xdr string
+	txeB64, e := sdex.sign(tx)
+	if e != nil {
+		return e
+	}
+	log.Printf("tx XDR: %s\n", txeB64)
+
+	// submit
 	if !sdex.simMode {
-		go sdex.signAndSubmit(tx)
+		log.Println("submitting tx XDR to network")
+		go sdex.submit(txeB64)
 	} else {
-		log.Println("not placing orders in simulation mode")
+		log.Println("not submitting tx XDR to network in simulation mode")
 	}
 
 	return nil
@@ -245,21 +254,17 @@ func (sdex *SDEX) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, pric
 	return sdex.CreateSellOffer(counter, base, 1/price, amount*price)
 }
 
-func (sdex *SDEX) signAndSubmit(tx *build.TransactionBuilder) {
+func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
 	var txe build.TransactionEnvelopeBuilder
 	if sdex.SourceSeed != sdex.TradingSeed {
 		txe = tx.Sign(sdex.SourceSeed, sdex.TradingSeed)
 	} else {
 		txe = tx.Sign(sdex.SourceSeed)
 	}
+	return txe.Base64()
+}
 
-	txeB64, err := txe.Base64()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Printf("tx: %s\n", txeB64)
-
+func (sdex *SDEX) submit(txeB64 string) {
 	resp, err := sdex.API.SubmitTransaction(txeB64)
 	if err != nil {
 		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
