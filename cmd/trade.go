@@ -14,8 +14,8 @@ import (
 	"github.com/stellar/go/support/config"
 )
 
-const tradeExamples = `  kelp trade -c trader.cfg -s buysell -f buysell.cfg
-  kelp trade -c trader.cfg -s buysell -f buysell.cfg --sim`
+const tradeExamples = `  kelp trade --botConf trader.cfg --strategy buysell --stratConf buysell.cfg
+  kelp trade --botConf trader.cfg --strategy buysell --stratConf buysell.cfg --sim`
 
 var tradeCmd = &cobra.Command{
 	Use:     "trade",
@@ -39,8 +39,8 @@ func hiddenFlag(flag string) {
 
 func init() {
 	// short flags
-	botConfigPath := tradeCmd.Flags().StringP("botConf", "c", "./trader.cfg", "(required) trading bot's basic config file path")
-	strategy := tradeCmd.Flags().StringP("strategy", "s", "buysell", "(required) type of strategy to run")
+	botConfigPath := tradeCmd.Flags().StringP("botConf", "c", "", "(required) trading bot's basic config file path")
+	strategy := tradeCmd.Flags().StringP("strategy", "s", "", "(required) type of strategy to run")
 	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
 	// long-only flags
 	fractionalReserveMultiplier := tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
