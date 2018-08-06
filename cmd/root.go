@@ -8,14 +8,18 @@ import (
 )
 
 const rootShort = "Kelp is a free and open-source trading bot for the Stellar universal marketplace."
-const rootLong = `Kelp is a free and open-source trading bot for the Stellar universal marketplace.
-Learn more about Kelp here: https://github.com/lightyeario/kelp`
+const rootLong = `Kelp is a free and open-source trading bot for the Stellar universal marketplace (https://stellar.org).
+
+Learn more about Stellar : https://www.stellar.org
+Learn more about Kelp    : https://github.com/lightyeario/kelp`
+const kelpExamples = tradeExamples + "\n  kelp trade --help"
 
 // RootCmd is the main command for this repo
 var RootCmd = &cobra.Command{
-	Use:   "kelp",
-	Short: rootShort,
-	Long:  rootLong,
+	Use:     "kelp",
+	Short:   rootShort,
+	Long:    rootLong,
+	Example: kelpExamples,
 	Run: func(ccmd *cobra.Command, args []string) {
 		intro := `
   __        _______ _     ____ ___  __  __ _____    _____ ___      _  _______ _     ____  

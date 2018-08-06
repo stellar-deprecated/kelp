@@ -14,9 +14,13 @@ import (
 	"github.com/stellar/go/support/config"
 )
 
+const tradeExamples = `  kelp trade -c trader.cfg -s buysell -f buysell.cfg
+  kelp trade -c trader.cfg -s buysell -f buysell.cfg --sim`
+
 var tradeCmd = &cobra.Command{
-	Use:   "trade",
-	Short: "Trades with a specific strategy against the Stellar universal marketplace.",
+	Use:     "trade",
+	Short:   "Trades against the Stellar universal marketplace using the specified strategy",
+	Example: tradeExamples,
 }
 
 func requiredFlag(flag string) {
