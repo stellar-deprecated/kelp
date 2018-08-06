@@ -2,5 +2,4 @@ trader/configs/
 terminator/configs/
 vendor/
 .vscode/
-glide.lock
 scripts/
