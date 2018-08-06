@@ -26,18 +26,27 @@ func requiredFlag(flag string) {
 	}
 }
 
+func hiddenFlag(flag string) {
+	e := tradeCmd.Flags().MarkHidden(flag)
+	if e != nil {
+		panic(e)
+	}
+}
+
 func init() {
 	// short flags
 	botConfigPath := tradeCmd.Flags().StringP("botConf", "c", "./trader.cfg", "(required) trading bot's basic config file path")
 	strategy := tradeCmd.Flags().StringP("strategy", "s", "buysell", "(required) type of strategy to run")
 	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
 	// long-only flags
-	fractionalReserveMagnifier := tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
-	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "operational buffer for min number of lumens needed in XLM reserves")
+	fractionalReserveMultiplier := tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
+	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
+	hiddenFlag("fractionalReserveMultiplier")
+	hiddenFlag("operationalBuffer")
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
 		startupMessage := "Starting Kelp Trader: v0.6"
@@ -70,7 +79,7 @@ func init() {
 			botConfig.SourceAccount(),
 			botConfig.TradingAccount(),
 			utils.ParseNetwork(botConfig.HORIZON_URL),
-			*fractionalReserveMagnifier,
+			*fractionalReserveMultiplier,
 			*operationalBuffer,
 			*simMode,
 		)
