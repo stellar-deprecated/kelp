@@ -219,7 +219,7 @@ See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contribu
 [github-pulls-closed]: https://github.com/lightyeario/kelp/pulls?q=is%3Apr+is%3Aclosed
 [stellarx]: https://www.stellarx.com
 [stablecoin]: https://en.wikipedia.org/wiki/Stablecoin
-[stellar q&a]: https://www.stellar.org
+[stellar q&a]: https://stellarx.zendesk.com/hc/en-us/sections/360001295034-Traders
 [scooter video]: https://youtu.be/LStXAG5dwzA
 [sdex]: https://www.stellar.org/developers/guides/concepts/exchange.html
 [sdex explainer video]: https://www.youtube.com/watch?v=2L8-lrmzeWk
