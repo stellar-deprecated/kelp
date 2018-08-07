@@ -77,7 +77,7 @@ func (t *Trader) deleteAllOffers() {
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
 	t.buyingAOffers = []horizon.Offer{}
 
-	log.Printf("deleting %d offers\n", len(dOps))
+	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
 		e := t.sdex.SubmitOps(dOps)
 		if e != nil {
@@ -104,6 +104,7 @@ func (t *Trader) update() {
 	// delete excess offers
 	var pruneOps []build.TransactionMutator
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
+	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
 		e = t.sdex.SubmitOps(pruneOps)
 		if e != nil {
@@ -123,6 +124,7 @@ func (t *Trader) update() {
 		return
 	}
 
+	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
 		e = t.sdex.SubmitOps(ops)
 		if e != nil {
