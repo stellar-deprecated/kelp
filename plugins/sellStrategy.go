@@ -8,15 +8,14 @@ import (
 
 // sellConfig contains the configuration params for this Strategy
 type sellConfig struct {
-	DATA_TYPE_A            string        `valid:"-"`
-	DATA_FEED_A_URL        string        `valid:"-"`
-	DATA_TYPE_B            string        `valid:"-"`
-	DATA_FEED_B_URL        string        `valid:"-"`
-	PRICE_TOLERANCE        float64       `valid:"-"`
-	AMOUNT_TOLERANCE       float64       `valid:"-"`
-	AMOUNT_OF_A_BASE       float64       `valid:"-"` // the size of order
-	DIVIDE_AMOUNT_BY_PRICE bool          `valid:"-"` // whether we want to divide the amount by the price, usually true if this is on the buy side
-	LEVELS                 []staticLevel `valid:"-"`
+	DATA_TYPE_A      string        `valid:"-"`
+	DATA_FEED_A_URL  string        `valid:"-"`
+	DATA_TYPE_B      string        `valid:"-"`
+	DATA_FEED_B_URL  string        `valid:"-"`
+	PRICE_TOLERANCE  float64       `valid:"-"`
+	AMOUNT_TOLERANCE float64       `valid:"-"`
+	AMOUNT_OF_A_BASE float64       `valid:"-"` // the size of order
+	LEVELS           []staticLevel `valid:"-"`
 }
 
 // String impl.
@@ -44,7 +43,7 @@ func makeSellStrategy(
 		makeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE, pf),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
-		config.DIVIDE_AMOUNT_BY_PRICE,
+		false,
 	)
 	// switch sides of base/quote here for the delete side
 	deleteSideStrategy := makeDeleteSideStrategy(sdex, assetQuote, assetBase)
