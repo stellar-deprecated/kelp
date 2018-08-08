@@ -8,14 +8,17 @@ import (
 
 // buySellConfig contains the configuration params for this strategy
 type buySellConfig struct {
-	PRICE_TOLERANCE  float64       `valid:"-"`
-	AMOUNT_TOLERANCE float64       `valid:"-"`
-	AMOUNT_OF_A_BASE float64       `valid:"-"` // the size of order to keep on either side
-	DATA_TYPE_A      string        `valid:"-"`
-	DATA_FEED_A_URL  string        `valid:"-"`
-	DATA_TYPE_B      string        `valid:"-"`
-	DATA_FEED_B_URL  string        `valid:"-"`
-	LEVELS           []staticLevel `valid:"-"`
+	PRICE_TOLERANCE           float64       `valid:"-"`
+	AMOUNT_TOLERANCE          float64       `valid:"-"`
+	RATE_OFFSET_PERCENT       float64       `valid:"-"`
+	RATE_OFFSET               float64       `valid:"-"`
+	RATE_OFFSET_PERCENT_FIRST bool          `valid:"-"`
+	AMOUNT_OF_A_BASE          float64       `valid:"-"` // the size of order to keep on either side
+	DATA_TYPE_A               string        `valid:"-"`
+	DATA_FEED_A_URL           string        `valid:"-"`
+	DATA_TYPE_B               string        `valid:"-"`
+	DATA_FEED_B_URL           string        `valid:"-"`
+	LEVELS                    []staticLevel `valid:"-"`
 }
 
 // String impl.

@@ -8,14 +8,17 @@ import (
 
 // sellConfig contains the configuration params for this Strategy
 type sellConfig struct {
-	DATA_TYPE_A      string        `valid:"-"`
-	DATA_FEED_A_URL  string        `valid:"-"`
-	DATA_TYPE_B      string        `valid:"-"`
-	DATA_FEED_B_URL  string        `valid:"-"`
-	PRICE_TOLERANCE  float64       `valid:"-"`
-	AMOUNT_TOLERANCE float64       `valid:"-"`
-	AMOUNT_OF_A_BASE float64       `valid:"-"` // the size of order
-	LEVELS           []staticLevel `valid:"-"`
+	DATA_TYPE_A               string        `valid:"-"`
+	DATA_FEED_A_URL           string        `valid:"-"`
+	DATA_TYPE_B               string        `valid:"-"`
+	DATA_FEED_B_URL           string        `valid:"-"`
+	PRICE_TOLERANCE           float64       `valid:"-"`
+	AMOUNT_TOLERANCE          float64       `valid:"-"`
+	AMOUNT_OF_A_BASE          float64       `valid:"-"` // the size of order
+	RATE_OFFSET_PERCENT       float64       `valid:"-"`
+	RATE_OFFSET               float64       `valid:"-"`
+	RATE_OFFSET_PERCENT_FIRST bool          `valid:"-"`
+	LEVELS                    []staticLevel `valid:"-"`
 }
 
 // String impl.
