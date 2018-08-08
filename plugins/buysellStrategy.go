@@ -33,6 +33,11 @@ func makeBuySellStrategy(
 	assetQuote *horizon.Asset,
 	config *buySellConfig,
 ) api.Strategy {
+	offsetSell := rateOffset{
+		percent:      config.RATE_OFFSET_PERCENT,
+		absolute:     config.RATE_OFFSET,
+		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+	}
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
 		assetBase,
@@ -40,6 +45,7 @@ func makeBuySellStrategy(
 		makeStaticSpreadLevelProvider(
 			config.LEVELS,
 			config.AMOUNT_OF_A_BASE,
+			offsetSell,
 			MakeFeedPair(
 				config.DATA_TYPE_A,
 				config.DATA_FEED_A_URL,
@@ -51,6 +57,13 @@ func makeBuySellStrategy(
 		config.AMOUNT_TOLERANCE,
 		false,
 	)
+
+	offsetBuy := rateOffset{
+		percent:      config.RATE_OFFSET_PERCENT,
+		absolute:     config.RATE_OFFSET,
+		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+		invert:       true,
+	}
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
 		sdex,
@@ -59,6 +72,7 @@ func makeBuySellStrategy(
 		makeStaticSpreadLevelProvider(
 			config.LEVELS,
 			config.AMOUNT_OF_A_BASE,
+			offsetBuy,
 			MakeFeedPair(
 				config.DATA_TYPE_B,
 				config.DATA_FEED_B_URL,

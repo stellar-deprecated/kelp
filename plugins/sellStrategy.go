@@ -39,11 +39,16 @@ func makeSellStrategy(
 		config.DATA_TYPE_B,
 		config.DATA_FEED_B_URL,
 	)
+	offset := rateOffset{
+		percent:      config.RATE_OFFSET_PERCENT,
+		absolute:     config.RATE_OFFSET,
+		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+	}
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
 		assetBase,
 		assetQuote,
-		makeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE, pf),
+		makeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE, offset, pf),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
 		false,
