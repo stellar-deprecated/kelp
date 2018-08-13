@@ -65,8 +65,12 @@ then
 fi
 
 ARCHIVE_DIR=build/$DATE
-mkdir -p $ARCHIVE_DIR
-OUTFILE=$ARCHIVE_DIR/kelp
+ARCHIVE_FOLDER_NAME=kelp-$VERSION
+ARCHIVE_DIR_SOURCE=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME
+mkdir -p $ARCHIVE_DIR_SOURCE
+OUTFILE=$ARCHIVE_DIR_SOURCE/kelp
+cp examples/configs/trader/* $ARCHIVE_DIR_SOURCE/
+
 PLATFORM_ARGS=("darwin amd64" "linux amd64" "windows amd64" "linux arm64" "linux arm 5" "linux arm 6" "linux arm 7")
 for args in "${PLATFORM_ARGS[@]}"
 do
@@ -91,7 +95,7 @@ do
     ARCHIVE_FILENAME=kelp-$VERSION-$GOOS-$GOARCH$GOARM.tar
     cd $ARCHIVE_DIR
     echo -n "archiving binary file ... "
-    tar cf ${ARCHIVE_FILENAME} kelp
+    tar cf ${ARCHIVE_FILENAME} $ARCHIVE_FOLDER_NAME
     TAR_RESULT=$?
     cd ../../
     if [[ $TAR_RESULT -ne 0 ]]
@@ -104,9 +108,10 @@ do
     echo ""
 done
 
-echo -n "cleaning up kelp binary in $ARCHIVE_DIR/ ... "
+echo -n "cleaning up kelp folder: $ARCHIVE_DIR_SOURCE/ ... "
 cd $ARCHIVE_DIR
-rm kelp
+rm $ARCHIVE_FOLDER_NAME/*
+rmdir $ARCHIVE_FOLDER_NAME
 cd ../../
 echo "done"
 
