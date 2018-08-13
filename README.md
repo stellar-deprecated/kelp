@@ -209,7 +209,9 @@ See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contribu
 # Questions & Improvements
 
 - Ask questions on the [Stellar StackExchange][stackexchange]; use the `kelp` tag
-- [Raise an issue][github-issues]
+- [Submit a Bug Report][github-bug-report]
+- [Submit a Feature Request][github-feature-request]
+- [Raise an issue][github-new-issue] that is not a bug report or a feature request
 - [Contribute a PR][github-pulls]
 
 [github-last-commit]: https://github.com/lightyeario/kelp/commit/HEAD
@@ -236,3 +238,6 @@ See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contribu
 [kraken]: https://www.kraken.com/
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
+[github-bug-report]: https://github.com/lightyeario/kelp/issues/new?template=bug_report.md
+[github-feature-request]: https://github.com/lightyeario/kelp/issues/new?template=feature_request.md
+[github-new-issue]: https://github.com/lightyeario/kelp/issues/new
