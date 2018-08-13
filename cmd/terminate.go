@@ -22,7 +22,7 @@ func init() {
 	configPath := terminateCmd.Flags().StringP("conf", "c", "./terminator.cfg", "service's basic config file path")
 
 	terminateCmd.Run = func(ccmd *cobra.Command, args []string) {
-		log.Println("Starting Terminator: v1.0")
+		log.Println("Starting Terminator: " + version + " [" + gitHash + "]")
 
 		var configFile terminator.Config
 		err := config.Read(*configPath, &configFile)

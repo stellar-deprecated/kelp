@@ -54,7 +54,7 @@ func init() {
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
-		startupMessage := "Starting Kelp Trader: v0.6"
+		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
 		if *simMode {
 			startupMessage += " (simulation mode)"
 		}
