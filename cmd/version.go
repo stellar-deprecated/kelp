@@ -9,7 +9,7 @@ import (
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "version and build information",
+	Short: "Version and build information",
 	Run: func(ccmd *cobra.Command, args []string) {
 		fmt.Printf("  version: %s\n", version)
 		fmt.Printf("  git hash: %s\n", gitHash)

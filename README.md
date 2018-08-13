@@ -57,9 +57,10 @@ To compile Kelp from source:
     * `git clone git@github.com:lightyeario/kelp.git`
 4. Change to the kelp directory and install the dependencies:
     * `glide install`
-5. Build the binaries:
-    * `go install github.com/lightyeario/kelp/...`
-6. Confirm _one new binary_ in `$GOPATH/bin`: `kelp`
+5. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
+    * `./scripts/build.sh`
+6. Confirm one new binary file:
+    * `./bin/kelp`
 
 ## Running Kelp
 
@@ -68,7 +69,8 @@ Kelp places orders on the [Stellar marketplace][stellarx] based on the selected 
 These are the following commands available from the `kelp` binary:
 - `exchanges`: Lists the available exchange integrations
 - `strategies`: Lists the available strategies
-- `trade`: Trades with a specific strategy against the Stellar universal marketplace.
+- `trade`: Trades with a specific strategy against the Stellar universal marketplace
+- `version`: Version and build information
 - `help`: Help about any command
 
 The `trade` command has three parameters which are:
