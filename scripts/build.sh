@@ -27,7 +27,7 @@ fi
 
 # version is git tag if it's available, otherwise git hash
 VERSION=$(git describe --always --abbrev=8 --dirty --tags)
-GIT_HASH=$(git rev-list -1 HEAD)
+GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
 LDFLAGS="-X github.com/lightyeario/kelp/cmd.version=$VERSION -X github.com/lightyeario/kelp/cmd.gitHash=$GIT_HASH -X github.com/lightyeario/kelp/cmd.buildDate=$DATE"
 
