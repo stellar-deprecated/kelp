@@ -39,10 +39,6 @@ var RootCmd = &cobra.Command{
 		if e != nil {
 			log.Fatal(e)
 		}
-
-		fmt.Println("version:", version)
-		fmt.Println("build date:", buildDate)
-		fmt.Println("git hash:", gitHash)
 	},
 }
 
@@ -51,4 +47,5 @@ func init() {
 	RootCmd.AddCommand(strategiesCmd)
 	RootCmd.AddCommand(exchanagesCmd)
 	RootCmd.AddCommand(terminateCmd)
+	RootCmd.AddCommand(versionCmd)
 }
