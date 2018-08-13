@@ -1,38 +1,55 @@
 ---
 name: Bug report
-about: Create a bug report to help us address any bugs
+about: Use this template to report anything that needs to be "fixed"
 
 ---
 
-**Describe the bug**
-// A clear and concise description of what the bug is.
+## Describe the bug
+// A succinct description of the buggy behavior.
+// This section includes **what** the bot is doing and **why** you think it is incorrect.
 
-**Current behavior**
-// A clear and concise description of the behavior that is buggy.
+The bot ...
 
-**Expected behavior**
-// A clear and concise description of what you expected to happen.
+## Expected behavior
+// A succinct description of **what you expected to happen**.
 
-**Steps To Reproduce**
-// Steps to reproduce the buggy behavior:
-// 1. Go to '...'
-// 2. Click on '....'
-// 3. Scroll down to '....'
-// 4. See error
+I think the correct behavior in this situation is for the bot to ...
 
-**Screenshots**
-// If applicable, add screenshots to help explain your problem.
+## Frequency
+// **How often** does this happen?
+//     Unpredictable = it's hard to predict when it will happen
+//     Sometimes = it happens every now and then but there's no pattern to it
+//     Always = it always happens consistently at the same point
 
-**Possible Solution**
-// Optional, suggest a fix or reason for the bug.
+The frequency is: ...
 
-**Your Environment:**
+## Steps To Reproduce
+// A concise description of the **steps to reproduce the buggy behavior** along with screenshots wherever applicable:
+
+Here are the steps to reproduce the issue (see attachments in section below):
+1. Set up your configuration file with these parameters: ...
+2. Start the bot using this command: ...
+...
+
+## Possible Solution
+// Optional, suggest a fix.
+
+This bug can be fixed by ...
+
+## Your Environment
 // Run `kelp version` to get the version and build information and paste it here
-// version: v1.0.0-rc1
-//  git hash: 1bcc4e9fa4012867a549472dbdf61cb008041305
-//  build date: 20180813T013016Z
-//  GOOS: linux
-//  GOARCH: amd64
+//   version: v1.0.0-rc1
+//   git hash: 1bcc4e9fa4012867a549472dbdf61cb008041305
+//   build date: 20180813T013016Z
+//   GOOS: linux
+//   GOARCH: amd64
 
-**Context**
-// How has this issue affected you? What are you trying to accomplish?
+...
+
+## Context
+// A succinct description of how has this bug has **affected you** or prevented you from accomplishing what you wanted.
+
+I am unable to ... because of this bug.
+
+## Attachments
+// Attach any relevant configuration files, logs, tx hashes, etc. here.
