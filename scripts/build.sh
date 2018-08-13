@@ -42,7 +42,7 @@ then
     OUTFILE=bin/kelp
     mkdir -p bin
 
-    echo -n "compiling ..."
+    echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
@@ -52,6 +52,8 @@ then
         exit $BUILD_RESULT
     fi
     echo "successful: $OUTFILE"
+    echo ""
+    echo "BUILD SUCCESSFUL"
     exit 0
 fi
 # else, we are in deploy mode
@@ -65,16 +67,17 @@ fi
 ARCHIVE_DIR=build/$DATE
 mkdir -p $ARCHIVE_DIR
 OUTFILE=$ARCHIVE_DIR/kelp
-PLATFORM_ARGS=("darwin amd64" "linux amd64" "linux arm" "windows amd64")
+PLATFORM_ARGS=("darwin amd64" "linux amd64" "windows amd64" "linux arm64" "linux arm 5" "linux arm 6" "linux arm 7")
 for args in "${PLATFORM_ARGS[@]}"
 do
     # extract vars
-    GOOS=`echo $args | cut -d' ' -f1`
-    GOARCH=`echo $args | cut -d' ' -f2`
-    echo -n "compiling for ($GOOS, $GOARCH)..."
+    GOOS=`echo $args | cut -d' ' -f1 | tr -d ' '`
+    GOARCH=`echo $args | cut -d' ' -f2 | tr -d ' '`
+    GOARM=`echo $args | cut -d' ' -f3 | tr -d ' '`
+    echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
 
     # compile
-    env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "$LDFLAGS" -o $OUTFILE
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $OUTFILE
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -85,9 +88,9 @@ do
     echo "successful"
 
     # archive
-    ARCHIVE_FILENAME=kelp-$VERSION-$GOOS-$GOARCH.tar
+    ARCHIVE_FILENAME=kelp-$VERSION-$GOOS-$GOARCH$GOARM.tar
     cd $ARCHIVE_DIR
-    echo -n "archiving binary file..."
+    echo -n "archiving binary file ... "
     tar cf ${ARCHIVE_FILENAME} kelp
     TAR_RESULT=$?
     cd ../../
@@ -101,8 +104,11 @@ do
     echo ""
 done
 
-echo -n "cleaning up kelp binary in $ARCHIVE_DIR..."
+echo -n "cleaning up kelp binary in $ARCHIVE_DIR/ ... "
 cd $ARCHIVE_DIR
 rm kelp
 cd ../../
 echo "done"
+
+echo ""
+echo "BUILD SUCCESSFUL"
