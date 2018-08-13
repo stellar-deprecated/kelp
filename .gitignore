@@ -1,5 +1,7 @@
 trader/configs/
+trader/scripts/
 terminator/configs/
 vendor/
 .vscode/
-scripts/
+build/
+bin/

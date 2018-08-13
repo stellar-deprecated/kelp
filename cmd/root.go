@@ -7,6 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// build flags
+var version string
+var buildDate string
+var gitHash string
+
 const rootShort = "Kelp is a free and open-source trading bot for the Stellar universal marketplace."
 const rootLong = `Kelp is a free and open-source trading bot for the Stellar universal marketplace (https://stellar.org).
 
@@ -30,11 +35,14 @@ var RootCmd = &cobra.Command{
 
 `
 		fmt.Println(intro)
-
 		e := ccmd.Help()
 		if e != nil {
 			log.Fatal(e)
 		}
+
+		fmt.Println("version:", version)
+		fmt.Println("build date:", buildDate)
+		fmt.Println("git hash:", gitHash)
 	},
 }
 
