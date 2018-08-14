@@ -33,7 +33,7 @@ For the purposes of this walkthrough, we set the `PRICE_TOLERANCE` and `AMOUNT_T
 
 A level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that sits in the orderbook. 
 
-![level screenshot](https://imgur.com/BxpOMGI.png "Levels Screenshot")
+![level screenshot](https://i.imgur.com/QVjZXGA.png "Levels Screenshot")
 
 - **`MAX_LEVELS`**: defines the depth of your order book by indicating the maximum number of levels on the buy and sell side
 - **`LEVEL_DENSITY`**: a value between `0.0` and `1.0` used as a probability of adding orders at a given price level. Setting this to `1.0` will make the depth chart look more like steps. Doing so will make it obvious that your orders are created by bots so feel free to play around with this value.

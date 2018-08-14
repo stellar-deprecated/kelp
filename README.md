@@ -10,6 +10,7 @@
 [![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-pulls-closed]
 
 Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
+Kelp is still in beta, so please submit any issues ([bug reports][github-bug-report] and [feature requests][github-feature-request]).
 
 Kelp includes several configurable trading strategies, and its modular design allows you to customize your algorithms, exchange integrations, and assets. You can define your own parameters or use the existing repository to quickly implement a trading bot. With Kelp, you could be up and trading on Stellar in a matter of minutes.
 
@@ -146,7 +147,7 @@ Price Feeds fetch the price of an asset from an external source. The following p
 
 Each strategy you implement needs a configuration file. The format of the configuration file is specific to the selected strategy. You can use these files to customize parameters for your chosen strategy.
 
-For more details, check out the [examples section](#configuration-files) of the readme.
+For more details, check out the [examples section](#configuration-files-1) of the readme.
 
 ## Exchanges
 

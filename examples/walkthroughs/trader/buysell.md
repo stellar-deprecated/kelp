@@ -32,7 +32,7 @@ For the purposes of this walkthrough, we set the `PRICE_TOLERANCE` and `AMOUNT_T
 
 A level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that sits in the orderbook. Each level has an `AMOUNT` and a `SPREAD` as part of its configuration. The bot creates mirrored orders on both the buy side and the sell side for each level configured.
 
-![level screenshot](https://imgur.com/BxpOMGI.png "Levels Screenshot")
+![level screenshot](https://i.imgur.com/QVjZXGA.png "Levels Screenshot")
 
 `AMOUNT_OF_A_BASE` allows you to scale the order size levels explained below. Trade amounts are specified in **units of the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency)** (i.e. `ASSET_CODE_A`).
 
