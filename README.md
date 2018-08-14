@@ -26,6 +26,7 @@ To learn more about the Stellar protocol check out [this video created by Lumena
 # Table of Contents
 
    * [Getting Started](#getting-started)
+      * [Download Binary](#download-binary)
       * [Compile from Source](#compile-from-source)
       * [Running Kelp](#running-kelp)
       * [Be Smart and Go Slow](#be-smart-and-go-slow)
@@ -48,12 +49,41 @@ To get started with Kelp, either download the pre-compiled binary for your platf
 
 There is **one** binary associated with this project: `kelp`. Once the binary is downloaded, run the bot by following the instructions in [Running Kelp](#running-kelp).
 
+## Download Binary
+
+You can find the pre-compiled binary for your platform from the [Github Releases Page][github-releases].
+
+Here is a list of binaries for the most recent release **v1.0.0-rc1**:
+
+| Platform       | Architecture | Binary File Name |
+| -------------- | ------------ | ---------------- |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.0.0-rc1-darwin-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-darwin-amd64.tar) |
+| Windows        | 64-bit       | [kelp-v1.0.0-rc1-windows-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-windows-amd64.tar) |
+| Linux          | 64-bit       | [kelp-v1.0.0-rc1-linux-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-amd64.tar) |
+| Linux          | 64-bit arm   | [kelp-v1.0.0-rc1-linux-arm64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm64.tar) |
+| Linux          | 32-bit arm5  | [kelp-v1.0.0-rc1-linux-arm5.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm5.tar) |
+| Linux          | 32-bit arm6  | [kelp-v1.0.0-rc1-linux-arm6.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm6.tar) |
+| Linux          | 32-bit arm7  | [kelp-v1.0.0-rc1-linux-arm7.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm7.tar) |
+
+After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.0.0-rc1`) and invoke the `kelp` binary.
+
+Here's an example to get you started (replace `filename` with the name of the file that you download):
+
+    tar xvf filename
+    cd kelp-v1.0.0-rc1
+    ./kelp
+
+To run the bot in simulation mode, try this command:
+
+    ./kelp trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim
+
 ## Compile from Source
 
 To compile Kelp from source:
 
 1. [Download][golang-download] and [setup][golang-setup] Golang.
-2. [Install Glide][glide-install] for dependency management.
+2. [Install Glide][glide-install] for dependency management
+    * `curl https://glide.sh/get | sh`
 3. Clone the repo into `$GOPATH/src/github.com/lightyeario/kelp`:
     * `git clone git@github.com:lightyeario/kelp.git`
 4. Change to the kelp directory and install the dependencies:
