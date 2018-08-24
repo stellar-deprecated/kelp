@@ -4,6 +4,8 @@ about: Use this template to report anything that needs to be "fixed"
 
 ---
 
+// see a sample bug report here: https://github.com/lightyeario/kelp/issues/1
+
 ## Describe the bug
 // A succinct description of the buggy behavior.
 // This section includes **what** the bot is doing and **why** you think it is incorrect.
