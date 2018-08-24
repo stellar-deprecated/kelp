@@ -46,6 +46,10 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 
 // SecretKey2PublicKey converts a secret key to a public key
 func SecretKey2PublicKey(i interface{}) interface{} {
+	if i == "" {
+		return ""
+	}
+
 	secret, ok := i.(string)
 	if !ok {
 		log.Fatal("field was not a string")
