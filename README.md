@@ -41,6 +41,7 @@ To learn more about the Stellar protocol check out [this video created by Lumena
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
    * [Contributing](#contributing)
+   * [Changelog](#changelog)
    * [Questions &amp; Improvements](#questions--improvements)
 
 # Getting Started
@@ -236,6 +237,10 @@ Reference config files are in the [examples folder](examples/configs/trader). Sp
 # Contributing
 
 See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
+
+# Changelog
+
+See the [Chanagelog](CHANGELOG.md).
 
 # Questions & Improvements
 
