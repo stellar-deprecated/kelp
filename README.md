@@ -240,7 +240,7 @@ See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contribu
 
 # Changelog
 
-See the [Chanagelog](CHANGELOG.md).
+See the [Changelog](CHANGELOG.md).
 
 # Questions & Improvements
 
