@@ -143,8 +143,8 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
 	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
 	if priceTrigger || amountTrigger {
-		log.Printf("sell,modify,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
-			curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
+		log.Printf("sell,modify,tp=%.7f,ta=%.7f,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
+			targetPrice, targetAmount, curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
 		return s.sdex.ModifySellOffer(offers[index], targetPrice, targetAmount)
 	}
 	return nil
