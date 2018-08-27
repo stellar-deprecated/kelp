@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/support/utils"
 )
 
 // balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
@@ -111,7 +113,7 @@ func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 
 		if !p.shouldIncludeLevel(i) {
 			// accummulate targetAmount into amountCarryover
-			amountCarryover += level.Amount
+			amountCarryover += level.Amount.AsFloat()
 			continue
 		}
 
@@ -131,7 +133,7 @@ func (p *balancedLevelProvider) computeNewLevelWithCarryover(level api.Level, am
 	// include the amountCarryover we computed, price of the level remains unchanged
 	level = api.Level{
 		Price:  level.Price,
-		Amount: level.Amount + amountCarryoverToInclude,
+		Amount: *model.NumberFromFloat(level.Amount.AsFloat()+amountCarryoverToInclude, level.Amount.Precision()),
 	}
 
 	return level, amountCarryover
@@ -143,14 +145,14 @@ func updateAssetBalances(level api.Level, useMaxQuoteInTargetAmountCalc bool, ma
 	var quoteIncreased float64
 	if useMaxQuoteInTargetAmountCalc {
 		// targetAmount is in quote so divide by price (quote/base) to give base
-		baseDecreased = level.Amount / level.Price
+		baseDecreased = level.Amount.AsFloat() / level.Price.AsFloat()
 		// targetAmount is in quote so use directly
-		quoteIncreased = level.Amount
+		quoteIncreased = level.Amount.AsFloat()
 	} else {
 		// targetAmount is in base so use directly
-		baseDecreased = level.Amount
+		baseDecreased = level.Amount.AsFloat()
 		// targetAmount is in base so multiply by price (quote/base) to give quote
-		quoteIncreased = level.Amount * level.Price
+		quoteIncreased = level.Amount.AsFloat() * level.Price.AsFloat()
 	}
 	// subtract because we had to sell that many units to reach the next level
 	newMaxAssetBase := maxAssetBase - baseDecreased
@@ -195,8 +197,8 @@ func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote flo
 	// since targetAmount needs to be less then what we've set above based on the inequality formula, let's reduce it by 5%
 	targetAmount *= (1 - p.getRandomSpread(p.minAmountSpread, p.maxAmountSpread))
 	level := api.Level{
-		Price:  targetPrice,
-		Amount: targetAmount,
+		Price:  *model.NumberFromFloat(targetPrice, utils.SdexPrecision),
+		Amount: *model.NumberFromFloat(targetAmount, utils.SdexPrecision),
 	}
 	return level, nil
 }

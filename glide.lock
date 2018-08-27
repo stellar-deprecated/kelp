@@ -1,54 +1,44 @@
-hash: 2816d9c6b47ce14fb720a01ad2459d72931332e5381920874afb7353e7f079b6
-updated: 2018-07-31T18:48:59.259161708-07:00
+hash: 60e5a9a0d3341cc43645653700849833794e22e18d2fb13840b4e03be84cfb3c
+updated: 2018-08-26T17:30:03.203295082-07:00
 imports:
 - name: github.com/agl/ed25519
   version: 278e1ec8e8a6e017cd07577924d6766039146ced
-  repo: https://github.com/agl/ed25519
   subpackages:
   - edwards25519
 - name: github.com/asaskevich/govalidator
-  version: f0666aa80d7dcf75bd564ae8717b952d74a29d6a
-  repo: https://github.com/stellar/govalidator.git
+  version: f9ffefc3facfbe0caee3fea233cbb6e8208f4541
 - name: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
 - name: github.com/BurntSushi/toml
   version: 99064174e013895bbd9b025c31100bd1d9b590ca
-  repo: https://github.com/BurntSushi/toml
 - name: github.com/davecgh/go-spew
-  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
-  repo: https://github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
-- name: github.com/getsentry/raven-go
-  version: c9d3cc542ad199f62c0264286be537f9bce6063c
-  repo: https://github.com/getsentry/raven-go
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
-  repo: https://github.com/go-errors/errors
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
-  repo: https://github.com/inconshreveable/mousetrap
+- name: github.com/lib/pq
+  version: 50761b0867bd1d9d069276790bcd4a3bccf2324a
+  subpackages:
+  - oid
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
-  repo: https://github.com/manucorporat/sse
 - name: github.com/nullstyle/go-xdr
   version: a875e7c9fa2388ce03279f6b5ba1c2ccd1f9e917
-  repo: https://github.com/nullstyle/go-xdr
   subpackages:
   - xdr3
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib
-  version: 792786c7400a136282c1664665ae0a8db921c6c2
-  repo: https://github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
 - name: github.com/segmentio/go-loggly
   version: eb91657e62b25699dd4e84d5562735440d4beace
-  repo: https://github.com/segmentio/go-loggly
 - name: github.com/sirupsen/logrus
   version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
-  repo: https://github.com/sirupsen/logrus
   subpackages:
   - hooks/test
 - name: github.com/spf13/cobra
@@ -56,7 +46,7 @@ imports:
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/stellar/go
-  version: a6a5de1d71f8246c7cdd4fdafedf4e3135662149
+  version: 5bbd27814a3ffca9aeffcbd75a09a6164959776a
   subpackages:
   - amount
   - build
@@ -66,31 +56,24 @@ imports:
   - keypair
   - network
   - price
+  - protocols/horizon
+  - protocols/horizon/base
   - strkey
   - support/config
   - support/errors
   - support/http/mutil
   - support/log
+  - support/render/hal
   - support/render/problem
+  - support/url
   - xdr
 - name: github.com/stretchr/objx
-  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
-  repo: https://github.com/stretchr/objx
+  version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
   version: 976c720a22c8eb4eb6a0b4348ad85ad12491a506
-  repo: https://github.com/stretchr/testify
   subpackages:
   - assert
   - mock
-  - require
-- name: golang.org/x/net
-  version: 9bc2a3340c92c17a20edcd0080e93851ed58f5d5
-  repo: https://go.googlesource.com/net
-  subpackages:
-  - context
-  - http2
-  - netutil
-  - publicsuffix
 - name: golang.org/x/sys
   version: 1f5e250e1174502017917628cc48b52fdc25b531
   subpackages:

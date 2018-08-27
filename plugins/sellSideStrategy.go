@@ -120,20 +120,26 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	targetPrice := s.currentLevels[index].Price
 	targetAmount := s.currentLevels[index].Amount
 	if s.divideAmountByPrice {
-		targetAmount /= targetPrice
+		targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
 	}
-	targetAmount = math.Min(targetAmount, s.maxAssetBase)
+	targetAmount = *model.NumberFromFloat(math.Min(targetAmount.AsFloat(), s.maxAssetBase), targetAmount.Precision())
 
 	if len(offers) <= index {
+		if targetPrice.Precision() > utils.SdexPrecision {
+			targetPrice = *model.NumberFromFloat(targetPrice.AsFloat(), utils.SdexPrecision)
+		}
+		if targetAmount.Precision() > utils.SdexPrecision {
+			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat(), utils.SdexPrecision)
+		}
 		// no existing offer at this index
-		log.Printf("sell,create,p=%.7f,a=%.7f\n", targetPrice, targetAmount)
-		return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice, targetAmount)
+		log.Printf("sell,create,p=%.7f,a=%.7f\n", targetPrice.AsFloat(), targetAmount.AsFloat())
+		return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat())
 	}
 
-	highestPrice := targetPrice + targetPrice*s.priceTolerance
-	lowestPrice := targetPrice - targetPrice*s.priceTolerance
-	minAmount := targetAmount - targetAmount*s.amountTolerance
-	maxAmount := targetAmount + targetAmount*s.amountTolerance
+	highestPrice := targetPrice.AsFloat() + targetPrice.AsFloat()*s.priceTolerance
+	lowestPrice := targetPrice.AsFloat() - targetPrice.AsFloat()*s.priceTolerance
+	minAmount := targetAmount.AsFloat() - targetAmount.AsFloat()*s.amountTolerance
+	maxAmount := targetAmount.AsFloat() + targetAmount.AsFloat()*s.amountTolerance
 
 	//check if existing offer needs to be modified
 	curPrice := utils.GetPrice(offers[index])
@@ -143,9 +149,15 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
 	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
 	if priceTrigger || amountTrigger {
+		if targetPrice.Precision() > utils.SdexPrecision {
+			targetPrice = *model.NumberFromFloat(targetPrice.AsFloat(), utils.SdexPrecision)
+		}
+		if targetAmount.Precision() > utils.SdexPrecision {
+			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat(), utils.SdexPrecision)
+		}
 		log.Printf("sell,modify,tp=%.7f,ta=%.7f,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
-			targetPrice, targetAmount, curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
-		return s.sdex.ModifySellOffer(offers[index], targetPrice, targetAmount)
+			targetPrice.AsFloat(), targetAmount.AsFloat(), curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
+		return s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat())
 	}
 	return nil
 }

@@ -155,7 +155,7 @@ func (t *Trader) load() {
 	var trustA float64
 	var trustB float64
 	for _, balance := range account.Balances {
-		if balance.Asset == t.assetBase {
+		if utils.AssetsEqual(balance.Asset, t.assetBase) {
 			maxA = utils.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == utils.Native {
 				trustA = maxLumenTrust
@@ -163,7 +163,7 @@ func (t *Trader) load() {
 				trustA = utils.AmountStringAsFloat(balance.Limit)
 			}
 			log.Printf("maxA=%.7f,trustA=%.7f\n", maxA, trustA)
-		} else if balance.Asset == t.assetQuote {
+		} else if utils.AssetsEqual(balance.Asset, t.assetQuote) {
 			maxB = utils.AmountStringAsFloat(balance.Balance)
 			if balance.Asset.Type == utils.Native {
 				trustB = maxLumenTrust

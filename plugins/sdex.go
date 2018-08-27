@@ -226,9 +226,9 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 		build.SourceAccount{AddressOrSeed: sdex.SourceAccount},
 	}
 	muts = append(muts, ops...)
-	tx := build.Transaction(muts...)
-	if tx.Err != nil {
-		return errors.Wrap(tx.Err, "SubmitOps error: ")
+	tx, e := build.Transaction(muts...)
+	if e != nil {
+		return errors.Wrap(e, "SubmitOps error: ")
 	}
 
 	// convert to xdr string
@@ -256,11 +256,17 @@ func (sdex *SDEX) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, pric
 
 func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
 	var txe build.TransactionEnvelopeBuilder
+	var e error
+
 	if sdex.SourceSeed != sdex.TradingSeed {
-		txe = tx.Sign(sdex.SourceSeed, sdex.TradingSeed)
+		txe, e = tx.Sign(sdex.SourceSeed, sdex.TradingSeed)
 	} else {
-		txe = tx.Sign(sdex.SourceSeed)
+		txe, e = tx.Sign(sdex.SourceSeed)
 	}
+	if e != nil {
+		return "", e
+	}
+
 	return txe.Base64()
 }
 

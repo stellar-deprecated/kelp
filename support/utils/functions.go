@@ -12,12 +12,16 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/protocols/horizon/base"
 )
 
 // Common Utilities needed by various bots
 
 // Native is the string representing the type for the native lumen asset
 const Native = "native"
+
+// SdexPrecision defines the number of decimals used in SDEX
+const SdexPrecision int8 = 7
 
 // ByPrice implements sort.Interface for []horizon.Offer based on the price
 type ByPrice []horizon.Offer
@@ -186,4 +190,11 @@ func GetCreditBalance(a horizon.Account, code string, issuer string) *string {
 		}
 	}
 	return nil
+}
+
+// AssetsEqual is a convenience method to compare horizon.Asset and base.Asset because they are not type aliased
+func AssetsEqual(baseAsset base.Asset, horizonAsset horizon.Asset) bool {
+	return horizonAsset.Type == baseAsset.Type &&
+		horizonAsset.Code == baseAsset.Code &&
+		horizonAsset.Issuer == baseAsset.Issuer
 }

@@ -4,6 +4,8 @@ import (
 	"log"
 
 	"github.com/lightyeario/kelp/api"
+	"github.com/lightyeario/kelp/model"
+	"github.com/lightyeario/kelp/support/utils"
 )
 
 // staticLevel represents a layer in the orderbook defined statically
@@ -82,8 +84,8 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 		absoluteSpread := centerPrice * sl.SPREAD
 		levels = append(levels, api.Level{
 			// we always add here because it is only used in the context of selling so we always charge a higher price to include a spread
-			Price:  centerPrice + absoluteSpread,
-			Amount: sl.AMOUNT * p.amountOfBase,
+			Price:  *model.NumberFromFloat(centerPrice+absoluteSpread, utils.SdexPrecision),
+			Amount: *model.NumberFromFloat(sl.AMOUNT*p.amountOfBase, utils.SdexPrecision),
 		})
 	}
 	return levels, nil
