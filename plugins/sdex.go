@@ -196,7 +196,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		}
 	}
 
-	stringPrice := strconv.FormatFloat(price, 'f', 8, 64)
+	stringPrice := strconv.FormatFloat(price, 'f', int(utils.SdexPrecision), 64)
 	rate := build.Rate{
 		Selling: utils.Asset2Asset(selling),
 		Buying:  utils.Asset2Asset(buying),
@@ -205,7 +205,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 
 	mutators := []interface{}{
 		rate,
-		build.Amount(strconv.FormatFloat(amount, 'f', -1, 64)),
+		build.Amount(strconv.FormatFloat(amount, 'f', int(utils.SdexPrecision), 64)),
 	}
 	if offer != nil {
 		mutators = append(mutators, build.OfferID(offer.ID))
