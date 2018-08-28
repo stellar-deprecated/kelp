@@ -123,8 +123,8 @@ func (s *mirrorStrategy) updateLevels(
 
 		// create offers for remaining new bids
 		for i := offset - 1; i >= 0; i-- {
-			price := newOrders[i].Price.AsFloat() * priceMultiplier
-			vol := newOrders[i].Volume.AsFloat() / s.config.VOLUME_DIVIDE_BY
+			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
+			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VOLUME_DIVIDE_BY, utils.SdexPrecision).AsFloat()
 			mo := createOffer(*s.baseAsset, *s.quoteAsset, price, vol)
 			if mo != nil {
 				ops = append(ops, *mo)
@@ -172,7 +172,11 @@ func doModifyOffer(
 		return ops
 	}
 
-	mo := modifyOffer(oldOffer, price, vol)
+	mo := modifyOffer(
+		oldOffer,
+		model.NumberFromFloat(price, utils.SdexPrecision).AsFloat(),
+		model.NumberFromFloat(vol, utils.SdexPrecision).AsFloat(),
+	)
 	if mo != nil {
 		ops = append(ops, *mo)
 	}
