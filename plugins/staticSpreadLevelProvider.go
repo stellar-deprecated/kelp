@@ -6,6 +6,7 @@ import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
+	"github.com/stellar/go/clients/horizon"
 )
 
 // staticLevel represents a layer in the orderbook defined statically
@@ -55,7 +56,7 @@ func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase floa
 }
 
 // GetLevels impl.
-func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64, buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]api.Level, error) {
 	centerPrice, e := p.pf.GetCenterPrice()
 	if e != nil {
 		log.Printf("error: center price couldn't be loaded! | %s\n", e)

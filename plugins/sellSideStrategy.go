@@ -65,7 +65,7 @@ func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.
 }
 
 // PreUpdate impl
-func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64) error {
+func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64, trustBase float64, trustQuote float64, buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) error {
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
 
@@ -80,7 +80,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 
 	// load currentLevels only once here
 	var e error
-	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
+	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote, buyingAOffers, sellingAOffers)
 	if e != nil {
 		log.Printf("levels couldn't be loaded: %s\n", e)
 		return e
