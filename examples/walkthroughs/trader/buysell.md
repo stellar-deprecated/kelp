@@ -2,7 +2,7 @@
 
 This guide shows you how to setup the **kelp** bot using the [buysell](../../../plugins/buysellStrategy.go) strategy. We'll configure it to make a market for a stablecoin against the XLM asset.
 
-This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../api/pricefeed.go).
+This strategy buys low and sells high with a pre-defined [spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) and [priceFeed](../../../api/priceFeed.go).
 
 ## Account Setup
 
