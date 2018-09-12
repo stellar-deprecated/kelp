@@ -94,7 +94,7 @@ func (t *Trader) update() {
 	t.loadExistingOffers()
 
 	// strategy has a chance to set any state it needs
-	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB, t.buyingAOffers, t.sellingAOffers)
+	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()

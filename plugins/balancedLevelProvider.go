@@ -8,7 +8,6 @@ import (
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/support/utils"
-	"github.com/stellar/go/clients/horizon"
 )
 
 // balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
@@ -93,7 +92,7 @@ func validateSpread(spread float64) {
 }
 
 // GetLevels impl.
-func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64, buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]api.Level, error) {
+func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
 	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
 	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
