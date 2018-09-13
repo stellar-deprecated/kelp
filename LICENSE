@@ -1,9 +1,7 @@
-                                 Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
-
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
-
+   Derived and modified from the Apache License v. 2.0, see http://www.apache.org/licenses/ 
+   Last Updated: September 13, 2018
+                       
    1. Definitions.
 
       "License" shall mean the terms and conditions for use, reproduction,
@@ -173,20 +171,9 @@
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
 
-   END OF TERMS AND CONDITIONS
+  10. Prohibited Use. You represent, warrant, and covenant that your usage does and will not involve, promote, enable, or facilitate any activity or business that is illegal, unlawful, or restricted by any applicable law, regulation, order, judgment, or other requirement imposed by any relevant governmental, judicial, or regulatory body ("Prohibited Activity"). Such Prohibited Activity includes, but is not limited to, market manipulation and fraud.
 
-   APPENDIX: How to apply the Apache License to your work.
-
-      To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "[]"
-      replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
-      comment syntax for the file format. We also recommend that a
-      file or class name and description of purpose be included on the
-      same "printed page" as the copyright notice for easier
-      identification within third-party archives.
-
-   Copyright [yyyy] [name of copyright owner]
+   Copyright 2017-2018 Lightyear Corporation DBA Interstellar
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
