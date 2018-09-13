@@ -15,15 +15,14 @@ const baseReserve = 0.5
 
 // SDEX helps with building and submitting transactions to the Stellar network
 type SDEX struct {
-	API                         *horizon.Client
-	SourceAccount               string
-	TradingAccount              string
-	SourceSeed                  string
-	TradingSeed                 string
-	Network                     build.Network
-	FractionalReserveMultiplier int8
-	operationalBuffer           float64
-	simMode                     bool
+	API               *horizon.Client
+	SourceAccount     string
+	TradingAccount    string
+	SourceSeed        string
+	TradingSeed       string
+	Network           build.Network
+	operationalBuffer float64
+	simMode           bool
 
 	// uninitialized
 	seqNum       uint64
@@ -46,20 +45,18 @@ func MakeSDEX(
 	sourceAccount string,
 	tradingAccount string,
 	network build.Network,
-	fractionalReserveMultiplier int8,
 	operationalBuffer float64,
 	simMode bool,
 ) *SDEX {
 	sdex := &SDEX{
-		API:                         api,
-		SourceSeed:                  sourceSeed,
-		TradingSeed:                 tradingSeed,
-		SourceAccount:               sourceAccount,
-		TradingAccount:              tradingAccount,
-		Network:                     network,
-		FractionalReserveMultiplier: fractionalReserveMultiplier,
-		operationalBuffer:           operationalBuffer,
-		simMode:                     simMode,
+		API:               api,
+		SourceSeed:        sourceSeed,
+		TradingSeed:       tradingSeed,
+		SourceAccount:     sourceAccount,
+		TradingAccount:    tradingAccount,
+		Network:           network,
+		operationalBuffer: operationalBuffer,
+		simMode:           simMode,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)

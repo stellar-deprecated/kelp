@@ -46,7 +46,6 @@ func init() {
 			*configFile.TradingAccount,
 			utils.ParseNetwork(configFile.HORIZON_URL),
 			-1, // not needed here
-			-1, // not needed here
 			false,
 		)
 		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)

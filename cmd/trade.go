@@ -43,13 +43,11 @@ func init() {
 	strategy := tradeCmd.Flags().StringP("strategy", "s", "", "(required) type of strategy to run")
 	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
 	// long-only flags
-	fractionalReserveMultiplier := tradeCmd.Flags().Int8("fractionalReserveMultiplier", 1, "fractional multiplier for XLM reserves")
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
-	hiddenFlag("fractionalReserveMultiplier")
 	hiddenFlag("operationalBuffer")
 	tradeCmd.Flags().SortFlags = false
 
@@ -84,7 +82,6 @@ func init() {
 			botConfig.SourceAccount(),
 			botConfig.TradingAccount(),
 			utils.ParseNetwork(botConfig.HORIZON_URL),
-			*fractionalReserveMultiplier,
 			*operationalBuffer,
 			*simMode,
 		)
