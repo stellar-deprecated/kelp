@@ -183,22 +183,16 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		return nil
 	}
 	// check trust limits on asset being bought (doesn't apply to native XLM)
-	var incrementalBuy float64
-	if buying.Type != utils.Native {
-		var willOverbuy bool
-		var e error
-		willOverbuy, incrementalBuy, e = sdex.willOverbuy(offer, buying, price*amount)
-		if e != nil {
-			log.Println(e)
-			return nil
-		}
-		if willOverbuy {
-			assetString := utils.Asset2String(selling)
-			log.Printf("not placing offer because we run the risk of overbuying the asset '%s'\n", assetString)
-			return nil
-		}
+	willOverbuy, incrementalBuy, e := sdex.willOverbuy(offer, buying, price*amount)
+	if e != nil {
+		log.Println(e)
+		return nil
 	}
-	// TODO handle case of setting incrementalBuy for native asset
+	if willOverbuy {
+		assetString := utils.Asset2String(selling)
+		log.Printf("not placing offer because we run the risk of overbuying the asset '%s'\n", assetString)
+		return nil
+	}
 
 	stringPrice := strconv.FormatFloat(price, 'f', int(utils.SdexPrecision), 64)
 	rate := build.Rate{
@@ -273,10 +267,6 @@ func (sdex *SDEX) willOversell(offer *horizon.Offer, asset horizon.Asset, amount
 
 // willOverbuy returns willOverbuy, incrementalAmount, error
 func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountBuying float64) (bool, float64, error) {
-	if asset.Type == utils.Native {
-		return false, 0, fmt.Errorf("error: should not check willOverbuy for the native asset")
-	}
-
 	var incrementalAmount float64
 	if offer != nil {
 		if offer.Buying != asset {
@@ -302,6 +292,11 @@ func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountB
 	} else {
 		// TODO need to add an additional check for increase in XLM liabilities vs. XLM limits for new non-XLM offers caused by base reserve increases
 		incrementalAmount = amountBuying
+		// TODO include base reserve on sell side for all assets against XLM (i.e. opposite polarity of incrementalAmount)
+	}
+	if asset.Type == utils.Native {
+		// you can never overbuy the native asset
+		return false, incrementalAmount, nil
 	}
 
 	_, trust, _, err := sdex.assetBalance(asset)
