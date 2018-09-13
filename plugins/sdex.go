@@ -172,7 +172,7 @@ func (sdex *SDEX) assetBalance(asset horizon.Asset) (float64, float64, float64, 
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
 func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	// check liability limits on the asset being sold
-	willOversell, e := sdex.willOversell(offer, selling, amount)
+	willOversell, incrementalSell, e := sdex.willOversell(offer, selling, amount)
 	if e != nil {
 		log.Println(e)
 		return nil
@@ -183,8 +183,11 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		return nil
 	}
 	// check trust limits on asset being bought (doesn't apply to native XLM)
+	var incrementalBuy float64
 	if buying.Type != utils.Native {
-		willOverbuy, e := sdex.willOverbuy(offer, buying, price*amount)
+		var willOverbuy bool
+		var e error
+		willOverbuy, incrementalBuy, e = sdex.willOverbuy(offer, buying, price*amount)
 		if e != nil {
 			log.Println(e)
 			return nil
@@ -195,6 +198,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 			return nil
 		}
 	}
+	// TODO handle case of setting incrementalBuy for native asset
 
 	stringPrice := strconv.FormatFloat(price, 'f', int(utils.SdexPrecision), 64)
 	rate := build.Rate{
@@ -214,26 +218,36 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		mutators = append(mutators, build.SourceAccount{AddressOrSeed: sdex.TradingAccount})
 	}
 	result := build.ManageOffer(false, mutators...)
+	// update the cached liabilities
+	sdex.cachedLiabilities[selling] = Liabilities{
+		Selling: sdex.cachedLiabilities[selling].Selling + incrementalSell,
+		Buying:  sdex.cachedLiabilities[selling].Buying,
+	}
+	sdex.cachedLiabilities[buying] = Liabilities{
+		Selling: sdex.cachedLiabilities[buying].Selling,
+		Buying:  sdex.cachedLiabilities[buying].Buying + incrementalBuy,
+	}
 	return &result
 }
 
-func (sdex *SDEX) willOversell(offer *horizon.Offer, asset horizon.Asset, amountSelling float64) (bool, error) {
+// willOversell returns willOversell, incrementalAmount, error
+func (sdex *SDEX) willOversell(offer *horizon.Offer, asset horizon.Asset, amountSelling float64) (bool, float64, error) {
 	var incrementalAmount float64
 	if offer != nil {
 		if offer.Selling != asset {
-			return false, fmt.Errorf("error: offer.Selling (%s) does not match asset being sold (%s)", utils.Asset2String(offer.Selling), asset)
+			return false, 0, fmt.Errorf("error: offer.Selling (%s) does not match asset being sold (%s)", utils.Asset2String(offer.Selling), asset)
 		}
 
 		// modifying an offer will only affect the exposure of the asset (positive or negative)
 		offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 		incrementalAmount = amountSelling - offerAmt
 
 		// if we are reducing our selling amount of an asset then it cannot exceed the threshold for that asset
 		if incrementalAmount < 0 {
-			return false, nil
+			return false, incrementalAmount, nil
 		}
 	} else {
 		// TODO need to add an additional check for increase in XLM liabilities vs. XLM limits for new non-XLM offers caused by base reserve increases
@@ -246,43 +260,44 @@ func (sdex *SDEX) willOversell(offer *horizon.Offer, asset horizon.Asset, amount
 
 	bal, _, minAccountBal, err := sdex.assetBalance(asset)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	liabilities, err := sdex.liabilities(asset)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	result := incrementalAmount > (bal - minAccountBal - liabilities.Selling)
-	return result, nil
+	return result, incrementalAmount, nil
 }
 
-func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountBuying float64) (bool, error) {
+// willOverbuy returns willOverbuy, incrementalAmount, error
+func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountBuying float64) (bool, float64, error) {
 	if asset.Type == utils.Native {
-		return false, fmt.Errorf("error: should not check willOverbuy for the native asset")
+		return false, 0, fmt.Errorf("error: should not check willOverbuy for the native asset")
 	}
 
 	var incrementalAmount float64
 	if offer != nil {
 		if offer.Buying != asset {
-			return false, fmt.Errorf("error: offer.Buying (%s) does not match asset being bought (%s)", utils.Asset2String(offer.Buying), asset)
+			return false, 0, fmt.Errorf("error: offer.Buying (%s) does not match asset being bought (%s)", utils.Asset2String(offer.Buying), asset)
 		}
 
 		// modifying an offer will only affect the exposure of the asset (positive or negative)
 		offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 		offerPrice, err := sdex.ParseOfferAmount(offer.Price)
 		if err != nil {
-			return false, fmt.Errorf("error parsing offer price: %s", err)
+			return false, 0, fmt.Errorf("error parsing offer price: %s", err)
 		}
 		offerBuyingAmount := offerAmt * offerPrice
 		incrementalAmount = amountBuying - offerBuyingAmount
 
 		// if we are reducing our buying amount of an asset then it cannot exceed the threshold for that asset
 		if incrementalAmount < 0 {
-			return false, nil
+			return false, incrementalAmount, nil
 		}
 	} else {
 		// TODO need to add an additional check for increase in XLM liabilities vs. XLM limits for new non-XLM offers caused by base reserve increases
@@ -291,15 +306,15 @@ func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountB
 
 	_, trust, _, err := sdex.assetBalance(asset)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	liabilities, err := sdex.liabilities(asset)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	result := incrementalAmount > (trust - liabilities.Buying)
-	return result, nil
+	return result, incrementalAmount, nil
 }
 
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
