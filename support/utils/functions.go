@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"math/big"
@@ -102,6 +103,14 @@ func Asset2Asset2(Asset build.Asset) horizon.Asset {
 		a.Type = "credit_alphanum4"
 	}
 	return a
+}
+
+// Asset2String converts a horizon.Asset to a string representation, using "native" for the native XLM
+func Asset2String(asset horizon.Asset) string {
+	if asset.Type == Native {
+		return Native
+	}
+	return fmt.Sprintf("%s:%s", asset.Code, asset.Issuer)
 }
 
 // String2Asset converts a code:issuer to a horizon.Asset
