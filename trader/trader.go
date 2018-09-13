@@ -114,9 +114,9 @@ func (t *Trader) update() {
 		}
 	}
 
-	// reset cached xlm exposure here so we only compute it once per update
+	// reset cached liabilities here so we only compute it once per update
 	// TODO 2 - calculate this here and pass it in
-	t.sdex.ResetCachedXlmExposure()
+	t.sdex.ResetCachedLiabilities()
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	if e != nil {
 		log.Println(e)

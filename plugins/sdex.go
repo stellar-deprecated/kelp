@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -25,9 +26,16 @@ type SDEX struct {
 	simMode                     bool
 
 	// uninitialized
-	seqNum            uint64
-	reloadSeqNum      bool
-	cachedXlmExposure *float64
+	seqNum       uint64
+	reloadSeqNum bool
+	// explicitly calculate liabilities here for now, we can switch over to using the values from Horizon once the protocol change has taken effect
+	cachedLiabilities map[horizon.Asset]Liabilities
+}
+
+// Liabilities represents the "committed" units of an asset on both the buy and sell sides
+type Liabilities struct {
+	Buying  float64 // affects how much more can be bought
+	Selling float64 // affects how much more can be sold
 }
 
 // MakeSDEX is a factory method for SDEX
@@ -180,16 +188,17 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 			return nil
 		}
 
-		xlmExposure, err := sdex.xlmExposure()
+		xlmLiabilities, err := sdex.liabilities(selling)
 		if err != nil {
 			log.Println(err)
 			return nil
 		}
+		xlmSellingLiabilities := xlmLiabilities.Selling
 
 		additionalExposure := incrementalXlmAmount >= 0
-		possibleTerminalExposure := ((xlmExposure + incrementalXlmAmount) / float64(sdex.FractionalReserveMultiplier)) > (bal - minAccountBal - sdex.operationalBuffer)
+		possibleTerminalExposure := ((xlmSellingLiabilities + incrementalXlmAmount) / float64(sdex.FractionalReserveMultiplier)) > (bal - minAccountBal - sdex.operationalBuffer)
 		if additionalExposure && possibleTerminalExposure {
-			log.Println("not placing offer because we run the risk of running out of lumens | xlmExposure:", xlmExposure,
+			log.Println("not placing offer because we run the risk of running out of lumens | xlmSellingLiabilities:", xlmSellingLiabilities,
 				"| incrementalXlmAmount:", incrementalXlmAmount, "| bal:", bal, "| minAccountBal:", minAccountBal,
 				"| operationalBuffer:", sdex.operationalBuffer, "| fractionalReserveMultiplier:", sdex.FractionalReserveMultiplier)
 			return nil
@@ -294,35 +303,44 @@ func (sdex *SDEX) submit(txeB64 string) {
 	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
 }
 
-// ResetCachedXlmExposure resets the cache
-func (sdex *SDEX) ResetCachedXlmExposure() {
-	sdex.cachedXlmExposure = nil
+// ResetCachedLiabilities resets the cache
+func (sdex *SDEX) ResetCachedLiabilities() {
+	sdex.cachedLiabilities = map[horizon.Asset]Liabilities{}
 }
 
-func (sdex *SDEX) xlmExposure() (float64, error) {
-	if sdex.cachedXlmExposure != nil {
-		return *sdex.cachedXlmExposure, nil
+func (sdex *SDEX) liabilities(asset horizon.Asset) (*Liabilities, error) {
+	if v, ok := sdex.cachedLiabilities[asset]; ok {
+		return &v, nil
 	}
 
 	// uses all offers for this trading account to accommodate sharing by other bots
 	offers, err := utils.LoadAllOffers(sdex.TradingAccount, sdex.API)
 	if err != nil {
-		log.Printf("error computing XLM exposure: %s\n", err)
-		return -1, err
+		assetString := utils.Native
+		if asset.Type != utils.Native {
+			assetString = fmt.Sprintf("%s:%s", asset.Code, asset.Issuer)
+		}
+		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
+		return nil, err
 	}
 
-	var sum float64
+	liabilities := Liabilities{}
 	for _, offer := range offers {
-		// only need to compute sum of selling because that's the max XLM we can give up if all our offers are taken
-		if offer.Selling.Type == utils.Native {
+		if offer.Selling == asset {
 			offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
 			if err != nil {
-				return -1, err
+				return nil, err
 			}
-			sum += offerAmt
+			liabilities.Selling += offerAmt
+		} else if offer.Buying == asset {
+			offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
+			if err != nil {
+				return nil, err
+			}
+			liabilities.Buying += offerAmt
 		}
 	}
 
-	sdex.cachedXlmExposure = &sum
-	return sum, nil
+	sdex.cachedLiabilities[asset] = liabilities
+	return &liabilities, nil
 }
