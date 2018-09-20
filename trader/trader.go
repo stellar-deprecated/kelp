@@ -2,6 +2,7 @@ package trader
 
 import (
 	"log"
+	"math"
 	"sort"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
-const maxLumenTrust float64 = 100000000000
+const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
