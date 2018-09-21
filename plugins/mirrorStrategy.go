@@ -116,13 +116,12 @@ func (s *mirrorStrategy) updateLevels(
 ) []build.TransactionMutator {
 	ops := []build.TransactionMutator{}
 	if len(newOrders) >= len(oldOffers) {
-		offset := len(newOrders) - len(oldOffers)
-		for i := len(newOrders) - 1; (i - offset) >= 0; i-- {
-			ops = doModifyOffer(oldOffers[i-offset], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+		for i := 0; i < len(oldOffers); i++ {
+			ops = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
 		}
 
 		// create offers for remaining new bids
-		for i := offset - 1; i >= 0; i-- {
+		for i := len(oldOffers); i < len(newOrders); i++ {
 			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
 			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VOLUME_DIVIDE_BY, utils.SdexPrecision).AsFloat()
 			mo := createOffer(*s.baseAsset, *s.quoteAsset, price, vol)
@@ -131,13 +130,12 @@ func (s *mirrorStrategy) updateLevels(
 			}
 		}
 	} else {
-		offset := len(oldOffers) - len(newOrders)
-		for i := len(oldOffers) - 1; (i - offset) >= 0; i-- {
-			ops = doModifyOffer(oldOffers[i], newOrders[i-offset], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+		for i := 0; i < len(newOrders); i++ {
+			ops = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
 		}
 
 		// delete remaining prior offers
-		for i := offset - 1; i >= 0; i-- {
+		for i := len(newOrders); i < len(oldOffers); i++ {
 			op := s.sdex.DeleteOffer(oldOffers[i])
 			ops = append(ops, op)
 		}

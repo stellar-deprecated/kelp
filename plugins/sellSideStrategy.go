@@ -91,7 +91,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 // UpdateWithOps impl
 func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	newTopOffer = nil
-	for i := len(s.currentLevels) - 1; i >= 0; i-- {
+	for i := 0; i < len(s.currentLevels); i++ {
 		op := s.updateSellLevel(offers, i)
 		if op != nil {
 			offer, e := model.NumberFromString(op.MO.Price.String(), 7)
