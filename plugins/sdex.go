@@ -175,7 +175,8 @@ func (sdex *SDEX) assetBalance(asset horizon.Asset) (float64, float64, float64, 
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
 func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder {
 	// check liability limits on the asset being sold
-	willOversell, incrementalSell, e := sdex.willOversell(offer, selling, amount)
+	incrementalSell := amount
+	willOversell, e := sdex.willOversell(selling, amount)
 	if e != nil {
 		log.Println(e)
 		return nil
@@ -186,7 +187,8 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	}
 
 	// check trust limits on asset being bought
-	willOverbuy, incrementalBuy, e := sdex.willOverbuy(offer, buying, price*amount)
+	incrementalBuy := price * amount
+	willOverbuy, e := sdex.willOverbuy(buying, incrementalBuy)
 	if e != nil {
 		log.Println(e)
 		return nil
@@ -209,8 +211,6 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	incrementalNativeAmountTotal := incrementalNativeAmountRaw
 	if selling.Type == utils.Native {
 		incrementalNativeAmountTotal += incrementalSell
-	} else if buying.Type == utils.Native {
-		incrementalNativeAmountTotal -= incrementalBuy
 	}
 	willOversellNative, e := sdex.willOversellNative(incrementalNativeAmountTotal)
 	if e != nil {
@@ -263,7 +263,7 @@ func (sdex *SDEX) willOversellNative(incrementalNativeAmount float64) (bool, err
 	if e != nil {
 		return false, e
 	}
-	nativeLiabilities, e := sdex.liabilities(utils.NativeAsset)
+	nativeLiabilities, e := sdex.assetLiabilities(utils.NativeAsset)
 	if e != nil {
 		return false, e
 	}
@@ -272,94 +272,39 @@ func (sdex *SDEX) willOversellNative(incrementalNativeAmount float64) (bool, err
 	return willOversellNative, nil
 }
 
-// willOversell returns willOversell, incrementalAmount, error
-func (sdex *SDEX) willOversell(offer *horizon.Offer, asset horizon.Asset, amountSelling float64) (bool, float64, error) {
-	offerSellingAmount, e := sdex.getSignedAmount(offer, asset)
-	if e != nil {
-		return false, 0, e
-	}
-	if offerSellingAmount > 0 {
-		return false, 0, fmt.Errorf("error: offer.Selling (%s) does not match asset being sold (%s)", utils.Asset2String(offer.Selling), asset)
-	}
-
-	incrementalAmount := amountSelling - offerSellingAmount
-	// reducing our selling amount can never exceed the threshold for that asset
-	if incrementalAmount < 0 {
-		return false, incrementalAmount, nil
-	}
-
+// willOversell returns willOversell, error
+func (sdex *SDEX) willOversell(asset horizon.Asset, amountSelling float64) (bool, error) {
 	bal, _, minAccountBal, e := sdex.assetBalance(asset)
 	if e != nil {
-		return false, 0, e
+		return false, e
 	}
-	liabilities, e := sdex.liabilities(asset)
+	liabilities, e := sdex.assetLiabilities(asset)
 	if e != nil {
-		return false, 0, e
+		return false, e
 	}
 
-	willOversell := incrementalAmount > (bal - minAccountBal - liabilities.Selling)
-	return willOversell, incrementalAmount, nil
+	willOversell := amountSelling > (bal - minAccountBal - liabilities.Selling)
+	return willOversell, nil
 }
 
-// willOverbuy returns willOverbuy, incrementalAmount, error
-func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountBuying float64) (bool, float64, error) {
-	offerBuyingAmount, e := sdex.getSignedAmount(offer, asset)
-	if e != nil {
-		return false, 0, e
-	}
-	if offerBuyingAmount < 0 {
-		return false, 0, fmt.Errorf("error: offer.Buying (%s) does not match asset being bought (%s)", utils.Asset2String(offer.Buying), asset)
-	}
-
-	incrementalAmount := amountBuying - offerBuyingAmount
-	// if we are reducing our buying amount of an asset then it cannot exceed the threshold for that asset
-	if incrementalAmount < 0 {
-		return false, incrementalAmount, nil
-	}
+// willOverbuy returns willOverbuy, error
+func (sdex *SDEX) willOverbuy(asset horizon.Asset, amountBuying float64) (bool, error) {
 	if asset.Type == utils.Native {
 		// you can never overbuy the native asset
-		return false, incrementalAmount, nil
+		return false, nil
 	}
 
 	_, trust, _, e := sdex.assetBalance(asset)
 	if e != nil {
-		return false, 0, e
+		return false, e
 	}
-	liabilities, e := sdex.liabilities(asset)
+	liabilities, e := sdex.assetLiabilities(asset)
 	if e != nil {
-		return false, 0, e
+		return false, e
 	}
 
-	willOverbuy := incrementalAmount > (trust - liabilities.Buying)
-	return willOverbuy, incrementalAmount, nil
-}
-
-// getSignedAmount gets the amount in the unit of the asset passed in, + for buying, - for selling. 0 if asset is not in the offer
-func (sdex *SDEX) getSignedAmount(offer *horizon.Offer, asset horizon.Asset) (float64, error) {
-	if offer == nil {
-		return 0, nil
-	}
-
-	if offer.Buying != asset && offer.Selling != asset {
-		return 0, nil
-	}
-
-	offerAmt, e := sdex.ParseOfferAmount(offer.Amount)
-	if e != nil {
-		return 0, e
-	}
-
-	if offer.Selling == asset {
-		// negative sign because offer is being sold
-		return -offerAmt, nil
-	}
-
-	offerPrice, e := sdex.ParseOfferAmount(offer.Price)
-	if e != nil {
-		return 0, e
-	}
-	// positive sign because offer is being bought; multiply with offerPrice to keep the units in the asset being bought
-	return offerAmt * offerPrice, nil
+	willOverbuy := amountBuying > (trust - liabilities.Buying)
+	return willOverbuy, nil
 }
 
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
@@ -439,41 +384,90 @@ func (sdex *SDEX) submit(txeB64 string) {
 	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
 }
 
-// ResetCachedLiabilities resets the cache
-func (sdex *SDEX) ResetCachedLiabilities() {
+// ResetCachedLiabilities resets the cache to include only the two assets passed in
+func (sdex *SDEX) ResetCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) error {
+	// re-compute the liabilities
 	sdex.cachedLiabilities = map[horizon.Asset]Liabilities{}
+	baseLiabilities, basePairLiabilities, e := sdex.pairLiabilities(assetBase, assetQuote)
+	if e != nil {
+		return e
+	}
+	quoteLiabilities, quotePairLiabilities, e := sdex.pairLiabilities(assetQuote, assetBase)
+	if e != nil {
+		return e
+	}
+
+	// delete liability amounts related to all offers (filter on only those offers involving **both** assets in case the account is used by multiple bots)
+	sdex.cachedLiabilities[assetBase] = Liabilities{
+		Buying:  baseLiabilities.Buying - basePairLiabilities.Buying,
+		Selling: baseLiabilities.Selling - basePairLiabilities.Selling,
+	}
+	sdex.cachedLiabilities[assetQuote] = Liabilities{
+		Buying:  quoteLiabilities.Buying - quotePairLiabilities.Buying,
+		Selling: quoteLiabilities.Selling - quotePairLiabilities.Selling,
+	}
+	return nil
 }
 
-func (sdex *SDEX) liabilities(asset horizon.Asset) (*Liabilities, error) {
+// assetLiabilities returns the liabilities for the asset
+func (sdex *SDEX) assetLiabilities(asset horizon.Asset) (*Liabilities, error) {
 	if v, ok := sdex.cachedLiabilities[asset]; ok {
 		return &v, nil
 	}
 
+	assetLiabilities, _, e := sdex._liabilities(asset, asset) // pass in the same asset, we ignore the returned object anyway
+	return assetLiabilities, e
+}
+
+// pairLiabilities returns the liabilities for the asset along with the pairLiabilities
+func (sdex *SDEX) pairLiabilities(asset horizon.Asset, otherAsset horizon.Asset) (*Liabilities, *Liabilities, error) {
+	assetLiabilities, pairLiabilities, e := sdex._liabilities(asset, otherAsset)
+	return assetLiabilities, pairLiabilities, e
+}
+
+// liabilities returns the asset liabilities and pairLiabilities (non-nil only if the other asset is specified)
+func (sdex *SDEX) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*Liabilities, *Liabilities, error) {
 	// uses all offers for this trading account to accommodate sharing by other bots
 	offers, err := utils.LoadAllOffers(sdex.TradingAccount, sdex.API)
 	if err != nil {
 		assetString := utils.Asset2String(asset)
 		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
-		return nil, err
+		return nil, nil, err
 	}
 
+	// liabilities for the asset
 	liabilities := Liabilities{}
+	// liabilities for the asset w.r.t. the trading pair
+	pairLiabilities := Liabilities{}
 	for _, offer := range offers {
 		if offer.Selling == asset {
 			offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			liabilities.Selling += offerAmt
+
+			if offer.Buying == otherAsset {
+				pairLiabilities.Selling += offerAmt
+			}
 		} else if offer.Buying == asset {
 			offerAmt, err := sdex.ParseOfferAmount(offer.Amount)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			liabilities.Buying += offerAmt
+			offerPrice, err := sdex.ParseOfferAmount(offer.Price)
+			if err != nil {
+				return nil, nil, err
+			}
+			buyingAmount := offerAmt * offerPrice
+			liabilities.Buying += buyingAmount
+
+			if offer.Selling == otherAsset {
+				pairLiabilities.Buying += buyingAmount
+			}
 		}
 	}
 
 	sdex.cachedLiabilities[asset] = liabilities
-	return &liabilities, nil
+	return &liabilities, &pairLiabilities, nil
 }

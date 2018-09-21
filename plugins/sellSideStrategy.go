@@ -92,7 +92,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	newTopOffer = nil
 	for i := 0; i < len(s.currentLevels); i++ {
-		op := s.updateSellLevel(offers, i)
+		deleteIfNilOp, op := s.updateSellLevel(offers, i)
 		if op != nil {
 			offer, e := model.NumberFromString(op.MO.Price.String(), 7)
 			if e != nil {
@@ -105,6 +105,11 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 			}
 
 			ops = append(ops, op)
+		} else if op == nil && deleteIfNilOp {
+			// delete offer if nothing was created and we had an extra offer
+			op := s.sdex.DeleteOffer(offers[i])
+			log.Printf("deleting offer because it is extra and we could not modify it, offerId=%d\n", offers[i].ID)
+			ops = append(ops, op)
 		}
 	}
 	return ops, newTopOffer, nil
@@ -115,8 +120,8 @@ func (s *sellSideStrategy) PostUpdate() error {
 	return nil
 }
 
-// Selling Base
-func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *build.ManageOfferBuilder {
+// updateSellLevel returns true if we should delete the offer at this level when the manageOfferBuilder is nil
+func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (bool, *build.ManageOfferBuilder) {
 	targetPrice := s.currentLevels[index].Price
 	targetAmount := s.currentLevels[index].Amount
 	if s.divideAmountByPrice {
@@ -133,7 +138,7 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 		}
 		// no existing offer at this index
 		log.Printf("sell,create,p=%.7f,a=%.7f\n", targetPrice.AsFloat(), targetAmount.AsFloat())
-		return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat())
+		return false, s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat())
 	}
 
 	highestPrice := targetPrice.AsFloat() + targetPrice.AsFloat()*s.priceTolerance
@@ -157,7 +162,7 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) *b
 		}
 		log.Printf("sell,modify,tp=%.7f,ta=%.7f,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
 			targetPrice.AsFloat(), targetAmount.AsFloat(), curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
-		return s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat())
+		return true, s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat())
 	}
-	return nil
+	return false, nil
 }

@@ -117,7 +117,12 @@ func (t *Trader) update() {
 
 	// reset cached liabilities here so we only compute it once per update
 	// TODO 2 - calculate this here and pass it in
-	t.sdex.ResetCachedLiabilities()
+	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers()
+		return
+	}
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	if e != nil {
 		log.Println(e)
