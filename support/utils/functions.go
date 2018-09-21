@@ -21,6 +21,9 @@ import (
 // Native is the string representing the type for the native lumen asset
 const Native = "native"
 
+// NativeAsset represents the native asset
+var NativeAsset = horizon.Asset{Type: Native}
+
 // SdexPrecision defines the number of decimals used in SDEX
 const SdexPrecision int8 = 7
 

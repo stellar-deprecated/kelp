@@ -13,6 +13,7 @@ import (
 )
 
 const baseReserve = 0.5
+const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
 
 // SDEX helps with building and submitting transactions to the Stellar network
@@ -180,19 +181,41 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		return nil
 	}
 	if willOversell {
-		assetString := utils.Asset2String(selling)
-		log.Printf("not placing offer because we run the risk of overselling the asset '%s'\n", assetString)
+		log.Printf("not placing offer because we run the risk of overselling the asset '%s'\n", utils.Asset2String(selling))
 		return nil
 	}
-	// check trust limits on asset being bought (doesn't apply to native XLM)
+
+	// check trust limits on asset being bought
 	willOverbuy, incrementalBuy, e := sdex.willOverbuy(offer, buying, price*amount)
 	if e != nil {
 		log.Println(e)
 		return nil
 	}
 	if willOverbuy {
-		assetString := utils.Asset2String(selling)
-		log.Printf("not placing offer because we run the risk of overbuying the asset '%s'\n", assetString)
+		log.Printf("not placing offer because we run the risk of overbuying the asset '%s'\n", utils.Asset2String(buying))
+		return nil
+	}
+
+	// explicitly check that we will not oversell XLM because of fee and min reserves
+	// at the minimum it will cost us a unit of base fee for this operation
+	incrementalNativeAmountRaw := baseFee
+	if offer == nil {
+		// new offers will increase the min reserve
+		incrementalNativeAmountRaw += baseReserve
+	}
+	incrementalNativeAmountTotal := incrementalNativeAmountRaw
+	if selling.Type == utils.Native {
+		incrementalNativeAmountTotal += incrementalSell
+	} else if buying.Type == utils.Native {
+		incrementalNativeAmountTotal -= incrementalBuy
+	}
+	willOversellNative, e := sdex.willOversellNative(incrementalNativeAmountTotal)
+	if e != nil {
+		log.Println(e)
+		return nil
+	}
+	if willOversellNative {
+		log.Println("not placing offer because we run the risk of overselling the native asset after including fee and min reserves")
 		return nil
 	}
 
@@ -214,6 +237,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		mutators = append(mutators, build.SourceAccount{AddressOrSeed: sdex.TradingAccount})
 	}
 	result := build.ManageOffer(false, mutators...)
+
 	// update the cached liabilities
 	sdex.cachedLiabilities[selling] = Liabilities{
 		Selling: sdex.cachedLiabilities[selling].Selling + incrementalSell,
@@ -223,7 +247,26 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		Selling: sdex.cachedLiabilities[buying].Selling,
 		Buying:  sdex.cachedLiabilities[buying].Buying + incrementalBuy,
 	}
+	sdex.cachedLiabilities[utils.NativeAsset] = Liabilities{
+		Selling: sdex.cachedLiabilities[utils.NativeAsset].Selling + incrementalNativeAmountRaw,
+		Buying:  sdex.cachedLiabilities[utils.NativeAsset].Buying,
+	}
 	return &result
+}
+
+// willOversellNative returns willOversellNative, error
+func (sdex *SDEX) willOversellNative(incrementalNativeAmount float64) (bool, error) {
+	nativeBal, _, minAccountBal, e := sdex.assetBalance(utils.NativeAsset)
+	if e != nil {
+		return false, e
+	}
+	nativeLiabilities, e := sdex.liabilities(utils.NativeAsset)
+	if e != nil {
+		return false, e
+	}
+
+	willOversellNative := incrementalNativeAmount > (nativeBal - minAccountBal - nativeLiabilities.Selling)
+	return willOversellNative, nil
 }
 
 // willOversell returns willOversell, incrementalAmount, error
@@ -236,14 +279,8 @@ func (sdex *SDEX) willOversell(offer *horizon.Offer, asset horizon.Asset, amount
 		return false, 0, fmt.Errorf("error: offer.Selling (%s) does not match asset being sold (%s)", utils.Asset2String(offer.Selling), asset)
 	}
 
-	// TODO need to add an additional check for increase in XLM liabilities vs. XLM limits for new non-XLM offers caused by base reserve increases
 	incrementalAmount := amountSelling - offerSellingAmount
-	// creating a new offer will increase the min reserve on the account
-	if asset.Type == utils.Native && offerSellingAmount != 0 {
-		incrementalAmount += baseReserve
-	}
-
-	// if we are reducing our selling amount of an asset then it cannot exceed the threshold for that asset
+	// reducing our selling amount can never exceed the threshold for that asset
 	if incrementalAmount < 0 {
 		return false, incrementalAmount, nil
 	}
@@ -271,14 +308,11 @@ func (sdex *SDEX) willOverbuy(offer *horizon.Offer, asset horizon.Asset, amountB
 		return false, 0, fmt.Errorf("error: offer.Buying (%s) does not match asset being bought (%s)", utils.Asset2String(offer.Buying), asset)
 	}
 
-	// TODO need to add an additional check for increase in XLM liabilities vs. XLM limits for new non-XLM offers caused by base reserve increases
-	// TODO include base reserve on sell side for all assets against XLM (i.e. opposite polarity of incrementalAmount)
 	incrementalAmount := amountBuying - offerBuyingAmount
 	// if we are reducing our buying amount of an asset then it cannot exceed the threshold for that asset
 	if incrementalAmount < 0 {
 		return false, incrementalAmount, nil
 	}
-
 	if asset.Type == utils.Native {
 		// you can never overbuy the native asset
 		return false, incrementalAmount, nil
