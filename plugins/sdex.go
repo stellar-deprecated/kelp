@@ -197,8 +197,11 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	}
 
 	// explicitly check that we will not oversell XLM because of fee and min reserves
-	// at the minimum it will cost us a unit of base fee for this operation
-	incrementalNativeAmountRaw := baseFee
+	incrementalNativeAmountRaw := 0.0
+	if sdex.TradingAccount == sdex.SourceAccount {
+		// at the minimum it will cost us a unit of base fee for this operation
+		incrementalNativeAmountRaw += baseFee
+	}
 	if offer == nil {
 		// new offers will increase the min reserve
 		incrementalNativeAmountRaw += baseReserve
