@@ -121,12 +121,18 @@ func (s *mirrorStrategy) updateLevels(
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) ([]build.TransactionMutator, error) {
 	ops := []build.TransactionMutator{}
-	var e error
+	deleteOps := []build.TransactionMutator{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			ops, e = s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
+			}
+			if modifyOp != nil {
+				ops = append(ops, modifyOp)
+			}
+			if deleteOp != nil {
+				deleteOps = append(deleteOps, deleteOp)
 			}
 		}
 
@@ -135,8 +141,7 @@ func (s *mirrorStrategy) updateLevels(
 			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
 			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VOLUME_DIVIDE_BY, utils.SdexPrecision).AsFloat()
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
-			var mo *build.ManageOfferBuilder
-			mo, e = createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
+			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
 			if e != nil {
 				return nil, e
 			}
@@ -148,33 +153,43 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			ops, e = s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
+			}
+			if modifyOp != nil {
+				ops = append(ops, modifyOp)
+			}
+			if deleteOp != nil {
+				deleteOps = append(deleteOps, deleteOp)
 			}
 		}
 
 		// delete remaining prior offers
 		for i := len(newOrders); i < len(oldOffers); i++ {
-			op := s.sdex.DeleteOffer(oldOffers[i])
-			ops = append(ops, op)
+			deleteOp := s.sdex.DeleteOffer(oldOffers[i])
+			deleteOps = append(deleteOps, deleteOp)
 		}
 	}
-	return ops, nil
+
+	// prepend deleteOps because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
+	allOps := append(deleteOps, ops...)
+	log.Printf("prepended %d deleteOps\n", len(deleteOps))
+
+	return allOps, nil
 }
 
+// doModifyOffer returns a new modifyOp, deleteOp, error
 func (s *mirrorStrategy) doModifyOffer(
 	oldOffer horizon.Offer,
 	newOrder model.Order,
 	priceMultiplier float64,
 	volumeDivideBy float64,
 	modifyOffer func(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
-	ops []build.TransactionMutator,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
-) ([]build.TransactionMutator, error) {
+) (build.TransactionMutator, build.TransactionMutator, error) {
 	price := newOrder.Price.AsFloat() * priceMultiplier
 	vol := newOrder.Volume.AsFloat() / volumeDivideBy
-
 	oldPrice := model.MustNumberFromString(oldOffer.Price, 6)
 	oldVol := model.MustNumberFromString(oldOffer.Amount, 6)
 	if hackPriceInvertForBuyOrderChangeCheck {
@@ -187,7 +202,7 @@ func (s *mirrorStrategy) doModifyOffer(
 	epsilon := 0.0001
 	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
 	if sameOrderParams {
-		return ops, nil
+		return nil, nil, nil
 	}
 
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
@@ -200,14 +215,17 @@ func (s *mirrorStrategy) doModifyOffer(
 		incrementalNativeAmountRaw,
 	)
 	if e != nil {
-		return nil, e
+		return nil, nil, e
 	}
 	if mo != nil {
-		ops = append(ops, *mo)
 		// update the cached liabilities if we create a valid operation to modify the offer
 		s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount, offerAmount*offerPrice, incrementalNativeAmountRaw)
+		return *mo, nil, nil
 	}
-	return ops, nil
+
+	// since mo is nil we want to delete this offer
+	deleteOp := s.sdex.DeleteOffer(oldOffer)
+	return nil, deleteOp, nil
 }
 
 // PostUpdate changes the strategy's state after the update has taken place
