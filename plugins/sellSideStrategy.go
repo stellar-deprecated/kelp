@@ -90,6 +90,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 
 // UpdateWithOps impl
 func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
+	deleteOps := []build.TransactionMutator{}
 	newTopOffer = nil
 	for i := 0; i < len(s.currentLevels); i++ {
 		deleteIfNilOp, op := s.updateSellLevel(offers, i)
@@ -107,11 +108,15 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 			ops = append(ops, op)
 		} else if op == nil && deleteIfNilOp {
 			// delete offer if nothing was created and we had an extra offer
-			op := s.sdex.DeleteOffer(offers[i])
+			delOp := s.sdex.DeleteOffer(offers[i])
 			log.Printf("deleting offer because it is extra and we could not modify it, offerId=%d\n", offers[i].ID)
-			ops = append(ops, op)
+			deleteOps = append(deleteOps, delOp)
 		}
 	}
+
+	// prepend deleteOps because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
+	ops = append(deleteOps, ops...)
+
 	return ops, newTopOffer, nil
 }
 
