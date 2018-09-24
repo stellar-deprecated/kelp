@@ -93,7 +93,10 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 	deleteOps := []build.TransactionMutator{}
 	newTopOffer = nil
 	for i := 0; i < len(s.currentLevels); i++ {
-		deleteIfNilOp, op := s.updateSellLevel(offers, i)
+		deleteIfNilOp, op, e := s.updateSellLevel(offers, i)
+		if e != nil {
+			return nil, nil, e
+		}
 		if op != nil {
 			offer, e := model.NumberFromString(op.MO.Price.String(), 7)
 			if e != nil {
@@ -126,7 +129,7 @@ func (s *sellSideStrategy) PostUpdate() error {
 }
 
 // updateSellLevel returns true if we should delete the offer at this level when the manageOfferBuilder is nil
-func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (bool, *build.ManageOfferBuilder) {
+func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (bool, *build.ManageOfferBuilder, error) {
 	targetPrice := s.currentLevels[index].Price
 	targetAmount := s.currentLevels[index].Amount
 	if s.divideAmountByPrice {
@@ -143,7 +146,8 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (b
 		}
 		// no existing offer at this index
 		log.Printf("sell,create,p=%.7f,a=%.7f\n", targetPrice.AsFloat(), targetAmount.AsFloat())
-		return false, s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat())
+		op, e := s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat())
+		return false, op, e
 	}
 
 	highestPrice := targetPrice.AsFloat() + targetPrice.AsFloat()*s.priceTolerance
@@ -167,7 +171,8 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (b
 		}
 		log.Printf("sell,modify,tp=%.7f,ta=%.7f,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
 			targetPrice.AsFloat(), targetAmount.AsFloat(), curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
-		return true, s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat())
+		op, e := s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat())
+		return true, op, e
 	}
-	return false, nil
+	return false, nil, nil
 }

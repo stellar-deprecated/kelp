@@ -75,7 +75,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		return nil, e
 	}
 
-	buyOps := s.updateLevels(
+	buyOps, e := s.updateLevels(
 		buyingAOffers,
 		ob.Bids(),
 		s.sdex.ModifyBuyOffer,
@@ -83,8 +83,11 @@ func (s mirrorStrategy) UpdateWithOps(
 		(1 - s.config.PER_LEVEL_SPREAD),
 		true,
 	)
+	if e != nil {
+		return nil, e
+	}
 	log.Printf("num. buyOps in this update: %d\n", len(buyOps))
-	sellOps := s.updateLevels(
+	sellOps, e := s.updateLevels(
 		sellingAOffers,
 		ob.Asks(),
 		s.sdex.ModifySellOffer,
@@ -92,6 +95,9 @@ func (s mirrorStrategy) UpdateWithOps(
 		(1 + s.config.PER_LEVEL_SPREAD),
 		false,
 	)
+	if e != nil {
+		return nil, e
+	}
 	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
 
 	ops := []build.TransactionMutator{}
@@ -109,29 +115,39 @@ func (s mirrorStrategy) UpdateWithOps(
 func (s *mirrorStrategy) updateLevels(
 	oldOffers []horizon.Offer,
 	newOrders []model.Order,
-	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
-	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64) *build.ManageOfferBuilder,
+	modifyOffer func(offer horizon.Offer, price float64, amount float64) (*build.ManageOfferBuilder, error),
+	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64) (*build.ManageOfferBuilder, error),
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
-) []build.TransactionMutator {
+) ([]build.TransactionMutator, error) {
 	ops := []build.TransactionMutator{}
+	var e error
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			ops = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			ops, e = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// create offers for remaining new bids
 		for i := len(oldOffers); i < len(newOrders); i++ {
 			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
 			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VOLUME_DIVIDE_BY, utils.SdexPrecision).AsFloat()
-			mo := createOffer(*s.baseAsset, *s.quoteAsset, price, vol)
+			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol)
+			if e != nil {
+				return nil, e
+			}
 			if mo != nil {
 				ops = append(ops, *mo)
 			}
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			ops = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			ops, e = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			if e != nil {
+				return nil, e
+			}
 		}
 
 		// delete remaining prior offers
@@ -140,7 +156,7 @@ func (s *mirrorStrategy) updateLevels(
 			ops = append(ops, op)
 		}
 	}
-	return ops
+	return ops, nil
 }
 
 func doModifyOffer(
@@ -148,10 +164,10 @@ func doModifyOffer(
 	newOrder model.Order,
 	priceMultiplier float64,
 	volumeDivideBy float64,
-	modifyOffer func(offer horizon.Offer, price float64, amount float64) *build.ManageOfferBuilder,
+	modifyOffer func(offer horizon.Offer, price float64, amount float64) (*build.ManageOfferBuilder, error),
 	ops []build.TransactionMutator,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
-) []build.TransactionMutator {
+) ([]build.TransactionMutator, error) {
 	price := newOrder.Price.AsFloat() * priceMultiplier
 	vol := newOrder.Volume.AsFloat() / volumeDivideBy
 
@@ -167,18 +183,21 @@ func doModifyOffer(
 	epsilon := 0.0001
 	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
 	if sameOrderParams {
-		return ops
+		return ops, nil
 	}
 
-	mo := modifyOffer(
+	mo, e := modifyOffer(
 		oldOffer,
 		model.NumberFromFloat(price, utils.SdexPrecision).AsFloat(),
 		model.NumberFromFloat(vol, utils.SdexPrecision).AsFloat(),
 	)
+	if e != nil {
+		return nil, e
+	}
 	if mo != nil {
 		ops = append(ops, *mo)
 	}
-	return ops
+	return ops, nil
 }
 
 // PostUpdate changes the strategy's state after the update has taken place
