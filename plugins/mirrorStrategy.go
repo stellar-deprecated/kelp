@@ -115,8 +115,8 @@ func (s mirrorStrategy) UpdateWithOps(
 func (s *mirrorStrategy) updateLevels(
 	oldOffers []horizon.Offer,
 	newOrders []model.Order,
-	modifyOffer func(offer horizon.Offer, price float64, amount float64) (*build.ManageOfferBuilder, error),
-	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64) (*build.ManageOfferBuilder, error),
+	modifyOffer func(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
+	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) ([]build.TransactionMutator, error) {
@@ -124,7 +124,7 @@ func (s *mirrorStrategy) updateLevels(
 	var e error
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			ops, e = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			ops, e = s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
 			}
@@ -134,17 +134,21 @@ func (s *mirrorStrategy) updateLevels(
 		for i := len(oldOffers); i < len(newOrders); i++ {
 			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
 			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VOLUME_DIVIDE_BY, utils.SdexPrecision).AsFloat()
-			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol)
+			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
+			var mo *build.ManageOfferBuilder
+			mo, e = createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
 			if e != nil {
 				return nil, e
 			}
 			if mo != nil {
 				ops = append(ops, *mo)
+				// update the cached liabilities if we create a valid operation to create an offer
+				s.sdex.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol, vol*price, incrementalNativeAmountRaw)
 			}
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			ops, e = doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
+			ops, e = s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, ops, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
 			}
@@ -159,12 +163,12 @@ func (s *mirrorStrategy) updateLevels(
 	return ops, nil
 }
 
-func doModifyOffer(
+func (s *mirrorStrategy) doModifyOffer(
 	oldOffer horizon.Offer,
 	newOrder model.Order,
 	priceMultiplier float64,
 	volumeDivideBy float64,
-	modifyOffer func(offer horizon.Offer, price float64, amount float64) (*build.ManageOfferBuilder, error),
+	modifyOffer func(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
 	ops []build.TransactionMutator,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) ([]build.TransactionMutator, error) {
@@ -186,16 +190,22 @@ func doModifyOffer(
 		return ops, nil
 	}
 
+	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
+	offerPrice := model.NumberFromFloat(price, utils.SdexPrecision).AsFloat()
+	offerAmount := model.NumberFromFloat(vol, utils.SdexPrecision).AsFloat()
 	mo, e := modifyOffer(
 		oldOffer,
-		model.NumberFromFloat(price, utils.SdexPrecision).AsFloat(),
-		model.NumberFromFloat(vol, utils.SdexPrecision).AsFloat(),
+		offerPrice,
+		offerAmount,
+		incrementalNativeAmountRaw,
 	)
 	if e != nil {
 		return nil, e
 	}
 	if mo != nil {
 		ops = append(ops, *mo)
+		// update the cached liabilities if we create a valid operation to modify the offer
+		s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount, offerAmount*offerPrice, incrementalNativeAmountRaw)
 	}
 	return ops, nil
 }

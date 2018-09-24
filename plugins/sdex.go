@@ -113,19 +113,19 @@ func (sdex *SDEX) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 }
 
 // ModifyBuyOffer modifies a buy offer
-func (sdex *SDEX) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64) (*build.ManageOfferBuilder, error) {
-	return sdex.ModifySellOffer(offer, 1/price, amount*price)
+func (sdex *SDEX) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+	return sdex.ModifySellOffer(offer, 1/price, amount*price, incrementalNativeAmountRaw)
 }
 
 // ModifySellOffer modifies a sell offer
-func (sdex *SDEX) ModifySellOffer(offer horizon.Offer, price float64, amount float64) (*build.ManageOfferBuilder, error) {
-	return sdex.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount)
+func (sdex *SDEX) ModifySellOffer(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+	return sdex.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount, incrementalNativeAmountRaw)
 }
 
 // CreateSellOffer creates a sell offer
-func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	if amount > 0 {
-		return sdex.createModifySellOffer(nil, base, counter, price, amount)
+		return sdex.createModifySellOffer(nil, base, counter, price, amount, incrementalNativeAmountRaw)
 	}
 	return nil, fmt.Errorf("error: cannot place sell order, zero amount")
 }
@@ -171,8 +171,22 @@ func (sdex *SDEX) assetBalance(asset horizon.Asset) (float64, float64, float64, 
 	return -1, -1, -1, errors.New("could not find a balance for the asset passed in")
 }
 
+// ComputeIncrementalNativeAmountRaw returns the native amount that will be added to liabilities because of fee and min-reserve additions
+func (sdex *SDEX) ComputeIncrementalNativeAmountRaw(isNewOffer bool) float64 {
+	incrementalNativeAmountRaw := 0.0
+	if sdex.TradingAccount == sdex.SourceAccount {
+		// at the minimum it will cost us a unit of base fee for this operation
+		incrementalNativeAmountRaw += baseFee
+	}
+	if isNewOffer {
+		// new offers will increase the min reserve
+		incrementalNativeAmountRaw += baseReserve
+	}
+	return incrementalNativeAmountRaw
+}
+
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
-func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	// check liability limits on the asset being sold
 	incrementalSell := amount
 	willOversell, e := sdex.willOversell(selling, amount)
@@ -194,15 +208,6 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	}
 
 	// explicitly check that we will not oversell XLM because of fee and min reserves
-	incrementalNativeAmountRaw := 0.0
-	if sdex.TradingAccount == sdex.SourceAccount {
-		// at the minimum it will cost us a unit of base fee for this operation
-		incrementalNativeAmountRaw += baseFee
-	}
-	if offer == nil {
-		// new offers will increase the min reserve
-		incrementalNativeAmountRaw += baseReserve
-	}
 	incrementalNativeAmountTotal := incrementalNativeAmountRaw
 	if selling.Type == utils.Native {
 		incrementalNativeAmountTotal += incrementalSell
@@ -233,8 +238,11 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		mutators = append(mutators, build.SourceAccount{AddressOrSeed: sdex.TradingAccount})
 	}
 	result := build.ManageOffer(false, mutators...)
+	return &result, nil
+}
 
-	// update the cached liabilities
+// addLiabilities updates the cached liabilities, units are in their respective assets
+func (sdex *SDEX) AddLiabilities(selling horizon.Asset, buying horizon.Asset, incrementalSell float64, incrementalBuy float64, incrementalNativeAmountRaw float64) {
 	sdex.cachedLiabilities[selling] = Liabilities{
 		Selling: sdex.cachedLiabilities[selling].Selling + incrementalSell,
 		Buying:  sdex.cachedLiabilities[selling].Buying,
@@ -247,7 +255,6 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		Selling: sdex.cachedLiabilities[utils.NativeAsset].Selling + incrementalNativeAmountRaw,
 		Buying:  sdex.cachedLiabilities[utils.NativeAsset].Buying,
 	}
-	return &result, nil
 }
 
 // willOversellNative returns willOversellNative, error
@@ -341,8 +348,8 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 }
 
 // CreateBuyOffer creates a buy offer
-func (sdex *SDEX) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64) (*build.ManageOfferBuilder, error) {
-	return sdex.CreateSellOffer(counter, base, 1/price, amount*price)
+func (sdex *SDEX) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+	return sdex.CreateSellOffer(counter, base, 1/price, amount*price, incrementalNativeAmountRaw)
 }
 
 func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {

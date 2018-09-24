@@ -146,7 +146,12 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (b
 		}
 		// no existing offer at this index
 		log.Printf("sell,create,p=%.7f,a=%.7f\n", targetPrice.AsFloat(), targetAmount.AsFloat())
-		op, e := s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat())
+		incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
+		op, e := s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, targetPrice.AsFloat(), targetAmount.AsFloat(), incrementalNativeAmountRaw)
+		if e == nil && op != nil {
+			// update the cached liabilities if we create a valid operation to create an offer
+			s.sdex.AddLiabilities(*s.assetBase, *s.assetQuote, targetAmount.AsFloat(), targetAmount.AsFloat()*targetPrice.AsFloat(), incrementalNativeAmountRaw)
+		}
 		return false, op, e
 	}
 
@@ -162,6 +167,7 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (b
 	// existing offer not within tolerances
 	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
 	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
+	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
 	if priceTrigger || amountTrigger {
 		if targetPrice.Precision() > utils.SdexPrecision {
 			targetPrice = *model.NumberFromFloat(targetPrice.AsFloat(), utils.SdexPrecision)
@@ -171,8 +177,14 @@ func (s *sellSideStrategy) updateSellLevel(offers []horizon.Offer, index int) (b
 		}
 		log.Printf("sell,modify,tp=%.7f,ta=%.7f,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
 			targetPrice.AsFloat(), targetAmount.AsFloat(), curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
-		op, e := s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat())
+		op, e := s.sdex.ModifySellOffer(offers[index], targetPrice.AsFloat(), targetAmount.AsFloat(), incrementalNativeAmountRaw)
+		if e == nil && op != nil {
+			// update the cached liabilities if we create a valid operation to modify the offer
+			s.sdex.AddLiabilities(offers[index].Selling, offers[index].Buying, targetAmount.AsFloat(), targetAmount.AsFloat()*targetPrice.AsFloat(), incrementalNativeAmountRaw)
+		}
 		return true, op, e
 	}
+	// always add back the current offer in the cached liabilities when we don't modify it
+	s.sdex.AddLiabilities(offers[index].Selling, offers[index].Buying, targetAmount.AsFloat(), targetAmount.AsFloat()*targetPrice.AsFloat(), incrementalNativeAmountRaw)
 	return false, nil, nil
 }
