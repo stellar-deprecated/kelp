@@ -392,6 +392,24 @@ func (sdex *SDEX) submit(txeB64 string) {
 	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
 }
 
+func (sdex *SDEX) logLiabilities(asset horizon.Asset) {
+	l, e := sdex.assetLiabilities(asset)
+	log.Printf("asset = %s, buyingLiabilities=%.7f, sellingLiabilities=%.7f\n", asset, l.Buying, l.Selling)
+	if e != nil {
+		log.Printf("could not fetch liability for asset '%s', error = %s\n", asset, e)
+	}
+}
+
+// LogAllLiabilities logs the liabilities for the two assets along with the native asset
+func (sdex *SDEX) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) {
+	sdex.logLiabilities(assetBase)
+	sdex.logLiabilities(assetQuote)
+
+	if assetBase != utils.NativeAsset && assetQuote != utils.NativeAsset {
+		sdex.logLiabilities(utils.NativeAsset)
+	}
+}
+
 // ResetCachedLiabilities resets the cache to include only the two assets passed in
 func (sdex *SDEX) ResetCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) error {
 	// re-compute the liabilities
