@@ -148,7 +148,11 @@ func (s *mirrorStrategy) updateLevels(
 			if mo != nil {
 				ops = append(ops, *mo)
 				// update the cached liabilities if we create a valid operation to create an offer
-				s.sdex.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol, vol*price, incrementalNativeAmountRaw)
+				if hackPriceInvertForBuyOrderChangeCheck {
+					s.sdex.AddLiabilities(*s.quoteAsset, *s.baseAsset, vol*price, vol, incrementalNativeAmountRaw)
+				} else {
+					s.sdex.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol, vol*price, incrementalNativeAmountRaw)
+				}
 			}
 		}
 	} else {
@@ -200,12 +204,18 @@ func (s *mirrorStrategy) doModifyOffer(
 	newPrice := model.NumberFromFloat(price, 6)
 	newVol := model.NumberFromFloat(vol, 6)
 	epsilon := 0.0001
+	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
 	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
 	if sameOrderParams {
+		// update the cached liabilities if we keep the existing offer
+		if hackPriceInvertForBuyOrderChangeCheck {
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, price*vol, vol, incrementalNativeAmountRaw)
+		} else {
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, vol, price*vol, incrementalNativeAmountRaw)
+		}
 		return nil, nil, nil
 	}
 
-	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
 	offerPrice := model.NumberFromFloat(price, utils.SdexPrecision).AsFloat()
 	offerAmount := model.NumberFromFloat(vol, utils.SdexPrecision).AsFloat()
 	mo, e := modifyOffer(
@@ -219,7 +229,11 @@ func (s *mirrorStrategy) doModifyOffer(
 	}
 	if mo != nil {
 		// update the cached liabilities if we create a valid operation to modify the offer
-		s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount, offerAmount*offerPrice, incrementalNativeAmountRaw)
+		if hackPriceInvertForBuyOrderChangeCheck {
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount*offerPrice, offerAmount, incrementalNativeAmountRaw)
+		} else {
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount, offerAmount*offerPrice, incrementalNativeAmountRaw)
+		}
 		return *mo, nil, nil
 	}
 
