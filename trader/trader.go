@@ -71,6 +71,7 @@ func (t *Trader) Start() {
 
 // deletes all offers for the bot (not all offers on the account)
 func (t *Trader) deleteAllOffers() {
+	log.Printf("deleting all offers\n")
 	dOps := []build.TransactionMutator{}
 
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
@@ -130,6 +131,8 @@ func (t *Trader) update() {
 	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
+		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
+		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
 	}

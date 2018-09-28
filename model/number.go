@@ -66,6 +66,14 @@ func InvertNumber(n *Number) *Number {
 	return NumberFromFloat(1/n.AsFloat(), n.Precision())
 }
 
+// NumberByCappingPrecision returns a number with a precision that is at max the passed in precision
+func NumberByCappingPrecision(n *Number, precision int8) *Number {
+	if n.Precision() > precision {
+		return NumberFromFloat(n.AsFloat(), precision)
+	}
+	return n
+}
+
 func round(num float64) int {
 	return int(num + math.Copysign(0.5, num))
 }

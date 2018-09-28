@@ -124,10 +124,7 @@ func (sdex *SDEX) ModifySellOffer(offer horizon.Offer, price float64, amount flo
 
 // CreateSellOffer creates a sell offer
 func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
-	if amount > 0 {
-		return sdex.createModifySellOffer(nil, base, counter, price, amount, incrementalNativeAmountRaw)
-	}
-	return nil, fmt.Errorf("error: cannot place sell order, zero amount")
+	return sdex.createModifySellOffer(nil, base, counter, price, amount, incrementalNativeAmountRaw)
 }
 
 // ParseOfferAmount is a convenience method to parse an offer amount
@@ -187,6 +184,13 @@ func (sdex *SDEX) ComputeIncrementalNativeAmountRaw(isNewOffer bool) float64 {
 
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
 func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+	if price <= 0 {
+		return nil, fmt.Errorf("error: cannot create or modify offer, invalid price: %.7f", price)
+	}
+	if amount <= 0 {
+		return nil, fmt.Errorf("error: cannot create or modify offer, invalid amount: %.7f", amount)
+	}
+
 	// check liability limits on the asset being sold
 	incrementalSell := amount
 	willOversell, e := sdex.willOversell(selling, amount)
@@ -410,6 +414,12 @@ func (sdex *SDEX) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.
 	}
 }
 
+// RecomputeAndLogCachedLiabilities clears the cached liabilities and recomputes from the network before logging
+func (sdex *SDEX) RecomputeAndLogCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) {
+	sdex.cachedLiabilities = map[horizon.Asset]Liabilities{}
+	sdex.LogAllLiabilities(assetBase, assetQuote)
+}
+
 // ResetCachedLiabilities resets the cache to include only the two assets passed in
 func (sdex *SDEX) ResetCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) error {
 	// re-compute the liabilities
@@ -433,6 +443,24 @@ func (sdex *SDEX) ResetCachedLiabilities(assetBase horizon.Asset, assetQuote hor
 		Selling: quoteLiabilities.Selling - quotePairLiabilities.Selling,
 	}
 	return nil
+}
+
+// AvailableCapacity returns the buying and selling amounts available for a given asset
+func (sdex *SDEX) AvailableCapacity(asset horizon.Asset) (*Liabilities, error) {
+	l, e := sdex.assetLiabilities(asset)
+	if e != nil {
+		return nil, e
+	}
+
+	bal, trust, minAccountBal, e := sdex.assetBalance(asset)
+	if e != nil {
+		return nil, e
+	}
+
+	return &Liabilities{
+		Buying:  trust - l.Buying,
+		Selling: bal - minAccountBal - l.Selling,
+	}, nil
 }
 
 // assetLiabilities returns the liabilities for the asset
