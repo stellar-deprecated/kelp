@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"sort"
@@ -170,29 +171,33 @@ func (t *Trader) load() {
 	var maxB float64
 	var trustA float64
 	var trustB float64
+	var trustAString string
+	var trustBString string
 	for _, balance := range account.Balances {
+		trust := maxLumenTrust
+		trustString := "math.MaxFloat64"
+		if balance.Asset.Type != utils.Native {
+			trust = utils.AmountStringAsFloat(balance.Limit)
+			trustString = fmt.Sprintf("%.7f", trust)
+		}
+
 		if utils.AssetsEqual(balance.Asset, t.assetBase) {
 			maxA = utils.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == utils.Native {
-				trustA = maxLumenTrust
-			} else {
-				trustA = utils.AmountStringAsFloat(balance.Limit)
-			}
-			log.Printf("maxA=%.7f,trustA=%.7f\n", maxA, trustA)
+			trustA = trust
+			trustAString = trustString
 		} else if utils.AssetsEqual(balance.Asset, t.assetQuote) {
 			maxB = utils.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == utils.Native {
-				trustB = maxLumenTrust
-			} else {
-				trustB = utils.AmountStringAsFloat(balance.Limit)
-			}
-			log.Printf("maxB=%.7f,trustB=%.7f\n", maxB, trustB)
+			trustB = trust
+			trustBString = trustString
 		}
 	}
 	t.maxAssetA = maxA
 	t.maxAssetB = maxB
 	t.trustAssetA = trustA
 	t.trustAssetB = trustB
+
+	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), maxA, trustAString)
+	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), maxB, trustBString)
 }
 
 func (t *Trader) loadExistingOffers() {
