@@ -446,7 +446,7 @@ func (sdex *SDEX) ResetCachedLiabilities(assetBase horizon.Asset, assetQuote hor
 }
 
 // AvailableCapacity returns the buying and selling amounts available for a given asset
-func (sdex *SDEX) AvailableCapacity(asset horizon.Asset) (*Liabilities, error) {
+func (sdex *SDEX) AvailableCapacity(asset horizon.Asset, incrementalNativeAmountRaw float64) (*Liabilities, error) {
 	l, e := sdex.assetLiabilities(asset)
 	if e != nil {
 		return nil, e
@@ -457,9 +457,15 @@ func (sdex *SDEX) AvailableCapacity(asset horizon.Asset) (*Liabilities, error) {
 		return nil, e
 	}
 
+	// factor in cost of increase in minReserve and fee when calculating selling capacity of native asset
+	incrementalSellingLiability := 0.0
+	if asset == utils.NativeAsset {
+		incrementalSellingLiability = incrementalNativeAmountRaw
+	}
+
 	return &Liabilities{
 		Buying:  trust - l.Buying,
-		Selling: bal - minAccountBal - l.Selling,
+		Selling: bal - minAccountBal - l.Selling - incrementalSellingLiability,
 	}, nil
 }
 

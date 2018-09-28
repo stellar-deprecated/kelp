@@ -151,18 +151,13 @@ func (s *sellSideStrategy) PostUpdate() error {
 
 // computeRemainderAmount returns sellingAmount, buyingAmount, error
 func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64, incrementalBuyAmount float64, price float64, incrementalNativeAmountRaw float64) (float64, float64, error) {
-	availableSellingCapacity, e := s.sdex.AvailableCapacity(*s.assetBase)
+	availableSellingCapacity, e := s.sdex.AvailableCapacity(*s.assetBase, incrementalNativeAmountRaw)
 	if e != nil {
 		return 0, 0, e
 	}
-	availableBuyingCapacity, e := s.sdex.AvailableCapacity(*s.assetQuote)
+	availableBuyingCapacity, e := s.sdex.AvailableCapacity(*s.assetQuote, incrementalNativeAmountRaw)
 	if e != nil {
 		return 0, 0, e
-	}
-
-	// factor in cost of increase in minReserve and fee when calculating selling capacity of native asset
-	if *s.assetBase == utils.NativeAsset {
-		availableSellingCapacity.Selling -= incrementalNativeAmountRaw
 	}
 
 	if availableSellingCapacity.Selling >= incrementalSellAmount && availableBuyingCapacity.Buying >= incrementalBuyAmount {
@@ -228,7 +223,7 @@ func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, ta
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
 	if !priceTrigger && !amountTrigger {
 		// always add back the current offer in the cached liabilities when we don't modify it
-		s.sdex.AddLiabilities(offers[index].Selling, offers[index].Buying, targetAmount.AsFloat(), targetAmount.AsFloat()*targetPrice.AsFloat(), incrementalNativeAmountRaw)
+		s.sdex.AddLiabilities(offers[index].Selling, offers[index].Buying, curAmount, curAmount*curPrice, incrementalNativeAmountRaw)
 		offerPrice := model.NumberFromFloat(curPrice, utils.SdexPrecision)
 		return offerPrice, false, nil, nil
 	}

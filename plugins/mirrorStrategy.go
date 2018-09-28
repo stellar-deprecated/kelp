@@ -209,9 +209,9 @@ func (s *mirrorStrategy) doModifyOffer(
 	if sameOrderParams {
 		// update the cached liabilities if we keep the existing offer
 		if hackPriceInvertForBuyOrderChangeCheck {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, price*vol, vol, incrementalNativeAmountRaw)
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat()*oldPrice.AsFloat(), oldVol.AsFloat(), incrementalNativeAmountRaw)
 		} else {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, vol, price*vol, incrementalNativeAmountRaw)
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat(), oldVol.AsFloat()*oldPrice.AsFloat(), incrementalNativeAmountRaw)
 		}
 		return nil, nil, nil
 	}
