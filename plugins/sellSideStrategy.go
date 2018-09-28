@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"log"
-	"math"
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
@@ -115,7 +114,6 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		if s.divideAmountByPrice {
 			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
 		}
-		targetAmount = *model.NumberFromFloat(math.Min(targetAmount.AsFloat(), s.maxAssetBase), targetAmount.Precision())
 
 		var offerPrice *model.Number
 		var op *build.ManageOfferBuilder
