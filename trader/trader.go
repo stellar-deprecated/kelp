@@ -99,6 +99,15 @@ func (t *Trader) update() {
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
 	t.sdex.ResetCachedBalances()
+	// reset and recompute cached liabilities for this update cycle
+	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	log.Printf("liabilities after resetting\n")
+	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers()
+		return
+	}
 
 	// strategy has a chance to set any state it needs
 	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
@@ -121,6 +130,9 @@ func (t *Trader) update() {
 		}
 	}
 
+	// TODO 2 streamline the request data instead of caching
+	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
+	t.sdex.ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
 	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")
@@ -130,6 +142,7 @@ func (t *Trader) update() {
 		t.deleteAllOffers()
 		return
 	}
+
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
 	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
