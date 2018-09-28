@@ -116,8 +116,7 @@ func (t *Trader) update() {
 		}
 	}
 
-	// reset cached liabilities here so we only compute it once per update
-	// TODO 2 - calculate this here and pass it in
+	// reset and recompute cached liabilities for this update cycle
 	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")
 	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
