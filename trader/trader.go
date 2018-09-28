@@ -95,6 +95,10 @@ func (t *Trader) update() {
 	t.load()
 	t.loadExistingOffers()
 
+	// TODO 2 streamline the request data instead of caching
+	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
+	t.sdex.ResetCachedBalances()
+
 	// strategy has a chance to set any state it needs
 	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {

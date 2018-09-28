@@ -32,12 +32,23 @@ type SDEX struct {
 	reloadSeqNum bool
 	// explicitly calculate liabilities here for now, we can switch over to using the values from Horizon once the protocol change has taken effect
 	cachedLiabilities map[horizon.Asset]Liabilities
+
+	// TODO 2 streamline requests instead of caching
+	// cache balances to avoid redundant requests
+	cachedBalances map[horizon.Asset]Balance
 }
 
 // Liabilities represents the "committed" units of an asset on both the buy and sell sides
 type Liabilities struct {
 	Buying  float64 // affects how much more can be bought
 	Selling float64 // affects how much more can be sold
+}
+
+// Balance repesents an asset's balance response from the assetBalance method below
+type Balance struct {
+	Balance float64
+	Trust   float64
+	Reserve float64
 }
 
 // MakeSDEX is a factory method for SDEX
@@ -141,8 +152,31 @@ func (sdex *SDEX) minReserve(subentries int32) float64 {
 	return float64(2+subentries) * baseReserve
 }
 
-// assetBalance returns asset balance, asset trust limit, reserve balance (zero for non-XLM), error
+// ResetCachedBalances resets the cached balances map
+func (sdex *SDEX) ResetCachedBalances() {
+	sdex.cachedBalances = map[horizon.Asset]Balance{}
+}
+
+// assetBalance is a memoized version of _assetBalance
 func (sdex *SDEX) assetBalance(asset horizon.Asset) (float64, float64, float64, error) {
+	if v, ok := sdex.cachedBalances[asset]; ok {
+		return v.Balance, v.Trust, v.Reserve, nil
+	}
+
+	b, t, r, e := sdex._assetBalance(asset)
+	if e == nil {
+		sdex.cachedBalances[asset] = Balance{
+			Balance: b,
+			Trust:   t,
+			Reserve: r,
+		}
+	}
+
+	return b, t, r, e
+}
+
+// assetBalance returns asset balance, asset trust limit, reserve balance (zero for non-XLM), error
+func (sdex *SDEX) _assetBalance(asset horizon.Asset) (float64, float64, float64, error) {
 	account, err := sdex.API.LoadAccount(sdex.TradingAccount)
 	if err != nil {
 		return -1, -1, -1, fmt.Errorf("error: unable to load account to fetch balance: %s", err)
@@ -162,7 +196,7 @@ func (sdex *SDEX) assetBalance(asset horizon.Asset) (float64, float64, float64, 
 			if e != nil {
 				return -1, -1, -1, fmt.Errorf("error: cannot parse trust limit: %s", e)
 			}
-			return b, t, 0, e
+			return b, t, 0, nil
 		}
 	}
 	return -1, -1, -1, errors.New("could not find a balance for the asset passed in")
@@ -245,7 +279,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	return &result, nil
 }
 
-// addLiabilities updates the cached liabilities, units are in their respective assets
+// AddLiabilities updates the cached liabilities, units are in their respective assets
 func (sdex *SDEX) AddLiabilities(selling horizon.Asset, buying horizon.Asset, incrementalSell float64, incrementalBuy float64, incrementalNativeAmountRaw float64) {
 	sdex.cachedLiabilities[selling] = Liabilities{
 		Selling: sdex.cachedLiabilities[selling].Selling + incrementalSell,
