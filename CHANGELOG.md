@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
-- support for all currencies available on Kraken
 
 ### Changed
 
@@ -20,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Security
 
+## [v1.0.0-rc3] - 2018-09-29
+
+### Added
+- support for all currencies available on Kraken
 
 ## [v1.0.0-rc2] - 2018-09-28
 
@@ -43,5 +46,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...HEAD
+[v1.0.0-rc3]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
 [v1.0.0-rc2]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc1...v1.0.0-rc2
