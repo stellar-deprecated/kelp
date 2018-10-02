@@ -108,13 +108,13 @@ These are the following commands available from the `kelp` binary:
 
 The `trade` command has three parameters which are:
 
-- **botConf**: _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
+- **botConf**: full path to the _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
 - **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _mirror_, _delete_).
-- **stratConf**: _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
+- **stratConf**: full path to the _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
 Here's an example of how to start the trading bot with the _buysell_ strategy:
 
-`kelp trade --botConf trader.cfg --strategy buysell --stratConf buysell.cfg`
+`kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg`
 
 If you are ever stuck, just invoke the `kelp` binary directly or type `kelp help [command]` for help with a specific command.
 
