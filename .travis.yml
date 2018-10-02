@@ -14,3 +14,4 @@ install:
 
 script:
 - ./scripts/build.sh
+- ./bin/kelp version
