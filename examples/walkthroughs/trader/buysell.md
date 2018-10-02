@@ -41,9 +41,9 @@ A level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that
 
 ## Run Kelp
 
-Assuming your botConfig is called `trader.cfg` and your strategy config is called `buysell.cfg`, you can run `kelp` with the following command:
+Assuming your botConfig is called `trader.cfg` and your strategy config is called `buysell.cfg`, and they are in the directory `$GOPATH/configs` you can run `kelp` with the following command:
 ```
-kelp trade --botConf trader.cfg --strategy buysell --stratConf buysell.cfg
+kelp trade --botConf $GOPATH/configs/trader.cfg --strategy buysell --stratConf $GOPATH/configs/buysell.cfg
 ```
 
 # Above and Beyond
