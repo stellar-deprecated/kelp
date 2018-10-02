@@ -64,7 +64,7 @@ The virtual balance combined with the actual balance the bot has in its account 
 Assuming your botConfig is called `trader.cfg` and your strategy config is called `balanced.cfg`, you can run `kelp` with the following command:
 
 ```
-kelp trade --botConf trader.cfg --strategy balanced --stratConf balanced.cfg
+kelp trade --botConf ./path/trader.cfg --strategy balanced --stratConf ./path/balanced.cfg
 ```
 
 # Above and Beyond

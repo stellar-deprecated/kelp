@@ -43,7 +43,7 @@ A level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that
 
 Assuming your botConfig is called `trader.cfg` and your strategy config is called `buysell.cfg`, you can run `kelp` with the following command:
 ```
-kelp trade --botConf trader.cfg --strategy buysell --stratConf buysell.cfg
+kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg
 ```
 
 # Above and Beyond
