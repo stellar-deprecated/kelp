@@ -71,23 +71,7 @@ func init() {
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
 
 		//Add current strategy to the log
-		var strat_display string
-		switch *strategy {
-			case "balanced":
-				strat_display = "Balanced"
-			case "sell":
-				strat_display = "Sell"
-			case "buysell": 
-				strat_display = "Buy/Sell"
-			case "mirror":
-				strat_display = "Mirror"
-			case "delete":
-				strat_display = "Delete"
-			default:
-				strat_display = *strategy
-				}
-				
-		log.Printf("Current strategy: %s\n", strat_display)
+		log.Printf("Current strategy: %s\n", *strategy)
 		
 		client := &horizon.Client{
 			URL:  botConfig.HORIZON_URL,
