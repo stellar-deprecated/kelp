@@ -1,7 +1,9 @@
 package trader
 
 import (
+	"fmt"
 	"log"
+	"math"
 	"sort"
 	"time"
 
@@ -13,7 +15,7 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
-const maxLumenTrust float64 = 100000000000
+const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
@@ -70,6 +72,7 @@ func (t *Trader) Start() {
 
 // deletes all offers for the bot (not all offers on the account)
 func (t *Trader) deleteAllOffers() {
+	log.Printf("deleting all offers\n")
 	dOps := []build.TransactionMutator{}
 
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
@@ -93,6 +96,19 @@ func (t *Trader) update() {
 	t.load()
 	t.loadExistingOffers()
 
+	// TODO 2 streamline the request data instead of caching
+	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
+	t.sdex.ResetCachedBalances()
+	// reset and recompute cached liabilities for this update cycle
+	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	log.Printf("liabilities after resetting\n")
+	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers()
+		return
+	}
+
 	// strategy has a chance to set any state it needs
 	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
@@ -114,12 +130,26 @@ func (t *Trader) update() {
 		}
 	}
 
-	// reset cached xlm exposure here so we only compute it once per update
-	// TODO 2 - calculate this here and pass it in
-	t.sdex.ResetCachedXlmExposure()
-	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
+	// TODO 2 streamline the request data instead of caching
+	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
+	t.sdex.ResetCachedBalances()
+	// reset and recompute cached liabilities for this update cycle
+	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	log.Printf("liabilities after resetting\n")
+	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
+		t.deleteAllOffers()
+		return
+	}
+
+	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
+	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
+	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	if e != nil {
+		log.Println(e)
+		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
+		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
 	}
@@ -154,29 +184,33 @@ func (t *Trader) load() {
 	var maxB float64
 	var trustA float64
 	var trustB float64
+	var trustAString string
+	var trustBString string
 	for _, balance := range account.Balances {
+		trust := maxLumenTrust
+		trustString := "math.MaxFloat64"
+		if balance.Asset.Type != utils.Native {
+			trust = utils.AmountStringAsFloat(balance.Limit)
+			trustString = fmt.Sprintf("%.7f", trust)
+		}
+
 		if utils.AssetsEqual(balance.Asset, t.assetBase) {
 			maxA = utils.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == utils.Native {
-				trustA = maxLumenTrust
-			} else {
-				trustA = utils.AmountStringAsFloat(balance.Limit)
-			}
-			log.Printf("maxA=%.7f,trustA=%.7f\n", maxA, trustA)
+			trustA = trust
+			trustAString = trustString
 		} else if utils.AssetsEqual(balance.Asset, t.assetQuote) {
 			maxB = utils.AmountStringAsFloat(balance.Balance)
-			if balance.Asset.Type == utils.Native {
-				trustB = maxLumenTrust
-			} else {
-				trustB = utils.AmountStringAsFloat(balance.Limit)
-			}
-			log.Printf("maxB=%.7f,trustB=%.7f\n", maxB, trustB)
+			trustB = trust
+			trustBString = trustString
 		}
 	}
 	t.maxAssetA = maxA
 	t.maxAssetB = maxB
 	t.trustAssetA = trustA
 	t.trustAssetB = trustB
+
+	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), maxA, trustAString)
+	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), maxB, trustBString)
 }
 
 func (t *Trader) loadExistingOffers() {

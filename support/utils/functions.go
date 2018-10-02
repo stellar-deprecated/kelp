@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"math/big"
@@ -19,6 +20,9 @@ import (
 
 // Native is the string representing the type for the native lumen asset
 const Native = "native"
+
+// NativeAsset represents the native asset
+var NativeAsset = horizon.Asset{Type: Native}
 
 // SdexPrecision defines the number of decimals used in SDEX
 const SdexPrecision int8 = 7
@@ -102,6 +106,14 @@ func Asset2Asset2(Asset build.Asset) horizon.Asset {
 		a.Type = "credit_alphanum4"
 	}
 	return a
+}
+
+// Asset2String converts a horizon.Asset to a string representation, using "native" for the native XLM
+func Asset2String(asset horizon.Asset) string {
+	if asset.Type == Native {
+		return Native
+	}
+	return fmt.Sprintf("%s:%s", asset.Code, asset.Issuer)
 }
 
 // String2Asset converts a code:issuer to a horizon.Asset

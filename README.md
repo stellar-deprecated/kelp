@@ -4,6 +4,7 @@
 [![Github All Releases](https://img.shields.io/github/downloads/lightyeario/kelp/total.svg?style=for-the-badge)][github-releases]
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
 
+[![Build Status](https://travis-ci.com/lightyeario/kelp.svg?branch=master)](https://travis-ci.com/lightyeario/kelp)
 [![GitHub issues](https://img.shields.io/github/issues/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-issues]
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-pulls]
@@ -54,24 +55,24 @@ There is **one** binary associated with this project: `kelp`. Once the binary is
 
 You can find the pre-compiled binary for your platform from the [Github Releases Page][github-releases].
 
-Here is a list of binaries for the most recent release **v1.0.0-rc1**:
+Here is a list of binaries for the most recent release **v1.0.0-rc3**:
 
 | Platform       | Architecture | Binary File Name |
 | -------------- | ------------ | ---------------- |
-| MacOS (Darwin) | 64-bit       | [kelp-v1.0.0-rc1-darwin-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-darwin-amd64.tar) |
-| Windows        | 64-bit       | [kelp-v1.0.0-rc1-windows-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-windows-amd64.tar) |
-| Linux          | 64-bit       | [kelp-v1.0.0-rc1-linux-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-amd64.tar) |
-| Linux          | 64-bit arm   | [kelp-v1.0.0-rc1-linux-arm64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm64.tar) |
-| Linux          | 32-bit arm5  | [kelp-v1.0.0-rc1-linux-arm5.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm5.tar) |
-| Linux          | 32-bit arm6  | [kelp-v1.0.0-rc1-linux-arm6.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm6.tar) |
-| Linux          | 32-bit arm7  | [kelp-v1.0.0-rc1-linux-arm7.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc1/kelp-v1.0.0-rc1-linux-arm7.tar) |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.0.0-rc3-darwin-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-darwin-amd64.tar) |
+| Windows        | 64-bit       | [kelp-v1.0.0-rc3-windows-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-windows-amd64.tar) |
+| Linux          | 64-bit       | [kelp-v1.0.0-rc3-linux-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-linux-amd64.tar) |
+| Linux          | 64-bit arm   | [kelp-v1.0.0-rc3-linux-arm64.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-linux-arm64.tar) |
+| Linux          | 32-bit arm5  | [kelp-v1.0.0-rc3-linux-arm5.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-linux-arm5.tar) |
+| Linux          | 32-bit arm6  | [kelp-v1.0.0-rc3-linux-arm6.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-linux-arm6.tar) |
+| Linux          | 32-bit arm7  | [kelp-v1.0.0-rc3-linux-arm7.tar](https://github.com/lightyeario/kelp/releases/download/v1.0.0-rc3/kelp-v1.0.0-rc3-linux-arm7.tar) |
 
-After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.0.0-rc1`) and invoke the `kelp` binary.
+After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.0.0-rc3`) and invoke the `kelp` binary.
 
 Here's an example to get you started (replace `filename` with the name of the file that you download):
 
     tar xvf filename
-    cd kelp-v1.0.0-rc1
+    cd kelp-v1.0.0-rc3
     ./kelp
 
 To run the bot in simulation mode, try this command:
