@@ -14,8 +14,8 @@ import (
 	"github.com/stellar/go/support/config"
 )
 
-const tradeExamples = `  kelp trade --botConf .path/trader.cfg --strategy buysell --stratConf .path/buysell.cfg
-  kelp trade --botConf .path/trader.cfg --strategy buysell --stratConf .path/buysell.cfg --sim`
+const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg
+  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg --sim`
 
 var tradeCmd = &cobra.Command{
 	Use:     "trade",
