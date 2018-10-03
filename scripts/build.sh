@@ -38,8 +38,15 @@ echo ""
 
 if [[ $MODE == "build" ]]
 then
+    # explicit check for windows
+    EXTENSION=""
+    if [[ `go env GOOS` == "windows" ]]
+    then
+        EXTENSION=".exe"
+    fi
+
     # generate outfile
-    OUTFILE=bin/kelp
+    OUTFILE=bin/kelp$EXTENSION
     mkdir -p bin
 
     echo -n "compiling ... "
@@ -80,8 +87,15 @@ do
     GOARM=`echo $args | cut -d' ' -f3 | tr -d ' '`
     echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
 
+    # explicit check for windows
+    BINARY="$OUTFILE"
+    if [[ "$GOOS" == "windows" ]]
+    then
+        BINARY="$OUTFILE.exe"
+    fi
+
     # compile
-    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $OUTFILE
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -105,6 +119,10 @@ do
         exit $TAR_RESULT
     fi
     echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME}"
+
+    echo -n "cleaning up binary: $BINARY ... "
+    rm $BINARY
+    echo "successful"
     echo ""
 done
 
