@@ -24,8 +24,8 @@ func MakePriceFeed(feedType string, url string) api.PriceFeed {
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
 			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),
 		}
-		tradeAPI := api.TradeAPI(exchange)
-		return newExchangeFeed(&tradeAPI, &tradingPair)
+		tickerAPI := api.TickerAPI(exchange)
+		return newExchangeFeed(&tickerAPI, &tradingPair)
 	}
 	return nil
 }

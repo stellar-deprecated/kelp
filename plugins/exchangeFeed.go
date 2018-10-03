@@ -7,26 +7,26 @@ import (
 	"github.com/lightyeario/kelp/model"
 )
 
-// encapsulates a priceFeed from a tradeAPI
+// encapsulates a priceFeed from a tickerAPI
 type exchangeFeed struct {
-	tradeAPI *api.TradeAPI
-	pairs    []model.TradingPair
+	tickerAPI *api.TickerAPI
+	pairs     []model.TradingPair
 }
 
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &exchangeFeed{}
 
-func newExchangeFeed(tradeAPI *api.TradeAPI, pair *model.TradingPair) *exchangeFeed {
+func newExchangeFeed(tickerAPI *api.TickerAPI, pair *model.TradingPair) *exchangeFeed {
 	return &exchangeFeed{
-		tradeAPI: tradeAPI,
-		pairs:    []model.TradingPair{*pair},
+		tickerAPI: tickerAPI,
+		pairs:     []model.TradingPair{*pair},
 	}
 }
 
 // GetPrice impl
 func (f *exchangeFeed) GetPrice() (float64, error) {
-	tradeAPI := *f.tradeAPI
-	m, e := tradeAPI.GetTickerPrice(f.pairs)
+	tickerAPI := *f.tickerAPI
+	m, e := tickerAPI.GetTickerPrice(f.pairs)
 	if e != nil {
 		return 0, e
 	}
