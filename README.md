@@ -38,6 +38,7 @@ To learn more about the Stellar protocol check out [this video created by Lumena
       * [Exchanges](#exchanges)
       * [Plugins](#plugins)
       * [Directory Structure](#directory-structure)
+      * [Accounting](#accounting)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
@@ -215,6 +216,10 @@ Each folder is its own package **without any sub-packages**.
     ├── main.go         # main function for our kelp binary
     └── ...
 
+## Accounting
+
+You can use [**Stellar-Downloader**][stellar-downloader] to download trade and payment data from your Stellar account as a CSV file.
+
 # Examples
 
 It's easier to learn with examples! Take a look at the walkthrough guides and sample configuration files below.
@@ -273,6 +278,7 @@ See the [Changelog](CHANGELOG.md).
 [fiat]: https://en.wikipedia.org/wiki/Fiat_money
 [currencylayer]: https://currencylayer.com/
 [kraken]: https://www.kraken.com/
+[stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
 [github-bug-report]: https://github.com/lightyeario/kelp/issues/new?template=bug_report.md
