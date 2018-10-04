@@ -121,6 +121,17 @@ var Display = makeAssetConverter(map[Asset]string{
 	KRW:  string(KRW),
 })
 
+// CcxtAssetConverter is the asset converter for the CCXT exchange interface
+var CcxtAssetConverter = makeAssetConverter(map[Asset]string{
+	XLM:  string(XLM),
+	BTC:  string(BTC),
+	USD:  string(USD),
+	ETH:  string(ETH),
+	LTC:  string(LTC),
+	REP:  string(REP),
+	USDT: string(USDT),
+})
+
 // KrakenAssetConverter is the asset converter for the Kraken exchange
 var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
 	XLM:  "XXLM",
