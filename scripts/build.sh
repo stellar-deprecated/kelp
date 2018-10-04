@@ -1,5 +1,5 @@
 #!/bin/bash
-
+(
 function usage() {
     echo "Usage: $0 [flags]"
     echo ""
@@ -9,10 +9,13 @@ function usage() {
     exit 1
 }
 
-if [[ ($# -gt 1 || `pwd | rev | cut -d'/' -f1 | rev` != "kelp") ]]
+if [[ `go env GOOS` != "windows" ]]
 then
-    echo "need to invoke from the root 'kelp' directory"
-    exit 1
+	if [[ ($# -gt 1 || `pwd | rev | cut -d'/' -f1 | rev` != "kelp") ]]
+	then
+		echo "need to invoke from the root 'kelp' directory"
+		exit 1
+	fi
 fi
 
 if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
@@ -38,9 +41,15 @@ echo ""
 
 if [[ $MODE == "build" ]]
 then
+    # explicit check for windows
+    EXTENSION=""
+    if [[ `go env GOOS` == "windows" ]]
+    then
+        EXTENSION=".exe"
+    fi
+
     # generate outfile
-    OUTFILE=bin/kelp
-    mkdir -p bin
+    OUTFILE=$GOPATH/bin/kelp$EXTENSION
 
     echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
@@ -80,8 +89,15 @@ do
     GOARM=`echo $args | cut -d' ' -f3 | tr -d ' '`
     echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
 
+    # explicit check for windows
+    BINARY="$OUTFILE"
+    if [[ "$GOOS" == "windows" ]]
+    then
+        BINARY="$OUTFILE.exe"
+    fi
+
     # compile
-    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $OUTFILE
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -105,6 +121,10 @@ do
         exit $TAR_RESULT
     fi
     echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME}"
+
+    echo -n "cleaning up binary: $BINARY ... "
+    rm $BINARY
+    echo "successful"
     echo ""
 done
 
@@ -117,3 +137,4 @@ echo "done"
 
 echo ""
 echo "BUILD SUCCESSFUL"
+)> build_log.txt
