@@ -84,3 +84,42 @@ func (c *Ccxt) init() error {
 
 	return nil
 }
+
+// FetchTicker calls the /fetchTicker endpoint on CCXT, trading pair is the CCXT version of the trading pair
+func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
+	// get list of symbols available on exchange
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var exchangeOutput interface{}
+	e := utils.JSONRequest(c.httpClient, "GET", url, "", map[string]string{}, &exchangeOutput)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching symbols on exchange '%s' (instance name = '%s'): %s", c.exchangeName, c.instanceName, e)
+	}
+
+	exchangeMap := exchangeOutput.(map[string]interface{})
+	symbolsList := exchangeMap["symbols"].([]interface{})
+	symbolExists := false
+	for _, p := range symbolsList {
+		symbol := p.(string)
+		if tradingPair == symbol {
+			symbolExists = true
+			break
+		}
+	}
+	if !symbolExists {
+		return nil, fmt.Errorf("trading pair '%s' does not exist in the list of %d symbols on exchange '%s'", tradingPair, len(symbolsList), c.exchangeName)
+	}
+
+	// fetch ticker for symbol
+	url = c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchTicker"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var tickerOutput interface{}
+	// TODO better JSON structure
+	e = utils.JSONRequest(c.httpClient, "POST", url, "[\""+tradingPair+"\"]", map[string]string{}, &tickerOutput)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching tickers for trading pair '%s': %s", tradingPair, e)
+	}
+
+	tickerMap := tickerOutput.(map[string]interface{})
+	return tickerMap, nil
+}
