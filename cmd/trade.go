@@ -67,10 +67,8 @@ func init() {
 			log.Fatal(e)
 		}
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
-
-		//Add current strategy to the log
 		log.Printf("Current strategy: %s\n", *strategy)
-		
+
 		client := &horizon.Client{
 			URL:  botConfig.HORIZON_URL,
 			HTTP: http.DefaultClient,
@@ -92,7 +90,11 @@ func init() {
 		assetBase := botConfig.AssetBase()
 		assetQuote := botConfig.AssetQuote()
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-		strat := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath)
+		strat, e := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath)
+		if e != nil {
+			log.Println()
+			log.Fatal(e)
+		}
 		bot := trader.MakeBot(
 			client,
 			botConfig.AssetBase(),
@@ -105,6 +107,7 @@ func init() {
 		)
 		// --- end initialization of objects ---
 
+		log.Println("Starting the trader bot...")
 		for {
 			bot.Start()
 			log.Println("Restarting the trader bot...")

@@ -9,9 +9,8 @@ import (
 	"github.com/lightyeario/kelp/support/utils"
 )
 
-// TODO should confirm to the api.Exchange interface
-// ensure that ccxtExchange conforms to the TickerAPI interface for now
-var _ api.TickerAPI = ccxtExchange{}
+// ensure that ccxtExchange conforms to the Exchange interface
+var _ api.Exchange = ccxtExchange{}
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
 type ccxtExchange struct {
@@ -22,8 +21,7 @@ type ccxtExchange struct {
 }
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
-// TODO should return api.Exchange
-func makeCcxtExchange(ccxtBaseURL string, exchangeName string) (api.TickerAPI, error) {
+func makeCcxtExchange(ccxtBaseURL string, exchangeName string) (api.Exchange, error) {
 	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName)
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
@@ -60,4 +58,79 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 	}
 
 	return priceResult, nil
+}
+
+// GetAssetConverter impl
+func (c ccxtExchange) GetAssetConverter() *model.AssetConverter {
+	return c.assetConverter
+}
+
+// GetAccountBalances impl
+func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// GetPrecision impl
+func (c ccxtExchange) GetPrecision() int8 {
+	// TODO implement
+	return utils.SdexPrecision
+}
+
+// GetOrderBook impl
+func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// GetTrades impl
+func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// GetTradeHistory impl
+func (c ccxtExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// GetOpenOrders impl
+func (c ccxtExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// AddOrder impl
+func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// CancelOrder impl
+func (c ccxtExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
+	// TODO implement
+	return model.CancelResultCancelSuccessful, nil
+}
+
+// PrepareDeposit impl
+func (c ccxtExchange) PrepareDeposit(asset model.Asset, amount *model.Number) (*api.PrepareDepositResult, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// GetWithdrawInfo impl
+func (c ccxtExchange) GetWithdrawInfo(asset model.Asset, amountToWithdraw *model.Number, address string) (*api.WithdrawInfo, error) {
+	// TODO implement
+	return nil, nil
+}
+
+// WithdrawFunds impl
+func (c ccxtExchange) WithdrawFunds(
+	asset model.Asset,
+	amountToWithdraw *model.Number,
+	address string,
+) (*api.WithdrawFunds, error) {
+	// TODO implement
+	return nil, nil
 }

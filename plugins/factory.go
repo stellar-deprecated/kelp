@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lightyeario/kelp/api"
@@ -15,7 +16,7 @@ type StrategyContainer struct {
 	Description string
 	NeedsConfig bool
 	Complexity  string
-	makeFn      func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy
+	makeFn      func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error)
 }
 
 // strategies is a map of all the strategies available
@@ -25,7 +26,7 @@ var strategies = map[string]StrategyContainer{
 		Description: "Creates buy and sell offers based on a reference price with a pre-specified liquidity depth",
 		NeedsConfig: true,
 		Complexity:  "Beginner",
-		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
+		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error) {
 			var cfg buySellConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
@@ -37,7 +38,7 @@ var strategies = map[string]StrategyContainer{
 		Description: "Mirrors an orderbook from another exchange by placing the same orders on Stellar",
 		NeedsConfig: true,
 		Complexity:  "Advanced",
-		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
+		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error) {
 			var cfg mirrorConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
@@ -49,7 +50,7 @@ var strategies = map[string]StrategyContainer{
 		Description: "Creates sell offers based on a reference price with a pre-specified liquidity depth",
 		NeedsConfig: true,
 		Complexity:  "Beginner",
-		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
+		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error) {
 			var cfg sellConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
@@ -61,11 +62,11 @@ var strategies = map[string]StrategyContainer{
 		Description: "Dynamically prices two tokens based on their relative demand",
 		NeedsConfig: true,
 		Complexity:  "Intermediate",
-		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
+		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error) {
 			var cfg balancedConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
-			return makeBalancedStrategy(sdex, assetBase, assetQuote, &cfg)
+			return makeBalancedStrategy(sdex, assetBase, assetQuote, &cfg), nil
 		},
 	},
 	"delete": StrategyContainer{
@@ -73,8 +74,8 @@ var strategies = map[string]StrategyContainer{
 		Description: "Deletes all orders for the configured orderbook",
 		NeedsConfig: false,
 		Complexity:  "Beginner",
-		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) api.Strategy {
-			return makeDeleteStrategy(sdex, assetBase, assetQuote)
+		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error) {
+			return makeDeleteStrategy(sdex, assetBase, assetQuote), nil
 		},
 	},
 }
@@ -86,7 +87,7 @@ func MakeStrategy(
 	assetQuote *horizon.Asset,
 	strategy string,
 	stratConfigPath string,
-) api.Strategy {
+) (api.Strategy, error) {
 	if strat, ok := strategies[strategy]; ok {
 		if strat.NeedsConfig && stratConfigPath == "" {
 			log.Println()
@@ -95,8 +96,7 @@ func MakeStrategy(
 		return strat.makeFn(sdex, assetBase, assetQuote, stratConfigPath)
 	}
 
-	log.Fatalf("invalid strategy type: %s\n", strategy)
-	return nil
+	return nil, fmt.Errorf("invalid strategy type: %s", strategy)
 }
 
 // Strategies returns the list of strategies along with metadata
@@ -106,7 +106,7 @@ func Strategies() map[string]StrategyContainer {
 
 type exchangeContainer struct {
 	description string
-	makeFn      func() api.Exchange
+	makeFn      func() (api.Exchange, error)
 }
 
 // exchanges is a map of all the exchange integrations available
@@ -115,16 +115,23 @@ var exchanges = map[string]exchangeContainer{
 		description: "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
 		makeFn:      makeKrakenExchange,
 	},
+	"ccxt-binance": exchangeContainer{
+		description: "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		makeFn: func() (api.Exchange, error) {
+			// TODO this URL should be taken from the bot config and this factory.go needs to be structified
+			return makeCcxtExchange("http://localhost:3000", "binance")
+		},
+	},
 }
 
 // MakeExchange is a factory method to make an exchange based on a given type
-func MakeExchange(exchangeType string) api.Exchange {
+func MakeExchange(exchangeType string) (api.Exchange, error) {
 	if exchange, ok := exchanges[exchangeType]; ok {
 		return exchange.makeFn()
 	}
 
 	log.Fatalf("invalid exchange type: %s\n", exchangeType)
-	return nil
+	return nil, nil
 }
 
 // Exchanges returns the list of exchanges along with the description

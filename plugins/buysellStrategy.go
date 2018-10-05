@@ -32,11 +32,20 @@ func makeBuySellStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *buySellConfig,
-) api.Strategy {
+) (api.Strategy, error) {
 	offsetSell := rateOffset{
 		percent:      config.RATE_OFFSET_PERCENT,
 		absolute:     config.RATE_OFFSET,
 		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+	}
+	sellSideFeedPair, e := MakeFeedPair(
+		config.DATA_TYPE_A,
+		config.DATA_FEED_A_URL,
+		config.DATA_TYPE_B,
+		config.DATA_FEED_B_URL,
+	)
+	if e != nil {
+		return nil, e
 	}
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
@@ -46,12 +55,7 @@ func makeBuySellStrategy(
 			config.LEVELS,
 			config.AMOUNT_OF_A_BASE,
 			offsetSell,
-			MakeFeedPair(
-				config.DATA_TYPE_A,
-				config.DATA_FEED_A_URL,
-				config.DATA_TYPE_B,
-				config.DATA_FEED_B_URL,
-			),
+			sellSideFeedPair,
 		),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
@@ -64,6 +68,15 @@ func makeBuySellStrategy(
 		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
 		invert:       true,
 	}
+	buySideFeedPair, e := MakeFeedPair(
+		config.DATA_TYPE_B,
+		config.DATA_FEED_B_URL,
+		config.DATA_TYPE_A,
+		config.DATA_FEED_A_URL,
+	)
+	if e != nil {
+		return nil, e
+	}
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
 		sdex,
@@ -73,12 +86,7 @@ func makeBuySellStrategy(
 			config.LEVELS,
 			config.AMOUNT_OF_A_BASE,
 			offsetBuy,
-			MakeFeedPair(
-				config.DATA_TYPE_B,
-				config.DATA_FEED_B_URL,
-				config.DATA_TYPE_A,
-				config.DATA_FEED_A_URL,
-			),
+			buySideFeedPair,
 		),
 		config.PRICE_TOLERANCE,
 		config.AMOUNT_TOLERANCE,
@@ -90,5 +98,5 @@ func makeBuySellStrategy(
 		assetQuote,
 		buySideStrategy,
 		sellSideStrategy,
-	)
+	), nil
 }
