@@ -32,13 +32,17 @@ func makeSellStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *sellConfig,
-) api.Strategy {
-	pf := MakeFeedPair(
+) (api.Strategy, error) {
+	pf, e := MakeFeedPair(
 		config.DATA_TYPE_A,
 		config.DATA_FEED_A_URL,
 		config.DATA_TYPE_B,
 		config.DATA_FEED_B_URL,
 	)
+	if e != nil {
+		return nil, e
+	}
+
 	offset := rateOffset{
 		percent:      config.RATE_OFFSET_PERCENT,
 		absolute:     config.RATE_OFFSET,
@@ -61,5 +65,5 @@ func makeSellStrategy(
 		assetQuote,
 		deleteSideStrategy,
 		sellSideStrategy,
-	)
+	), nil
 }

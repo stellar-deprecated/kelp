@@ -39,8 +39,12 @@ type mirrorStrategy struct {
 var _ api.Strategy = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) api.Strategy {
-	exchange := MakeExchange(config.EXCHANGE)
+func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) (api.Strategy, error) {
+	exchange, e := MakeExchange(config.EXCHANGE)
+	if e != nil {
+		return nil, e
+	}
+
 	orderbookPair := &model.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
 		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
@@ -52,7 +56,7 @@ func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizo
 		quoteAsset:    quoteAsset,
 		config:        config,
 		tradeAPI:      api.TradeAPI(exchange),
-	}
+	}, nil
 }
 
 // PruneExistingOffers deletes any extra offers

@@ -68,12 +68,20 @@ func getTotalNativeValue(address string, cmcRef string) float64 {
 		} else {
 			cryptoBal = bal
 
-			nativePriceInUSD, e := makeCmcFeed("stellar").GetPrice()
+			pf, e := makeCmcFeed("stellar")
+			if e != nil {
+				log.Fatal(e)
+			}
+			nativePriceInUSD, e := pf.GetPrice()
 			if e != nil {
 				log.Fatal(e)
 			}
 
-			cryptoPriceInUSD, e := makeCmcFeed(cmcRef).GetPrice()
+			pf, e = makeCmcFeed(cmcRef)
+			if e != nil {
+				log.Fatal(e)
+			}
+			cryptoPriceInUSD, e := pf.GetPrice()
 			if e != nil {
 				log.Fatal(e)
 			}
@@ -100,7 +108,7 @@ func loadAccount(client *horizon.Client, address string) horizon.Account {
 	return account
 }
 
-func makeCmcFeed(cmcRef string) api.PriceFeed {
+func makeCmcFeed(cmcRef string) (api.PriceFeed, error) {
 	url := fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", cmcRef)
 	return plugins.MakePriceFeed("crypto", url)
 }
