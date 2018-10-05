@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/lightyeario/kelp/api"
@@ -21,7 +22,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		urlParts := strings.Split(url, "/")
 		exchange, e := MakeExchange(urlParts[0])
 		if e != nil {
-			return nil, e
+			return nil, fmt.Errorf("error making exchange: %s", e)
 		}
 		tradingPair := model.TradingPair{
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
