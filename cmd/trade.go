@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
@@ -93,7 +94,9 @@ func init() {
 		strat, e := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath)
 		if e != nil {
 			log.Println()
-			log.Fatal(e)
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(botConfig, client, sdex)
 		}
 		bot := trader.MakeBot(
 			client,
@@ -140,5 +143,46 @@ func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
 	if len(missingTrustlines) > 0 {
 		log.Println()
 		log.Fatalf("error: your trading account does not have the required trustlines: %v\n", missingTrustlines)
+	}
+}
+
+func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX) {
+	log.Println()
+	log.Printf("deleting all offers and then exiting...\n")
+
+	offers, e := utils.LoadAllOffers(botConfig.TradingAccount(), client)
+	if e != nil {
+		log.Println()
+		log.Fatal(e)
+		return
+	}
+	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, botConfig.AssetBase(), botConfig.AssetQuote())
+	allOffers := append(sellingAOffers, buyingAOffers...)
+
+	dOps := sdex.DeleteAllOffers(allOffers)
+	log.Printf("created %d operations to delete offers\n", len(dOps))
+
+	if len(dOps) > 0 {
+		e := sdex.SubmitOps(dOps, func(hash string, e error) {
+			if e != nil {
+				log.Println()
+				log.Fatal(e)
+				return
+			}
+			log.Fatal("...deleted all offers, exiting")
+		})
+		if e != nil {
+			log.Println()
+			log.Fatal(e)
+			return
+		}
+
+		for {
+			sleepSeconds := 10
+			log.Printf("sleeping for %d seconds until our deletion is confirmed and we exit...\n", sleepSeconds)
+			time.Sleep(time.Duration(sleepSeconds) * time.Second)
+		}
+	} else {
+		log.Fatal("...nothing to delete, exiting")
 	}
 }
