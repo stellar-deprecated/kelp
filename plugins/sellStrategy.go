@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"fmt"
+
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
@@ -40,7 +42,7 @@ func makeSellStrategy(
 		config.DATA_FEED_B_URL,
 	)
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot make the sell strategy because we could not make the feed pair: %s", e)
 	}
 
 	offset := rateOffset{
