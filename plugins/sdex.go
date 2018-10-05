@@ -354,7 +354,7 @@ func (sdex *SDEX) willOverbuy(asset horizon.Asset, amountBuying float64) (bool, 
 }
 
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
-func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
+func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	sdex.incrementSeqNum()
 	muts := []build.TransactionMutator{
 		build.Sequence{Sequence: sdex.seqNum},
@@ -377,11 +377,13 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator) error {
 	// submit
 	if !sdex.simMode {
 		log.Println("submitting tx XDR to network (async)")
-		go sdex.submit(txeB64)
+		go sdex.submit(txeB64, asyncCallback)
 	} else {
-		log.Println("not submitting tx XDR to network in simulation mode")
+		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
+		if asyncCallback != nil {
+			go asyncCallback("", nil)
+		}
 	}
-
 	return nil
 }
 
@@ -406,7 +408,7 @@ func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
 	return txe.Base64()
 }
 
-func (sdex *SDEX) submit(txeB64 string) {
+func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)) {
 	resp, err := sdex.API.SubmitTransaction(txeB64)
 	if err != nil {
 		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
@@ -414,6 +416,9 @@ func (sdex *SDEX) submit(txeB64 string) {
 			rcs, err = herr.ResultCodes()
 			if err != nil {
 				log.Printf("(async) error: no result codes from horizon: %s\n", err)
+				if asyncCallback != nil {
+					go asyncCallback("", err)
+				}
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
@@ -424,10 +429,16 @@ func (sdex *SDEX) submit(txeB64 string) {
 		} else {
 			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
 		}
+		if asyncCallback != nil {
+			go asyncCallback("", err)
+		}
 		return
 	}
 
 	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
+	if asyncCallback != nil {
+		go asyncCallback(resp.Hash, nil)
+	}
 }
 
 func (sdex *SDEX) logLiabilities(asset horizon.Asset) {

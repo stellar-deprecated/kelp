@@ -24,9 +24,17 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		if e != nil {
 			return nil, fmt.Errorf("cannot make priceFeed because of an error when making the '%s' exchange: %s", urlParts[0], e)
 		}
+		baseAsset, e := exchange.GetAssetConverter().FromString(urlParts[1])
+		if e != nil {
+			return nil, fmt.Errorf("cannot make priceFeed because of an error when converting the base asset: %s", e)
+		}
+		quoteAsset, e := exchange.GetAssetConverter().FromString(urlParts[2])
+		if e != nil {
+			return nil, fmt.Errorf("cannot make priceFeed because of an error when converting the quote asset: %s", e)
+		}
 		tradingPair := model.TradingPair{
-			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
-			Quote: exchange.GetAssetConverter().MustFromString(urlParts[2]),
+			Base:  baseAsset,
+			Quote: quoteAsset,
 		}
 		tickerAPI := api.TickerAPI(exchange)
 		return newExchangeFeed(&tickerAPI, &tradingPair), nil

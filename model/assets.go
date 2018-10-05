@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"log"
 )
 
@@ -83,7 +84,7 @@ func (c AssetConverter) FromString(s string) (Asset, error) {
 func (c AssetConverter) MustFromString(s string) Asset {
 	a, e := c.FromString(s)
 	if e != nil {
-		log.Fatal(e)
+		log.Fatal(fmt.Errorf("exiting on an error-enforced asset conversion: %s", e))
 	}
 	return a
 }

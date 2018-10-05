@@ -42,12 +42,12 @@ func (p TradingPair) ToString(c *AssetConverter, delim string) (string, error) {
 func TradingPairFromString(codeSize int8, c *AssetConverter, p string) (*TradingPair, error) {
 	base, e := c.FromString(p[0:codeSize])
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("base asset could not be converted: %s", e)
 	}
 
 	quote, e := c.FromString(p[codeSize : codeSize*2])
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("quote asset could not be converted: %s", e)
 	}
 
 	return &TradingPair{Base: base, Quote: quote}, nil

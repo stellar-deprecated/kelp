@@ -82,7 +82,7 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.sdex.SubmitOps(dOps)
+		e := t.sdex.SubmitOps(dOps, nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -122,7 +122,7 @@ func (t *Trader) update() {
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
-		e = t.sdex.SubmitOps(pruneOps)
+		e = t.sdex.SubmitOps(pruneOps, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -156,7 +156,7 @@ func (t *Trader) update() {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.sdex.SubmitOps(ops)
+		e = t.sdex.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
