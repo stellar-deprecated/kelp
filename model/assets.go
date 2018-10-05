@@ -122,6 +122,7 @@ var Display = makeAssetConverter(map[Asset]string{
 })
 
 // CcxtAssetConverter is the asset converter for the CCXT exchange interface
+// TODO define a scalable approach to referencing assets using CCXT w.r.t. dev cost
 var CcxtAssetConverter = makeAssetConverter(map[Asset]string{
 	XLM:  string(XLM),
 	BTC:  string(BTC),

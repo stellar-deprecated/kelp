@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"fmt"
+
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
@@ -45,7 +47,7 @@ func makeBuySellStrategy(
 		config.DATA_FEED_B_URL,
 	)
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the sell side feed pair: %s", e)
 	}
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
@@ -75,7 +77,7 @@ func makeBuySellStrategy(
 		config.DATA_FEED_A_URL,
 	)
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the buy side feed pair: %s", e)
 	}
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(

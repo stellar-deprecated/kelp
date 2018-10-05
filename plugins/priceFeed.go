@@ -22,7 +22,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		urlParts := strings.Split(url, "/")
 		exchange, e := MakeExchange(urlParts[0])
 		if e != nil {
-			return nil, fmt.Errorf("error making exchange: %s", e)
+			return nil, fmt.Errorf("cannot make priceFeed because of an error when making the '%s' exchange: %s", urlParts[0], e)
 		}
 		tradingPair := model.TradingPair{
 			Base:  exchange.GetAssetConverter().MustFromString(urlParts[1]),
@@ -38,12 +38,12 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 func MakeFeedPair(dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) (*api.FeedPair, error) {
 	feedA, e := MakePriceFeed(dataTypeA, dataFeedAUrl)
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed A: %s", e)
 	}
 
 	feedB, e := MakePriceFeed(dataTypeB, dataFeedBUrl)
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed B: %s", e)
 	}
 
 	return &api.FeedPair{

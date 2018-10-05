@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
@@ -30,7 +29,11 @@ var strategies = map[string]StrategyContainer{
 			var cfg buySellConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
-			return makeBuySellStrategy(sdex, assetBase, assetQuote, &cfg)
+			s, e := makeBuySellStrategy(sdex, assetBase, assetQuote, &cfg)
+			if e != nil {
+				return nil, fmt.Errorf("makeFn failed: %s", e)
+			}
+			return s, nil
 		},
 	},
 	"mirror": StrategyContainer{
@@ -42,7 +45,11 @@ var strategies = map[string]StrategyContainer{
 			var cfg mirrorConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
-			return makeMirrorStrategy(sdex, assetBase, assetQuote, &cfg)
+			s, e := makeMirrorStrategy(sdex, assetBase, assetQuote, &cfg)
+			if e != nil {
+				return nil, fmt.Errorf("makeFn failed: %s", e)
+			}
+			return s, nil
 		},
 	},
 	"sell": StrategyContainer{
@@ -54,7 +61,11 @@ var strategies = map[string]StrategyContainer{
 			var cfg sellConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
-			return makeSellStrategy(sdex, assetBase, assetQuote, &cfg)
+			s, e := makeSellStrategy(sdex, assetBase, assetQuote, &cfg)
+			if e != nil {
+				return nil, fmt.Errorf("makeFn failed: %s", e)
+			}
+			return s, nil
 		},
 	},
 	"balanced": StrategyContainer{
@@ -90,10 +101,13 @@ func MakeStrategy(
 ) (api.Strategy, error) {
 	if strat, ok := strategies[strategy]; ok {
 		if strat.NeedsConfig && stratConfigPath == "" {
-			log.Println()
-			log.Fatalf("error: the '%s' strategy needs a config file\n", strategy)
+			return nil, fmt.Errorf("the '%s' strategy needs a config file", strategy)
 		}
-		return strat.makeFn(sdex, assetBase, assetQuote, stratConfigPath)
+		s, e := strat.makeFn(sdex, assetBase, assetQuote, stratConfigPath)
+		if e != nil {
+			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)
+		}
+		return s, nil
 	}
 
 	return nil, fmt.Errorf("invalid strategy type: %s", strategy)
@@ -127,11 +141,14 @@ var exchanges = map[string]exchangeContainer{
 // MakeExchange is a factory method to make an exchange based on a given type
 func MakeExchange(exchangeType string) (api.Exchange, error) {
 	if exchange, ok := exchanges[exchangeType]; ok {
-		return exchange.makeFn()
+		x, e := exchange.makeFn()
+		if e != nil {
+			return nil, fmt.Errorf("error when making the '%s' exchange: %s", exchangeType, e)
+		}
+		return x, nil
 	}
 
-	log.Fatalf("invalid exchange type: %s\n", exchangeType)
-	return nil, nil
+	return nil, fmt.Errorf("invalid exchange type: %s", exchangeType)
 }
 
 // Exchanges returns the list of exchanges along with the description
