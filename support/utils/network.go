@@ -51,10 +51,12 @@ func JSONRequest(
 		return fmt.Errorf("invalid 'Content-Type' header in http response ('%s'), expecting 'application/json', response body: %s", contentType, string(body))
 	}
 
-	// parse response, the passed in responseData should be a pointer
-	e = json.Unmarshal(body, responseData)
-	if e != nil {
-		return fmt.Errorf("could not unmarshall response body into json: %s | response body: %s", e, string(body))
+	if responseData != nil {
+		// parse response, the passed in responseData should be a pointer
+		e = json.Unmarshal(body, responseData)
+		if e != nil {
+			return fmt.Errorf("could not unmarshall response body into json: %s | response body: %s", e, string(body))
+		}
 	}
 
 	return nil

@@ -82,6 +82,13 @@ func (c *Ccxt) init() error {
 		c.instanceName = instanceList[0]
 	}
 
+	// load markets to populate fields related to markets
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/loadMarkets"
+	e = utils.JSONRequest(c.httpClient, "POST", url, "", map[string]string{}, nil)
+	if e != nil {
+		return fmt.Errorf("error loading markets for exchange instance (exchange=%s, instanceName=%s): %s", c.exchangeName, c.instanceName, e)
+	}
+
 	return nil
 }
 
@@ -93,10 +100,13 @@ func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
 	var exchangeOutput interface{}
 	e := utils.JSONRequest(c.httpClient, "GET", url, "", map[string]string{}, &exchangeOutput)
 	if e != nil {
-		return nil, fmt.Errorf("error fetching symbols on exchange '%s' (instance name = '%s'): %s", c.exchangeName, c.instanceName, e)
+		return nil, fmt.Errorf("error fetching details of exchange instance (exchange=%s, instanceName=%s): %s", c.exchangeName, c.instanceName, e)
 	}
 
 	exchangeMap := exchangeOutput.(map[string]interface{})
+	if _, ok := exchangeMap["symbols"]; !ok {
+		return nil, fmt.Errorf("'symbols' field not in result of exchange details (exchange=%s, instanceName=%s)", c.exchangeName, c.instanceName)
+	}
 	symbolsList := exchangeMap["symbols"].([]interface{})
 	symbolExists := false
 	for _, p := range symbolsList {
