@@ -41,6 +41,7 @@ const (
 	GBP  Asset = "GBP"
 	JPY  Asset = "JPY"
 	KRW  Asset = "KRW"
+	OMG  Asset = "OMG"
 )
 
 // AssetConverter converts to and from the asset type, it is specific to an exchange
@@ -120,6 +121,7 @@ var Display = makeAssetConverter(map[Asset]string{
 	GBP:  string(GBP),
 	JPY:  string(JPY),
 	KRW:  string(KRW),
+	OMG:  string(OMG),
 })
 
 // CcxtAssetConverter is the asset converter for the CCXT exchange interface
@@ -131,7 +133,10 @@ var CcxtAssetConverter = makeAssetConverter(map[Asset]string{
 	ETH:  string(ETH),
 	LTC:  string(LTC),
 	REP:  string(REP),
+	BCH:  string(BCH),
 	USDT: string(USDT),
+	ICN:  string(ICN),
+	OMG:  string(OMG),
 })
 
 // KrakenAssetConverter is the asset converter for the Kraken exchange
