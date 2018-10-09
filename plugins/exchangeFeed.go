@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
@@ -9,6 +10,7 @@ import (
 
 // encapsulates a priceFeed from a tickerAPI
 type exchangeFeed struct {
+	name      string
 	tickerAPI *api.TickerAPI
 	pairs     []model.TradingPair
 }
@@ -16,8 +18,9 @@ type exchangeFeed struct {
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &exchangeFeed{}
 
-func newExchangeFeed(tickerAPI *api.TickerAPI, pair *model.TradingPair) *exchangeFeed {
+func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair) *exchangeFeed {
 	return &exchangeFeed{
+		name:      name,
 		tickerAPI: tickerAPI,
 		pairs:     []model.TradingPair{*pair},
 	}
@@ -28,7 +31,7 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 	tickerAPI := *f.tickerAPI
 	m, e := tickerAPI.GetTickerPrice(f.pairs)
 	if e != nil {
-		return 0, e
+		return 0, fmt.Errorf("error while getting price from exchange feed: %s", e)
 	}
 
 	p, ok := m[f.pairs[0]]
@@ -37,5 +40,6 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 	}
 
 	centerPrice := (p.BidPrice.AsFloat() + p.AskPrice.AsFloat()) / 2
+	log.Printf("price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, centerPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), centerPrice)
 	return centerPrice, nil
 }
