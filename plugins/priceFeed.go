@@ -37,7 +37,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 			Quote: quoteAsset,
 		}
 		tickerAPI := api.TickerAPI(exchange)
-		return newExchangeFeed(&tickerAPI, &tradingPair), nil
+		return newExchangeFeed(url, &tickerAPI, &tradingPair), nil
 	}
 	return nil, nil
 }
