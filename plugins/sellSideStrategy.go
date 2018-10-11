@@ -111,6 +111,13 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		// hitCapacityLimit can be updated below
 		targetPrice := s.currentLevels[i].Price
 		targetAmount := s.currentLevels[i].Amount
+		if targetPrice.AsFloat() == 0 {
+			return nil, nil, fmt.Errorf("targetPrice is 0")
+		}
+		if targetAmount.AsFloat() == 0 {
+			return nil, nil, fmt.Errorf("targetAmount is 0")
+		}
+		
 		if s.divideAmountByPrice {
 			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
 		}
