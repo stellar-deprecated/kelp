@@ -111,33 +111,35 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		// hitCapacityLimit can be updated below
 		targetPrice := s.currentLevels[i].Price
 		targetAmount := s.currentLevels[i].Amount
-		if targetAmount.AsFloat() > 0 && targetPrice.AsFloat() > 0 {
-			if s.divideAmountByPrice {
-				targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
-			}
+		if targetPrice.AsFloat() == 0 {
+			return nil, nil, fmt.Errorf("targetPrice is 0")
+		}
+		if targetAmount.AsFloat() == 0 {
+			return nil, nil, fmt.Errorf("targetAmount is 0")
+		}
+		
+		if s.divideAmountByPrice {
+			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
+		}
 
-			var offerPrice *model.Number
-			var op *build.ManageOfferBuilder
-			var e error
-			if isModify {
-				offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, i, targetPrice, targetAmount)
-			} else {
-				offerPrice, hitCapacityLimit, op, e = s.createSellLevel(targetPrice, targetAmount)
-			}
-			if e != nil {
-				return nil, nil, e
-			}
-			if op != nil {
-				ops = append(ops, op)
-			}
-
-			// update top offer, newTopOffer is minOffer because this is a sell strategy, and the lowest price is the best (top) price on the orderbook
-			if newTopOffer == nil || offerPrice.AsFloat() < newTopOffer.AsFloat() {
-				newTopOffer = offerPrice
-			}
+		var offerPrice *model.Number
+		var op *build.ManageOfferBuilder
+		var e error
+		if isModify {
+			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, i, targetPrice, targetAmount)
 		} else {
-			log.Printf("A price was <= 0, cancelling order placement")
-			break
+			offerPrice, hitCapacityLimit, op, e = s.createSellLevel(targetPrice, targetAmount)
+		}
+		if e != nil {
+			return nil, nil, e
+		}
+		if op != nil {
+			ops = append(ops, op)
+		}
+
+		// update top offer, newTopOffer is minOffer because this is a sell strategy, and the lowest price is the best (top) price on the orderbook
+		if newTopOffer == nil || offerPrice.AsFloat() < newTopOffer.AsFloat() {
+			newTopOffer = offerPrice
 		}
 	}
 
