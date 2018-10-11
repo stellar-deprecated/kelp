@@ -82,6 +82,8 @@ To run the bot in simulation mode, try this command:
 
 ## Compile from Source
 
+_Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
+
 To compile Kelp from source:
 
 1. [Download][golang-download] and [setup][golang-setup] Golang.
@@ -269,6 +271,7 @@ See the [Changelog](CHANGELOG.md).
 [scooter video]: https://youtu.be/LStXAG5dwzA
 [sdex]: https://www.stellar.org/developers/guides/concepts/exchange.html
 [sdex explainer video]: https://www.youtube.com/watch?v=2L8-lrmzeWk
+[bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [golang-download]: https://golang.org/dl/
 [golang-setup]: https://golang.org/doc/install#install
 [glide-install]: https://github.com/Masterminds/glide#install
