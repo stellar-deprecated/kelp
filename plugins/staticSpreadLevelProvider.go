@@ -61,7 +61,6 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 		log.Printf("error: center price couldn't be loaded! | %s\n", e)
 		return nil, e
 	}
-	log.Printf("center price: %.7f\n", centerPrice)
 	if p.offset.percent != 0.0 || p.offset.absolute != 0 {
 		// if inverted, we want to invert before we compute the adjusted price, and then invert back
 		if p.offset.invert {
