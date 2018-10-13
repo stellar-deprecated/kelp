@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- executables for windows should use the .exe extension (7b5bbc9eb5b776a27c63483c4af09ca38937670d)
 
 ### Deprecated
 

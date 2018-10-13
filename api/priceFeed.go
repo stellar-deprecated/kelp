@@ -1,5 +1,7 @@
 package api
 
+import "log"
+
 // PriceFeed allows you to fetch the price of a feed
 type PriceFeed interface {
 	GetPrice() (float64, error)
@@ -24,5 +26,7 @@ func (p *FeedPair) GetCenterPrice() (float64, error) {
 		return 0, err
 	}
 
-	return pA / pB, nil
+	centerPrice := pA / pB
+	log.Printf("feedPair prices: feedA=%.7f, feedB=%.7f; centerPrice=%.7f\n", pA, pB, centerPrice)
+	return centerPrice, nil
 }
