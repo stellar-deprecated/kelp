@@ -125,19 +125,7 @@ var Display = makeAssetConverter(map[Asset]string{
 })
 
 // CcxtAssetConverter is the asset converter for the CCXT exchange interface
-// TODO define a scalable approach to referencing assets using CCXT w.r.t. dev cost
-var CcxtAssetConverter = makeAssetConverter(map[Asset]string{
-	XLM:  string(XLM),
-	BTC:  string(BTC),
-	USD:  string(USD),
-	ETH:  string(ETH),
-	LTC:  string(LTC),
-	REP:  string(REP),
-	BCH:  string(BCH),
-	USDT: string(USDT),
-	ICN:  string(ICN),
-	OMG:  string(OMG),
-})
+var CcxtAssetConverter = Display
 
 // KrakenAssetConverter is the asset converter for the Kraken exchange
 var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
