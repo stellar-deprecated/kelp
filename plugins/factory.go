@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
@@ -99,6 +100,7 @@ func MakeStrategy(
 	strategy string,
 	stratConfigPath string,
 ) (api.Strategy, error) {
+	log.Printf("Making strategy: %s\n", strategy)
 	if strat, ok := strategies[strategy]; ok {
 		if strat.NeedsConfig && stratConfigPath == "" {
 			return nil, fmt.Errorf("the '%s' strategy needs a config file", strategy)
