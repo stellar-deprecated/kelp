@@ -68,13 +68,11 @@ func init() {
 			log.Fatal(e)
 		}
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
-		log.Printf("Current strategy: %s\n", *strategy)
 
 		client := &horizon.Client{
 			URL:  botConfig.HORIZON_URL,
 			HTTP: http.DefaultClient,
 		}
-		validateTrustlines(client, &botConfig)
 
 		// --- start initialization of objects ----
 		sdex := plugins.MakeSDEX(
@@ -109,6 +107,10 @@ func init() {
 			dataKey,
 		)
 		// --- end initialization of objects ---
+
+		log.Printf("validating trustlines...\n")
+		validateTrustlines(client, &botConfig)
+		log.Printf("trustlines valid\n")
 
 		log.Println("Starting the trader bot...")
 		for {
