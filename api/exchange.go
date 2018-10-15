@@ -35,8 +35,6 @@ type TickerAPI interface {
 
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange
 type TradeAPI interface {
-	GetPrecision() int8
-
 	GetAssetConverter() *model.AssetConverter
 
 	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)

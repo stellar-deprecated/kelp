@@ -230,11 +230,6 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 	return orders
 }
 
-// GetPrecision impl.
-func (k krakenExchange) GetPrecision() int8 {
-	return k.precision
-}
-
 // GetTickerPrice impl.
 func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]api.Ticker, error) {
 	pairsMap, e := model.TradingPairs2Strings(k.assetConverter, k.delimiter, pairs)
