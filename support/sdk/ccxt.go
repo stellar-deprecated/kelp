@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -68,9 +69,17 @@ func (c *Ccxt) init() error {
 	// make a new instance if needed
 	if len(instanceList) == 0 {
 		instanceName := c.exchangeName + "1"
+		var data []byte
+		data, e = json.Marshal(&struct {
+			ID string `json:"id"`
+		}{
+			ID: instanceName,
+		})
+		if e != nil {
+			return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", instanceName, c.exchangeName, e)
+		}
 		var newInstance map[string]interface{}
-		// TODO better JSON structure
-		e = utils.JSONRequest(c.httpClient, "POST", c.ccxtBaseURL+pathExchanges+"/"+c.exchangeName, "{\"id\": \""+instanceName+"\"}", map[string]string{}, &newInstance)
+		e = utils.JSONRequest(c.httpClient, "POST", c.ccxtBaseURL+pathExchanges+"/"+c.exchangeName, string(data), map[string]string{}, &newInstance)
 		if e != nil {
 			return fmt.Errorf("error creating new exchange instance for exchange '%s': %s", c.exchangeName, e)
 		}
@@ -123,9 +132,13 @@ func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
 	// fetch ticker for symbol
 	url = c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchTicker"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var data []byte
+	data, e = json.Marshal(&[]string{tradingPair})
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling tradingPair '%s' as an array for exchange '%s': %s", tradingPair, c.exchangeName, e)
+	}
 	var tickerOutput interface{}
-	// TODO better JSON structure
-	e = utils.JSONRequest(c.httpClient, "POST", url, "[\""+tradingPair+"\"]", map[string]string{}, &tickerOutput)
+	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &tickerOutput)
 	if e != nil {
 		return nil, fmt.Errorf("error fetching tickers for trading pair '%s': %s", tradingPair, e)
 	}

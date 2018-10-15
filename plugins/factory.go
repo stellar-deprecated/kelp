@@ -134,14 +134,12 @@ var exchanges = map[string]exchangeContainer{
 	"ccxt-binance": exchangeContainer{
 		description: "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		makeFn: func() (api.Exchange, error) {
-			// TODO this URL should be taken from the bot config and this factory.go needs to be structified
 			return makeCcxtExchange("http://localhost:3000", "binance")
 		},
 	},
 	"ccxt-poloniex": exchangeContainer{
 		description: "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		makeFn: func() (api.Exchange, error) {
-			// TODO this URL should be taken from the bot config and this factory.go needs to be structified
 			return makeCcxtExchange("http://localhost:3000", "poloniex")
 		},
 	},
