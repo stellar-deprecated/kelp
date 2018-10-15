@@ -251,10 +251,8 @@ func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tra
 	for _, p := range pairs {
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = api.Ticker{
-			AskPrice:  model.MustNumberFromString(pairTickerInfo.Ask[0], k.precision),
-			AskVolume: model.MustNumberFromString(pairTickerInfo.Ask[1], k.precision),
-			BidPrice:  model.MustNumberFromString(pairTickerInfo.Bid[0], k.precision),
-			BidVolume: model.MustNumberFromString(pairTickerInfo.Bid[1], k.precision),
+			AskPrice: model.MustNumberFromString(pairTickerInfo.Ask[0], k.precision),
+			BidPrice: model.MustNumberFromString(pairTickerInfo.Bid[0], k.precision),
 		}
 	}
 

@@ -13,10 +13,8 @@ type Account interface {
 
 // Ticker encapsulates all the data for a given Trading Pair
 type Ticker struct {
-	AskPrice  *model.Number
-	AskVolume *model.Number
-	BidPrice  *model.Number
-	BidVolume *model.Number
+	AskPrice *model.Number
+	BidPrice *model.Number
 }
 
 // TradesResult is the result of a GetTrades call
