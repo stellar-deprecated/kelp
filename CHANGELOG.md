@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
-- executables for windows should use the .exe extension (7b5bbc9eb5b776a27c63483c4af09ca38937670d)
 
 ### Deprecated
 
@@ -19,6 +18,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 ### Security
+
+## [v1.0.0] - 2018-10-15
+
+### Changed
+- executables for windows should use the .exe extension (7b5bbc9eb5b776a27c63483c4af09ca38937670d)
+
+### Fixed
+- fixed divide by zero error (fa7d7c4d5a2a256d6cfcfe43a65e530e3c06862e)
 
 ## [v1.0.0-rc3] - 2018-09-29
 
@@ -47,6 +54,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.0.0...HEAD
+[v1.0.0]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...v1.0.0
 [v1.0.0-rc3]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
 [v1.0.0-rc2]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc1...v1.0.0-rc2
