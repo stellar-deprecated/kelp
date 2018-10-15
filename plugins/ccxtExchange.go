@@ -69,12 +69,6 @@ func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Ass
 	return nil, nil
 }
 
-// GetPrecision impl
-func (c ccxtExchange) GetPrecision() int8 {
-	// TODO implement
-	return utils.SdexPrecision
-}
-
 // GetOrderBook impl
 func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
 	// TODO implement
