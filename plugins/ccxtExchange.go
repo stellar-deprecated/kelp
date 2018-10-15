@@ -50,10 +50,8 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 		}
 
 		priceResult[p] = api.Ticker{
-			AskPrice:  model.NumberFromFloat(tickerMap["ask"].(float64), c.precision),
-			AskVolume: model.NumberFromFloat(tickerMap["askVolume"].(float64), c.precision),
-			BidPrice:  model.NumberFromFloat(tickerMap["bid"].(float64), c.precision),
-			BidVolume: model.NumberFromFloat(tickerMap["bidVolume"].(float64), c.precision),
+			AskPrice: model.NumberFromFloat(tickerMap["ask"].(float64), c.precision),
+			BidPrice: model.NumberFromFloat(tickerMap["bid"].(float64), c.precision),
 		}
 	}
 
