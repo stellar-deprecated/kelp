@@ -71,8 +71,42 @@ func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Ass
 
 // GetOrderBook impl
 func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
-	// TODO implement
-	return nil, nil
+	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
+	if e != nil {
+		return nil, fmt.Errorf("error converting pair to string: %s", e)
+	}
+
+	limit := int(maxCount)
+	ob, e := c.api.FetchOrderBook(pairString, &limit)
+	if e != nil {
+		return nil, fmt.Errorf("error while fetching orderbook for trading pair '%s': %s", pairString, e)
+	}
+
+	if _, ok := ob["asks"]; !ok {
+		return nil, fmt.Errorf("orderbook did not contain the 'asks' field: %v", ob)
+	}
+	if _, ok := ob["bids"]; !ok {
+		return nil, fmt.Errorf("orderbook did not contain the 'bids' field: %v", ob)
+	}
+
+	asks := c.readOrders(ob["asks"], pair, model.OrderActionSell)
+	bids := c.readOrders(ob["bids"], pair, model.OrderActionBuy)
+	return model.MakeOrderBook(pair, asks, bids), nil
+}
+
+func (c ccxtExchange) readOrders(orders []sdk.CcxtOrder, pair *model.TradingPair, orderAction model.OrderAction) []model.Order {
+	result := []model.Order{}
+	for _, o := range orders {
+		result = append(result, model.Order{
+			Pair:        pair,
+			OrderAction: orderAction,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(o.Price, c.precision),
+			Volume:      model.NumberFromFloat(o.Amount, c.precision),
+			Timestamp:   nil,
+		})
+	}
+	return result
 }
 
 // GetTrades impl
