@@ -132,15 +132,21 @@ var exchanges = map[string]exchangeContainer{
 		makeFn:      makeKrakenExchange,
 	},
 	"ccxt-binance": exchangeContainer{
-		description: "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		description: "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
 		makeFn: func() (api.Exchange, error) {
 			return makeCcxtExchange("http://localhost:3000", "binance")
 		},
 	},
 	"ccxt-poloniex": exchangeContainer{
-		description: "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		description: "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
 		makeFn: func() (api.Exchange, error) {
 			return makeCcxtExchange("http://localhost:3000", "poloniex")
+		},
+	},
+	"ccxt-bittrex": exchangeContainer{
+		description: "Bittrex is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
+		makeFn: func() (api.Exchange, error) {
+			return makeCcxtExchange("http://localhost:3000", "bittrex")
 		},
 	},
 }
