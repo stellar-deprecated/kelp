@@ -41,21 +41,27 @@ func JSONRequest(
 	if e != nil {
 		return fmt.Errorf("could not read http response: %s", e)
 	}
+	bodyString := string(body)
 
 	// ensure Content-Type is json
 	contentType, _, e := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if e != nil {
-		return fmt.Errorf("could not read 'Content-Type' header in http response: %s | response body: %s", e, string(body))
+		return fmt.Errorf("could not read 'Content-Type' header in http response: %s | response body: %s", e, bodyString)
 	}
 	if contentType != "application/json" {
-		return fmt.Errorf("invalid 'Content-Type' header in http response ('%s'), expecting 'application/json', response body: %s", contentType, string(body))
+		return fmt.Errorf("invalid 'Content-Type' header in http response ('%s'), expecting 'application/json', response body: %s", contentType, bodyString)
+	}
+
+	// TODO move this out of this low-level layer
+	if strings.Contains(bodyString, "error") {
+		return fmt.Errorf("error in response: %s", bodyString)
 	}
 
 	if responseData != nil {
 		// parse response, the passed in responseData should be a pointer
 		e = json.Unmarshal(body, responseData)
 		if e != nil {
-			return fmt.Errorf("could not unmarshall response body into json: %s | response body: %s", e, string(body))
+			return fmt.Errorf("could not unmarshall response body into json: %s | response body: %s", e, bodyString)
 		}
 	}
 

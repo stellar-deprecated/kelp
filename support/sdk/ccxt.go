@@ -164,3 +164,61 @@ func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
 	tickerMap := tickerOutput.(map[string]interface{})
 	return tickerMap, nil
 }
+
+// CcxtOrder represents an order in the orderbook
+type CcxtOrder struct {
+	Price  float64
+	Amount float64
+}
+
+// FetchOrderBook calls the /fetchOrderBook endpoint on CCXT, trading pair is the CCXT version of the trading pair
+func (c *Ccxt) FetchOrderBook(tradingPair string, limit *int) (map[string][]CcxtOrder, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	var data []byte
+	if limit != nil {
+		data, e = json.Marshal(&[]string{tradingPair, fmt.Sprintf("%d", *limit)})
+		if e != nil {
+			return nil, fmt.Errorf("error marshaling tradingPair '%s' as an array for exchange '%s' with limit=%d: %s", tradingPair, c.exchangeName, *limit, e)
+		}
+	} else {
+		data, e = json.Marshal(&[]string{tradingPair})
+		if e != nil {
+			return nil, fmt.Errorf("error marshaling tradingPair '%s' as an array for exchange '%s' with no limit: %s", tradingPair, c.exchangeName, e)
+		}
+	}
+
+	// fetch orderbook for symbol
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOrderBook"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var tickerOutput interface{}
+	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &tickerOutput)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching tickers for trading pair '%s': %s", tradingPair, e)
+	}
+
+	result := map[string][]CcxtOrder{}
+	tickerMap := tickerOutput.(map[string]interface{})
+	for k, v := range tickerMap {
+		if k != "asks" && k != "bids" {
+			continue
+		}
+
+		parsedList := []CcxtOrder{}
+		// parse the list into the struct
+		ordersList := v.([]interface{})
+		for _, o := range ordersList {
+			order := o.([]interface{})
+			parsedList = append(parsedList, CcxtOrder{
+				Price:  order[0].(float64),
+				Amount: order[1].(float64),
+			})
+		}
+		result[k] = parsedList
+	}
+	return result, nil
+}
