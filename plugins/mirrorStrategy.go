@@ -79,9 +79,19 @@ func (s mirrorStrategy) UpdateWithOps(
 		return nil, e
 	}
 
+	// limit bids and asks to max 50 operations each because of Stellar's limit of 100 ops/tx
+	bids := ob.Bids()
+	if len(bids) > 50 {
+		bids = bids[:50]
+	}
+	asks := ob.Asks()
+	if len(asks) > 50 {
+		asks = asks[:50]
+	}
+
 	buyOps, e := s.updateLevels(
 		buyingAOffers,
-		ob.Bids(),
+		bids,
 		s.sdex.ModifyBuyOffer,
 		s.sdex.CreateBuyOffer,
 		(1 - s.config.PER_LEVEL_SPREAD),
@@ -91,9 +101,10 @@ func (s mirrorStrategy) UpdateWithOps(
 		return nil, e
 	}
 	log.Printf("num. buyOps in this update: %d\n", len(buyOps))
+
 	sellOps, e := s.updateLevels(
 		sellingAOffers,
-		ob.Asks(),
+		asks,
 		s.sdex.ModifySellOffer,
 		s.sdex.CreateSellOffer,
 		(1 + s.config.PER_LEVEL_SPREAD),
