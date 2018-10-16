@@ -69,6 +69,7 @@ func TestGetOrderBook(t *testing.T) {
 	if !assert.NoError(t, e) {
 		return
 	}
+	assert.Equal(t, ob.Pair(), &pair)
 
 	assert.True(t, len(ob.Asks()) > 0, len(ob.Asks()))
 	assert.True(t, len(ob.Bids()) > 0, len(ob.Bids()))
@@ -76,6 +77,10 @@ func TestGetOrderBook(t *testing.T) {
 	assert.True(t, ob.Asks()[0].OrderType.IsLimit())
 	assert.True(t, ob.Bids()[0].OrderAction.IsBuy())
 	assert.True(t, ob.Bids()[0].OrderType.IsLimit())
+	assert.True(t, ob.Asks()[0].Price.AsFloat() > 0)
+	assert.True(t, ob.Asks()[0].Volume.AsFloat() > 0)
+	assert.True(t, ob.Bids()[0].Price.AsFloat() > 0)
+	assert.True(t, ob.Bids()[0].Volume.AsFloat() > 0)
 }
 
 func TestGetTrades(t *testing.T) {
