@@ -155,13 +155,13 @@ func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
 	// fetch ticker for symbol
 	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchTicker"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
-	var tickerOutput interface{}
-	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &tickerOutput)
+	var output interface{}
+	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
 	if e != nil {
 		return nil, fmt.Errorf("error fetching tickers for trading pair '%s': %s", tradingPair, e)
 	}
 
-	tickerMap := tickerOutput.(map[string]interface{})
+	tickerMap := output.(map[string]interface{})
 	return tickerMap, nil
 }
 
@@ -195,14 +195,14 @@ func (c *Ccxt) FetchOrderBook(tradingPair string, limit *int) (map[string][]Ccxt
 	// fetch orderbook for symbol
 	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOrderBook"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
-	var tickerOutput interface{}
-	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &tickerOutput)
+	var output interface{}
+	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
 	if e != nil {
-		return nil, fmt.Errorf("error fetching tickers for trading pair '%s': %s", tradingPair, e)
+		return nil, fmt.Errorf("error fetching orderbook for trading pair '%s': %s", tradingPair, e)
 	}
 
 	result := map[string][]CcxtOrder{}
-	tickerMap := tickerOutput.(map[string]interface{})
+	tickerMap := output.(map[string]interface{})
 	for k, v := range tickerMap {
 		if k != "asks" && k != "bids" {
 			continue
@@ -221,4 +221,41 @@ func (c *Ccxt) FetchOrderBook(tradingPair string, limit *int) (map[string][]Ccxt
 		result[k] = parsedList
 	}
 	return result, nil
+}
+
+// CcxtTrade represents a trade
+type CcxtTrade struct {
+	Amount    float64 `json:"amount"`
+	Cost      float64 `json:"cost"`
+	Datetime  string  `json:"datetime"`
+	ID        string  `json:"id"`
+	Price     float64 `json:"price"`
+	Side      string  `json:"side"`
+	Symbol    string  `json:"symbol"`
+	Timestamp int64   `json:"timestamp"`
+}
+
+// FetchTrades calls the /fetchTrades endpoint on CCXT, trading pair is the CCXT version of the trading pair
+// TODO take in since and limit values to match CCXT's API
+func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	data, e := json.Marshal(&[]string{tradingPair})
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (tradingPair=%s) as an array for exchange '%s': %s", tradingPair, c.exchangeName, e)
+	}
+
+	// fetch trades for symbol
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchTrades"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	output := []CcxtTrade{}
+	e = utils.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
+	}
+	return output, nil
 }
