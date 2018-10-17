@@ -136,13 +136,13 @@ func runTestFetchOrderBook(k orderbookTest, t *testing.T) {
 
 	m, e := c.FetchOrderBook(k.tradingPair, k.limit)
 	if e != nil && !k.expectError {
-		assert.Fail(t, fmt.Sprintf("error when fetching tickers: %s", e))
+		assert.Fail(t, fmt.Sprintf("error when fetching orderbook: %s", e))
 		return
 	} else if e != nil {
 		// success
 		return
 	} else if e == nil && k.expectError {
-		assert.Fail(t, fmt.Sprintf("expected error when fetching tickers but nothing thrown"))
+		assert.Fail(t, fmt.Sprintf("expected error when fetching orderbook but nothing thrown"))
 		return
 	}
 	// else run checks below
@@ -160,4 +160,96 @@ func runTestFetchOrderBook(k orderbookTest, t *testing.T) {
 	}
 	validateOrders("asks")
 	validateOrders("bids")
+}
+
+func TestFetchTrades(t *testing.T) {
+	poloniexFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
+	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
+	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
+
+	for _, k := range []tradesTest{
+		{
+			exchangeName:   "poloniex",
+			tradingPair:    "BTC/USDT",
+			expectedFields: poloniexFields,
+		}, {
+			exchangeName:   "poloniex",
+			tradingPair:    "XLM/USDT",
+			expectedFields: poloniexFields,
+		}, {
+			exchangeName:   "binance",
+			tradingPair:    "BTC/USDT",
+			expectedFields: binanceFields,
+		}, {
+			exchangeName:   "binance",
+			tradingPair:    "XLM/USDT",
+			expectedFields: binanceFields,
+		}, {
+			exchangeName:   "bittrex",
+			tradingPair:    "XLM/BTC",
+			expectedFields: bittrexFields,
+		},
+	} {
+		t.Run(k.exchangeName, func(t *testing.T) {
+			runTestFetchTrades(k, t)
+		})
+	}
+}
+
+type tradesTest struct {
+	exchangeName   string
+	tradingPair    string
+	expectedFields []string
+}
+
+func runTestFetchTrades(k tradesTest, t *testing.T) {
+	c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName)
+	if e != nil {
+		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+		return
+	}
+
+	trades, e := c.FetchTrades(k.tradingPair)
+	if e != nil {
+		assert.Fail(t, fmt.Sprintf("error when fetching trades: %s", e))
+		return
+	}
+
+	// convert expectedFields to a map and create the supportsField function
+	fieldsMap := map[string]bool{}
+	for _, f := range k.expectedFields {
+		fieldsMap[f] = true
+	}
+	supportsField := func(field string) bool {
+		_, ok := fieldsMap[field]
+		return ok
+	}
+
+	assert.True(t, len(trades) > 0)
+	for _, trade := range trades {
+		if supportsField("amount") && !assert.True(t, trade.Amount > 0) {
+			return
+		}
+		if supportsField("cost") && !assert.True(t, trade.Cost > 0) {
+			return
+		}
+		if supportsField("datetime") && !assert.True(t, len(trade.Datetime) > 0) {
+			return
+		}
+		if supportsField("id") && !assert.True(t, len(trade.ID) > 0) {
+			return
+		}
+		if supportsField("price") && !assert.True(t, trade.Price > 0) {
+			return
+		}
+		if supportsField("side") && !assert.True(t, trade.Side == "sell" || trade.Side == "buy") {
+			return
+		}
+		if supportsField("symbol") && !assert.True(t, trade.Symbol == k.tradingPair) {
+			return
+		}
+		if supportsField("timestamp") && !assert.True(t, trade.Timestamp > 0) {
+			return
+		}
+	}
 }
