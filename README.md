@@ -98,6 +98,7 @@ To compile Kelp from source:
     * `./scripts/build.sh`
 6. Confirm one new binary file:
     * `./bin/kelp`
+7. Set up CCXT to use an expanded set of priceFeeds or orderbooks (see the [Using CCXT](#using-ccxt) section for details)
 
 ## Running Kelp
 
@@ -124,9 +125,9 @@ If you are ever stuck, just invoke the `kelp` binary directly or type `kelp help
 
 ## Using CCXT
 
-You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices from a larger number of exchanges.
+You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices and orderbooks from a larger number of exchanges.
 
-You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it. In order to run CCXT you should install [docker][docker] (`sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (`sudo docker run -p 3000:3000 -d franzsee/ccxt-rest`). You can find more details on the [CCXT_REST github page][ccxt-rest]. The CCXT-REST server **must** be running before you start up the Kelp bot.
+You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it. In order to run CCXT you should install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest`). You can find more details on the [CCXT_REST github page][ccxt-rest]. The CCXT-REST server **must** be running on port `3000` before you start up the Kelp bot.
 
 You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
 
