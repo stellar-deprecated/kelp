@@ -111,8 +111,64 @@ func (c ccxtExchange) readOrders(orders []sdk.CcxtOrder, pair *model.TradingPair
 
 // GetTrades impl
 func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
-	// TODO implement
-	return nil, nil
+	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
+	if e != nil {
+		return nil, fmt.Errorf("error converting pair to string: %s", e)
+	}
+
+	// TODO use cursor when fetching trades
+	tradesRaw, e := c.api.FetchTrades(pairString)
+	if e != nil {
+		return nil, fmt.Errorf("error while fetching trades for trading pair '%s': %s", pairString, e)
+	}
+
+	trades := []model.Trade{}
+	for _, raw := range tradesRaw {
+		t, e := c.readTrade(pair, pairString, raw)
+		if e != nil {
+			return nil, fmt.Errorf("error while reading trade: %s", e)
+		}
+		trades = append(trades, *t)
+	}
+
+	// TODO implement cursor logic
+	return &api.TradesResult{
+		Cursor: nil,
+		Trades: trades,
+	}, nil
+}
+
+func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawTrade sdk.CcxtTrade) (*model.Trade, error) {
+	if rawTrade.Symbol != pairString {
+		return nil, fmt.Errorf("expected '%s' for 'symbol' field, got: %s", pairString, rawTrade.Symbol)
+	}
+
+	trade := model.Trade{
+		Order: model.Order{
+			Pair:      pair,
+			Price:     model.NumberFromFloat(rawTrade.Price, c.precision),
+			Volume:    model.NumberFromFloat(rawTrade.Amount, c.precision),
+			OrderType: model.OrderTypeLimit,
+			Timestamp: model.MakeTimestamp(rawTrade.Timestamp),
+		},
+		TransactionID: model.MakeTransactionID(rawTrade.ID),
+		Fee:           nil,
+	}
+
+	if rawTrade.Side == "sell" {
+		trade.OrderAction = model.OrderActionSell
+	} else if rawTrade.Side == "buy" {
+		trade.OrderAction = model.OrderActionBuy
+	} else {
+		return nil, fmt.Errorf("unrecognized value for 'side' field: %s", rawTrade.Side)
+	}
+
+	if rawTrade.Cost != 0.0 {
+		// use 2x the precision for cost since it's logically derived from amount and price
+		trade.Cost = model.NumberFromFloat(rawTrade.Cost, c.precision*2)
+	}
+
+	return &trade, nil
 }
 
 // GetTradeHistory impl
