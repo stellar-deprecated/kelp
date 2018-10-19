@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
-- support for [CCXT](https://github.com/ccxt/ccxt) via [CCXT-REST API](https://github.com/franz-see/ccxt-rest), increasing exchange integrations for priceFeeds and mirroring [diff](https://github.com/lightyeario/kelp/compare/0db8f2d42580aa87867470e428d5f0f63eed5ec6^...33bc7b98418129011b151d0f56c9c0770a3d897e)
 
 ### Changed
 
@@ -19,6 +18,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 ### Security
+
+## [v1.1.0] - 2018-10-19
+
+### Added
+- support for [CCXT](https://github.com/ccxt/ccxt) via [CCXT-REST API](https://github.com/franz-see/ccxt-rest), increasing exchange integrations for priceFeeds and mirroring [diff](https://github.com/lightyeario/kelp/compare/0db8f2d42580aa87867470e428d5f0f63eed5ec6^...33bc7b98418129011b151d0f56c9c0770a3d897e)
 
 ## [v1.0.0] - 2018-10-15
 
@@ -55,7 +59,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.0...HEAD
+[v1.1.0]: https://github.com/lightyeario/kelp/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...v1.0.0
 [v1.0.0-rc3]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
 [v1.0.0-rc2]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc1...v1.0.0-rc2
