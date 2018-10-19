@@ -202,6 +202,9 @@ Exchange integrations provide data to trading strategies and allow you to [hedge
 
 - sdex ([source](plugins/sdex.go)): The [Stellar Decentralized Exchange][sdex]
 - kraken ([source](plugins/krakenExchange.go)): [Kraken][kraken]
+- binance (_`"ccxt-binance"`_) ([source](plugins/ccxtExchange.go)): Binance via CCXT - only supports priceFeeds and mirroring (buysell, sell, and mirror strategy)
+- poloniex (_`"ccxt-poloniex"`_) ([source](plugins/ccxtExchange.go)): Poloniex via CCXT - only supports priceFeeds and mirroring (buysell, sell, and mirror strategy)
+- bittrex (_`"ccxt-bittrex"`_) ([source](plugins/ccxtExchange.go)): Bittrex via CCXT - only supports priceFeeds and mirroring (buysell, sell, and mirror strategy)
 
 ## Plugins
 
