@@ -8,19 +8,19 @@ import (
 
 // balancedConfig contains the configuration params for this Strategy
 type balancedConfig struct {
-	PRICE_TOLERANCE                 float64 `valid:"-"`
-	AMOUNT_TOLERANCE                float64 `valid:"-"`
-	SPREAD                          float64 `valid:"-"` // this is the bid-ask spread (i.e. it is not the spread from the center price)
-	MIN_AMOUNT_SPREAD               float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
-	MAX_AMOUNT_SPREAD               float64 `valid:"-"` // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
-	MAX_LEVELS                      int16   `valid:"-"` // max number of levels to have on either side
-	LEVEL_DENSITY                   float64 `valid:"-"` // value between 0.0 to 1.0 used as a probability
-	ENSURE_FIRST_N_LEVELS           int16   `valid:"-"` // always adds the first N levels, meaningless if levelDensity = 1.0
-	MIN_AMOUNT_CARRYOVER_SPREAD     float64 `valid:"-"` // the minimum spread % we take off the amountCarryover before placing the orders
-	MAX_AMOUNT_CARRYOVER_SPREAD     float64 `valid:"-"` // the maximum spread % we take off the amountCarryover before placing the orders
-	CARRYOVER_INCLUSION_PROBABILITY float64 `valid:"-"` // probability of including the carryover at a level that will be added
-	VIRTUAL_BALANCE_BASE            float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
-	VIRTUAL_BALANCE_QUOTE           float64 `valid:"-"` // virtual balance to use so we can smoothen out the curve
+	priceTolerance                float64 `valid:"-" toml:"PRICE_TOLERANCE"`
+	amountTolerance               float64 `valid:"-" toml:"AMOUNT_TOLERANCE"`
+	spread                        float64 `valid:"-" toml:"SPREAD"`                          // this is the bid-ask spread (i.e. it is not the spread from the center price)
+	minAmountSpread               float64 `valid:"-" toml:"MIN_AMOUNT_SPREAD"`               // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
+	maxAmountSpread               float64 `valid:"-" toml:"MAX_AMOUNT_SPREAD"`               // reduces the order size by this percentage resulting in a gain anytime 1 unit more than the first layer is consumed
+	maxLevels                     int16   `valid:"-" toml:"MAX_LEVELS"`                      // max number of levels to have on either side
+	levelDensity                  float64 `valid:"-" toml:"LEVEL_DENSITY"`                   // value between 0.0 to 1.0 used as a probability
+	ensureFirstNLevels            int16   `valid:"-" toml:"ENSURE_FIRST_N_LEVELS"`           // always adds the first N levels, meaningless if levelDensity = 1.0
+	minAmountCarryoverSpread      float64 `valid:"-" toml:"MIN_AMOUNT_CARRYOVER_SPREAD"`     // the minimum spread % we take off the amountCarryover before placing the orders
+	maxAmountCarryoverSpread      float64 `valid:"-" toml:"MAX_AMOUNT_CARRYOVER_SPREAD"`     // the maximum spread % we take off the amountCarryover before placing the orders
+	carryoverInclusionProbability float64 `valid:"-" toml:"CARRYOVER_INCLUSION_PROBABILITY"` // probability of including the carryover at a level that will be added
+	virtualBalanceBase            float64 `valid:"-" toml:"VIRTUAL_BALANCE_BASE"`            // virtual balance to use so we can smoothen out the curve
+	virtualBalanceQuote           float64 `valid:"-" toml:"VIRTUAL_BALANCE_QUOTE"`           // virtual balance to use so we can smoothen out the curve
 }
 
 // String impl.
@@ -40,20 +40,20 @@ func makeBalancedStrategy(
 		assetBase,
 		assetQuote,
 		makeBalancedLevelProvider(
-			config.SPREAD,
+			config.spread,
 			false,
-			config.MIN_AMOUNT_SPREAD,
-			config.MAX_AMOUNT_SPREAD,
-			config.MAX_LEVELS,
-			config.LEVEL_DENSITY,
-			config.ENSURE_FIRST_N_LEVELS,
-			config.MIN_AMOUNT_CARRYOVER_SPREAD,
-			config.MAX_AMOUNT_CARRYOVER_SPREAD,
-			config.CARRYOVER_INCLUSION_PROBABILITY,
-			config.VIRTUAL_BALANCE_BASE,
-			config.VIRTUAL_BALANCE_QUOTE),
-		config.PRICE_TOLERANCE,
-		config.AMOUNT_TOLERANCE,
+			config.minAmountSpread,
+			config.maxAmountSpread,
+			config.maxLevels,
+			config.levelDensity,
+			config.ensureFirstNLevels,
+			config.minAmountCarryoverSpread,
+			config.maxAmountCarryoverSpread,
+			config.carryoverInclusionProbability,
+			config.virtualBalanceBase,
+			config.virtualBalanceQuote),
+		config.priceTolerance,
+		config.amountTolerance,
 		false,
 	)
 	// switch sides of base/quote here for buy side
@@ -62,20 +62,20 @@ func makeBalancedStrategy(
 		assetQuote,
 		assetBase,
 		makeBalancedLevelProvider(
-			config.SPREAD,
+			config.spread,
 			true, // real base is passed in as quote so pass in true
-			config.MIN_AMOUNT_SPREAD,
-			config.MAX_AMOUNT_SPREAD,
-			config.MAX_LEVELS,
-			config.LEVEL_DENSITY,
-			config.ENSURE_FIRST_N_LEVELS,
-			config.MIN_AMOUNT_CARRYOVER_SPREAD,
-			config.MAX_AMOUNT_CARRYOVER_SPREAD,
-			config.CARRYOVER_INCLUSION_PROBABILITY,
-			config.VIRTUAL_BALANCE_QUOTE,
-			config.VIRTUAL_BALANCE_BASE),
-		config.PRICE_TOLERANCE,
-		config.AMOUNT_TOLERANCE,
+			config.minAmountSpread,
+			config.maxAmountSpread,
+			config.maxLevels,
+			config.levelDensity,
+			config.ensureFirstNLevels,
+			config.minAmountCarryoverSpread,
+			config.maxAmountCarryoverSpread,
+			config.carryoverInclusionProbability,
+			config.virtualBalanceQuote,
+			config.virtualBalanceBase),
+		config.priceTolerance,
+		config.amountTolerance,
 		true,
 	)
 
