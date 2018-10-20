@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"fmt"
+
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
@@ -32,13 +34,17 @@ func makeSellStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *sellConfig,
-) api.Strategy {
-	pf := MakeFeedPair(
+) (api.Strategy, error) {
+	pf, e := MakeFeedPair(
 		config.DATA_TYPE_A,
 		config.DATA_FEED_A_URL,
 		config.DATA_TYPE_B,
 		config.DATA_FEED_B_URL,
 	)
+	if e != nil {
+		return nil, fmt.Errorf("cannot make the sell strategy because we could not make the feed pair: %s", e)
+	}
+
 	offset := rateOffset{
 		percent:      config.RATE_OFFSET_PERCENT,
 		absolute:     config.RATE_OFFSET,
@@ -61,5 +67,5 @@ func makeSellStrategy(
 		assetQuote,
 		deleteSideStrategy,
 		sellSideStrategy,
-	)
+	), nil
 }

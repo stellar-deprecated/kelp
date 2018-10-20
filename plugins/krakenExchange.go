@@ -45,14 +45,14 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 
 // makeKrakenExchange is a factory method to make the kraken exchange
 // TODO 2, should take in config file for kraken api keys + withdrawalKeys mapping
-func makeKrakenExchange() api.Exchange {
+func makeKrakenExchange() (api.Exchange, error) {
 	return &krakenExchange{
 		assetConverter: model.KrakenAssetConverter,
 		api:            krakenapi.New("", ""),
 		delimiter:      "",
 		withdrawKeys:   asset2Address2Key{},
 		precision:      8,
-	}
+	}, nil
 }
 
 const pricePrecision = 5
@@ -230,11 +230,6 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 	return orders
 }
 
-// GetPrecision impl.
-func (k krakenExchange) GetPrecision() int8 {
-	return k.precision
-}
-
 // GetTickerPrice impl.
 func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]api.Ticker, error) {
 	pairsMap, e := model.TradingPairs2Strings(k.assetConverter, k.delimiter, pairs)
@@ -251,10 +246,8 @@ func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tra
 	for _, p := range pairs {
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = api.Ticker{
-			AskPrice:  model.MustNumberFromString(pairTickerInfo.Ask[0], k.precision),
-			AskVolume: model.MustNumberFromString(pairTickerInfo.Ask[1], k.precision),
-			BidPrice:  model.MustNumberFromString(pairTickerInfo.Bid[0], k.precision),
-			BidVolume: model.MustNumberFromString(pairTickerInfo.Bid[1], k.precision),
+			AskPrice: model.MustNumberFromString(pairTickerInfo.Ask[0], k.precision),
+			BidPrice: model.MustNumberFromString(pairTickerInfo.Bid[0], k.precision),
 		}
 	}
 

@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"log"
 )
 
@@ -40,6 +41,7 @@ const (
 	GBP  Asset = "GBP"
 	JPY  Asset = "JPY"
 	KRW  Asset = "KRW"
+	OMG  Asset = "OMG"
 )
 
 // AssetConverter converts to and from the asset type, it is specific to an exchange
@@ -83,7 +85,7 @@ func (c AssetConverter) FromString(s string) (Asset, error) {
 func (c AssetConverter) MustFromString(s string) Asset {
 	a, e := c.FromString(s)
 	if e != nil {
-		log.Fatal(e)
+		log.Fatal(fmt.Errorf("exiting on an error-enforced asset conversion: %s", e))
 	}
 	return a
 }
@@ -119,7 +121,11 @@ var Display = makeAssetConverter(map[Asset]string{
 	GBP:  string(GBP),
 	JPY:  string(JPY),
 	KRW:  string(KRW),
+	OMG:  string(OMG),
 })
+
+// CcxtAssetConverter is the asset converter for the CCXT exchange interface
+var CcxtAssetConverter = Display
 
 // KrakenAssetConverter is the asset converter for the Kraken exchange
 var KrakenAssetConverter = makeAssetConverter(map[Asset]string{

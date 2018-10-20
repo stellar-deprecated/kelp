@@ -111,6 +111,11 @@ type OrderBook struct {
 	bids []Order
 }
 
+// Pair returns trading pair
+func (o OrderBook) Pair() *TradingPair {
+	return o.pair
+}
+
 // Asks returns the asks in an orderbook
 func (o OrderBook) Asks() []Order {
 	return o.asks

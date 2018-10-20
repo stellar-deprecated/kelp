@@ -13,10 +13,8 @@ type Account interface {
 
 // Ticker encapsulates all the data for a given Trading Pair
 type Ticker struct {
-	AskPrice  *model.Number
-	AskVolume *model.Number
-	BidPrice  *model.Number
-	BidVolume *model.Number
+	AskPrice *model.Number
+	BidPrice *model.Number
 }
 
 // TradesResult is the result of a GetTrades call
@@ -30,13 +28,14 @@ type TradeHistoryResult struct {
 	Trades []model.Trade
 }
 
+// TickerAPI is the interface we use as a generic API for getting ticker data from any crypto exchange
+type TickerAPI interface {
+	GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]Ticker, error)
+}
+
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange
 type TradeAPI interface {
-	GetPrecision() int8
-
 	GetAssetConverter() *model.AssetConverter
-
-	GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]Ticker, error)
 
 	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)
 
@@ -145,6 +144,7 @@ func MakeErrWithdrawAmountInvalid(amountToWithdraw *model.Number, fee *model.Num
 // Exchange is the interface we use as a generic API for all crypto exchanges
 type Exchange interface {
 	Account
+	TickerAPI
 	TradeAPI
 	DepositAPI
 	WithdrawAPI
