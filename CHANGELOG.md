@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Security
 
+## [v1.1.1] - 2018-10-22
+
+### Fixed
+- fixed bot panicing when it cannot cast ticker bid/ask values to a float64 from CCXT's FetchTicker endpoint (0ccbc495e18b1e3b207dad5d3421c7556c63c004) ([issue #31](https://github.com/lightyeario/kelp/issues/31))
+
 ## [v1.1.0] - 2018-10-19
 
 ### Added
@@ -59,7 +64,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.1...HEAD
+[v1.1.1]: https://github.com/lightyeario/kelp/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/lightyeario/kelp/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...v1.0.0
 [v1.0.0-rc3]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
