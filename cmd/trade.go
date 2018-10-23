@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/lightyeario/kelp/model"
@@ -46,6 +49,8 @@ func init() {
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
+
+	setLogFile()
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -187,4 +192,19 @@ func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, 
 	} else {
 		log.Fatal("...nothing to delete, exiting")
 	}
+}
+
+func setLogFile() {
+	t := time.Now().String()
+	var b strings.Builder
+	b.WriteString("KelpLog_")
+	b.WriteString(t)
+	fileName := b.String()
+	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Failed to set log file: %v", err)
+	}
+
+	mw := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(mw)
 }
