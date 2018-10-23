@@ -27,7 +27,12 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 	var buf bytes.Buffer
 	numFields := reflect.TypeOf(s).NumField()
 	for i := 0; i < numFields; i++ {
-		fieldName := reflect.TypeOf(s).Field(i).Name
+		field := reflect.TypeOf(s).Field(i)
+		fieldName := field.Name
+		fieldDisplayName := field.Tag.Get("toml")
+		if fieldDisplayName == "" {
+			fieldDisplayName = fieldName
+		}
 
 		// set the transformation function
 		transformFn := passthrough
