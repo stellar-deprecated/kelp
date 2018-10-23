@@ -35,20 +35,20 @@ func init() {
 
 		// --- start initialization of objects ----
 		client := &horizon.Client{
-			URL:  configFile.HORIZON_URL,
+			URL:  configFile.HorizonURL,
 			HTTP: http.DefaultClient,
 		}
 		sdex := plugins.MakeSDEX(
 			client,
-			configFile.SOURCE_SECRET_SEED,
-			configFile.TRADING_SECRET_SEED,
+			configFile.SourceSecretSeed,
+			configFile.TradingSecretSeed,
 			*configFile.SourceAccount,
 			*configFile.TradingAccount,
-			utils.ParseNetwork(configFile.HORIZON_URL),
+			utils.ParseNetwork(configFile.HorizonURL),
 			-1, // not needed here
 			false,
 		)
-		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TICK_INTERVAL_SECONDS, configFile.ALLOW_INACTIVE_MINUTES)
+		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes)
 		// --- end initialization of objects ----
 
 		for {
