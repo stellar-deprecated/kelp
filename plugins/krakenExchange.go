@@ -11,7 +11,7 @@ import (
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/lightyeario/kelp/api"
 	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/lightyeario/kelp/support/networking"
 )
 
 // ensure that krakenExchange conforms to the Exchange interface
@@ -19,12 +19,13 @@ var _ api.Exchange = krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
-	assetConverter *model.AssetConverter
-	api            *krakenapi.KrakenApi
-	delimiter      string
-	precision      int8
-	withdrawKeys   asset2Address2Key
-	isSimulated    bool // will simulate add and cancel orders if this is true
+	assetConverter           *model.AssetConverter
+	assetConverterOpenOrders *model.AssetConverter // kraken uses different symbols when fetching open orders!
+	api                      *krakenapi.KrakenApi
+	delimiter                string
+	precision                int8
+	withdrawKeys             asset2Address2Key
+	isSimulated              bool // will simulate add and cancel orders if this is true
 }
 
 type asset2Address2Key map[model.Asset]map[string]string
@@ -47,28 +48,20 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 // TODO 2, should take in config file for kraken api keys + withdrawalKeys mapping
 func makeKrakenExchange() (api.Exchange, error) {
 	return &krakenExchange{
-		assetConverter: model.KrakenAssetConverter,
-		api:            krakenapi.New("", ""),
-		delimiter:      "",
-		withdrawKeys:   asset2Address2Key{},
-		precision:      8,
+		assetConverter:           model.KrakenAssetConverter,
+		assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
+		api:          krakenapi.New("", ""),
+		delimiter:    "",
+		withdrawKeys: asset2Address2Key{},
+		precision:    8,
 	}, nil
 }
-
-const pricePrecision = 5
-const volPrecision = 5
 
 // AddOrder impl.
 func (k krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
 	pairStr, e := order.Pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
-	}
-	if order.Price.Precision() != pricePrecision {
-		return nil, fmt.Errorf("price has unexpected precision: %d, expected %d", order.Price.Precision(), pricePrecision)
-	}
-	if order.Volume.Precision() != volPrecision {
-		return nil, fmt.Errorf("volume has unexpected precision: %d, expected %d", order.Volume.Precision(), volPrecision)
 	}
 
 	args := map[string]string{
@@ -106,6 +99,10 @@ func (k krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, erro
 
 // CancelOrder impl.
 func (k krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
+	if k.isSimulated {
+		return model.CancelResultCancelSuccessful, nil
+	}
+
 	resp, e := k.api.CancelOrder(txID.String())
 	if e != nil {
 		return model.CancelResultFailed, e
@@ -167,8 +164,8 @@ func (k krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder
 
 	m := map[model.TradingPair][]model.OpenOrder{}
 	for ID, o := range openOrdersResponse.Open {
-		// for some reason the open orders API returns the normal codes for assets
-		pair, e := model.TradingPairFromString(3, model.Display, o.Description.AssetPair)
+		// kraken uses different symbols when fetching open orders!
+		pair, e := model.TradingPairFromString(3, k.assetConverterOpenOrders, o.Description.AssetPair)
 		if e != nil {
 			return nil, e
 		}
@@ -466,15 +463,15 @@ type withdrawInfo struct {
 
 func parseWithdrawInfo(m map[string]interface{}) (*withdrawInfo, error) {
 	// limit
-	limit, e := utils.ParseNumber(m, "limit", "WithdrawInfo")
+	limit, e := networking.ParseNumber(m, "limit", "WithdrawInfo")
 	if e != nil {
 		return nil, e
 	}
 
 	// fee
-	fee, e := utils.ParseNumber(m, "fee", "WithdrawInfo")
+	fee, e := networking.ParseNumber(m, "fee", "WithdrawInfo")
 	if e != nil {
-		if !strings.HasPrefix(e.Error(), utils.PrefixFieldNotFound) {
+		if !strings.HasPrefix(e.Error(), networking.PrefixFieldNotFound) {
 			return nil, e
 		}
 		// fee may be missing in which case it's null
@@ -482,7 +479,7 @@ func parseWithdrawInfo(m map[string]interface{}) (*withdrawInfo, error) {
 	}
 
 	// amount
-	amount, e := utils.ParseNumber(m, "amount", "WithdrawInfo")
+	amount, e := networking.ParseNumber(m, "amount", "WithdrawInfo")
 	if e != nil {
 		return nil, e
 	}
@@ -625,22 +622,22 @@ func (k krakenExchange) getDepositAddress(asset string, method string, genAddres
 
 func parseDepositAddress(m map[string]interface{}) (*depositAddress, error) {
 	// address
-	address, e := utils.ParseString(m, "address", "DepositAddresses")
+	address, e := networking.ParseString(m, "address", "DepositAddresses")
 	if e != nil {
 		return nil, e
 	}
 
 	// expiretm
-	expireN, e := utils.ParseNumber(m, "expiretm", "DepositAddresses")
+	expireN, e := networking.ParseNumber(m, "expiretm", "DepositAddresses")
 	if e != nil {
 		return nil, e
 	}
 	expireTs := int64(expireN.AsFloat())
 
 	// new
-	isNew, e := utils.ParseBool(m, "new", "DepositAddresses")
+	isNew, e := networking.ParseBool(m, "new", "DepositAddresses")
 	if e != nil {
-		if !strings.HasPrefix(e.Error(), utils.PrefixFieldNotFound) {
+		if !strings.HasPrefix(e.Error(), networking.PrefixFieldNotFound) {
 			return nil, e
 		}
 		// new may be missing in which case it's false
@@ -656,17 +653,17 @@ func parseDepositAddress(m map[string]interface{}) (*depositAddress, error) {
 
 func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	// method
-	method, e := utils.ParseString(m, "method", "DepositMethods")
+	method, e := networking.ParseString(m, "method", "DepositMethods")
 	if e != nil {
 		return nil, e
 	}
 
 	// limit
 	var limit *model.Number
-	limB, e := utils.ParseBool(m, "limit", "DepositMethods")
+	limB, e := networking.ParseBool(m, "limit", "DepositMethods")
 	if e != nil {
 		// limit is special as it can be a boolean or a number
-		limit, e = utils.ParseNumber(m, "limit", "DepositMethods")
+		limit, e = networking.ParseNumber(m, "limit", "DepositMethods")
 		if e != nil {
 			return nil, e
 		}
@@ -678,9 +675,9 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// fee
-	fee, e := utils.ParseNumber(m, "fee", "DepositMethods")
+	fee, e := networking.ParseNumber(m, "fee", "DepositMethods")
 	if e != nil {
-		if !strings.HasPrefix(e.Error(), utils.PrefixFieldNotFound) {
+		if !strings.HasPrefix(e.Error(), networking.PrefixFieldNotFound) {
 			return nil, e
 		}
 		// fee may be missing in which case it's null
@@ -688,7 +685,7 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 	}
 
 	// gen-address
-	genAddress, e := utils.ParseBool(m, "gen-address", "DepositMethods")
+	genAddress, e := networking.ParseBool(m, "gen-address", "DepositMethods")
 	if e != nil {
 		return nil, e
 	}
@@ -734,7 +731,7 @@ func (k krakenExchange) WithdrawFunds(
 func parseWithdrawResponse(resp interface{}) (*api.WithdrawFunds, error) {
 	switch m := resp.(type) {
 	case map[string]interface{}:
-		refid, e := utils.ParseString(m, "refid", "Withdraw")
+		refid, e := networking.ParseString(m, "refid", "Withdraw")
 		if e != nil {
 			return nil, e
 		}

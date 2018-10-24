@@ -10,12 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- conversion of asset symbols in the GetOpenOrders() API for Kraken, reducing the number of tested asset symbols with this API
 
 ### Security
 

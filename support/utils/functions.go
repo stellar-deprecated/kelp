@@ -225,3 +225,11 @@ func CheckFetchFloat(m map[string]interface{}, key string) (float64, error) {
 
 	return f, nil
 }
+
+// CheckedString returns "<nil>" if the object is nil, otherwise calls the String() function on the object
+func CheckedString(v interface{}) string {
+	if v == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%v", v)
+}

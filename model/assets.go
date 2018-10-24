@@ -159,3 +159,10 @@ var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
 	JPY:  "ZJPY",
 	KRW:  "ZKRW",
 })
+
+// KrakenAssetConverterOpenOrders is the asset converter for the Kraken exchange's GetOpenOrders API
+var KrakenAssetConverterOpenOrders = makeAssetConverter(map[Asset]string{
+	XLM: "XLM",
+	BTC: "XBT",
+	USD: "USD",
+})
