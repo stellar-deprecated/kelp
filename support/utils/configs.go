@@ -36,14 +36,14 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 
 		// set the transformation function
 		transformFn := passthrough
-		if fn, ok := transforms[fieldName]; ok {
+		if fn, ok := transforms[fieldDisplayName]; ok {
 			transformFn = fn
 		}
 
 		if reflect.ValueOf(s).Field(i).CanInterface() {
 			value := reflect.ValueOf(s).Field(i).Interface()
 			transformedValue := transformFn(value)
-			buf.WriteString(fmt.Sprintf("%s: %+v\n", fieldName, transformedValue))
+			buf.WriteString(fmt.Sprintf("%s: %+v\n", fieldDisplayName, transformedValue))
 		}
 	}
 	return buf.String()
