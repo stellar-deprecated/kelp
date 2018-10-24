@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/lightyeario/kelp/model"
@@ -49,8 +48,7 @@ func init() {
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
-
-	setLogFile()
+	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file as well as stdout")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -63,6 +61,13 @@ func init() {
 			startupMessage += " (simulation mode)"
 		}
 		log.Println(startupMessage)
+
+		if *logPrefix != "" {
+			t := time.Now().String()
+			fileName := fmt.Sprintf("%s_%s", *logPrefix, t)
+			setLogFile(fileName)
+			log.Printf("Logging to file %s", fileName)
+		}
 
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
@@ -194,12 +199,7 @@ func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, 
 	}
 }
 
-func setLogFile() {
-	t := time.Now().String()
-	var b strings.Builder
-	b.WriteString("KelpLog_")
-	b.WriteString(t)
-	fileName := b.String()
+func setLogFile(fileName string) {
 	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Failed to set log file: %v", err)
