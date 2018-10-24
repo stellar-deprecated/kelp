@@ -20,6 +20,8 @@ type BotConfig struct {
 	ISSUER_B              string `valid:"-"`
 	TICK_INTERVAL_SECONDS int32  `valid:"-"`
 	HORIZON_URL           string `valid:"-"`
+	ALERT_TYPE            string `valid:"-"`
+	ALERT_API_KEY         string `valid:"-"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil

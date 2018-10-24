@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
+	"github.com/lightyeario/kelp/support/monitoring"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader"
 	"github.com/spf13/cobra"
@@ -74,6 +75,10 @@ func init() {
 			HTTP: http.DefaultClient,
 		}
 
+		alert, e := monitoring.MakeAlert(botConfig.ALERT_TYPE, botConfig.ALERT_API_KEY)
+		if e != nil {
+			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.ALERT_TYPE)
+		}
 		// --- start initialization of objects ----
 		sdex := plugins.MakeSDEX(
 			client,
@@ -105,6 +110,7 @@ func init() {
 			strat,
 			botConfig.TICK_INTERVAL_SECONDS,
 			dataKey,
+			alert,
 		)
 		// --- end initialization of objects ---
 
