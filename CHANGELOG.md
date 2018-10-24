@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/lightyeario/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
 
 ### Changed
 - reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
