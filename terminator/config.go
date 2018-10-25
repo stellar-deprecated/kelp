@@ -21,8 +21,8 @@ type Config struct {
 // String impl.
 func (c Config) String() string {
 	return utils.StructString(c, map[string]func(interface{}) interface{}{
-		"SourceSecretSeed":  utils.SecretKey2PublicKey,
-		"TradingSecretSeed": utils.SecretKey2PublicKey,
+		"SOURCE_SECRET_SEED":  utils.SecretKey2PublicKey,
+		"TRADING_SECRET_SEED": utils.SecretKey2PublicKey,
 	})
 }
 
