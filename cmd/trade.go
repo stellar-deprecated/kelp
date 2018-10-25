@@ -56,19 +56,6 @@ func init() {
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
-		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
-		if *simMode {
-			startupMessage += " (simulation mode)"
-		}
-		log.Println(startupMessage)
-
-		if *logPrefix != "" {
-			t := time.Now().String()
-			fileName := fmt.Sprintf("%s_%s", *logPrefix, t)
-			setLogFile(fileName)
-			log.Printf("Logging to file %s", fileName)
-		}
-
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
@@ -77,6 +64,27 @@ func init() {
 			log.Println()
 			log.Fatal(e)
 		}
+
+		if *logPrefix != "" {
+			//t := time.Now().String()
+			//test_20181024T154304PDT
+			t := time.Now().Format("20060102T150405MST")
+			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B, t)
+			e := setLogFile(fileName)
+			if e != nil {
+				log.Println()
+				log.Fatal(e)
+				return
+			}
+			log.Printf("Logging to file %s", fileName)
+		}
+
+		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
+		if *simMode {
+			startupMessage += " (simulation mode)"
+		}
+		log.Println(startupMessage)
+
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
 
 		client := &horizon.Client{
@@ -199,12 +207,12 @@ func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, 
 	}
 }
 
-func setLogFile(fileName string) {
-	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("Failed to set log file: %v", err)
+func setLogFile(fileName string) error {
+	f, e := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if e != nil {
+		return fmt.Errorf("failed to set log file: %s", e)
 	}
-
 	mw := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(mw)
+	return nil
 }
