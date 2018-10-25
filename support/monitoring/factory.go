@@ -1,10 +1,18 @@
 package monitoring
 
 import (
-	"fmt"
-
 	"github.com/lightyeario/kelp/api"
 )
+
+type noopAlert struct{}
+
+var _ api.Alert = &noopAlert{}
+
+// Trigger is simply a noop for the default Alert, meaning that the client
+// hasn't specified a monitoring service that's supported.
+func (p *noopAlert) Trigger(description string, details interface{}) error {
+	return nil
+}
 
 // MakeAlert creates an Alert based on the type of the service (eg Pager Duty) and its corresponding API key.
 func MakeAlert(alertType string, apiKey string) (api.Alert, error) {
@@ -12,6 +20,6 @@ func MakeAlert(alertType string, apiKey string) (api.Alert, error) {
 	case "PagerDuty":
 		return makePagerDuty(apiKey)
 	default:
-		return nil, fmt.Errorf("cannot make alert - invalid alert type: %s", alertType)
+		return &noopAlert{}, nil
 	}
 }
