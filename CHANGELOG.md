@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
+- levels are now logged with prices in the quote asset and amounts in the base asset for the sell, buysell, and balanced strategies
 
 ### Deprecated
 
