@@ -66,8 +66,6 @@ func init() {
 		}
 
 		if *logPrefix != "" {
-			//t := time.Now().String()
-			//test_20181024T154304PDT
 			t := time.Now().Format("20060102T150405MST")
 			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B, t)
 			e := setLogFile(fileName)
