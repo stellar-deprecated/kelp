@@ -22,7 +22,7 @@ type BotConfig struct {
 	TickIntervalSeconds int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
 	HorizonURL          string `valid:"-" toml:"HORIZON_URL"`
 	AlertType           string `valid:"-" toml:"ALERT_TYPE"`
-	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"``
+	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
