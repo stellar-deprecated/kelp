@@ -75,9 +75,9 @@ func init() {
 			HTTP: http.DefaultClient,
 		}
 
-		alert, e := monitoring.MakeAlert(botConfig.ALERT_TYPE, botConfig.ALERT_API_KEY)
+		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
 		if e != nil {
-			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.ALERT_TYPE)
+			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 		}
 		// --- start initialization of objects ----
 		sdex := plugins.MakeSDEX(
