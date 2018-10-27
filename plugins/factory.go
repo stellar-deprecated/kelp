@@ -90,6 +90,22 @@ var strategies = map[string]StrategyContainer{
 			return makeDeleteStrategy(sdex, assetBase, assetQuote), nil
 		},
 	},
+	"trackSDEX": StrategyContainer{
+		SortOrder:   5,
+		Description: "Places buy and sell orders based on the SDEX orderbook price of an asset",
+		NeedsConfig: true,
+		Complexity:  "Intermediate",
+		makeFn: func(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset, stratConfigPath string) (api.Strategy, error) {
+			var cfg trackSDEXConfig
+			err := config.Read(stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, stratConfigPath)
+			s, e := makeTrackSDEXStrategy(sdex, assetBase, assetQuote, &cfg)
+			if e != nil {
+				return nil, fmt.Errorf("makeFn failed: %s", e)
+			}
+			return s, nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy
