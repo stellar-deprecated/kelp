@@ -27,6 +27,7 @@ type Trader struct {
 	strat               api.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
 	dataKey             *model.BotKey
+	alert               api.Alert
 
 	// uninitialized
 	maxAssetA      float64
@@ -47,6 +48,7 @@ func MakeBot(
 	strat api.Strategy,
 	tickIntervalSeconds int32,
 	dataKey *model.BotKey,
+	alert api.Alert,
 ) *Trader {
 	return &Trader{
 		api:                 api,
@@ -57,6 +59,7 @@ func MakeBot(
 		strat:               strat,
 		tickIntervalSeconds: tickIntervalSeconds,
 		dataKey:             dataKey,
+		alert:               alert,
 	}
 }
 

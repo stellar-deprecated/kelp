@@ -8,16 +8,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/lightyeario/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
 
 ### Changed
+- reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
+- levels are now logged with prices in the quote asset and amounts in the base asset for the sell, buysell, and balanced strategies
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- conversion of asset symbols in the GetOpenOrders() API for Kraken, reducing the number of tested asset symbols with this API
 
 ### Security
+
+## [v1.1.1] - 2018-10-22
+
+### Fixed
+- fixed bot panicing when it cannot cast ticker bid/ask values to a float64 from CCXT's FetchTicker endpoint (0ccbc495e18b1e3b207dad5d3421c7556c63c004) ([issue #31](https://github.com/lightyeario/kelp/issues/31))
 
 ## [v1.1.0] - 2018-10-19
 
@@ -59,7 +68,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.1...HEAD
+[v1.1.1]: https://github.com/lightyeario/kelp/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/lightyeario/kelp/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...v1.0.0
 [v1.0.0-rc3]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...v1.0.0-rc3

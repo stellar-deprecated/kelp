@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+
+	"github.com/lightyeario/kelp/support/utils"
 )
 
 // OrderAction is the action of buy / sell
@@ -139,8 +141,8 @@ func MakeOrderBook(pair *TradingPair, asks []Order, bids []Order) *OrderBook {
 type TransactionID string
 
 // String is the stringer function
-func (t TransactionID) String() string {
-	return string(t)
+func (t *TransactionID) String() string {
+	return string(*t)
 }
 
 // MakeTransactionID is a factory method for convenience
@@ -200,15 +202,15 @@ type Trade struct {
 }
 
 func (t Trade) String() string {
-	return fmt.Sprintf("Trades[txid: %s, ts: %d, pair: %s, action: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
-		*t.TransactionID,
-		t.Timestamp,
+	return fmt.Sprintf("Trades[txid: %s, ts: %s, pair: %s, action: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
+		utils.CheckedString(t.TransactionID),
+		utils.CheckedString(t.Timestamp),
 		*t.Pair,
 		t.OrderAction,
 		t.OrderType,
-		t.Price.AsString(),
-		t.Volume.AsString(),
-		t.Cost.AsString(),
-		t.Fee.AsString(),
+		utils.CheckedString(t.Price),
+		utils.CheckedString(t.Volume),
+		utils.CheckedString(t.Cost),
+		utils.CheckedString(t.Fee),
 	)
 }

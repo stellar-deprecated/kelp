@@ -12,6 +12,7 @@ const XLM = "XLM"
 
 // BotConfig represents the configuration params for the bot
 type BotConfig struct {
+
 	SourceSecretSeed    string `valid:"-" toml:"SOURCE_SECRET_SEED"`
 	TradingSecretSeed   string `valid:"-" toml:"TRADING_SECRET_SEED"`
 	AssetCodeA          string `valid:"-" toml:"ASSET_CODE_A"`
@@ -20,6 +21,8 @@ type BotConfig struct {
 	IssuerB             string `valid:"-" toml:"ISSUER_B"`
 	TickIntervalSeconds int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
 	HorizonURL          string `valid:"-" toml:"HORIZON_URL"`
+	AlertType           string `valid:"-" toml:"ALERT_TYPE"`
+	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"``
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
