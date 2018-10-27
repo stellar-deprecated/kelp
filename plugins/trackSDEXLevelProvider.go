@@ -49,7 +49,7 @@ func (p *SDEXLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float6
 	levels := []api.Level{}
 	balanceRatio := maxAssetBase / (maxAssetBase + (maxAssetQuote / p.sdexMidPrice))
 
-	log.Printf("balanceRatio = %s", balanceRatio)
+	log.Printf("balanceRatio = %v", balanceRatio)
 
 	// don't place any orders if below minimum balance parameter
 	if balanceRatio < p.maintainBalancePercent {
