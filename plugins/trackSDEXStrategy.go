@@ -14,7 +14,6 @@ type trackSDEXConfig struct {
 	PriceTolerance         float64 `valid:"-" toml:"PRICE_TOLERANCE"`
 	AmountTolerance        float64 `valid:"-" toml:"AMOUNT_TOLERANCE"`
 	BasePercentPerLevel    float64 `valid:"-" toml:"BASE_PERCENT_PER_LEVEL"`
-	MinTotalOrder          float64 `valid:"-" toml:"MIN_TOTAL_ORDER"`
 	MaxLevels              int16   `valid:"-" toml:"MAX_LEVELS"`
 	MaintainBalancePercent float64 `valid:"-" toml:"MAINTAIN_BALANCE_PERCENT"`
 }
@@ -35,7 +34,6 @@ func makeTrackSDEXStrategy(
 		sdex,
 		assetBase,
 		assetQuote,
-		config.MinTotalOrder,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("failed to get SDEX orderbook price", e)
