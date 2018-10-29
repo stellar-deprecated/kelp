@@ -49,7 +49,7 @@ func init() {
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
-	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file as well as stdout")
+	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
