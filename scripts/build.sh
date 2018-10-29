@@ -27,17 +27,23 @@ fi
 
 # version is git tag if it's available, otherwise git hash
 VERSION=$(git describe --always --abbrev=8 --dirty --tags)
+GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
+VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS="-X github.com/lightyeario/kelp/cmd.version=$VERSION -X github.com/lightyeario/kelp/cmd.gitHash=$GIT_HASH -X github.com/lightyeario/kelp/cmd.buildDate=$DATE"
+LDFLAGS="-X github.com/lightyeario/kelp/cmd.version=$VERSION_STRING -X github.com/lightyeario/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/lightyeario/kelp/cmd.gitHash=$GIT_HASH -X github.com/lightyeario/kelp/cmd.buildDate=$DATE"
 
-echo "version: $VERSION"
+echo "version: $VERSION_STRING"
+echo "git branch: $GIT_BRANCH"
 echo "git hash: $GIT_HASH"
 echo "build date: $DATE"
-echo ""
 
 if [[ $MODE == "build" ]]
 then
+    echo "GOOS: $(go env GOOS)"
+    echo "GOARCH: $(go env GOARCH)"
+    echo ""
+
     # explicit check for windows
     EXTENSION=""
     if [[ `go env GOOS` == "windows" ]]
@@ -64,10 +70,17 @@ then
     exit 0
 fi
 # else, we are in deploy mode
+echo ""
 
 if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
 then
     echo "error: the git commit needs to be tagged with a valid version to prepare archives, see $0 -h for more information"
+    exit 1
+fi
+EXPECTED_GIT_RELEASE_BRANCH="release/$(echo $VERSION | cut -d '.' -f1,2).x"
+if ! [[ ("$GIT_BRANCH" == "$EXPECTED_GIT_RELEASE_BRANCH") || ("$GIT_BRANCH" == "master") ]]
+then
+    echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
     exit 1
 fi
 

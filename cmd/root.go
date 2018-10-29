@@ -11,6 +11,7 @@ import (
 // build flags
 var version string
 var buildDate string
+var gitBranch string
 var gitHash string
 
 const rootShort = "Kelp is a free and open-source trading bot for the Stellar universal marketplace."
@@ -54,7 +55,7 @@ func init() {
 }
 
 func validateBuild() {
-	if version == "" || buildDate == "" || gitHash == "" {
+	if version == "" || buildDate == "" || gitBranch == "" || gitHash == "" {
 		fmt.Println("version information not included, please build using the build script (scripts/build.sh)")
 		os.Exit(1)
 	}
