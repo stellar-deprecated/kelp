@@ -68,7 +68,7 @@ func init() {
 
 		if *logPrefix != "" {
 			t := time.Now().Format("20060102T150405MST")
-			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B, t)
+			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
 			e := setLogFile(fileName)
 			if e != nil {
 				log.Println()
