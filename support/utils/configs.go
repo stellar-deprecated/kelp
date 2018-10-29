@@ -27,18 +27,23 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 	var buf bytes.Buffer
 	numFields := reflect.TypeOf(s).NumField()
 	for i := 0; i < numFields; i++ {
-		fieldName := reflect.TypeOf(s).Field(i).Name
+		field := reflect.TypeOf(s).Field(i)
+		fieldName := field.Name
+		fieldDisplayName := field.Tag.Get("toml")
+		if fieldDisplayName == "" {
+			fieldDisplayName = fieldName
+		}
 
 		// set the transformation function
 		transformFn := passthrough
-		if fn, ok := transforms[fieldName]; ok {
+		if fn, ok := transforms[fieldDisplayName]; ok {
 			transformFn = fn
 		}
 
 		if reflect.ValueOf(s).Field(i).CanInterface() {
 			value := reflect.ValueOf(s).Field(i).Interface()
 			transformedValue := transformFn(value)
-			buf.WriteString(fmt.Sprintf("%s: %+v\n", fieldName, transformedValue))
+			buf.WriteString(fmt.Sprintf("%s: %+v\n", fieldDisplayName, transformedValue))
 		}
 	}
 	return buf.String()

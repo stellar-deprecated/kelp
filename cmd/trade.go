@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
+	"github.com/lightyeario/kelp/support/monitoring"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader"
 	"github.com/spf13/cobra"
@@ -67,21 +68,25 @@ func init() {
 			log.Println()
 			log.Fatal(e)
 		}
-		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
+		log.Printf("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
-			URL:  botConfig.HORIZON_URL,
+			URL:  botConfig.HorizonURL,
 			HTTP: http.DefaultClient,
 		}
 
+		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
+		if e != nil {
+			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
+		}
 		// --- start initialization of objects ----
 		sdex := plugins.MakeSDEX(
 			client,
-			botConfig.SOURCE_SECRET_SEED,
-			botConfig.TRADING_SECRET_SEED,
+			botConfig.SourceSecretSeed,
+			botConfig.TradingSecretSeed,
 			botConfig.SourceAccount(),
 			botConfig.TradingAccount(),
-			utils.ParseNetwork(botConfig.HORIZON_URL),
+			utils.ParseNetwork(botConfig.HorizonURL),
 			*operationalBuffer,
 			*simMode,
 		)
@@ -103,8 +108,9 @@ func init() {
 			botConfig.TradingAccount(),
 			sdex,
 			strat,
-			botConfig.TICK_INTERVAL_SECONDS,
+			botConfig.TickIntervalSeconds,
 			dataKey,
+			alert,
 		)
 		// --- end initialization of objects ---
 
@@ -128,17 +134,17 @@ func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
 	}
 
 	missingTrustlines := []string{}
-	if botConfig.ISSUER_A != "" {
-		balance := utils.GetCreditBalance(account, botConfig.ASSET_CODE_A, botConfig.ISSUER_A)
+	if botConfig.IssuerA != "" {
+		balance := utils.GetCreditBalance(account, botConfig.AssetCodeA, botConfig.IssuerA)
 		if balance == nil {
-			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.ASSET_CODE_A, botConfig.ISSUER_A))
+			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.AssetCodeA, botConfig.IssuerA))
 		}
 	}
 
-	if botConfig.ISSUER_B != "" {
-		balance := utils.GetCreditBalance(account, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
+	if botConfig.IssuerB != "" {
+		balance := utils.GetCreditBalance(account, botConfig.AssetCodeB, botConfig.IssuerB)
 		if balance == nil {
-			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.ASSET_CODE_B, botConfig.ISSUER_B))
+			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.AssetCodeB, botConfig.IssuerB))
 		}
 	}
 
