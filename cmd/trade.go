@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/lightyeario/kelp/model"
@@ -47,6 +49,7 @@ func init() {
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
+	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -54,12 +57,6 @@ func init() {
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
-		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
-		if *simMode {
-			startupMessage += " (simulation mode)"
-		}
-		log.Println(startupMessage)
-
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
@@ -68,6 +65,27 @@ func init() {
 			log.Println()
 			log.Fatal(e)
 		}
+
+		if *logPrefix != "" {
+			t := time.Now().Format("20060102T150405MST")
+			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
+			e = setLogFile(fileName)
+			if e != nil {
+				log.Println()
+				log.Fatal(e)
+				return
+			}
+			log.Printf("logging to file: %s", fileName)
+		}
+
+		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
+		if *simMode {
+			startupMessage += " (simulation mode)"
+		}
+		log.Println(startupMessage)
+
+		// only log botConfig file here so it can be included in the log file
+		utils.LogConfig(botConfig)
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
@@ -193,4 +211,14 @@ func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, 
 	} else {
 		log.Fatal("...nothing to delete, exiting")
 	}
+}
+
+func setLogFile(fileName string) error {
+	f, e := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if e != nil {
+		return fmt.Errorf("failed to set log file: %s", e)
+	}
+	mw := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(mw)
+	return nil
 }

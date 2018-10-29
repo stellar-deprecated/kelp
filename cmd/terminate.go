@@ -31,6 +31,7 @@ func init() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		utils.LogConfig(configFile)
 		log.Println("Started Terminator for account: ", *configFile.TradingAccount)
 
 		// --- start initialization of objects ----
