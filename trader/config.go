@@ -12,16 +12,17 @@ const XLM = "XLM"
 
 // BotConfig represents the configuration params for the bot
 type BotConfig struct {
-	SOURCE_SECRET_SEED    string `valid:"-"`
-	TRADING_SECRET_SEED   string `valid:"-"`
-	ASSET_CODE_A          string `valid:"-"`
-	ISSUER_A              string `valid:"-"`
-	ASSET_CODE_B          string `valid:"-"`
-	ISSUER_B              string `valid:"-"`
-	TICK_INTERVAL_SECONDS int32  `valid:"-"`
-	HORIZON_URL           string `valid:"-"`
-	ALERT_TYPE            string `valid:"-"`
-	ALERT_API_KEY         string `valid:"-"`
+
+	SourceSecretSeed    string `valid:"-" toml:"SOURCE_SECRET_SEED"`
+	TradingSecretSeed   string `valid:"-" toml:"TRADING_SECRET_SEED"`
+	AssetCodeA          string `valid:"-" toml:"ASSET_CODE_A"`
+	IssuerA             string `valid:"-" toml:"ISSUER_A"`
+	AssetCodeB          string `valid:"-" toml:"ASSET_CODE_B"`
+	IssuerB             string `valid:"-" toml:"ISSUER_B"`
+	TickIntervalSeconds int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
+	HorizonURL          string `valid:"-" toml:"HORIZON_URL"`
+	AlertType           string `valid:"-" toml:"ALERT_TYPE"`
+	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
@@ -62,23 +63,23 @@ func (b *BotConfig) AssetQuote() horizon.Asset {
 
 // Init initializes this config
 func (b *BotConfig) Init() error {
-	if b.ASSET_CODE_A == b.ASSET_CODE_B && b.ISSUER_A == b.ISSUER_B {
-		return fmt.Errorf("error: both assets cannot be the same '%s:%s'", b.ASSET_CODE_A, b.ISSUER_A)
+	if b.AssetCodeA == b.AssetCodeB && b.IssuerA == b.IssuerB {
+		return fmt.Errorf("error: both assets cannot be the same '%s:%s'", b.AssetCodeA, b.IssuerA)
 	}
 
-	asset, e := parseAsset(b.ASSET_CODE_A, b.ISSUER_A, "A")
+	asset, e := parseAsset(b.AssetCodeA, b.IssuerA, "A")
 	if e != nil {
 		return e
 	}
 	b.assetBase = *asset
 
-	asset, e = parseAsset(b.ASSET_CODE_B, b.ISSUER_B, "B")
+	asset, e = parseAsset(b.AssetCodeB, b.IssuerB, "B")
 	if e != nil {
 		return e
 	}
 	b.assetQuote = *asset
 
-	b.tradingAccount, e = utils.ParseSecret(b.TRADING_SECRET_SEED)
+	b.tradingAccount, e = utils.ParseSecret(b.TradingSecretSeed)
 	if e != nil {
 		return e
 	}
@@ -86,7 +87,7 @@ func (b *BotConfig) Init() error {
 		return fmt.Errorf("no trading account specified")
 	}
 
-	b.sourceAccount, e = utils.ParseSecret(b.SOURCE_SECRET_SEED)
+	b.sourceAccount, e = utils.ParseSecret(b.SourceSecretSeed)
 	return e
 }
 

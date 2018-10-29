@@ -10,17 +10,17 @@ import (
 
 // sellConfig contains the configuration params for this Strategy
 type sellConfig struct {
-	DATA_TYPE_A               string        `valid:"-"`
-	DATA_FEED_A_URL           string        `valid:"-"`
-	DATA_TYPE_B               string        `valid:"-"`
-	DATA_FEED_B_URL           string        `valid:"-"`
-	PRICE_TOLERANCE           float64       `valid:"-"`
-	AMOUNT_TOLERANCE          float64       `valid:"-"`
-	AMOUNT_OF_A_BASE          float64       `valid:"-"` // the size of order
-	RATE_OFFSET_PERCENT       float64       `valid:"-"`
-	RATE_OFFSET               float64       `valid:"-"`
-	RATE_OFFSET_PERCENT_FIRST bool          `valid:"-"`
-	LEVELS                    []staticLevel `valid:"-"`
+	DataTypeA              string        `valid:"-" toml:"DATA_TYPE_A"`
+	DataFeedAURL           string        `valid:"-" toml:"DATA_FEED_A_URL"`
+	DataTypeB              string        `valid:"-" toml:"DATA_TYPE_B"`
+	DataFeedBURL           string        `valid:"-" toml:"DATA_FEED_B_URL"`
+	PriceTolerance         float64       `valid:"-" toml:"PRICE_TOLERANCE"`
+	AmountTolerance        float64       `valid:"-" toml:"AMOUNT_TOLERANCE"`
+	AmountOfABase          float64       `valid:"-" toml:"AMOUNT_OF_A_BASE"` // the size of order
+	RateOffsetPercent      float64       `valid:"-" toml:"RATE_OFFSET_PERCENT"`
+	RateOffset             float64       `valid:"-" toml:"RATE_OFFSET"`
+	RateOffsetPercentFirst bool          `valid:"-" toml:"RATE_OFFSET_PERCENT_FIRST"`
+	Levels                 []staticLevel `valid:"-" toml:"LEVELS"`
 }
 
 // String impl.
@@ -36,27 +36,27 @@ func makeSellStrategy(
 	config *sellConfig,
 ) (api.Strategy, error) {
 	pf, e := MakeFeedPair(
-		config.DATA_TYPE_A,
-		config.DATA_FEED_A_URL,
-		config.DATA_TYPE_B,
-		config.DATA_FEED_B_URL,
+		config.DataTypeA,
+		config.DataFeedAURL,
+		config.DataTypeB,
+		config.DataFeedBURL,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the sell strategy because we could not make the feed pair: %s", e)
 	}
 
 	offset := rateOffset{
-		percent:      config.RATE_OFFSET_PERCENT,
-		absolute:     config.RATE_OFFSET,
-		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+		percent:      config.RateOffsetPercent,
+		absolute:     config.RateOffset,
+		percentFirst: config.RateOffsetPercentFirst,
 	}
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
 		assetBase,
 		assetQuote,
-		makeStaticSpreadLevelProvider(config.LEVELS, config.AMOUNT_OF_A_BASE, offset, pf),
-		config.PRICE_TOLERANCE,
-		config.AMOUNT_TOLERANCE,
+		makeStaticSpreadLevelProvider(config.Levels, config.AmountOfABase, offset, pf),
+		config.PriceTolerance,
+		config.AmountTolerance,
 		false,
 	)
 	// switch sides of base/quote here for the delete side
