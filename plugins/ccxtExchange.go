@@ -49,9 +49,18 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 			return nil, fmt.Errorf("error while fetching ticker price for trading pair %s: %s", pairsMap[p], e)
 		}
 
+		askPrice, e := utils.CheckFetchFloat(tickerMap, "ask")
+		if e != nil {
+			return nil, fmt.Errorf("unable to correctly fetch value from tickerMap: %s", e)
+		}
+		bidPrice, e := utils.CheckFetchFloat(tickerMap, "bid")
+		if e != nil {
+			return nil, fmt.Errorf("unable to correctly fetch value from tickerMap: %s", e)
+		}
+
 		priceResult[p] = api.Ticker{
-			AskPrice: model.NumberFromFloat(tickerMap["ask"].(float64), c.precision),
-			BidPrice: model.NumberFromFloat(tickerMap["bid"].(float64), c.precision),
+			AskPrice: model.NumberFromFloat(askPrice, c.precision),
+			BidPrice: model.NumberFromFloat(bidPrice, c.precision),
 		}
 	}
 

@@ -1,5 +1,5 @@
-hash: 60e5a9a0d3341cc43645653700849833794e22e18d2fb13840b4e03be84cfb3c
-updated: 2018-08-26T17:30:03.203295082-07:00
+hash: 737a1e1cd738e7f5b20c6fd1ce67914f61c0411f02ae9fc09050f3a052590cbf
+updated: 2018-10-23T11:32:07.610978-07:00
 imports:
 - name: github.com/agl/ed25519
   version: 278e1ec8e8a6e017cd07577924d6766039146ced
@@ -17,6 +17,10 @@ imports:
   - spew
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
+- name: github.com/google/go-querystring
+  version: 44c6ddd0a2342c386950e880b658017258da92fc
+  subpackages:
+  - query
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/lib/pq
@@ -29,6 +33,8 @@ imports:
   version: a875e7c9fa2388ce03279f6b5ba1c2ccd1f9e917
   subpackages:
   - xdr3
+- name: github.com/PagerDuty/go-pagerduty
+  version: 635c5ce271490fba94880e62cde4eea3c1c184b9
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib

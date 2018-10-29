@@ -8,11 +8,11 @@ import (
 
 // Config represents the configuration params for the bot
 type Config struct {
-	SOURCE_SECRET_SEED     string `valid:"-"`
-	TRADING_SECRET_SEED    string `valid:"-"`
-	ALLOW_INACTIVE_MINUTES int32  `valid:"-"` // bots that are inactive for more than this time will have its offers deleted
-	TICK_INTERVAL_SECONDS  int32  `valid:"-"`
-	HORIZON_URL            string `valid:"-"`
+	SourceSecretSeed     string `valid:"-" toml:"SOURCE_SECRET_SEED"`
+	TradingSecretSeed    string `valid:"-" toml:"TRADING_SECRET_SEED"`
+	AllowInactiveMinutes int32  `valid:"-" toml:"ALLOW_INACTIVE_MINUTES"` // bots that are inactive for more than this time will have its offers deleted
+	TickIntervalSeconds  int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
+	HorizonURL           string `valid:"-" toml:"HORIZON_URL"`
 
 	TradingAccount *string
 	SourceAccount  *string // can be nil
@@ -29,7 +29,7 @@ func (c Config) String() string {
 // Init initializes this config
 func (c *Config) Init() error {
 	var e error
-	c.TradingAccount, e = utils.ParseSecret(c.TRADING_SECRET_SEED)
+	c.TradingAccount, e = utils.ParseSecret(c.TradingSecretSeed)
 	if e != nil {
 		return e
 	}
@@ -38,6 +38,6 @@ func (c *Config) Init() error {
 		return fmt.Errorf("no trading account specified")
 	}
 
-	c.SourceAccount, e = utils.ParseSecret(c.SOURCE_SECRET_SEED)
+	c.SourceAccount, e = utils.ParseSecret(c.SourceSecretSeed)
 	return e
 }
