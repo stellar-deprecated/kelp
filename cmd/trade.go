@@ -69,13 +69,13 @@ func init() {
 		if *logPrefix != "" {
 			t := time.Now().Format("20060102T150405MST")
 			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
-			e := setLogFile(fileName)
+			e = setLogFile(fileName)
 			if e != nil {
 				log.Println()
 				log.Fatal(e)
 				return
 			}
-			log.Printf("Logging to file %s", fileName)
+			log.Printf("logging to file: %s", fileName)
 		}
 
 		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
@@ -84,6 +84,8 @@ func init() {
 		}
 		log.Println(startupMessage)
 
+		// only log botConfig file here so it can be included in the log file
+		utils.LogConfig(botConfig)
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
