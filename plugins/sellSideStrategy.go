@@ -140,7 +140,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		if targetAmount.AsFloat() == 0 {
 			return nil, nil, fmt.Errorf("targetAmount is 0")
 		}
-		
+
 		if s.divideAmountByPrice {
 			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
 		}
@@ -157,7 +157,12 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 			return nil, nil, e
 		}
 		if op != nil {
-			ops = append(ops, op)
+			if hitCapacityLimit && isModify {
+				// prepend operations that reduce the size of an existing order because they decrease our liabilities
+				ops = append([]build.TransactionMutator{op}, ops...)
+			} else {
+				ops = append(ops, op)
+			}
 		}
 
 		// update top offer, newTopOffer is minOffer because this is a sell strategy, and the lowest price is the best (top) price on the orderbook
