@@ -83,7 +83,7 @@ func (p *SDEXLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote, levelC
 	targetPrice := p.sdexMidPrice * (1.0 + p.spread*levelCounter)
 	targetAmount := maxAssetBase * p.basePercentPerLevel * (1.0 + ratioGap)
 	if p.isBuy {
-		targetAmount = maxAssetQuote * p.basePercentPerLevel * (1.0 + ratioGap)
+		targetAmount = maxAssetBase * p.basePercentPerLevel * (1.0 + ratioGap) * targetPrice
 	}
 
 	level := api.Level{
