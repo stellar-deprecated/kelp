@@ -144,6 +144,16 @@ func LoadAllOffers(account string, api *horizon.Client) (offersRet []horizon.Off
 	return
 }
 
+// GetOrderBook gets the orderbook for the A/B pair
+func GetOrderBook(api *horizon.Client, assetBase *horizon.Asset, assetQuote *horizon.Asset) (orderBook horizon.OrderBookSummary, e error) {
+	b, e := api.LoadOrderBook(*assetBase, *assetQuote)
+	if e != nil {
+		log.Printf("Can't get SDEX orderbook: %s\n", e)
+		return
+	}
+	return b, e
+}
+
 // FilterOffers filters out the offers into selling and buying, where sellOffers sells the sellAsset and buyOffers buys the sellAsset
 func FilterOffers(offers []horizon.Offer, sellAsset horizon.Asset, buyAsset horizon.Asset) (sellOffers []horizon.Offer, buyOffers []horizon.Offer) {
 	for _, offer := range offers {
