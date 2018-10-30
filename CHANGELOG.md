@@ -24,6 +24,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Security
 
+## [v1.1.2] - 2018-10-30
+
+### Added
+- log balance with liabilities
+
+### Changed
+- scripts/build.sh: update VERSION format and LDFLAGS to include git branch info
+
+### Fixed
+- fix op_underfunded errors when we hit capacity limits
+
 ## [v1.1.1] - 2018-10-22
 
 ### Fixed
@@ -69,7 +80,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.2...HEAD
+[v1.1.2]: https://github.com/lightyeario/kelp/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/lightyeario/kelp/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/lightyeario/kelp/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...v1.0.0
