@@ -13,12 +13,13 @@ import (
 )
 
 var testKrakenExchange api.Exchange = krakenExchange{
-	assetConverter: model.KrakenAssetConverter,
-	api:            krakenapi.New("", ""),
-	delimiter:      "",
-	precision:      8,
-	withdrawKeys:   asset2Address2Key{},
-	isSimulated:    true,
+	assetConverter:           model.KrakenAssetConverter,
+	assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
+	api:          krakenapi.New("", ""),
+	delimiter:    "",
+	precision:    8,
+	withdrawKeys: asset2Address2Key{},
+	isSimulated:  true,
 }
 
 func TestGetTickerPrice(t *testing.T) {
@@ -32,7 +33,16 @@ func TestGetTickerPrice(t *testing.T) {
 	assert.Equal(t, 1, len(m))
 
 	ticker := m[pair]
-	assert.True(t, ticker.AskPrice.AsFloat() < 1, ticker.AskPrice.AsString())
+	fmt.Printf("ticker price: bid=%.8f, ask=%.8f\n", ticker.BidPrice.AsFloat(), ticker.AskPrice.AsFloat())
+
+	if !assert.True(t, ticker.AskPrice.AsFloat() < 1, ticker.AskPrice.AsString()) {
+		return
+	}
+	if !assert.True(t, ticker.BidPrice.AsFloat() < 1, ticker.BidPrice.AsString()) {
+		return
+	}
+
+	assert.Fail(t, "force fail")
 }
 
 func TestGetAccountBalances(t *testing.T) {
@@ -57,7 +67,7 @@ func TestGetAccountBalances(t *testing.T) {
 
 	for _, a := range assetList {
 		bal := m[a]
-		assert.True(t, bal.AsFloat() > 0, bal.AsString())
+		assert.True(t, bal.AsFloat() >= 0, bal.AsString())
 	}
 
 	assert.Fail(t, "force fail")
@@ -71,8 +81,12 @@ func TestGetOrderBook(t *testing.T) {
 	}
 	assert.Equal(t, ob.Pair(), &pair)
 
-	assert.True(t, len(ob.Asks()) > 0, len(ob.Asks()))
-	assert.True(t, len(ob.Bids()) > 0, len(ob.Bids()))
+	if !assert.True(t, len(ob.Asks()) > 0, len(ob.Asks())) {
+		return
+	}
+	if !assert.True(t, len(ob.Bids()) > 0, len(ob.Bids())) {
+		return
+	}
 	assert.True(t, ob.Asks()[0].OrderAction.IsSell())
 	assert.True(t, ob.Asks()[0].OrderType.IsLimit())
 	assert.True(t, ob.Bids()[0].OrderAction.IsBuy())
@@ -81,6 +95,16 @@ func TestGetOrderBook(t *testing.T) {
 	assert.True(t, ob.Asks()[0].Volume.AsFloat() > 0)
 	assert.True(t, ob.Bids()[0].Price.AsFloat() > 0)
 	assert.True(t, ob.Bids()[0].Volume.AsFloat() > 0)
+
+	// print here for convenience
+	fmt.Printf("first 2 bids:\n")
+	fmt.Println(ob.Bids()[0])
+	fmt.Println(ob.Bids()[1])
+	fmt.Printf("first 2 asks:\n")
+	fmt.Println(ob.Asks()[0])
+	fmt.Println(ob.Asks()[1])
+
+	assert.Fail(t, "force fail")
 }
 
 func TestGetTrades(t *testing.T) {
@@ -93,6 +117,14 @@ func TestGetTrades(t *testing.T) {
 	cursor := trades.Cursor.(int64)
 	assert.True(t, cursor > 0, strconv.FormatInt(cursor, 10))
 	assert.True(t, len(trades.Trades) > 0)
+
+	// print here for convenience
+	fmt.Printf("total number of trades: %d\n", len(trades.Trades))
+	for _, t := range trades.Trades {
+		fmt.Println(t.String())
+	}
+
+	assert.Fail(t, "force fail")
 }
 
 func TestGetTradeHistory(t *testing.T) {
@@ -107,7 +139,9 @@ func TestGetTradeHistory(t *testing.T) {
 		fmt.Println(t.String())
 	}
 
-	assert.True(t, len(tradeHistoryResult.Trades) > 0)
+	if !assert.True(t, len(tradeHistoryResult.Trades) >= 0) {
+		return
+	}
 
 	assert.Fail(t, "force fail")
 }
@@ -126,25 +160,29 @@ func TestGetOpenOrders(t *testing.T) {
 		}
 	}
 
-	assert.True(t, len(m) > 0, "there were no open orders")
+	if !assert.True(t, len(m) > 0, "there were no open orders") {
+		return
+	}
 
 	assert.Fail(t, "force fail")
 }
 
 func TestAddOrder(t *testing.T) {
 	txID, e := testKrakenExchange.AddOrder(&model.Order{
-		Pair:        &model.TradingPair{Base: model.REP, Quote: model.ETH},
-		OrderAction: model.OrderActionBuy,
+		Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USD},
+		OrderAction: model.OrderActionSell,
 		OrderType:   model.OrderTypeLimit,
-		Price:       model.NumberFromFloat(0.00001, 5),
-		Volume:      model.NumberFromFloat(0.3145, 5),
+		Price:       model.NumberFromFloat(5.123456, 6),
+		Volume:      model.NumberFromFloat(30.12345678, 8),
 	})
 	if !assert.NoError(t, e) {
 		return
 	}
 
 	fmt.Printf("transactionID from order: %s\n", txID)
-	assert.NotNil(t, txID)
+	if !assert.NotNil(t, txID) {
+		return
+	}
 
 	assert.Fail(t, "force fail")
 }
@@ -158,7 +196,9 @@ func TestCancelOrder(t *testing.T) {
 	}
 
 	fmt.Printf("result from cancel order (transactionID=%s): %s\n", txID.String(), result.String())
-	assert.Equal(t, model.CancelResultCancelSuccessful, result)
+	if !assert.Equal(t, model.CancelResultCancelSuccessful, result) {
+		return
+	}
 
 	assert.Fail(t, "force fail")
 }

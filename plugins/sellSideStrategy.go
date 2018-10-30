@@ -11,6 +11,9 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
+const actionSell = "sell"
+const actionBuy = "buy "
+
 // sellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
 type sellSideStrategy struct {
 	sdex                *SDEX
@@ -20,6 +23,7 @@ type sellSideStrategy struct {
 	priceTolerance      float64
 	amountTolerance     float64
 	divideAmountByPrice bool
+	action              string
 
 	// uninitialized
 	currentLevels []api.Level // levels for current iteration
@@ -40,6 +44,10 @@ func makeSellSideStrategy(
 	amountTolerance float64,
 	divideAmountByPrice bool,
 ) api.SideStrategy {
+	action := actionSell
+	if divideAmountByPrice {
+		action = actionBuy
+	}
 	return &sellSideStrategy{
 		sdex:                sdex,
 		assetBase:           assetBase,
@@ -48,16 +56,31 @@ func makeSellSideStrategy(
 		priceTolerance:      priceTolerance,
 		amountTolerance:     amountTolerance,
 		divideAmountByPrice: divideAmountByPrice,
+		action:              action,
 	}
 }
 
 // PruneExistingOffers impl
 func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
 	pruneOps := []build.TransactionMutator{}
-	for i := len(s.currentLevels); i < len(offers); i++ {
-		pOp := s.sdex.DeleteOffer(offers[i])
-		pruneOps = append(pruneOps, &pOp)
+	for i := 0; i < len(offers); i++ {
+		curAmount := utils.AmountStringAsFloat(offers[i].Amount)
+		curPrice := utils.GetPrice(offers[i])
+		if s.divideAmountByPrice {
+			curAmount = curAmount * curPrice
+			curPrice = 1 / curPrice
+		}
+
+		// base and quote here refers to the bot's base and quote, not the base and quote of the sellSideStrategy
+		isPruning := i >= len(s.currentLevels)
+		log.Printf("offer | %s | level=%d | curPriceQuote=%.7f | curAmtBase=%.7f | pruning=%v\n", s.action, i+1, curPrice, curAmount, isPruning)
+
+		if isPruning {
+			pOp := s.sdex.DeleteOffer(offers[i])
+			pruneOps = append(pruneOps, &pOp)
+		}
 	}
+
 	if len(offers) > len(s.currentLevels) {
 		offers = offers[:len(s.currentLevels)]
 	}
@@ -128,7 +151,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		if isModify {
 			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, i, targetPrice, targetAmount)
 		} else {
-			offerPrice, hitCapacityLimit, op, e = s.createSellLevel(targetPrice, targetAmount)
+			offerPrice, hitCapacityLimit, op, e = s.createSellLevel(i, targetPrice, targetAmount)
 		}
 		if e != nil {
 			return nil, nil, e
@@ -192,7 +215,7 @@ func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64,
 }
 
 // createSellLevel returns offerPrice, hitCapacityLimit, op, error.
-func (s *sellSideStrategy) createSellLevel(targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
+func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
 	targetPrice = *model.NumberByCappingPrecision(&targetPrice, utils.SdexPrecision)
 	targetAmount = *model.NumberByCappingPrecision(&targetAmount, utils.SdexPrecision)
@@ -202,7 +225,13 @@ func (s *sellSideStrategy) createSellLevel(targetPrice model.Number, targetAmoun
 		targetAmount.AsFloat(),
 		incrementalNativeAmountRaw,
 		func(price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
-			log.Printf("sell,create,p=%.7f,a=%.7f\n", price, amount)
+			priceLogged := price
+			amountLogged := amount
+			if s.divideAmountByPrice {
+				priceLogged = 1 / price
+				amountLogged = amount * price
+			}
+			log.Printf("%s | create | level=%d | priceQuote=%.7f | amtBase=%.7f\n", s.action, index+1, priceLogged, amountLogged)
 			return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, price, amount, incrementalNativeAmountRaw)
 		},
 		*s.assetBase,
@@ -240,8 +269,27 @@ func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, ta
 		targetAmount.AsFloat(),
 		incrementalNativeAmountRaw,
 		func(price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
-			log.Printf("sell,modify,tp=%.7f,ta=%.7f,curPrice=%.7f,highPrice=%.7f,lowPrice=%.7f,curAmt=%.7f,minAmt=%.7f,maxAmt=%.7f\n",
-				price, amount, curPrice, highestPrice, lowestPrice, curAmount, minAmount, maxAmount)
+			priceLogged := price
+			amountLogged := amount
+			curPriceLogged := curPrice
+			lowestPriceLogged := lowestPrice
+			highestPriceLogged := highestPrice
+			curAmountLogged := curAmount
+			minAmountLogged := minAmount
+			maxAmountLogged := maxAmount
+			if s.divideAmountByPrice {
+				priceLogged = 1 / price
+				amountLogged = amount * price
+				curPriceLogged = 1 / curPrice
+				curAmountLogged = curAmount * curPrice
+				minAmountLogged = minAmount * curPrice
+				maxAmountLogged = maxAmount * curPrice
+				// because we flip prices, the low and high need to be swapped here
+				lowestPriceLogged = 1 / highestPrice
+				highestPriceLogged = 1 / lowestPrice
+			}
+			log.Printf("%s | modify | level=%d | targetPriceQuote=%.7f | targetAmtBase=%.7f | curPriceQuote=%.7f | lowPriceQuote=%.7f | highPriceQuote=%.7f | curAmtBase=%.7f | minAmtBase=%.7f | maxAmtBase=%.7f\n",
+				s.action, index+1, priceLogged, amountLogged, curPriceLogged, lowestPriceLogged, highestPriceLogged, curAmountLogged, minAmountLogged, maxAmountLogged)
 			return s.sdex.ModifySellOffer(offers[index], price, amount, incrementalNativeAmountRaw)
 		},
 		offers[index].Selling,

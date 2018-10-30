@@ -10,17 +10,17 @@ import (
 
 // buySellConfig contains the configuration params for this strategy
 type buySellConfig struct {
-	PRICE_TOLERANCE           float64       `valid:"-"`
-	AMOUNT_TOLERANCE          float64       `valid:"-"`
-	RATE_OFFSET_PERCENT       float64       `valid:"-"`
-	RATE_OFFSET               float64       `valid:"-"`
-	RATE_OFFSET_PERCENT_FIRST bool          `valid:"-"`
-	AMOUNT_OF_A_BASE          float64       `valid:"-"` // the size of order to keep on either side
-	DATA_TYPE_A               string        `valid:"-"`
-	DATA_FEED_A_URL           string        `valid:"-"`
-	DATA_TYPE_B               string        `valid:"-"`
-	DATA_FEED_B_URL           string        `valid:"-"`
-	LEVELS                    []staticLevel `valid:"-"`
+	PriceTolerance         float64       `valid:"-" toml:"PRICE_TOLERANCE"`
+	AmountTolerance        float64       `valid:"-" toml:"AMOUNT_TOLERANCE"`
+	RateOffsetPercent      float64       `valid:"-" toml:"RATE_OFFSET_PERCENT"`
+	RateOffset             float64       `valid:"-" toml:"RATE_OFFSET"`
+	RateOffsetPercentFirst bool          `valid:"-" toml:"RATE_OFFSET_PERCENT_FIRST"`
+	AmountOfABase          float64       `valid:"-" toml:"AMOUNT_OF_A_BASE"` // the size of order to keep on either side
+	DataTypeA              string        `valid:"-" toml:"DATA_TYPE_A"`
+	DataFeedAURL           string        `valid:"-" toml:"DATA_FEED_A_URL"`
+	DataTypeB              string        `valid:"-" toml:"DATA_TYPE_B"`
+	DataFeedBURL           string        `valid:"-" toml:"DATA_FEED_B_URL"`
+	Levels                 []staticLevel `valid:"-" toml:"LEVELS"`
 }
 
 // String impl.
@@ -36,15 +36,15 @@ func makeBuySellStrategy(
 	config *buySellConfig,
 ) (api.Strategy, error) {
 	offsetSell := rateOffset{
-		percent:      config.RATE_OFFSET_PERCENT,
-		absolute:     config.RATE_OFFSET,
-		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+		percent:      config.RateOffsetPercent,
+		absolute:     config.RateOffset,
+		percentFirst: config.RateOffsetPercentFirst,
 	}
 	sellSideFeedPair, e := MakeFeedPair(
-		config.DATA_TYPE_A,
-		config.DATA_FEED_A_URL,
-		config.DATA_TYPE_B,
-		config.DATA_FEED_B_URL,
+		config.DataTypeA,
+		config.DataFeedAURL,
+		config.DataTypeB,
+		config.DataFeedBURL,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the sell side feed pair: %s", e)
@@ -54,27 +54,27 @@ func makeBuySellStrategy(
 		assetBase,
 		assetQuote,
 		makeStaticSpreadLevelProvider(
-			config.LEVELS,
-			config.AMOUNT_OF_A_BASE,
+			config.Levels,
+			config.AmountOfABase,
 			offsetSell,
 			sellSideFeedPair,
 		),
-		config.PRICE_TOLERANCE,
-		config.AMOUNT_TOLERANCE,
+		config.PriceTolerance,
+		config.AmountTolerance,
 		false,
 	)
 
 	offsetBuy := rateOffset{
-		percent:      config.RATE_OFFSET_PERCENT,
-		absolute:     config.RATE_OFFSET,
-		percentFirst: config.RATE_OFFSET_PERCENT_FIRST,
+		percent:      config.RateOffsetPercent,
+		absolute:     config.RateOffset,
+		percentFirst: config.RateOffsetPercentFirst,
 		invert:       true,
 	}
 	buySideFeedPair, e := MakeFeedPair(
-		config.DATA_TYPE_B,
-		config.DATA_FEED_B_URL,
-		config.DATA_TYPE_A,
-		config.DATA_FEED_A_URL,
+		config.DataTypeB,
+		config.DataFeedBURL,
+		config.DataTypeA,
+		config.DataFeedAURL,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the buy side feed pair: %s", e)
@@ -85,13 +85,13 @@ func makeBuySellStrategy(
 		assetQuote,
 		assetBase,
 		makeStaticSpreadLevelProvider(
-			config.LEVELS,
-			config.AMOUNT_OF_A_BASE,
+			config.Levels,
+			config.AmountOfABase,
 			offsetBuy,
 			buySideFeedPair,
 		),
-		config.PRICE_TOLERANCE,
-		config.AMOUNT_TOLERANCE,
+		config.PriceTolerance,
+		config.AmountTolerance,
 		true,
 	)
 

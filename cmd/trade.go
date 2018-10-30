@@ -2,12 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
+	"github.com/lightyeario/kelp/support/monitoring"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader"
 	"github.com/spf13/cobra"
@@ -46,6 +49,7 @@ func init() {
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
+	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -53,12 +57,6 @@ func init() {
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
-		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
-		if *simMode {
-			startupMessage += " (simulation mode)"
-		}
-		log.Println(startupMessage)
-
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
@@ -67,21 +65,46 @@ func init() {
 			log.Println()
 			log.Fatal(e)
 		}
-		log.Printf("Trading %s:%s for %s:%s\n", botConfig.ASSET_CODE_A, botConfig.ISSUER_A, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
+
+		if *logPrefix != "" {
+			t := time.Now().Format("20060102T150405MST")
+			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
+			e = setLogFile(fileName)
+			if e != nil {
+				log.Println()
+				log.Fatal(e)
+				return
+			}
+			log.Printf("logging to file: %s", fileName)
+		}
+
+		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
+		if *simMode {
+			startupMessage += " (simulation mode)"
+		}
+		log.Println(startupMessage)
+
+		// only log botConfig file here so it can be included in the log file
+		utils.LogConfig(botConfig)
+		log.Printf("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
-			URL:  botConfig.HORIZON_URL,
+			URL:  botConfig.HorizonURL,
 			HTTP: http.DefaultClient,
 		}
 
+		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
+		if e != nil {
+			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
+		}
 		// --- start initialization of objects ----
 		sdex := plugins.MakeSDEX(
 			client,
-			botConfig.SOURCE_SECRET_SEED,
-			botConfig.TRADING_SECRET_SEED,
+			botConfig.SourceSecretSeed,
+			botConfig.TradingSecretSeed,
 			botConfig.SourceAccount(),
 			botConfig.TradingAccount(),
-			utils.ParseNetwork(botConfig.HORIZON_URL),
+			utils.ParseNetwork(botConfig.HorizonURL),
 			*operationalBuffer,
 			*simMode,
 		)
@@ -103,8 +126,9 @@ func init() {
 			botConfig.TradingAccount(),
 			sdex,
 			strat,
-			botConfig.TICK_INTERVAL_SECONDS,
+			botConfig.TickIntervalSeconds,
 			dataKey,
+			alert,
 		)
 		// --- end initialization of objects ---
 
@@ -128,17 +152,17 @@ func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
 	}
 
 	missingTrustlines := []string{}
-	if botConfig.ISSUER_A != "" {
-		balance := utils.GetCreditBalance(account, botConfig.ASSET_CODE_A, botConfig.ISSUER_A)
+	if botConfig.IssuerA != "" {
+		balance := utils.GetCreditBalance(account, botConfig.AssetCodeA, botConfig.IssuerA)
 		if balance == nil {
-			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.ASSET_CODE_A, botConfig.ISSUER_A))
+			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.AssetCodeA, botConfig.IssuerA))
 		}
 	}
 
-	if botConfig.ISSUER_B != "" {
-		balance := utils.GetCreditBalance(account, botConfig.ASSET_CODE_B, botConfig.ISSUER_B)
+	if botConfig.IssuerB != "" {
+		balance := utils.GetCreditBalance(account, botConfig.AssetCodeB, botConfig.IssuerB)
 		if balance == nil {
-			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.ASSET_CODE_B, botConfig.ISSUER_B))
+			missingTrustlines = append(missingTrustlines, fmt.Sprintf("%s:%s", botConfig.AssetCodeB, botConfig.IssuerB))
 		}
 	}
 
@@ -187,4 +211,14 @@ func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, 
 	} else {
 		log.Fatal("...nothing to delete, exiting")
 	}
+}
+
+func setLogFile(fileName string) error {
+	f, e := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if e != nil {
+		return fmt.Errorf("failed to set log file: %s", e)
+	}
+	mw := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(mw)
+	return nil
 }

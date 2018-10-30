@@ -1,4 +1,4 @@
-package utils
+package networking
 
 import (
 	"fmt"
@@ -8,7 +8,9 @@ import (
 )
 
 const numberPrecision = 10
-const PrefixFieldNotFound = "could not find field in map of PrepareDeposit"
+
+// PrefixFieldNotFound is what is returned in the error when we cannot find a field in the map
+const PrefixFieldNotFound = "could not find field in map"
 
 func checkKeyPresent(m map[string]interface{}, key string) (interface{}, error) {
 	v, ok := m[key]

@@ -220,3 +220,26 @@ func AssetsEqual(baseAsset base.Asset, horizonAsset horizon.Asset) bool {
 		horizonAsset.Code == baseAsset.Code &&
 		horizonAsset.Issuer == baseAsset.Issuer
 }
+
+// CheckFetchFloat tries to fetch and then cast the value for the provided key
+func CheckFetchFloat(m map[string]interface{}, key string) (float64, error) {
+	v, ok := m[key]
+	if !ok {
+		return 0.0, fmt.Errorf("'%s' field not in map", key)
+	}
+
+	f, ok := v.(float64)
+	if !ok {
+		return 0.0, fmt.Errorf("unable to cast '%s' field to float64, value: %v", key, v)
+	}
+
+	return f, nil
+}
+
+// CheckedString returns "<nil>" if the object is nil, otherwise calls the String() function on the object
+func CheckedString(v interface{}) string {
+	if v == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%v", v)
+}

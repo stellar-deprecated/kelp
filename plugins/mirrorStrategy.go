@@ -12,12 +12,12 @@ import (
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	EXCHANGE         string  `valid:"-"`
-	EXCHANGE_BASE    string  `valid:"-"`
-	EXCHANGE_QUOTE   string  `valid:"-"`
-	ORDERBOOK_DEPTH  int32   `valid:"-"`
-	VOLUME_DIVIDE_BY float64 `valid:"-"`
-	PER_LEVEL_SPREAD float64 `valid:"-"`
+	Exchange       string  `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase   string  `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote  string  `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	VolumeDivideBy float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
+	PerLevelSpread float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
 }
 
 // String impl.
@@ -40,14 +40,14 @@ var _ api.Strategy = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
 func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) (api.Strategy, error) {
-	exchange, e := MakeExchange(config.EXCHANGE)
+	exchange, e := MakeExchange(config.Exchange)
 	if e != nil {
 		return nil, e
 	}
 
 	orderbookPair := &model.TradingPair{
-		Base:  exchange.GetAssetConverter().MustFromString(config.EXCHANGE_BASE),
-		Quote: exchange.GetAssetConverter().MustFromString(config.EXCHANGE_QUOTE),
+		Base:  exchange.GetAssetConverter().MustFromString(config.ExchangeBase),
+		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
 	return &mirrorStrategy{
 		sdex:          sdex,
@@ -74,7 +74,7 @@ func (s mirrorStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.tradeAPI.GetOrderBook(s.orderbookPair, s.config.ORDERBOOK_DEPTH)
+	ob, e := s.tradeAPI.GetOrderBook(s.orderbookPair, s.config.OrderbookDepth)
 	if e != nil {
 		return nil, e
 	}
@@ -94,7 +94,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		bids,
 		s.sdex.ModifyBuyOffer,
 		s.sdex.CreateBuyOffer,
-		(1 - s.config.PER_LEVEL_SPREAD),
+		(1 - s.config.PerLevelSpread),
 		true,
 	)
 	if e != nil {
@@ -107,7 +107,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		asks,
 		s.sdex.ModifySellOffer,
 		s.sdex.CreateSellOffer,
-		(1 + s.config.PER_LEVEL_SPREAD),
+		(1 + s.config.PerLevelSpread),
 		false,
 	)
 	if e != nil {
@@ -139,7 +139,7 @@ func (s *mirrorStrategy) updateLevels(
 	deleteOps := []build.TransactionMutator{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VolumeDivideBy, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
 			}
@@ -154,7 +154,7 @@ func (s *mirrorStrategy) updateLevels(
 		// create offers for remaining new bids
 		for i := len(oldOffers); i < len(newOrders); i++ {
 			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
-			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VOLUME_DIVIDE_BY, utils.SdexPrecision).AsFloat()
+			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VolumeDivideBy, utils.SdexPrecision).AsFloat()
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
 			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
 			if e != nil {
@@ -172,7 +172,7 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VOLUME_DIVIDE_BY, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VolumeDivideBy, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
 			}
