@@ -441,27 +441,42 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 	}
 }
 
-func (sdex *SDEX) logLiabilities(asset horizon.Asset) {
+func (sdex *SDEX) logLiabilities(asset horizon.Asset, assetStr string) {
 	l, e := sdex.assetLiabilities(asset)
-	log.Printf("asset = %s, buyingLiabilities=%.7f, sellingLiabilities=%.7f\n", asset, l.Buying, l.Selling)
 	if e != nil {
-		log.Printf("could not fetch liability for asset '%s', error = %s\n", asset, e)
+		log.Printf("could not fetch liability for asset '%s', error = %s\n", assetStr, e)
+		return
 	}
+
+	bal, trust, minAccountBal, e := sdex.assetBalance(asset)
+	if e != nil {
+		log.Printf("cannot fetch balance for asset '%s', error = %s\n", assetStr, e)
+		return
+	}
+
+	trustString := "math.MaxFloat64"
+	if trust != maxLumenTrust {
+		trustString = fmt.Sprintf("%.7f", trust)
+	}
+	log.Printf("asset=%s, balance=%.7f, trust=%s, minAccountBal=%.7f, buyingLiabilities=%.7f, sellingLiabilities=%.7f\n",
+		assetStr, bal, trustString, minAccountBal, l.Buying, l.Selling)
 }
 
 // LogAllLiabilities logs the liabilities for the two assets along with the native asset
 func (sdex *SDEX) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) {
-	sdex.logLiabilities(assetBase)
-	sdex.logLiabilities(assetQuote)
+	sdex.logLiabilities(assetBase, "base  ")
+	sdex.logLiabilities(assetQuote, "quote ")
 
 	if assetBase != utils.NativeAsset && assetQuote != utils.NativeAsset {
-		sdex.logLiabilities(utils.NativeAsset)
+		sdex.logLiabilities(utils.NativeAsset, "native")
 	}
 }
 
 // RecomputeAndLogCachedLiabilities clears the cached liabilities and recomputes from the network before logging
 func (sdex *SDEX) RecomputeAndLogCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) {
 	sdex.cachedLiabilities = map[horizon.Asset]Liabilities{}
+	// reset cached balances too so we fetch fresh balances
+	sdex.ResetCachedBalances()
 	sdex.LogAllLiabilities(assetBase, assetQuote)
 }
 
