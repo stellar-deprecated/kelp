@@ -30,6 +30,7 @@ var strategies = map[string]StrategyContainer{
 			var cfg buySellConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
+			utils.LogConfig(cfg)
 			s, e := makeBuySellStrategy(sdex, assetBase, assetQuote, &cfg)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
@@ -46,6 +47,7 @@ var strategies = map[string]StrategyContainer{
 			var cfg mirrorConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
+			utils.LogConfig(cfg)
 			s, e := makeMirrorStrategy(sdex, assetBase, assetQuote, &cfg)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
@@ -62,6 +64,7 @@ var strategies = map[string]StrategyContainer{
 			var cfg sellConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
+			utils.LogConfig(cfg)
 			s, e := makeSellStrategy(sdex, assetBase, assetQuote, &cfg)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
@@ -78,6 +81,7 @@ var strategies = map[string]StrategyContainer{
 			var cfg balancedConfig
 			err := config.Read(stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, stratConfigPath)
+			utils.LogConfig(cfg)
 			return makeBalancedStrategy(sdex, assetBase, assetQuote, &cfg), nil
 		},
 	},
