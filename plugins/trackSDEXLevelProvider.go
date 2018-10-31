@@ -53,11 +53,6 @@ func (p *SDEXLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float6
 
 	log.Printf("balanceRatio = %v", balanceRatio)
 
-	// don't place any orders if below minimum balance parameter
-	// if balanceRatio < p.maintainBalancePercent {
-	// 	return levels, nil
-	// }
-
 	allowedSpend := maxAssetBase
 	if ratioGap < 0 {
 		allowedSpend = maxAssetBase - totalAssetValue*p.maintainBalancePercent
