@@ -1,5 +1,5 @@
-hash: 737a1e1cd738e7f5b20c6fd1ce67914f61c0411f02ae9fc09050f3a052590cbf
-updated: 2018-10-23T11:32:07.610978-07:00
+hash: d73684db16b53521a217496dcb3a48443ab67cab134ea6587f5b69b5890eb4df
+updated: 2018-10-26T15:04:59.457806-07:00
 imports:
 - name: github.com/agl/ed25519
   version: 278e1ec8e8a6e017cd07577924d6766039146ced
@@ -15,6 +15,8 @@ imports:
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
+- name: github.com/go-chi/chi
+  version: 0ebf7795c516423a110473652e9ba3a59a504863
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
 - name: github.com/google/go-querystring

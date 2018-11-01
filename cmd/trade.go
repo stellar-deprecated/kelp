@@ -11,6 +11,7 @@ import (
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/monitoring"
+	"github.com/lightyeario/kelp/support/networking"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader"
 	"github.com/spf13/cobra"
@@ -119,6 +120,7 @@ func init() {
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(botConfig, client, sdex)
 		}
+
 		bot := trader.MakeBot(
 			client,
 			botConfig.AssetBase(),
@@ -136,12 +138,48 @@ func init() {
 		validateTrustlines(client, &botConfig)
 		log.Printf("trustlines valid\n")
 
+		// --- start initialization of services ---
+		if botConfig.MonitoringPort != 0 {
+			go func() {
+				e := startMonitoringServer(botConfig)
+				if e != nil {
+					log.Println()
+					log.Printf("unable to start the monitoring server or problem encountered while running server: %s\n", e)
+					// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
+					// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
+					// aren't outstanding offers.
+					deleteAllOffersAndExit(botConfig, client, sdex)
+				}
+			}()
+		}
+		// --- end initialization of services ---
+
 		log.Println("Starting the trader bot...")
 		for {
 			bot.Start()
 			log.Println("Restarting the trader bot...")
 		}
 	}
+}
+
+func startMonitoringServer(botConfig trader.BotConfig) error {
+	healthMetrics, e := monitoring.MakeMetricsRecorder(map[string]interface{}{"success": true})
+	if e != nil {
+		return fmt.Errorf("unable to make metrics recorder for the health endpoint: %s", e)
+	}
+
+	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/health", healthMetrics, networking.NoAuth)
+	if e != nil {
+		return fmt.Errorf("unable to make /health endpoint: %s", e)
+	}
+
+	server, e := networking.MakeServer([]networking.Endpoint{healthEndpoint})
+	if e != nil {
+		return fmt.Errorf("unable to initialize the metrics server: %s", e)
+	}
+
+	log.Printf("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
+	return server.StartServer(botConfig.MonitoringPort, "", "")
 }
 
 func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {

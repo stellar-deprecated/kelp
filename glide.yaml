@@ -17,3 +17,5 @@ import:
   - support/errors
 - package: github.com/PagerDuty/go-pagerduty
   version: 635c5ce271490fba94880e62cde4eea3c1c184b9
+- package: github.com/go-chi/chi
+  version: 0ebf7795c516423a110473652e9ba3a59a504863
