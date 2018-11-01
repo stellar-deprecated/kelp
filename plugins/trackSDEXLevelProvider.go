@@ -104,6 +104,10 @@ func (p *SDEXLevelProvider) getLevel(maxAssetBase float64, levelCounter float64,
 		targetAmount = backupBalance * 0.001
 	}
 
+	if overSpent && p.isBuy {
+		targetAmount = backupBalance * 0.001 * targetPrice
+	}
+
 	level := api.Level{
 		Price:  *model.NumberFromFloat(targetPrice, utils.SdexPrecision),
 		Amount: *model.NumberFromFloat(targetAmount, utils.SdexPrecision),
