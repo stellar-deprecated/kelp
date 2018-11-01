@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lightyeario/kelp/api"
@@ -46,6 +47,10 @@ func validateTotalAmount(maxLevels int16, basePercentPerLevel float64) {
 }
 
 func (p *SDEXLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+	if maxAssetBase <= 0.0 {
+		return nil, fmt.Errorf("Had none of the base asset, unable to generate levels")
+	}
+
 	levels := []api.Level{}
 	totalAssetValue := maxAssetBase + (maxAssetQuote / p.sdexMidPrice)
 	balanceRatio := maxAssetBase / totalAssetValue
@@ -53,32 +58,50 @@ func (p *SDEXLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float6
 
 	log.Printf("balanceRatio = %v", balanceRatio)
 
-	allowedSpend := maxAssetBase
-	if ratioGap < 0 {
-		allowedSpend = maxAssetBase - totalAssetValue*p.maintainBalancePercent
+	allowedSpend := maxAssetBase - totalAssetValue*p.maintainBalancePercent
+	if allowedSpend < 0.0 {
+		allowedSpend = 0.0
 	}
+	backupBalance := maxAssetBase - allowedSpend
 
 	spent := 0.0
 	levelCounter := 1.0
-	for i := int16(0); i < p.maxLevels && spent < allowedSpend; i++ {
-		level, amountSpent, e := p.getLevel(maxAssetBase, maxAssetQuote, levelCounter, ratioGap)
+	overSpent := false
+	for i := int16(0); i < p.maxLevels; i++ {
+		if spent >= maxAssetBase {
+			return nil, fmt.Errorf("Level provider spent more than asset balance")
+		}
+		if spent >= allowedSpend {
+			overSpent = true
+		}
+
+		level, amountSpent, e := p.getLevel(maxAssetBase, levelCounter, ratioGap, overSpent, backupBalance)
 		if e != nil {
 			return nil, e
 		}
-		levelCounter += 1.0
+
 		spent += amountSpent
-		levels = append(levels, level)
+		if overSpent {
+			backupBalance -= amountSpent
+		}
+		if spent < maxAssetBase {
+			levels = append(levels, level)
+		}
+		levelCounter += 1.0
 	}
 	return levels, nil
 }
 
-func (p *SDEXLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote, levelCounter float64, ratioGap float64) (api.Level, float64, error) {
-	//find balance mismatch for amount adjustment, helps keep assets from running out
+func (p *SDEXLevelProvider) getLevel(maxAssetBase float64, levelCounter float64, ratioGap float64, overSpent bool, backupBalance float64) (api.Level, float64, error) {
 
 	targetPrice := p.sdexMidPrice * (1.0 + p.spread*levelCounter)
-	targetAmount := maxAssetBase * p.basePercentPerLevel * (1.0 + ratioGap)
+	targetAmount := maxAssetBase * p.basePercentPerLevel * (1.0 + ratioGap*2)
 	if p.isBuy {
-		targetAmount = maxAssetBase * p.basePercentPerLevel * (1.0 + ratioGap) * targetPrice
+		targetAmount = maxAssetBase * p.basePercentPerLevel * (1.0 + ratioGap*2) * targetPrice
+	}
+
+	if overSpent {
+		targetAmount = backupBalance * 0.001
 	}
 
 	level := api.Level{
