@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/lightyeario/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
 - support for logging to a file with the `--log` or `-l` command-line option followed by the prefix of the log filename
+- support for basic monitoring with a health check service, run `glide up` to update the dependency ([c6374c35cff9dfa46da342aa5342f312dcd337c4](https://github.com/lightyeario/kelp/commit/c6374c35cff9dfa46da342aa5342f312dcd337c4))
 
 ### Changed
 - reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
