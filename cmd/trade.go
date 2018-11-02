@@ -179,7 +179,7 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 	}
 
 	log.Printf("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
-	return server.StartServer(botConfig.MonitoringPort, "", "")
+	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTlsCert, botConfig.MonitoringTlsKey)
 }
 
 func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {

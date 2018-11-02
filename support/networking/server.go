@@ -1,7 +1,9 @@
 package networking
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -31,5 +33,16 @@ func MakeServer(endpoints []Endpoint) (WebServer, error) {
 // This call will block or return a non-nil error.
 func (s *server) StartServer(port uint16, certFile string, keyFile string) error {
 	addr := ":" + strconv.Itoa(int(port))
+	if certFile != "" && keyFile != "" {
+		_, e := os.Stat(certFile)
+		if e != nil {
+			return fmt.Errorf("provided tls cert file cannot be found")
+		}
+		_, e = os.Stat(keyFile)
+		if e != nil {
+			return fmt.Errorf("provided tls key file cannot be found")
+		}
+		return http.ListenAndServeTLS(addr, certFile, keyFile, s.router)
+	}
 	return http.ListenAndServe(addr, s.router)
 }

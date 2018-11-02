@@ -23,6 +23,8 @@ type BotConfig struct {
 	AlertType           string `valid:"-" toml:"ALERT_TYPE"`
 	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"`
 	MonitoringPort      uint16 `valid:"-" toml:"MONITORING_PORT"`
+	MonitoringTlsCert   string `valid:"-" toml:"MONITORING_TLS_CERT"`
+	MonitoringTlsKey    string `valid:"-" toml:"MONITORING_TLS_KEY"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
