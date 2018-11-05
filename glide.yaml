@@ -17,5 +17,5 @@ import:
   - support/errors
 - package: github.com/PagerDuty/go-pagerduty
   version: 635c5ce271490fba94880e62cde4eea3c1c184b9
-- package: github.com/go-chi/chi
-  version: 0ebf7795c516423a110473652e9ba3a59a504863
+- package: github.com/lechengfan/googleauth
+  version: 722d91dabd57bee7ad3a35c3d642f4c3f90a3826

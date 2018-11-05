@@ -1,6 +1,10 @@
-hash: d73684db16b53521a217496dcb3a48443ab67cab134ea6587f5b69b5890eb4df
-updated: 2018-10-26T15:04:59.457806-07:00
+hash: 43085f64fa17164dddb192e2df5fecf87435461128fee643d429f81fc37ab345
+updated: 2018-11-05T10:23:55.320568-08:00
 imports:
+- name: cloud.google.com/go
+  version: 793297ec250352b0ece46e103381a0fc3dab95a1
+  subpackages:
+  - compute/metadata
 - name: github.com/agl/ed25519
   version: 278e1ec8e8a6e017cd07577924d6766039146ced
   subpackages:
@@ -15,16 +19,22 @@ imports:
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
-- name: github.com/go-chi/chi
-  version: 0ebf7795c516423a110473652e9ba3a59a504863
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
+- name: github.com/golang/protobuf
+  version: d3de96c4c28ef8af3aa1a892fc481e0f103c01ff
+  subpackages:
+  - proto
 - name: github.com/google/go-querystring
   version: 44c6ddd0a2342c386950e880b658017258da92fc
   subpackages:
   - query
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/kr/session
+  version: 6f756089c21ec9a4ceb14473bf90d5e3a3e9e303
+- name: github.com/lechengfan/googleauth
+  version: 722d91dabd57bee7ad3a35c3d642f4c3f90a3826
 - name: github.com/lib/pq
   version: 50761b0867bd1d9d069276790bcd4a3bccf2324a
   subpackages:
@@ -82,8 +92,39 @@ imports:
   subpackages:
   - assert
   - mock
+- name: golang.org/x/crypto
+  version: e84da0312774c21d64ee2317962ef669b27ffb41
+  subpackages:
+  - internal/subtle
+  - nacl/secretbox
+  - poly1305
+  - salsa20/salsa
+- name: golang.org/x/net
+  version: 9b4f9f5ad5197c79fd623a3638e70d8b26cef344
+  subpackages:
+  - context
+  - context/ctxhttp
+- name: golang.org/x/oauth2
+  version: 9dcd33a902f40452422c2367fefcb95b54f9f8f8
+  subpackages:
+  - google
+  - internal
+  - jws
+  - jwt
 - name: golang.org/x/sys
   version: 1f5e250e1174502017917628cc48b52fdc25b531
   subpackages:
   - unix
+- name: google.golang.org/appengine
+  version: ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06
+  subpackages:
+  - internal
+  - internal/app_identity
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/modules
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 testImports: []

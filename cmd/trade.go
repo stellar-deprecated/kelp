@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/lightyeario/kelp/model"
@@ -163,6 +164,16 @@ func init() {
 }
 
 func startMonitoringServer(botConfig trader.BotConfig) error {
+	serverConfig := &networking.Config{
+		GoogleClientID: botConfig.GoogleClientId,
+		GoogleClientSecret: botConfig.GoogleClientSecret,
+		PermittedEmails: map[string]bool{},
+	}
+	// Load acceptable Google emails into the map
+	for _, email := range strings.Split(botConfig.AcceptableEmails, ",") {
+		serverConfig.PermittedEmails[email] = true
+	}
+
 	healthMetrics, e := monitoring.MakeMetricsRecorder(map[string]interface{}{"success": true})
 	if e != nil {
 		return fmt.Errorf("unable to make metrics recorder for the health endpoint: %s", e)
@@ -172,8 +183,16 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 	if e != nil {
 		return fmt.Errorf("unable to make /health endpoint: %s", e)
 	}
+	kelpMetrics , e := monitoring.MakeMetricsRecorder(nil)
+	if e != nil {
+		return fmt.Errorf("unable to make metrics recorder for the /metrics endpoint: %s", e)
+	}
 
-	server, e := networking.MakeServer([]networking.Endpoint{healthEndpoint})
+	metricsEndpoint, e := monitoring.MakeMetricsEndpoint("/metrics", kelpMetrics, networking.GoogleAuth)
+	if e != nil {
+		return fmt.Errorf("unable to make /metrics endpoint: %s", e)
+	}
+	server, e := networking.MakeServer(serverConfig, []networking.Endpoint{healthEndpoint, metricsEndpoint})
 	if e != nil {
 		return fmt.Errorf("unable to initialize the metrics server: %s", e)
 	}

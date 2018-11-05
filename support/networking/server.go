@@ -1,11 +1,29 @@
 package networking
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
+
+	"github.com/lechengfan/googleauth"
 )
+
+// Config is a struct storing configuration parameters for the monitoring server.
+type Config struct {
+	// PermittedEmails is a map of emails that are allowed access to the endpoints protected by Google authentication
+	PermittedEmails map[string]bool
+	// GoogleClientID - client ID of the Google application. It should only be left empty if no endpoints require
+	// Google authentication
+	GoogleClientID string
+	// GoogleClientSecret - client secret of the Google application. It should only be left empty if no endpoints require
+	// Google authentication
+	GoogleClientSecret string
+}
 
 // WebServer defines an interface for a generic HTTP/S server with a StartServer function.
 // If certFile and certKey are specified, then the server will serve through HTTPS. StartServer
@@ -15,15 +33,37 @@ type WebServer interface {
 }
 
 type server struct {
-	router *http.ServeMux
+	router             *http.ServeMux
+	googleClientID     string
+	googleClientSecret string
+	permittedEmails    map[string]bool
 }
 
 // MakeServer creates a WebServer that's responsible for serving all the endpoints passed into it.
-func MakeServer(endpoints []Endpoint) (WebServer, error) {
+func MakeServer(cfg *Config, endpoints []Endpoint) (WebServer, error) {
 	mux := new(http.ServeMux)
-	s := &server{router: mux}
+	s := &server{
+		router:             mux,
+		googleClientID:     cfg.GoogleClientID,
+		googleClientSecret: cfg.GoogleClientSecret,
+		permittedEmails:    cfg.PermittedEmails,
+	}
+	// Router for endpoints that require authentication
+	authMux := new(http.ServeMux)
+	googleAuthRequired := false
 	for _, endpoint := range endpoints {
-		mux.HandleFunc(endpoint.GetPath(), endpoint.GetHandlerFunc())
+		if endpoint.GetAuthLevel() == GoogleAuth {
+			if cfg.GoogleClientID == "" || cfg.GoogleClientSecret == "" {
+				return nil, fmt.Errorf("error registering a GoogleAuth endpoint - google client ID or client secret is empty")
+			}
+			googleAuthRequired = true
+			authMux.HandleFunc(endpoint.GetPath(), endpoint.GetHandlerFunc())
+		} else {
+			mux.HandleFunc(endpoint.GetPath(), endpoint.GetHandlerFunc())
+		}
+	}
+	if googleAuthRequired {
+		mux.Handle("/", s.googleAuthHandler(authMux))
 	}
 	return s, nil
 }
@@ -45,4 +85,25 @@ func (s *server) StartServer(port uint16, certFile string, keyFile string) error
 		return http.ListenAndServeTLS(addr, certFile, keyFile, s.router)
 	}
 	return http.ListenAndServe(addr, s.router)
+}
+
+// googleAuthHandler creates a random key to encrypt/decrypt session cookies
+// and returns a handler for the Google OAuth process, where the user is asked
+// to sign in via Google. If successful, h is used as the callback.
+func (s *server) googleAuthHandler(h http.Handler) http.Handler {
+	key := make([]byte, 64)
+	_, e := rand.Read(key)
+	if e != nil {
+		log.Printf("error encountered generating random key for google auth")
+		panic(e)
+	}
+	k := sha256.Sum256(key)
+	return &googleauth.Handler{
+		PermittedEmails: s.permittedEmails,
+		Keys:            []*[32]byte{&k},
+		ClientID:        s.googleClientID,
+		ClientSecret:    s.googleClientSecret,
+		MaxAge:          28 * 24 * time.Hour,
+		Handler:         h,
+	}
 }

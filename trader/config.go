@@ -25,6 +25,9 @@ type BotConfig struct {
 	MonitoringPort      uint16 `valid:"-" toml:"MONITORING_PORT"`
 	MonitoringTlsCert   string `valid:"-" toml:"MONITORING_TLS_CERT"`
 	MonitoringTlsKey    string `valid:"-" toml:"MONITORING_TLS_KEY"`
+	GoogleClientId      string `valid:"-" toml:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret  string `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
+	AcceptableEmails    string `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
