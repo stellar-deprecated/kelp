@@ -12,10 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testKrakenExchange api.Exchange = krakenExchange{
+var testKrakenExchange api.Exchange = &krakenExchange{
 	assetConverter:           model.KrakenAssetConverter,
 	assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-	api:          krakenapi.New("", ""),
+	apis:         []*krakenapi.KrakenApi{krakenapi.New("", "")},
+	apiNextIndex: 0,
 	delimiter:    "",
 	precision:    8,
 	withdrawKeys: asset2Address2Key{},

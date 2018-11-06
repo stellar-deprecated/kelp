@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,13 +16,14 @@ import (
 )
 
 // ensure that krakenExchange conforms to the Exchange interface
-var _ api.Exchange = krakenExchange{}
+var _ api.Exchange = &krakenExchange{}
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
 	assetConverter           *model.AssetConverter
 	assetConverterOpenOrders *model.AssetConverter // kraken uses different symbols when fetching open orders!
-	api                      *krakenapi.KrakenApi
+	apis                     []*krakenapi.KrakenApi
+	apiNextIndex             uint8
 	delimiter                string
 	precision                int8
 	withdrawKeys             asset2Address2Key
@@ -45,20 +47,40 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 }
 
 // makeKrakenExchange is a factory method to make the kraken exchange
-// TODO 2, should take in config file for kraken api keys + withdrawalKeys mapping
-func makeKrakenExchange() (api.Exchange, error) {
+// TODO 2, should take in config file for withdrawalKeys mapping
+func makeKrakenExchange(apiKeys []api.ExchangeAPIKey) (api.Exchange, error) {
+	if len(apiKeys) == 0 || len(apiKeys) > math.MaxUint8 {
+		return nil, fmt.Errorf("invalid number of apiKeys: %d", len(apiKeys))
+	}
+
+	krakenAPIs := []*krakenapi.KrakenApi{}
+	for _, apiKey := range apiKeys {
+		krakenAPIClient := krakenapi.New(apiKey.Key, apiKey.Secret)
+		krakenAPIs = append(krakenAPIs, krakenAPIClient)
+	}
+
 	return &krakenExchange{
 		assetConverter:           model.KrakenAssetConverter,
 		assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-		api:          krakenapi.New("", ""),
+		apis:         krakenAPIs,
+		apiNextIndex: 0,
 		delimiter:    "",
 		withdrawKeys: asset2Address2Key{},
 		precision:    8,
 	}, nil
 }
 
+// nextAPI rotates the API key being used so we can overcome rate limit issues
+func (k *krakenExchange) nextAPI() *krakenapi.KrakenApi {
+	log.Printf("returning kraken API key at index %d", k.apiNextIndex)
+	api := k.apis[k.apiNextIndex]
+	// rotate key for the next call
+	k.apiNextIndex = (k.apiNextIndex + 1) % uint8(len(k.apis))
+	return api
+}
+
 // AddOrder impl.
-func (k krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
+func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
 	pairStr, e := order.Pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
@@ -71,7 +93,7 @@ func (k krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, erro
 	if k.isSimulated {
 		args["validate"] = "true"
 	}
-	resp, e := k.api.AddOrder(
+	resp, e := k.nextAPI().AddOrder(
 		pairStr,
 		order.OrderAction.String(),
 		order.OrderType.String(),
@@ -98,12 +120,12 @@ func (k krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, erro
 }
 
 // CancelOrder impl.
-func (k krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
+func (k *krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
 	if k.isSimulated {
 		return model.CancelResultCancelSuccessful, nil
 	}
 
-	resp, e := k.api.CancelOrder(txID.String())
+	resp, e := k.nextAPI().CancelOrder(txID.String())
 	if e != nil {
 		return model.CancelResultFailed, e
 	}
@@ -125,8 +147,8 @@ func (k krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrde
 }
 
 // GetAccountBalances impl.
-func (k krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
-	balanceResponse, e := k.api.Balance()
+func (k *krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
+	balanceResponse, e := k.nextAPI().Balance()
 	if e != nil {
 		return nil, e
 	}
@@ -151,13 +173,13 @@ func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float64 {
 }
 
 // GetAssetConverter impl.
-func (k krakenExchange) GetAssetConverter() *model.AssetConverter {
+func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
 	return k.assetConverter
 }
 
 // GetOpenOrders impl.
-func (k krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error) {
-	openOrdersResponse, e := k.api.OpenOrders(map[string]string{})
+func (k *krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error) {
+	openOrdersResponse, e := k.nextAPI().OpenOrders(map[string]string{})
 	if e != nil {
 		return nil, e
 	}
@@ -195,13 +217,13 @@ func (k krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder
 }
 
 // GetOrderBook impl.
-func (k krakenExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
+func (k *krakenExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
 	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
 	}
 
-	krakenob, e := k.api.Depth(pairStr, int(maxCount))
+	krakenob, e := k.nextAPI().Depth(pairStr, int(maxCount))
 	if e != nil {
 		return nil, e
 	}
@@ -212,7 +234,7 @@ func (k krakenExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*
 	return ob, nil
 }
 
-func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.TradingPair, orderAction model.OrderAction) []model.Order {
+func (k *krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.TradingPair, orderAction model.OrderAction) []model.Order {
 	orders := []model.Order{}
 	for _, item := range obi {
 		orders = append(orders, model.Order{
@@ -228,13 +250,13 @@ func (k krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.Tr
 }
 
 // GetTickerPrice impl.
-func (k krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]api.Ticker, error) {
+func (k *krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]api.Ticker, error) {
 	pairsMap, e := model.TradingPairs2Strings(k.assetConverter, k.delimiter, pairs)
 	if e != nil {
 		return nil, e
 	}
 
-	resp, e := k.api.Ticker(values(pairsMap)...)
+	resp, e := k.nextAPI().Ticker(values(pairsMap)...)
 	if e != nil {
 		return nil, e
 	}
@@ -262,7 +284,7 @@ func values(m map[model.TradingPair]string) []string {
 }
 
 // GetTradeHistory impl.
-func (k krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
 	var mcs *int64
 	if maybeCursorStart != nil {
 		i := maybeCursorStart.(int64)
@@ -278,7 +300,7 @@ func (k krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCurso
 	return k.getTradeHistory(mcs, mce)
 }
 
-func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
 	input := map[string]string{}
 	if maybeCursorStart != nil {
 		input["start"] = strconv.FormatInt(*maybeCursorStart, 10)
@@ -287,7 +309,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 		input["end"] = strconv.FormatInt(*maybeCursorEnd, 10)
 	}
 
-	resp, e := k.api.Query("TradesHistory", input)
+	resp, e := k.nextAPI().Query("TradesHistory", input)
 	if e != nil {
 		return nil, e
 	}
@@ -330,7 +352,7 @@ func (k krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd 
 }
 
 // GetTrades impl.
-func (k krakenExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
+func (k *krakenExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
 	if maybeCursor != nil {
 		mc := maybeCursor.(int64)
 		return k.getTrades(pair, &mc)
@@ -338,7 +360,7 @@ func (k krakenExchange) GetTrades(pair *model.TradingPair, maybeCursor interface
 	return k.getTrades(pair, nil)
 }
 
-func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (*api.TradesResult, error) {
+func (k *krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (*api.TradesResult, error) {
 	pairStr, e := pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e
@@ -346,9 +368,9 @@ func (k krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) (
 
 	var tradesResp *krakenapi.TradesResponse
 	if maybeCursor != nil {
-		tradesResp, e = k.api.Trades(pairStr, *maybeCursor)
+		tradesResp, e = k.nextAPI().Trades(pairStr, *maybeCursor)
 	} else {
-		tradesResp, e = k.api.Trades(pairStr, -1)
+		tradesResp, e = k.nextAPI().Trades(pairStr, -1)
 	}
 	if e != nil {
 		return nil, e
@@ -406,7 +428,7 @@ func getOrderType(tInfo krakenapi.TradeInfo) (model.OrderType, error) {
 }
 
 // GetWithdrawInfo impl.
-func (k krakenExchange) GetWithdrawInfo(
+func (k *krakenExchange) GetWithdrawInfo(
 	asset model.Asset,
 	amountToWithdraw *model.Number,
 	address string,
@@ -420,7 +442,7 @@ func (k krakenExchange) GetWithdrawInfo(
 	if e != nil {
 		return nil, e
 	}
-	resp, e := k.api.Query(
+	resp, e := k.nextAPI().Query(
 		"WithdrawInfo",
 		map[string]string{
 			"asset":  krakenAsset,
@@ -492,7 +514,7 @@ func parseWithdrawInfo(m map[string]interface{}) (*withdrawInfo, error) {
 }
 
 // PrepareDeposit impl.
-func (k krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) (*api.PrepareDepositResult, error) {
+func (k *krakenExchange) PrepareDeposit(asset model.Asset, amount *model.Number) (*api.PrepareDepositResult, error) {
 	krakenAsset, e := k.assetConverter.ToString(asset)
 	if e != nil {
 		return nil, e
@@ -557,8 +579,8 @@ type depositMethod struct {
 	genAddress bool
 }
 
-func (k krakenExchange) getDepositMethods(asset string) (*depositMethod, error) {
-	resp, e := k.api.Query(
+func (k *krakenExchange) getDepositMethods(asset string) (*depositMethod, error) {
+	resp, e := k.nextAPI().Query(
 		"DepositMethods",
 		map[string]string{"asset": asset},
 	)
@@ -585,7 +607,7 @@ type depositAddress struct {
 	isNew    bool
 }
 
-func (k krakenExchange) getDepositAddress(asset string, method string, genAddress bool) ([]depositAddress, error) {
+func (k *krakenExchange) getDepositAddress(asset string, method string, genAddress bool) ([]depositAddress, error) {
 	input := map[string]string{
 		"asset":  asset,
 		"method": method,
@@ -594,7 +616,7 @@ func (k krakenExchange) getDepositAddress(asset string, method string, genAddres
 		// only set "new" if it's supposed to be 'true'. If you set it to 'false' then it will be treated as true by Kraken :(
 		input["new"] = "true"
 	}
-	resp, e := k.api.Query("DepositAddresses", input)
+	resp, e := k.nextAPI().Query("DepositAddresses", input)
 	if e != nil {
 		return []depositAddress{}, e
 	}
@@ -699,7 +721,7 @@ func parseDepositMethods(m map[string]interface{}) (*depositMethod, error) {
 }
 
 // WithdrawFunds impl.
-func (k krakenExchange) WithdrawFunds(
+func (k *krakenExchange) WithdrawFunds(
 	asset model.Asset,
 	amountToWithdraw *model.Number,
 	address string,
@@ -713,7 +735,7 @@ func (k krakenExchange) WithdrawFunds(
 	if e != nil {
 		return nil, e
 	}
-	resp, e := k.api.Query(
+	resp, e := k.nextAPI().Query(
 		"Withdraw",
 		map[string]string{
 			"asset":  krakenAsset,

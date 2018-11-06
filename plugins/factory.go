@@ -133,7 +133,10 @@ type exchangeContainer struct {
 var exchanges = map[string]exchangeContainer{
 	"kraken": exchangeContainer{
 		description: "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
-		makeFn:      makeKrakenExchange,
+		makeFn: func() (api.Exchange, error) {
+			apiKey := api.ExchangeAPIKey{Key: "", Secret: ""}
+			return makeKrakenExchange([]api.ExchangeAPIKey{apiKey})
+		},
 	},
 	"ccxt-binance": exchangeContainer{
 		description: "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
