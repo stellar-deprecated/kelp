@@ -6,6 +6,12 @@ import (
 	"github.com/lightyeario/kelp/model"
 )
 
+// ExchangeAPIKey specifies API credentials for an exchange
+type ExchangeAPIKey struct {
+	Key    string
+	Secret string
+}
+
 // Account allows you to access key account functions
 type Account interface {
 	GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error)
