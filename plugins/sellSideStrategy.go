@@ -217,10 +217,14 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 	if e != nil {
 		return nil, nil, fmt.Errorf("unable to create preceding offers: %s", e)
 	}
-	remainingLevels := s.currentLevels[numLevelsConsumed:]
+	// pad the offers so it lines up correctly with numLevelsConsumed.
+	// alternatively we could chop off the beginning of s.currentLevels but then that affects the logging of levels downstream
+	for i := 0; i < numLevelsConsumed; i++ {
+		offers = append([]horizon.Offer{horizon.Offer{}}, offers...)
+	}
 
 	// next we want to adjust our remaining offers to be in line with what is desired, creating new offers that may not exist at the end of our existing offers
-	for i := 0; i < len(remainingLevels); i++ {
+	for i := numLevelsConsumed; i < len(s.currentLevels); i++ {
 		isModify := i < len(offers)
 		// we only want to delete offers after we hit the capacity limit which is why we perform this check in the beginning
 		if hitCapacityLimit {
@@ -236,7 +240,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		}
 
 		// hitCapacityLimit can be updated below
-		targetPrice, targetAmount, e := s.computeTargets(remainingLevels[i])
+		targetPrice, targetAmount, e := s.computeTargets(s.currentLevels[i])
 		if e != nil {
 			return nil, nil, fmt.Errorf("could not compute targets: %s", e)
 		}
