@@ -111,12 +111,120 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	return nil
 }
 
+// computePrecedingLevels returns the levels priced better than the lowest existing offer, up to the max preceding levels allowed
+func computePrecedingLevels(offers []horizon.Offer, levels []api.Level) []api.Level {
+	if len(offers) == 0 {
+		// we want to place all levels as create offers
+		return levels
+	}
+	if len(offers) >= len(levels) {
+		// we have enough offers to modify to reach our goal
+		// our logic is not sophisticated so we default to the modify all offers behavior here
+		return []api.Level{}
+	}
+
+	// the number of new levels we can place is capped by the number of existing offers we have
+	maxPrecedingLevels := len(levels) - len(offers)
+	// we only want to create new offers that are priced lower than the lowest existing offer
+	cutoffPrice := float64(offers[0].PriceR.N) / float64(offers[0].PriceR.D)
+
+	precedingLevels := []api.Level{}
+	for i, level := range levels {
+		if i >= maxPrecedingLevels {
+			break
+		}
+
+		if level.Price.AsFloat() >= cutoffPrice {
+			break
+		}
+		precedingLevels = append(precedingLevels, level)
+	}
+	return precedingLevels
+}
+
+func (s *sellSideStrategy) computeTargets(level api.Level) (targetPrice *model.Number, targetAmount *model.Number, e error) {
+	targetPrice = &level.Price
+	targetAmount = &level.Amount
+
+	if targetPrice.AsFloat() == 0 {
+		return nil, nil, fmt.Errorf("targetPrice is 0")
+	}
+	if targetAmount.AsFloat() == 0 {
+		return nil, nil, fmt.Errorf("targetAmount is 0")
+	}
+
+	if s.divideAmountByPrice {
+		targetAmount = model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
+	}
+
+	return targetPrice, targetAmount, nil
+}
+
+func (s *sellSideStrategy) createPrecedingOffers(
+	precedingLevels []api.Level,
+) (
+	int, // numLevelsConsumed
+	bool, // hitCapacityLimit
+	[]build.TransactionMutator, // ops
+	*model.Number, // newTopOffer
+	error, // e
+) {
+	hitCapacityLimit := false
+	ops := []build.TransactionMutator{}
+	var newTopOffer *model.Number
+
+	for i := 0; i < len(precedingLevels); i++ {
+		if hitCapacityLimit {
+			// we consider the ith level consumed because we don't want to create an offer for it anyway since we hit the capacity limit
+			return (i + 1), true, ops, newTopOffer, nil
+		}
+
+		targetPrice, targetAmount, e := s.computeTargets(precedingLevels[i])
+		if e != nil {
+			return 0, false, nil, nil, fmt.Errorf("could not compute targets: %s", e)
+		}
+
+		var offerPrice *model.Number
+		var op *build.ManageOfferBuilder
+		offerPrice, hitCapacityLimit, op, e = s.createSellLevel(i, *targetPrice, *targetAmount)
+		if e != nil {
+			return 0, false, nil, nil, fmt.Errorf("unable to create new preceding offer: %s", e)
+		}
+
+		if op != nil {
+			ops = append(ops, op)
+		}
+
+		// update top offer, newTopOffer is minOffer because this is a sell strategy, and the lowest price is the best (top) price on the orderbook
+		if newTopOffer == nil || offerPrice.AsFloat() < newTopOffer.AsFloat() {
+			newTopOffer = offerPrice
+		}
+	}
+
+	// hitCapacityLimit can be updated after the check inside the for loop
+	return len(precedingLevels), hitCapacityLimit, ops, newTopOffer, nil
+}
+
 // UpdateWithOps impl
 func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	deleteOps := []build.TransactionMutator{}
-	newTopOffer = nil
-	hitCapacityLimit := false
-	for i := 0; i < len(s.currentLevels); i++ {
+
+	// first we want to re-create any offers that precede our existing offers and are additions to the existing offers that we have
+	precedingLevels := computePrecedingLevels(offers, s.currentLevels)
+	var hitCapacityLimit bool
+	var numLevelsConsumed int
+	numLevelsConsumed, hitCapacityLimit, ops, newTopOffer, e = s.createPrecedingOffers(precedingLevels)
+	if e != nil {
+		return nil, nil, fmt.Errorf("unable to create preceding offers: %s", e)
+	}
+	// pad the offers so it lines up correctly with numLevelsConsumed.
+	// alternatively we could chop off the beginning of s.currentLevels but then that affects the logging of levels downstream
+	for i := 0; i < numLevelsConsumed; i++ {
+		offers = append([]horizon.Offer{horizon.Offer{}}, offers...)
+	}
+
+	// next we want to adjust our remaining offers to be in line with what is desired, creating new offers that may not exist at the end of our existing offers
+	for i := numLevelsConsumed; i < len(s.currentLevels); i++ {
 		isModify := i < len(offers)
 		// we only want to delete offers after we hit the capacity limit which is why we perform this check in the beginning
 		if hitCapacityLimit {
@@ -132,29 +240,20 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		}
 
 		// hitCapacityLimit can be updated below
-		targetPrice := s.currentLevels[i].Price
-		targetAmount := s.currentLevels[i].Amount
-		if targetPrice.AsFloat() == 0 {
-			return nil, nil, fmt.Errorf("targetPrice is 0")
-		}
-		if targetAmount.AsFloat() == 0 {
-			return nil, nil, fmt.Errorf("targetAmount is 0")
-		}
-
-		if s.divideAmountByPrice {
-			targetAmount = *model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
+		targetPrice, targetAmount, e := s.computeTargets(s.currentLevels[i])
+		if e != nil {
+			return nil, nil, fmt.Errorf("could not compute targets: %s", e)
 		}
 
 		var offerPrice *model.Number
 		var op *build.ManageOfferBuilder
-		var e error
 		if isModify {
-			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, i, targetPrice, targetAmount)
+			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, i, *targetPrice, *targetAmount)
 		} else {
-			offerPrice, hitCapacityLimit, op, e = s.createSellLevel(i, targetPrice, targetAmount)
+			offerPrice, hitCapacityLimit, op, e = s.createSellLevel(i, *targetPrice, *targetAmount)
 		}
 		if e != nil {
-			return nil, nil, e
+			return nil, nil, fmt.Errorf("unable to update existing offers or create new offers: %s", e)
 		}
 		if op != nil {
 			if hitCapacityLimit && isModify {
