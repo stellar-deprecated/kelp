@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -40,6 +41,13 @@ func hiddenFlag(flag string) {
 	e := tradeCmd.Flags().MarkHidden(flag)
 	if e != nil {
 		panic(e)
+	}
+}
+
+func logPanic() {
+	if r := recover(); r != nil {
+		st := debug.Stack()
+		log.Printf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
 	}
 }
 
@@ -78,6 +86,9 @@ func init() {
 				return
 			}
 			log.Printf("logging to file: %s", fileName)
+
+			// we want to create a deferred recovery function here that will log panics to the log file and then exit
+			defer logPanic()
 		}
 
 		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
