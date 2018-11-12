@@ -11,16 +11,15 @@
 [![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-pulls-closed]
 
 Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
-Kelp is still in beta, so please submit any issues ([bug reports][github-bug-report] and [feature requests][github-feature-request]).
 
-Kelp includes several configurable trading strategies, and its modular design allows you to customize your algorithms, exchange integrations, and assets. You can define your own parameters or use the existing repository to quickly implement a trading bot. With Kelp, you could be up and trading on Stellar in a matter of minutes.
+Kelp includes several configurable trading strategies and exchange integrations. You can define your own parameters or use the sample configurations to quickly get up and running with a trading bot in a matter of minutes. The modular design allows you to easily create new trading strategies, exchange integrations, and assets to give you full control over the bot.
 
-Kelp is pre-configured to:
+Kelp is built to:
 
 - Make spreads and make markets
 - Create liquidity and facilitate price-discovery for ICOs
 - Price and trade custom [stablecoins][stablecoin]
-- Mimic order books from other exchanges
+- Mimic orderbooks from other exchanges
 
 To learn more about the Stellar protocol check out [this video created by Lumenauts][sdex explainer video]. You can also search [Stellar's Q&A][stellar q&a].
 
@@ -98,20 +97,20 @@ To compile Kelp from source:
     * `./scripts/build.sh`
 6. Confirm one new binary file:
     * `./bin/kelp`
-7. Set up CCXT to use an expanded set of priceFeeds or orderbooks (see the [Using CCXT](#using-ccxt) section for details)
+7. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
 
 ## Running Kelp
 
 Kelp places orders on the [Stellar marketplace][stellarx] based on the selected strategy. Configuration files specify the Stellar account and strategy details.
 
 These are the following commands available from the `kelp` binary:
-- `exchanges`: Lists the available exchange integrations
-- `strategies`: Lists the available strategies
 - `trade`: Trades with a specific strategy against the Stellar universal marketplace
+- `exchanges`: Lists the available exchange integrations along with capabilities
+- `strategies`: Lists the available strategies along with details
 - `version`: Version and build information
 - `help`: Help about any command
 
-The `trade` command has three parameters which are:
+The `trade` command has three required parameters which are:
 
 - **botConf**: full path to the _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
 - **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _mirror_, _delete_).
@@ -121,13 +120,13 @@ Here's an example of how to start the trading bot with the _buysell_ strategy:
 
 `kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg`
 
-If you are ever stuck, just invoke the `kelp` binary directly or type `kelp help [command]` for help with a specific command.
+If you are ever stuck, just run the `kelp` binary directly to bring up the help section or type `kelp help [command]` for help with a specific command.
 
 ## Using CCXT
 
 You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices and orderbooks from a larger number of exchanges.
 
-You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it. In order to run CCXT you should install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest`). You can find more details on the [CCXT_REST github page][ccxt-rest]. The CCXT-REST server **must** be running on port `3000` before you start up the Kelp bot.
+You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it. In order to run CCXT you should install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest`). You can find more details on the [CCXT_REST github page][ccxt-rest]. The CCXT-REST server **must** be running on port `3000` _before_ you start up the Kelp bot.
 
 You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
 
