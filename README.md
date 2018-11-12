@@ -42,9 +42,12 @@ To learn more about the Stellar protocol check out [this video created by Lumena
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
-   * [Contributing](#contributing)
    * [Changelog](#changelog)
-   * [Questions &amp; Improvements](#questions--improvements)
+   * [Community](#community)
+      * [Contributing](#contributing)
+      * [Communication](#communication)
+      * [Code of Conduct](#code-of-conduct)
+      * [Project Improvements](#project-improvements)
 
 # Getting Started
 
@@ -256,17 +259,28 @@ Reference config files are in the [examples folder](examples/configs/trader). Sp
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
 
-# Contributing
-
-See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
-
 # Changelog
 
 See the [Changelog](CHANGELOG.md).
 
-# Questions & Improvements
+# Community
+
+# Contributing
+
+See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
+
+## Communication
 
 - Ask questions on the [Stellar StackExchange][stackexchange]; use the `kelp` tag
+- Announcements will be made on the Google Group mailing list: https://groups.google.com/forum/#!forum/kelp-announce
+- Community discussions (outside of questions) can take place on the mailing list: https://groups.google.com/forum/#!aboutgroup/kelp-talk
+
+## Code of Conduct
+
+See the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Project Improvements
+
 - [Submit a Bug Report][github-bug-report]
 - [Submit a Feature Request][github-feature-request]
 - [Raise an issue][github-new-issue] that is not a bug report or a feature request
