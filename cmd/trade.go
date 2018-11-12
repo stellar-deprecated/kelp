@@ -60,6 +60,7 @@ func init() {
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
+	fixedIterations := tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -96,6 +97,13 @@ func init() {
 			startupMessage += " (simulation mode)"
 		}
 		log.Println(startupMessage)
+
+		if *fixedIterations == 0 {
+			fixedIterations = nil
+			log.Printf("will run unbounded iterations\n")
+		} else {
+			log.Printf("will run only %d update iterations\n", *fixedIterations)
+		}
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
@@ -141,6 +149,7 @@ func init() {
 			sdex,
 			strat,
 			botConfig.TickIntervalSeconds,
+			fixedIterations,
 			dataKey,
 			alert,
 		)
@@ -167,18 +176,15 @@ func init() {
 		// --- end initialization of services ---
 
 		log.Println("Starting the trader bot...")
-		for {
-			bot.Start()
-			log.Println("Restarting the trader bot...")
-		}
+		bot.Start()
 	}
 }
 
 func startMonitoringServer(botConfig trader.BotConfig) error {
 	serverConfig := &networking.Config{
-		GoogleClientID: botConfig.GoogleClientId,
+		GoogleClientID:     botConfig.GoogleClientId,
 		GoogleClientSecret: botConfig.GoogleClientSecret,
-		PermittedEmails: map[string]bool{},
+		PermittedEmails:    map[string]bool{},
 	}
 	// Load acceptable Google emails into the map
 	for _, email := range strings.Split(botConfig.AcceptableEmails, ",") {
@@ -194,7 +200,7 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 	if e != nil {
 		return fmt.Errorf("unable to make /health endpoint: %s", e)
 	}
-	kelpMetrics , e := monitoring.MakeMetricsRecorder(nil)
+	kelpMetrics, e := monitoring.MakeMetricsRecorder(nil)
 	if e != nil {
 		return fmt.Errorf("unable to make metrics recorder for the /metrics endpoint: %s", e)
 	}
