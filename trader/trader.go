@@ -75,6 +75,7 @@ func (t *Trader) Start() {
 			*t.fixedIterations = *t.fixedIterations - 1
 			if *t.fixedIterations <= 0 {
 				log.Printf("finished requested number of iterations, stopping bot updates\n")
+				// TODO need to wait for any background goroutines that are submitting transactions
 				return
 			}
 		}
