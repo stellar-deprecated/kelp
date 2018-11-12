@@ -316,7 +316,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
 [announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
-[discussions-group]: https://groups.google.com/forum/#!aboutgroup/kelp-talk
+[discussions-group]: https://groups.google.com/forum/#!forum/kelp-talk
 [github-bug-report]: https://github.com/lightyeario/kelp/issues/new?template=bug_report.md
 [github-feature-request]: https://github.com/lightyeario/kelp/issues/new?template=feature_request.md
 [github-new-issue]: https://github.com/lightyeario/kelp/issues/new
