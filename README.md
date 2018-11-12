@@ -271,9 +271,9 @@ See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contribu
 
 ## Communication
 
-- Ask questions on the [Stellar StackExchange][stackexchange]; use the `kelp` tag
-- Announcements will be made on the Google Group mailing list: https://groups.google.com/forum/#!forum/kelp-announce
-- Community discussions (outside of questions) can take place on the mailing list: https://groups.google.com/forum/#!aboutgroup/kelp-talk
+- Ask questions on the [Stellar StackExchange][stackexchange] using the `kelp` tag
+- Announcements will be made on the [announcements distribution list][announcements-group]
+- Community discussions (outside of questions) can take place on the [mailing list][discussions-group]
 
 ## Code of Conduct
 
@@ -315,6 +315,8 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
+[announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
+[discussions-group]: https://groups.google.com/forum/#!aboutgroup/kelp-talk
 [github-bug-report]: https://github.com/lightyeario/kelp/issues/new?template=bug_report.md
 [github-feature-request]: https://github.com/lightyeario/kelp/issues/new?template=feature_request.md
 [github-new-issue]: https://github.com/lightyeario/kelp/issues/new
