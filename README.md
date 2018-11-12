@@ -265,7 +265,7 @@ See the [Changelog](CHANGELOG.md).
 
 # Community
 
-# Contributing
+## Contributing
 
 See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
 
