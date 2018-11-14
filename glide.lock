@@ -1,5 +1,5 @@
-hash: f8cc11e83686356eb23f324585db062a00477b9b78628a7c6aadb773335872da
-updated: 2018-11-13T20:04:24.839484236-08:00
+hash: 9591697dc68984d4841e1aa71ff0aaca4b202d99f85e7e9f47c445f3a5ab4420
+updated: 2018-11-13T20:46:54.414207737-08:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -34,7 +34,7 @@ imports:
 - name: github.com/kr/session
   version: 6f756089c21ec9a4ceb14473bf90d5e3a3e9e303
 - name: github.com/lechengfan/googleauth
-  version: 722d91dabd57bee7ad3a35c3d642f4c3f90a3826
+  version: 7595ba02fbce171759c10d69d96e4cd898d1fa93
 - name: github.com/lib/pq
   version: 50761b0867bd1d9d069276790bcd4a3bccf2324a
   subpackages:
@@ -43,6 +43,8 @@ imports:
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/nikhilsaraf/go-tools
   version: bcfd18c97e1cdae3aa432337bb17d3927c3e4fc0
+  subpackages:
+  - multithreading
 - name: github.com/nullstyle/go-xdr
   version: a875e7c9fa2388ce03279f6b5ba1c2ccd1f9e917
   subpackages:
