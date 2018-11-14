@@ -11,6 +11,7 @@ import (
 	"github.com/lightyeario/kelp/model"
 	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -26,6 +27,8 @@ type Trader struct {
 	sdex                *plugins.SDEX
 	strat               api.Strategy // the instance of this bot is bound to this strategy
 	tickIntervalSeconds int32
+	threadTracker       *multithreading.ThreadTracker
+	fixedIterations     *uint64
 	dataKey             *model.BotKey
 	alert               api.Alert
 
@@ -47,6 +50,8 @@ func MakeBot(
 	sdex *plugins.SDEX,
 	strat api.Strategy,
 	tickIntervalSeconds int32,
+	threadTracker *multithreading.ThreadTracker,
+	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
@@ -58,6 +63,8 @@ func MakeBot(
 		sdex:                sdex,
 		strat:               strat,
 		tickIntervalSeconds: tickIntervalSeconds,
+		threadTracker:       threadTracker,
+		fixedIterations:     fixedIterations,
 		dataKey:             dataKey,
 		alert:               alert,
 	}
@@ -68,6 +75,15 @@ func (t *Trader) Start() {
 	for {
 		log.Println("----------------------------------------------------------------------------------------------------")
 		t.update()
+		if t.fixedIterations != nil {
+			*t.fixedIterations = *t.fixedIterations - 1
+			if *t.fixedIterations <= 0 {
+				log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
+				t.threadTracker.Wait()
+				log.Printf("...all threads finished, stopping bot update loop\n")
+				return
+			}
+		}
 		log.Printf("sleeping for %d seconds...\n", t.tickIntervalSeconds)
 		time.Sleep(time.Duration(t.tickIntervalSeconds) * time.Second)
 	}

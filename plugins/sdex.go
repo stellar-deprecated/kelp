@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/lightyeario/kelp/support/utils"
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -24,6 +25,7 @@ type SDEX struct {
 	SourceSeed        string
 	TradingSeed       string
 	Network           build.Network
+	threadTracker     *multithreading.ThreadTracker
 	operationalBuffer float64
 	simMode           bool
 
@@ -59,6 +61,7 @@ func MakeSDEX(
 	sourceAccount string,
 	tradingAccount string,
 	network build.Network,
+	threadTracker *multithreading.ThreadTracker,
 	operationalBuffer float64,
 	simMode bool,
 ) *SDEX {
@@ -69,6 +72,7 @@ func MakeSDEX(
 		SourceAccount:     sourceAccount,
 		TradingAccount:    tradingAccount,
 		Network:           network,
+		threadTracker:     threadTracker,
 		operationalBuffer: operationalBuffer,
 		simMode:           simMode,
 	}
@@ -377,12 +381,12 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 	// submit
 	if !sdex.simMode {
 		log.Println("submitting tx XDR to network (async)")
-		go sdex.submit(txeB64, asyncCallback)
+		sdex.threadTracker.TriggerGoroutine(func() {
+			sdex.submit(txeB64, asyncCallback)
+		})
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
-		if asyncCallback != nil {
-			go asyncCallback("", nil)
-		}
+		sdex.invokeAsyncCallback(asyncCallback, "", nil)
 	}
 	return nil
 }
@@ -416,9 +420,7 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 			rcs, err = herr.ResultCodes()
 			if err != nil {
 				log.Printf("(async) error: no result codes from horizon: %s\n", err)
-				if asyncCallback != nil {
-					go asyncCallback("", err)
-				}
+				sdex.invokeAsyncCallback(asyncCallback, "", err)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
@@ -429,16 +431,22 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 		} else {
 			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
 		}
-		if asyncCallback != nil {
-			go asyncCallback("", err)
-		}
+		sdex.invokeAsyncCallback(asyncCallback, "", err)
 		return
 	}
 
 	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
-	if asyncCallback != nil {
-		go asyncCallback(resp.Hash, nil)
+	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil)
+}
+
+func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, e error), hash string, e error) {
+	if asyncCallback == nil {
+		return
 	}
+
+	sdex.threadTracker.TriggerGoroutine(func() {
+		asyncCallback(hash, e)
+	})
 }
 
 func (sdex *SDEX) logLiabilities(asset horizon.Asset, assetStr string) {

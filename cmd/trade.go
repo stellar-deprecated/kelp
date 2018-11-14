@@ -16,6 +16,7 @@ import (
 	"github.com/lightyeario/kelp/support/networking"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader"
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -60,6 +61,7 @@ func init() {
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
+	fixedIterations := tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -97,6 +99,13 @@ func init() {
 		}
 		log.Println(startupMessage)
 
+		if *fixedIterations == 0 {
+			fixedIterations = nil
+			log.Printf("will run unbounded iterations\n")
+		} else {
+			log.Printf("will run only %d update iterations\n", *fixedIterations)
+		}
+
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
 		log.Printf("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
@@ -111,6 +120,8 @@ func init() {
 			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 		}
 		// --- start initialization of objects ----
+		threadTracker := multithreading.MakeThreadTracker()
+
 		sdex := plugins.MakeSDEX(
 			client,
 			botConfig.SourceSecretSeed,
@@ -118,6 +129,7 @@ func init() {
 			botConfig.SourceAccount(),
 			botConfig.TradingAccount(),
 			utils.ParseNetwork(botConfig.HorizonURL),
+			threadTracker,
 			*operationalBuffer,
 			*simMode,
 		)
@@ -141,6 +153,8 @@ func init() {
 			sdex,
 			strat,
 			botConfig.TickIntervalSeconds,
+			threadTracker,
+			fixedIterations,
 			dataKey,
 			alert,
 		)
@@ -167,18 +181,15 @@ func init() {
 		// --- end initialization of services ---
 
 		log.Println("Starting the trader bot...")
-		for {
-			bot.Start()
-			log.Println("Restarting the trader bot...")
-		}
+		bot.Start()
 	}
 }
 
 func startMonitoringServer(botConfig trader.BotConfig) error {
 	serverConfig := &networking.Config{
-		GoogleClientID: botConfig.GoogleClientId,
+		GoogleClientID:     botConfig.GoogleClientId,
 		GoogleClientSecret: botConfig.GoogleClientSecret,
-		PermittedEmails: map[string]bool{},
+		PermittedEmails:    map[string]bool{},
 	}
 	// Load acceptable Google emails into the map
 	for _, email := range strings.Split(botConfig.AcceptableEmails, ",") {
@@ -194,7 +205,7 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 	if e != nil {
 		return fmt.Errorf("unable to make /health endpoint: %s", e)
 	}
-	kelpMetrics , e := monitoring.MakeMetricsRecorder(nil)
+	kelpMetrics, e := monitoring.MakeMetricsRecorder(nil)
 	if e != nil {
 		return fmt.Errorf("unable to make metrics recorder for the /metrics endpoint: %s", e)
 	}
