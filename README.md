@@ -42,9 +42,12 @@ To learn more about the Stellar protocol check out [this video created by Lumena
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
-   * [Contributing](#contributing)
    * [Changelog](#changelog)
-   * [Questions &amp; Improvements](#questions--improvements)
+   * [Community](#community)
+      * [Contributing](#contributing)
+      * [Communication](#communication)
+      * [Code of Conduct](#code-of-conduct)
+      * [Project Improvements](#project-improvements)
 
 # Getting Started
 
@@ -256,17 +259,28 @@ Reference config files are in the [examples folder](examples/configs/trader). Sp
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
 
-# Contributing
-
-See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
-
 # Changelog
 
 See the [Changelog](CHANGELOG.md).
 
-# Questions & Improvements
+# Community
 
-- Ask questions on the [Stellar StackExchange][stackexchange]; use the `kelp` tag
+## Contributing
+
+See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
+
+## Communication
+
+- Ask questions on the [Stellar StackExchange][stackexchange] using the `kelp` tag
+- Announcements will be made on the [announcements distribution list][announcements-group]
+- Community discussions (outside of questions) can take place on the [mailing list][discussions-group]
+
+## Code of Conduct
+
+See the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Project Improvements
+
 - [Submit a Bug Report][github-bug-report]
 - [Submit a Feature Request][github-feature-request]
 - [Raise an issue][github-new-issue] that is not a bug report or a feature request
@@ -301,6 +315,8 @@ See the [Changelog](CHANGELOG.md).
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
+[announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
+[discussions-group]: https://groups.google.com/forum/#!forum/kelp-talk
 [github-bug-report]: https://github.com/lightyeario/kelp/issues/new?template=bug_report.md
 [github-feature-request]: https://github.com/lightyeario/kelp/issues/new?template=feature_request.md
 [github-new-issue]: https://github.com/lightyeario/kelp/issues/new
