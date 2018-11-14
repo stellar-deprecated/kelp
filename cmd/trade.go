@@ -16,6 +16,7 @@ import (
 	"github.com/lightyeario/kelp/support/networking"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/trader"
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -119,6 +120,8 @@ func init() {
 			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 		}
 		// --- start initialization of objects ----
+		threadTracker := multithreading.MakeThreadTracker()
+
 		sdex := plugins.MakeSDEX(
 			client,
 			botConfig.SourceSecretSeed,
@@ -126,6 +129,7 @@ func init() {
 			botConfig.SourceAccount(),
 			botConfig.TradingAccount(),
 			utils.ParseNetwork(botConfig.HorizonURL),
+			threadTracker,
 			*operationalBuffer,
 			*simMode,
 		)
@@ -149,6 +153,7 @@ func init() {
 			sdex,
 			strat,
 			botConfig.TickIntervalSeconds,
+			threadTracker,
 			fixedIterations,
 			dataKey,
 			alert,

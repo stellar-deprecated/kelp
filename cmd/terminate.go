@@ -7,6 +7,7 @@ import (
 	"github.com/lightyeario/kelp/plugins"
 	"github.com/lightyeario/kelp/support/utils"
 	"github.com/lightyeario/kelp/terminator"
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -46,6 +47,7 @@ func init() {
 			*configFile.SourceAccount,
 			*configFile.TradingAccount,
 			utils.ParseNetwork(configFile.HorizonURL),
+			multithreading.MakeThreadTracker(),
 			-1, // not needed here
 			false,
 		)

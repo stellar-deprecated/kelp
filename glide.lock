@@ -1,5 +1,5 @@
-hash: 43085f64fa17164dddb192e2df5fecf87435461128fee643d429f81fc37ab345
-updated: 2018-11-05T10:23:55.320568-08:00
+hash: f8cc11e83686356eb23f324585db062a00477b9b78628a7c6aadb773335872da
+updated: 2018-11-13T20:04:24.839484236-08:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -41,6 +41,8 @@ imports:
   - oid
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/nikhilsaraf/go-tools
+  version: bcfd18c97e1cdae3aa432337bb17d3927c3e4fc0
 - name: github.com/nullstyle/go-xdr
   version: a875e7c9fa2388ce03279f6b5ba1c2ccd1f9e917
   subpackages:
