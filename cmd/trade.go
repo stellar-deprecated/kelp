@@ -145,6 +145,7 @@ func init() {
 			deleteAllOffersAndExit(botConfig, client, sdex)
 		}
 
+		timeController := plugins.MakeIntervalTimeController(time.Duration(botConfig.TickIntervalSeconds) * time.Second)
 		bot := trader.MakeBot(
 			client,
 			botConfig.AssetBase(),
@@ -152,7 +153,7 @@ func init() {
 			botConfig.TradingAccount(),
 			sdex,
 			strat,
-			botConfig.TickIntervalSeconds,
+			timeController,
 			threadTracker,
 			fixedIterations,
 			dataKey,

@@ -20,17 +20,17 @@ const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
-	api                 *horizon.Client
-	assetBase           horizon.Asset
-	assetQuote          horizon.Asset
-	tradingAccount      string
-	sdex                *plugins.SDEX
-	strat               api.Strategy // the instance of this bot is bound to this strategy
-	tickIntervalSeconds int32
-	threadTracker       *multithreading.ThreadTracker
-	fixedIterations     *uint64
-	dataKey             *model.BotKey
-	alert               api.Alert
+	api             *horizon.Client
+	assetBase       horizon.Asset
+	assetQuote      horizon.Asset
+	tradingAccount  string
+	sdex            *plugins.SDEX
+	strat           api.Strategy // the instance of this bot is bound to this strategy
+	timeController  api.TimeController
+	threadTracker   *multithreading.ThreadTracker
+	fixedIterations *uint64
+	dataKey         *model.BotKey
+	alert           api.Alert
 
 	// uninitialized
 	maxAssetA      float64
@@ -49,43 +49,55 @@ func MakeBot(
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	strat api.Strategy,
-	tickIntervalSeconds int32,
+	timeController api.TimeController,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
 	return &Trader{
-		api:                 api,
-		assetBase:           assetBase,
-		assetQuote:          assetQuote,
-		tradingAccount:      tradingAccount,
-		sdex:                sdex,
-		strat:               strat,
-		tickIntervalSeconds: tickIntervalSeconds,
-		threadTracker:       threadTracker,
-		fixedIterations:     fixedIterations,
-		dataKey:             dataKey,
-		alert:               alert,
+		api:             api,
+		assetBase:       assetBase,
+		assetQuote:      assetQuote,
+		tradingAccount:  tradingAccount,
+		sdex:            sdex,
+		strat:           strat,
+		timeController:  timeController,
+		threadTracker:   threadTracker,
+		fixedIterations: fixedIterations,
+		dataKey:         dataKey,
+		alert:           alert,
 	}
 }
 
 // Start starts the bot with the injected strategy
 func (t *Trader) Start() {
+	log.Println("----------------------------------------------------------------------------------------------------")
+	var lastUpdateTime time.Time
+
 	for {
-		log.Println("----------------------------------------------------------------------------------------------------")
-		t.update()
-		if t.fixedIterations != nil {
-			*t.fixedIterations = *t.fixedIterations - 1
-			if *t.fixedIterations <= 0 {
-				log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
-				t.threadTracker.Wait()
-				log.Printf("...all threads finished, stopping bot update loop\n")
-				return
+		currentUpdateTime := time.Now()
+		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
+			t.update()
+			if t.fixedIterations != nil {
+				*t.fixedIterations = *t.fixedIterations - 1
+				if *t.fixedIterations <= 0 {
+					log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
+					t.threadTracker.Wait()
+					log.Printf("...all threads finished, stopping bot update loop\n")
+					return
+				}
 			}
+
+			// wait for any goroutines from the current update to finish so we don't have inconsistent state reads
+			t.threadTracker.Wait()
+			log.Println("----------------------------------------------------------------------------------------------------")
+			lastUpdateTime = currentUpdateTime
 		}
-		log.Printf("sleeping for %d seconds...\n", t.tickIntervalSeconds)
-		time.Sleep(time.Duration(t.tickIntervalSeconds) * time.Second)
+
+		sleepTime := t.timeController.SleepTime(lastUpdateTime, currentUpdateTime)
+		log.Printf("sleeping for %s...\n", sleepTime)
+		time.Sleep(sleepTime)
 	}
 }
 
