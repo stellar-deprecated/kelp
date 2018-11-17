@@ -62,29 +62,66 @@ func makeSellSideStrategy(
 
 // PruneExistingOffers impl
 func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
+	// figure out which offers we want to prune
+	shouldPrune := computeOffersToPrune(offers, s.currentLevels)
+
 	pruneOps := []build.TransactionMutator{}
-	for i := 0; i < len(offers); i++ {
-		curAmount := utils.AmountStringAsFloat(offers[i].Amount)
-		curPrice := utils.GetPrice(offers[i])
+	updatedOffers := []horizon.Offer{}
+	for i, offer := range offers {
+		isPruning := shouldPrune[i]
+		if isPruning {
+			pOp := s.sdex.DeleteOffer(offer)
+			pruneOps = append(pruneOps, &pOp)
+		} else {
+			updatedOffers = append(updatedOffers, offer)
+		}
+
+		curAmount := utils.AmountStringAsFloat(offer.Amount)
+		curPrice := utils.GetPrice(offer)
 		if s.divideAmountByPrice {
 			curAmount = curAmount * curPrice
 			curPrice = 1 / curPrice
 		}
-
 		// base and quote here refers to the bot's base and quote, not the base and quote of the sellSideStrategy
-		isPruning := i >= len(s.currentLevels)
 		log.Printf("offer | %s | level=%d | curPriceQuote=%.7f | curAmtBase=%.7f | pruning=%v\n", s.action, i+1, curPrice, curAmount, isPruning)
+	}
+	return pruneOps, updatedOffers
+}
 
-		if isPruning {
-			pOp := s.sdex.DeleteOffer(offers[i])
-			pruneOps = append(pruneOps, &pOp)
+// computeOffersToPrune returns a list of bools representing whether we should prune the offer at that position or not
+func computeOffersToPrune(offers []horizon.Offer, levels []api.Level) []bool {
+	numToPrune := len(offers) - len(levels)
+	if numToPrune <= 0 {
+		return make([]bool, len(offers))
+	}
+
+	offerIdx := 0
+	levelIdx := 0
+	shouldPrune := make([]bool, len(offers))
+	for numToPrune > 0 {
+		if offerIdx == len(offers) || levelIdx == len(levels) {
+			// prune remaining offers (from the back as a convention)
+			for i := 0; i < numToPrune; i++ {
+				shouldPrune[len(offers)-1-i] = true
+			}
+			return shouldPrune
+		}
+
+		offerPrice := float64(offers[offerIdx].PriceR.N) / float64(offers[offerIdx].PriceR.D)
+		levelPrice := levels[levelIdx].Price.AsFloat()
+		if offerPrice < levelPrice {
+			shouldPrune[offerIdx] = true
+			numToPrune--
+			offerIdx++
+		} else if offerPrice == levelPrice {
+			shouldPrune[offerIdx] = false
+			offerIdx++
+			// do not increment levelIdx because we could have two offers or levels at the same price. This will resolve in the next iteration automatically.
+		} else {
+			levelIdx++
 		}
 	}
-
-	if len(offers) > len(s.currentLevels) {
-		offers = offers[:len(s.currentLevels)]
-	}
-	return pruneOps, offers
+	return shouldPrune
 }
 
 // PreUpdate impl
