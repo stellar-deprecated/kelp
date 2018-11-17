@@ -30,6 +30,12 @@ type balancedLevelProvider struct {
 
 	// precomputed before construction
 	randGen *rand.Rand
+
+	//keeps the starting balances from the previous run to check if anything has changed
+	lastMaxAssetBase  float64
+	lastMaxAssetQuote float64
+	//keeps the levels generated on the previous run to use if asset balances haven't changed
+	lastLevels []api.Level
 }
 
 // ensure it implements LevelProvider
@@ -68,8 +74,14 @@ func makeBalancedLevelProvider(
 	validateSpread(carryoverInclusionProbability)
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	//set starting values for the previous-run variables
+	lastLevels := []api.Level{}
+	lastMaxAssetBase := 0.0
+	lastMaxAssetQuote := 0.0
+
 	return &balancedLevelProvider{
-		spread: spread,
+		spread:                        spread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
 		maxAmountSpread:               maxAmountSpread,
@@ -82,6 +94,9 @@ func makeBalancedLevelProvider(
 		virtualBalanceBase:            virtualBalanceBase,
 		virtualBalanceQuote:           virtualBalanceQuote,
 		randGen:                       randGen,
+		lastLevels:                    lastLevels,
+		lastMaxAssetBase:              lastMaxAssetBase,
+		lastMaxAssetQuote:             lastMaxAssetQuote,
 	}
 }
 
@@ -93,6 +108,26 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+	log.Printf("Last base balance was: %s", p.lastMaxAssetBase)
+	log.Printf("Last quote balance was: %s", p.lastMaxAssetQuote)
+
+	//Checking whether balances have changed meaningfully
+	//We have to give the balances some room to move because slightly different balance values come back from Horizon even if nothing changed
+	//Probably because floating point math is the worst
+	minValidBaseBalance := p.lastMaxAssetBase * 0.9999
+	maxValidBaseBalance := p.lastMaxAssetBase * 1.0001
+
+	minValidQuoteBalance := p.lastMaxAssetQuote * 0.9999
+	maxValidQuoteBalance := p.lastMaxAssetQuote * 1.0001
+
+	validBaseTrigger := maxAssetBase >= minValidBaseBalance && maxAssetBase <= maxValidBaseBalance
+	validQuoteTrigger := maxAssetQuote >= minValidQuoteBalance && maxAssetQuote <= maxValidQuoteBalance
+
+	if validBaseTrigger && validQuoteTrigger {
+		log.Println("Balances remain essentially the same as the previous cycle, leave levels as they are.")
+		return p.lastLevels, nil
+	}
+
 	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
 	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
 	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
@@ -122,6 +157,11 @@ func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 		}
 		levels = append(levels, level)
 	}
+
+	p.lastMaxAssetBase = maxAssetBase
+	p.lastMaxAssetQuote = maxAssetQuote
+	p.lastLevels = levels
+
 	return levels, nil
 }
 
