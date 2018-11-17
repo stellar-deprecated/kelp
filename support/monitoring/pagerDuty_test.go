@@ -7,6 +7,10 @@ import (
 )
 
 func TestTriggerPagerDuty(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	const kelpServiceKey = "" // Fill in pager duty service key here during testing.
 	testCases := []struct {
 		testName      string

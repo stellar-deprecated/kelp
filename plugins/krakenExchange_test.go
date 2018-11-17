@@ -42,11 +42,13 @@ func TestGetTickerPrice(t *testing.T) {
 	if !assert.True(t, ticker.BidPrice.AsFloat() < 1, ticker.BidPrice.AsString()) {
 		return
 	}
-
-	assert.Fail(t, "force fail")
 }
 
 func TestGetAccountBalances(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	assetList := []model.Asset{
 		model.USD,
 		model.XLM,
@@ -104,8 +106,6 @@ func TestGetOrderBook(t *testing.T) {
 	fmt.Printf("first 2 asks:\n")
 	fmt.Println(ob.Asks()[0])
 	fmt.Println(ob.Asks()[1])
-
-	assert.Fail(t, "force fail")
 }
 
 func TestGetTrades(t *testing.T) {
@@ -125,10 +125,14 @@ func TestGetTrades(t *testing.T) {
 		fmt.Println(t.String())
 	}
 
-	assert.Fail(t, "force fail")
+	// assert.Fail(t, "force fail")
 }
 
 func TestGetTradeHistory(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(nil, nil)
 	if !assert.NoError(t, e) {
 		return
@@ -148,6 +152,10 @@ func TestGetTradeHistory(t *testing.T) {
 }
 
 func TestGetOpenOrders(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	m, e := testKrakenExchange.GetOpenOrders()
 	if !assert.NoError(t, e) {
 		return
@@ -169,6 +177,10 @@ func TestGetOpenOrders(t *testing.T) {
 }
 
 func TestAddOrder(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	txID, e := testKrakenExchange.AddOrder(&model.Order{
 		Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USD},
 		OrderAction: model.OrderActionSell,
@@ -189,6 +201,10 @@ func TestAddOrder(t *testing.T) {
 }
 
 func TestCancelOrder(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	// need to add some transactionID here to run this test
 	txID := model.MakeTransactionID("")
 	result, e := testKrakenExchange.CancelOrder(txID)
@@ -205,6 +221,10 @@ func TestCancelOrder(t *testing.T) {
 }
 
 func TestPrepareDeposit(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	result, e := testKrakenExchange.PrepareDeposit(model.BTC, model.NumberFromFloat(1.0, 7))
 	if !assert.NoError(t, e) {
 		return
@@ -215,6 +235,10 @@ func TestPrepareDeposit(t *testing.T) {
 }
 
 func TestGetWithdrawInfo(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	result, e := testKrakenExchange.GetWithdrawInfo(model.BTC, model.NumberFromFloat(1.0, 7), "")
 	if !assert.NoError(t, e) {
 		return
@@ -225,6 +249,10 @@ func TestGetWithdrawInfo(t *testing.T) {
 }
 
 func TestWithdrawFunds(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	result, e := testKrakenExchange.WithdrawFunds(model.XLM, model.NumberFromFloat(0.0000001, 7), "")
 	if !assert.NoError(t, e) {
 		return

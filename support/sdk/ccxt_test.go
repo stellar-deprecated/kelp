@@ -9,6 +9,10 @@ import (
 )
 
 func TestMakeValid(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	_, e := MakeInitializedCcxtExchange("http://localhost:3000", "kraken")
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("unexpected error: %s", e))
@@ -18,6 +22,10 @@ func TestMakeValid(t *testing.T) {
 }
 
 func TestMakeInvalid(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	_, e := MakeInitializedCcxtExchange("http://localhost:3000", "missing-exchange")
 	if e == nil {
 		assert.Fail(t, "expected an error when trying to make and initialize an exchange that is missing: 'missing-exchange'")
@@ -32,6 +40,10 @@ func TestMakeInvalid(t *testing.T) {
 }
 
 func TestFetchTickers(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance")
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
@@ -49,6 +61,10 @@ func TestFetchTickers(t *testing.T) {
 }
 
 func TestFetchTickersWithMissingSymbol(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance")
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
@@ -69,6 +85,10 @@ func TestFetchTickersWithMissingSymbol(t *testing.T) {
 }
 
 func TestFetchOrderBook(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	limit5 := 5
 	limit2 := 2
 	for _, k := range []orderbookTest{
@@ -128,6 +148,10 @@ type orderbookTest struct {
 }
 
 func runTestFetchOrderBook(k orderbookTest, t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName)
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
@@ -163,6 +187,10 @@ func runTestFetchOrderBook(k orderbookTest, t *testing.T) {
 }
 
 func TestFetchTrades(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	poloniexFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
 	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
@@ -203,6 +231,10 @@ type tradesTest struct {
 }
 
 func runTestFetchTrades(k tradesTest, t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName)
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))

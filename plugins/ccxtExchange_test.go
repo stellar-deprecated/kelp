@@ -11,6 +11,10 @@ import (
 var supportedExchanges = []string{"binance", "poloniex", "bittrex"}
 
 func TestGetTickerPrice_Ccxt(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
 			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName)
@@ -34,6 +38,10 @@ func TestGetTickerPrice_Ccxt(t *testing.T) {
 }
 
 func TestGetOrderBook_Ccxt(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
 			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName)
@@ -63,6 +71,10 @@ func TestGetOrderBook_Ccxt(t *testing.T) {
 }
 
 func TestGetTrades_Ccxt(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
 			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName)
