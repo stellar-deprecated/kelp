@@ -108,8 +108,8 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	log.Printf("Last base balance was: %s", p.lastMaxAssetBase)
-	log.Printf("Last quote balance was: %s", p.lastMaxAssetQuote)
+	log.Printf("Last base balance was: %v", p.lastMaxAssetBase)
+	log.Printf("Last quote balance was: %v", p.lastMaxAssetQuote)
 
 	//Checking whether balances have changed meaningfully
 	//We have to give the balances some room to move because slightly different balance values come back from Horizon even if nothing changed
