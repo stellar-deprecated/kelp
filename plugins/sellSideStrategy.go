@@ -405,6 +405,12 @@ func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, ta
 
 	targetPrice = *model.NumberByCappingPrecision(&targetPrice, utils.SdexPrecision)
 	targetAmount = *model.NumberByCappingPrecision(&targetAmount, utils.SdexPrecision)
+
+	//changes the price back to the last price if only amountTrigger was triggered
+	if !priceTrigger {
+		targetPrice = *model.NumberFromFloat(curPrice, utils.SdexPrecision)
+	}
+
 	hitCapacityLimit, op, e := s.placeOrderWithRetry(
 		targetPrice.AsFloat(),
 		targetAmount.AsFloat(),
