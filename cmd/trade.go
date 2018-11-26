@@ -59,6 +59,7 @@ func init() {
 	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
+	operationalBufferNonNativePct := tradeCmd.Flags().Float64("operationalBufferNonNativePct", 0.001, "buffer of non-native assets to maintain as a percentage (default value of 0.001 = 0.1%)")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	fixedIterations := tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
@@ -66,6 +67,7 @@ func init() {
 	requiredFlag("botConf")
 	requiredFlag("strategy")
 	hiddenFlag("operationalBuffer")
+	hiddenFlag("operationalBufferNonNativePct")
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
@@ -131,6 +133,7 @@ func init() {
 			utils.ParseNetwork(botConfig.HorizonURL),
 			threadTracker,
 			*operationalBuffer,
+			*operationalBufferNonNativePct,
 			*simMode,
 		)
 

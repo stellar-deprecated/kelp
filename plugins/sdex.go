@@ -19,15 +19,16 @@ const maxLumenTrust = math.MaxFloat64
 
 // SDEX helps with building and submitting transactions to the Stellar network
 type SDEX struct {
-	API               *horizon.Client
-	SourceAccount     string
-	TradingAccount    string
-	SourceSeed        string
-	TradingSeed       string
-	Network           build.Network
-	threadTracker     *multithreading.ThreadTracker
-	operationalBuffer float64
-	simMode           bool
+	API                           *horizon.Client
+	SourceAccount                 string
+	TradingAccount                string
+	SourceSeed                    string
+	TradingSeed                   string
+	Network                       build.Network
+	threadTracker                 *multithreading.ThreadTracker
+	operationalBuffer             float64
+	operationalBufferNonNativePct float64
+	simMode                       bool
 
 	// uninitialized
 	seqNum       uint64
@@ -63,18 +64,20 @@ func MakeSDEX(
 	network build.Network,
 	threadTracker *multithreading.ThreadTracker,
 	operationalBuffer float64,
+	operationalBufferNonNativePct float64,
 	simMode bool,
 ) *SDEX {
 	sdex := &SDEX{
-		API:               api,
-		SourceSeed:        sourceSeed,
-		TradingSeed:       tradingSeed,
-		SourceAccount:     sourceAccount,
-		TradingAccount:    tradingAccount,
-		Network:           network,
-		threadTracker:     threadTracker,
-		operationalBuffer: operationalBuffer,
-		simMode:           simMode,
+		API:                           api,
+		SourceSeed:                    sourceSeed,
+		TradingSeed:                   tradingSeed,
+		SourceAccount:                 sourceAccount,
+		TradingAccount:                tradingAccount,
+		Network:                       network,
+		threadTracker:                 threadTracker,
+		operationalBuffer:             operationalBuffer,
+		operationalBufferNonNativePct: operationalBufferNonNativePct,
+		simMode: simMode,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
@@ -179,7 +182,7 @@ func (sdex *SDEX) assetBalance(asset horizon.Asset) (float64, float64, float64, 
 	return b, t, r, e
 }
 
-// assetBalance returns asset balance, asset trust limit, reserve balance (zero for non-XLM), error
+// assetBalance returns asset balance, asset trust limit, reserve balance, error
 func (sdex *SDEX) _assetBalance(asset horizon.Asset) (float64, float64, float64, error) {
 	account, err := sdex.API.LoadAccount(sdex.TradingAccount)
 	if err != nil {
@@ -200,7 +203,7 @@ func (sdex *SDEX) _assetBalance(asset horizon.Asset) (float64, float64, float64,
 			if e != nil {
 				return -1, -1, -1, fmt.Errorf("error: cannot parse trust limit: %s", e)
 			}
-			return b, t, 0, nil
+			return b, t, b * sdex.operationalBufferNonNativePct, nil
 		}
 	}
 	return -1, -1, -1, errors.New("could not find a balance for the asset passed in")
