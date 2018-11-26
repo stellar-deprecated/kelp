@@ -49,6 +49,7 @@ func init() {
 			utils.ParseNetwork(configFile.HorizonURL),
 			multithreading.MakeThreadTracker(),
 			-1, // not needed here
+			-1, // not needed here
 			false,
 		)
 		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes)

@@ -59,6 +59,7 @@ func init() {
 	stratConfigPath := tradeCmd.Flags().StringP("stratConf", "f", "", "strategy config file path")
 	// long-only flags
 	operationalBuffer := tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
+	operationalBufferNonNativePct := tradeCmd.Flags().Float64("operationalBufferNonNativePct", 0.001, "buffer of non-native assets to maintain as a percentage (0.001 = 0.1%)")
 	simMode := tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	logPrefix := tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	fixedIterations := tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
@@ -66,7 +67,25 @@ func init() {
 	requiredFlag("botConf")
 	requiredFlag("strategy")
 	hiddenFlag("operationalBuffer")
+	hiddenFlag("operationalBufferNonNativePct")
 	tradeCmd.Flags().SortFlags = false
+
+	validateCliParams := func() {
+		if *operationalBuffer < 0 {
+			panic(fmt.Sprintf("invalid operationalBuffer argument, must be non-negative: %f", *operationalBuffer))
+		}
+
+		if *operationalBufferNonNativePct < 0 || *operationalBufferNonNativePct > 1 {
+			panic(fmt.Sprintf("invalid operationalBufferNonNativePct argument, must be between 0 and 1 inclusive: %f", *operationalBufferNonNativePct))
+		}
+
+		if *fixedIterations == 0 {
+			fixedIterations = nil
+			log.Printf("will run unbounded iterations\n")
+		} else {
+			log.Printf("will run only %d update iterations\n", *fixedIterations)
+		}
+	}
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
 		var botConfig trader.BotConfig
@@ -99,12 +118,8 @@ func init() {
 		}
 		log.Println(startupMessage)
 
-		if *fixedIterations == 0 {
-			fixedIterations = nil
-			log.Printf("will run unbounded iterations\n")
-		} else {
-			log.Printf("will run only %d update iterations\n", *fixedIterations)
-		}
+		// now that we've got the basic messages logged, validate the cli params
+		validateCliParams()
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
@@ -131,6 +146,7 @@ func init() {
 			utils.ParseNetwork(botConfig.HorizonURL),
 			threadTracker,
 			*operationalBuffer,
+			*operationalBufferNonNativePct,
 			*simMode,
 		)
 
