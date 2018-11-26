@@ -70,6 +70,23 @@ func init() {
 	hiddenFlag("operationalBufferNonNativePct")
 	tradeCmd.Flags().SortFlags = false
 
+	validateCliParams := func() {
+		if *operationalBuffer < 0 {
+			panic(fmt.Sprintf("invalid operationalBuffer argument, must be non-negative: %f", *operationalBuffer))
+		}
+
+		if *operationalBufferNonNativePct < 0 || *operationalBufferNonNativePct > 1 {
+			panic(fmt.Sprintf("invalid operationalBufferNonNativePct argument, must be non-negative: %f", *operationalBufferNonNativePct))
+		}
+
+		if *fixedIterations == 0 {
+			fixedIterations = nil
+			log.Printf("will run unbounded iterations\n")
+		} else {
+			log.Printf("will run only %d update iterations\n", *fixedIterations)
+		}
+	}
+
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
@@ -101,20 +118,8 @@ func init() {
 		}
 		log.Println(startupMessage)
 
-		// --- start validation of cli params ----
-		if *operationalBuffer < 0 {
-			panic(fmt.Sprintf("invalid operationalBuffer argument, must be non-negative: %f", *operationalBuffer))
-		}
-		if *operationalBufferNonNativePct < 0 || *operationalBufferNonNativePct > 1 {
-			panic(fmt.Sprintf("invalid operationalBufferNonNativePct argument, must be non-negative: %f", *operationalBufferNonNativePct))
-		}
-		if *fixedIterations == 0 {
-			fixedIterations = nil
-			log.Printf("will run unbounded iterations\n")
-		} else {
-			log.Printf("will run only %d update iterations\n", *fixedIterations)
-		}
-		// --- end validation of cli params ----
+		// now that we've got the basic messages logged, validate the cli params
+		validateCliParams()
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
