@@ -204,7 +204,7 @@ func init() {
 
 func startMonitoringServer(botConfig trader.BotConfig) error {
 	serverConfig := &networking.Config{
-		GoogleClientID:     botConfig.GoogleClientId,
+		GoogleClientID:     botConfig.GoogleClientID,
 		GoogleClientSecret: botConfig.GoogleClientSecret,
 		PermittedEmails:    map[string]bool{},
 	}
@@ -237,7 +237,7 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 	}
 
 	log.Printf("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
-	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTlsCert, botConfig.MonitoringTlsKey)
+	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTLSCert, botConfig.MonitoringTLSKey)
 }
 
 func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {

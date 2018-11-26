@@ -23,9 +23,9 @@ type BotConfig struct {
 	AlertType           string `valid:"-" toml:"ALERT_TYPE"`
 	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"`
 	MonitoringPort      uint16 `valid:"-" toml:"MONITORING_PORT"`
-	MonitoringTlsCert   string `valid:"-" toml:"MONITORING_TLS_CERT"`
-	MonitoringTlsKey    string `valid:"-" toml:"MONITORING_TLS_KEY"`
-	GoogleClientId      string `valid:"-" toml:"GOOGLE_CLIENT_ID"`
+	MonitoringTLSCert   string `valid:"-" toml:"MONITORING_TLS_CERT"`
+	MonitoringTLSKey    string `valid:"-" toml:"MONITORING_TLS_KEY"`
+	GoogleClientID      string `valid:"-" toml:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret  string `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
 	AcceptableEmails    string `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
 
