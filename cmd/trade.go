@@ -76,7 +76,7 @@ func init() {
 		}
 
 		if *operationalBufferNonNativePct < 0 || *operationalBufferNonNativePct > 1 {
-			panic(fmt.Sprintf("invalid operationalBufferNonNativePct argument, must be non-negative: %f", *operationalBufferNonNativePct))
+			panic(fmt.Sprintf("invalid operationalBufferNonNativePct argument, must be between 0 and 1 inclusive: %f", *operationalBufferNonNativePct))
 		}
 
 		if *fixedIterations == 0 {
