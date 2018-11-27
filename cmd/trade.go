@@ -170,6 +170,7 @@ func init() {
 			sdex,
 			strat,
 			timeController,
+			botConfig.DeleteCyclesThreshold,
 			threadTracker,
 			fixedIterations,
 			dataKey,

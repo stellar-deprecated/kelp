@@ -8,26 +8,28 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
+// XLM is a constant for XLM
 const XLM = "XLM"
 
 // BotConfig represents the configuration params for the bot
 type BotConfig struct {
-	SourceSecretSeed    string `valid:"-" toml:"SOURCE_SECRET_SEED"`
-	TradingSecretSeed   string `valid:"-" toml:"TRADING_SECRET_SEED"`
-	AssetCodeA          string `valid:"-" toml:"ASSET_CODE_A"`
-	IssuerA             string `valid:"-" toml:"ISSUER_A"`
-	AssetCodeB          string `valid:"-" toml:"ASSET_CODE_B"`
-	IssuerB             string `valid:"-" toml:"ISSUER_B"`
-	TickIntervalSeconds int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
-	HorizonURL          string `valid:"-" toml:"HORIZON_URL"`
-	AlertType           string `valid:"-" toml:"ALERT_TYPE"`
-	AlertAPIKey         string `valid:"-" toml:"ALERT_API_KEY"`
-	MonitoringPort      uint16 `valid:"-" toml:"MONITORING_PORT"`
-	MonitoringTLSCert   string `valid:"-" toml:"MONITORING_TLS_CERT"`
-	MonitoringTLSKey    string `valid:"-" toml:"MONITORING_TLS_KEY"`
-	GoogleClientID      string `valid:"-" toml:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret  string `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
-	AcceptableEmails    string `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
+	SourceSecretSeed      string `valid:"-" toml:"SOURCE_SECRET_SEED"`
+	TradingSecretSeed     string `valid:"-" toml:"TRADING_SECRET_SEED"`
+	AssetCodeA            string `valid:"-" toml:"ASSET_CODE_A"`
+	IssuerA               string `valid:"-" toml:"ISSUER_A"`
+	AssetCodeB            string `valid:"-" toml:"ASSET_CODE_B"`
+	IssuerB               string `valid:"-" toml:"ISSUER_B"`
+	TickIntervalSeconds   int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
+	DeleteCyclesThreshold int64  `valid:"-" toml:"DELETE_CYCLES_THRESHOLD"`
+	HorizonURL            string `valid:"-" toml:"HORIZON_URL"`
+	AlertType             string `valid:"-" toml:"ALERT_TYPE"`
+	AlertAPIKey           string `valid:"-" toml:"ALERT_API_KEY"`
+	MonitoringPort        uint16 `valid:"-" toml:"MONITORING_PORT"`
+	MonitoringTLSCert     string `valid:"-" toml:"MONITORING_TLS_CERT"`
+	MonitoringTLSKey      string `valid:"-" toml:"MONITORING_TLS_KEY"`
+	GoogleClientID        string `valid:"-" toml:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret    string `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
+	AcceptableEmails      string `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
 
 	tradingAccount *string
 	sourceAccount  *string // can be nil
