@@ -20,19 +20,23 @@ const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
-	api             *horizon.Client
-	assetBase       horizon.Asset
-	assetQuote      horizon.Asset
-	tradingAccount  string
-	sdex            *plugins.SDEX
-	strat           api.Strategy // the instance of this bot is bound to this strategy
-	timeController  api.TimeController
-	threadTracker   *multithreading.ThreadTracker
-	fixedIterations *uint64
-	dataKey         *model.BotKey
-	alert           api.Alert
+	api                   *horizon.Client
+	assetBase             horizon.Asset
+	assetQuote            horizon.Asset
+	tradingAccount        string
+	sdex                  *plugins.SDEX
+	strat                 api.Strategy // the instance of this bot is bound to this strategy
+	timeController        api.TimeController
+	deleteCyclesThreshold int64
+	threadTracker         *multithreading.ThreadTracker
+	fixedIterations       *uint64
+	dataKey               *model.BotKey
+	alert                 api.Alert
 
-	// uninitialized
+	// initialized runtime vars
+	deleteCycles int64
+
+	// uninitialized runtime vars
 	maxAssetA      float64
 	maxAssetB      float64
 	trustAssetA    float64
@@ -50,23 +54,27 @@ func MakeBot(
 	sdex *plugins.SDEX,
 	strat api.Strategy,
 	timeController api.TimeController,
+	deleteCyclesThreshold int64,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
 	return &Trader{
-		api:             api,
-		assetBase:       assetBase,
-		assetQuote:      assetQuote,
-		tradingAccount:  tradingAccount,
-		sdex:            sdex,
-		strat:           strat,
-		timeController:  timeController,
-		threadTracker:   threadTracker,
-		fixedIterations: fixedIterations,
-		dataKey:         dataKey,
-		alert:           alert,
+		api:                   api,
+		assetBase:             assetBase,
+		assetQuote:            assetQuote,
+		tradingAccount:        tradingAccount,
+		sdex:                  sdex,
+		strat:                 strat,
+		timeController:        timeController,
+		deleteCyclesThreshold: deleteCyclesThreshold,
+		threadTracker:         threadTracker,
+		fixedIterations:       fixedIterations,
+		dataKey:               dataKey,
+		alert:                 alert,
+		// initialized runtime vars
+		deleteCycles: 0,
 	}
 }
 
@@ -103,9 +111,19 @@ func (t *Trader) Start() {
 
 // deletes all offers for the bot (not all offers on the account)
 func (t *Trader) deleteAllOffers() {
-	log.Printf("deleting all offers\n")
-	dOps := []build.TransactionMutator{}
+	if t.deleteCyclesThreshold < 0 {
+		log.Printf("not deleting any offers because deleteCyclesThreshold is negative\n")
+		return
+	}
 
+	t.deleteCycles++
+	if t.deleteCycles <= t.deleteCyclesThreshold {
+		log.Printf("not deleting any offers, deleteCycles (=%d) needs to exceed deleteCyclesThreshold (=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
+		return
+	}
+
+	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d\n", t.deleteCycles)
+	dOps := []build.TransactionMutator{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
 	t.sellingAOffers = []horizon.Offer{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
@@ -201,6 +219,9 @@ func (t *Trader) update() {
 		t.deleteAllOffers()
 		return
 	}
+
+	// reset deleteCycles on every successful run
+	t.deleteCycles = 0
 }
 
 func (t *Trader) load() {
