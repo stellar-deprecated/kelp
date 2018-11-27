@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [v1.2.0] - 2018-11-26
+
+### Added
 - support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/lightyeario/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
 - support for logging to a file with the `--log` or `-l` command-line option followed by the prefix of the log filename
 - support for basic monitoring with a health check service, run `glide up` to update the dependency ([c6374c35cff9dfa46da342aa5342f312dcd337c4](https://github.com/lightyeario/kelp/commit/c6374c35cff9dfa46da342aa5342f312dcd337c4))
@@ -19,15 +33,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - levels are now logged with prices in the quote asset and amounts in the base asset for the sell, buysell, and balanced strategies
 - clock tick is now synchronized at the start of each cycle ([cd33d91b2d468bfbce6d38a6186d12c86777b7d5](https://github.com/lightyeario/kelp/commit/cd33d91b2d468bfbce6d38a6186d12c86777b7d5))
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - conversion of asset symbols in the GetOpenOrders() API for Kraken, reducing the number of tested asset symbols with this API
 - fix op_underfunded errors when we hit capacity limits for non-XLM assets ([e6bebee9aeadf6e00a829a28c125f5dffad8c05c](https://github.com/lightyeario/kelp/commit/e6bebee9aeadf6e00a829a28c125f5dffad8c05c))
-
-### Security
 
 ## [v1.1.2] - 2018-10-30
 
@@ -85,7 +93,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.2.0...HEAD
+[v1.2.0]: https://github.com/lightyeario/kelp/compare/v1.1.2...v1.2.0
 [v1.1.2]: https://github.com/lightyeario/kelp/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/lightyeario/kelp/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/lightyeario/kelp/compare/v1.0.0...v1.1.0
