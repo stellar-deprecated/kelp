@@ -116,6 +116,14 @@ func Asset2String(asset horizon.Asset) string {
 	return fmt.Sprintf("%s:%s", asset.Code, asset.Issuer)
 }
 
+// Asset2CodeString extracts the code out of a horizon.Asset
+func Asset2CodeString(asset horizon.Asset) string {
+	if asset.Type == Native {
+		return "XLM"
+	}
+	return asset.Code
+}
+
 // String2Asset converts a code:issuer to a horizon.Asset
 func String2Asset(code string, issuer string) horizon.Asset {
 	if code == "XLM" {

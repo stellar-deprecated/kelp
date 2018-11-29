@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"reflect"
 	"strconv"
+	"strings"
 
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
@@ -16,6 +20,7 @@ import (
 const baseReserve = 0.5
 const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
+const maxPageLimit = 200
 
 // SDEX helps with building and submitting transactions to the Stellar network
 type SDEX struct {
@@ -29,6 +34,8 @@ type SDEX struct {
 	operationalBuffer             float64
 	operationalBufferNonNativePct float64
 	simMode                       bool
+	pair                          *model.TradingPair
+	assetMap                      map[model.Asset]horizon.Asset // this is needed until we fully address putting SDEX behind the Exchange interface
 
 	// uninitialized
 	seqNum       uint64
@@ -66,6 +73,8 @@ func MakeSDEX(
 	operationalBuffer float64,
 	operationalBufferNonNativePct float64,
 	simMode bool,
+	pair *model.TradingPair,
+	assetMap map[model.Asset]horizon.Asset,
 ) *SDEX {
 	sdex := &SDEX{
 		API:                           api,
@@ -77,7 +86,9 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode: simMode,
+		simMode:  simMode,
+		pair:     pair,
+		assetMap: assetMap,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
@@ -384,9 +395,9 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 	// submit
 	if !sdex.simMode {
 		log.Println("submitting tx XDR to network (async)")
-		sdex.threadTracker.TriggerGoroutine(func() {
+		sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 			sdex.submit(txeB64, asyncCallback)
-		})
+		}, nil)
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
 		sdex.invokeAsyncCallback(asyncCallback, "", nil)
@@ -447,9 +458,9 @@ func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, e error), 
 		return
 	}
 
-	sdex.threadTracker.TriggerGoroutine(func() {
+	sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 		asyncCallback(hash, e)
-	})
+	}, nil)
 }
 
 func (sdex *SDEX) logLiabilities(asset horizon.Asset, assetStr string) {
@@ -601,4 +612,117 @@ func (sdex *SDEX) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*
 
 	sdex.cachedLiabilities[asset] = liabilities
 	return &liabilities, &pairLiabilities, nil
+}
+
+// enforce SDEX implementing api.TradeFetcher
+var _ api.TradeFetcher = &SDEX{}
+
+// GetTradeHistory fetches trades for the trading account bound to this instance of SDEX
+func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+	baseAsset, ok := sdex.assetMap[sdex.pair.Base]
+	if !ok {
+		return nil, fmt.Errorf("unexpected error, base asset was not found in sdex.assetMap")
+	}
+
+	quoteAsset, ok := sdex.assetMap[sdex.pair.Quote]
+	if !ok {
+		return nil, fmt.Errorf("unexpected error, quote asset was not found in sdex.assetMap")
+	}
+
+	var cursorStart string
+	if maybeCursorStart != nil {
+		cursorStart, ok = maybeCursorStart.(string)
+		if !ok {
+			return nil, fmt.Errorf("could not convert maybeCursorStart to string, type=%s, maybeCursorStart=%v", reflect.TypeOf(maybeCursorStart), maybeCursorStart)
+		}
+	}
+	var cursorEnd string
+	if maybeCursorEnd != nil {
+		cursorEnd, ok = maybeCursorEnd.(string)
+		if !ok {
+			return nil, fmt.Errorf("could not convert maybeCursorEnd to string, type=%s, maybeCursorEnd=%v", reflect.TypeOf(maybeCursorEnd), maybeCursorEnd)
+		}
+	}
+
+	trades := []model.Trade{}
+	for {
+		// TODO we need a reasonable value for the resolution here (currently arbitrary 300000 from a test in horizon)
+		tradesPage, e := sdex.API.LoadTrades(baseAsset, quoteAsset, 0, 300000, horizon.Cursor(cursorStart), horizon.Order(horizon.OrderAsc), horizon.Limit(maxPageLimit))
+		if e != nil {
+			if strings.Contains(e.Error(), "Rate limit exceeded") {
+				// return normally, we will continue loading trades in the next call from where we left off
+				return &api.TradeHistoryResult{
+					Cursor: cursorStart,
+					Trades: trades,
+				}, nil
+			}
+			return nil, fmt.Errorf("error while fetching trades in SDEX (cursor=%s): %s", cursorStart, e)
+		}
+
+		if len(tradesPage.Embedded.Records) == 0 {
+			return &api.TradeHistoryResult{
+				Cursor: cursorStart,
+				Trades: trades,
+			}, nil
+		}
+
+		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(tradesPage, cursorEnd)
+		if e != nil {
+			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
+		}
+		cursorStart = updatedResult.Cursor.(string)
+		trades = append(trades, updatedResult.Trades...)
+
+		if hitCursorEnd {
+			return &api.TradeHistoryResult{
+				Cursor: cursorStart,
+				Trades: trades,
+			}, nil
+		}
+	}
+}
+
+// returns tradeHistoryResult, hitCursorEnd, and any error
+func (sdex *SDEX) tradesPage2TradeHistoryResult(tradesPage horizon.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
+	var cursor string
+	trades := []model.Trade{}
+
+	for _, t := range tradesPage.Embedded.Records {
+		orderAction := model.OrderActionSell
+		if (t.BaseAccount == sdex.TradingAccount && !t.BaseIsSeller) || (t.CounterAccount == sdex.TradingAccount && t.BaseIsSeller) {
+			orderAction = model.OrderActionBuy
+		}
+		vol, e := model.NumberFromString(t.BaseAmount, utils.SdexPrecision)
+		if e != nil {
+			return nil, false, fmt.Errorf("could not convert baseAmount to model.Number: %s", e)
+		}
+		floatPrice := float64(t.Price.N) / float64(t.Price.D)
+
+		trades = append(trades, model.Trade{
+			Order: model.Order{
+				Pair:        sdex.pair,
+				OrderAction: orderAction,
+				OrderType:   model.OrderTypeLimit,
+				Price:       model.NumberFromFloat(floatPrice, utils.SdexPrecision),
+				Volume:      vol,
+				Timestamp:   model.MakeTimestampFromTime(t.LedgerCloseTime),
+			},
+			TransactionID: model.MakeTransactionID(t.ID),
+			Cost:          model.NumberFromFloat(floatPrice*vol.AsFloat(), utils.SdexPrecision),
+			Fee:           model.NumberFromFloat(baseFee, utils.SdexPrecision),
+		})
+
+		cursor = t.PT
+		if cursor == cursorEnd {
+			return &api.TradeHistoryResult{
+				Cursor: cursor,
+				Trades: trades,
+			}, true, nil
+		}
+	}
+
+	return &api.TradeHistoryResult{
+		Cursor: cursor,
+		Trades: trades,
+	}, false, nil
 }

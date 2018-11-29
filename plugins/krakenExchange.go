@@ -347,6 +347,7 @@ func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd
 			Cost:          model.MustNumberFromString(_cost, k.precision),
 			Fee:           model.MustNumberFromString(_fee, k.precision),
 		})
+		res.Cursor = _time
 	}
 	return &res, nil
 }

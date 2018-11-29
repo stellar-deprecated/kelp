@@ -67,7 +67,7 @@ func makeAssetConverter(asset2String map[Asset]string) *AssetConverter {
 func (c AssetConverter) ToString(a Asset) (string, error) {
 	s, ok := c.asset2String[a]
 	if !ok {
-		return "", errors.New("could not recognize Asset: " + string(a))
+		return fmt.Sprintf("missing[%s]", string(a)), nil
 	}
 	return s, nil
 }

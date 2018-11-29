@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Timestamp is millis since epoch
 type Timestamp int64
@@ -9,6 +12,11 @@ type Timestamp int64
 func MakeTimestamp(ts int64) *Timestamp {
 	timestamp := Timestamp(ts)
 	return &timestamp
+}
+
+// MakeTimestampFromTime creates a new Timestamp
+func MakeTimestampFromTime(t time.Time) *Timestamp {
+	return MakeTimestamp(t.UnixNano() / int64(time.Millisecond))
 }
 
 func (t *Timestamp) String() string {

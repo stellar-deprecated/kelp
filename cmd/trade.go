@@ -137,6 +137,17 @@ func init() {
 		// --- start initialization of objects ----
 		threadTracker := multithreading.MakeThreadTracker()
 
+		assetBase := botConfig.AssetBase()
+		assetQuote := botConfig.AssetQuote()
+		tradingPair := &model.TradingPair{
+			Base:  model.Asset(utils.Asset2CodeString(assetBase)),
+			Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
+		}
+
+		sdexAssetMap := map[model.Asset]horizon.Asset{
+			tradingPair.Base:  assetBase,
+			tradingPair.Quote: assetQuote,
+		}
 		sdex := plugins.MakeSDEX(
 			client,
 			botConfig.SourceSecretSeed,
@@ -148,10 +159,10 @@ func init() {
 			*operationalBuffer,
 			*operationalBufferNonNativePct,
 			*simMode,
+			tradingPair,
+			sdexAssetMap,
 		)
 
-		assetBase := botConfig.AssetBase()
-		assetQuote := botConfig.AssetQuote()
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 		strat, e := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath)
 		if e != nil {
@@ -176,6 +187,9 @@ func init() {
 			dataKey,
 			alert,
 		)
+
+		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex)
+		fillTracker.RegisterHandler(plugins.MakeFillLogger())
 		// --- end initialization of objects ---
 
 		log.Printf("validating trustlines...\n")
@@ -196,6 +210,16 @@ func init() {
 				}
 			}()
 		}
+
+		go func() {
+			e := fillTracker.TrackFills()
+			if e != nil {
+				log.Println()
+				log.Printf("problem encountered while running the fill tracker: %s\n", e)
+				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
+				deleteAllOffersAndExit(botConfig, client, sdex)
+			}
+		}()
 		// --- end initialization of services ---
 
 		log.Println("Starting the trader bot...")

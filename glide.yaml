@@ -20,4 +20,4 @@ import:
 - package: github.com/lechengfan/googleauth
   version: 7595ba02fbce171759c10d69d96e4cd898d1fa93
 - package: github.com/nikhilsaraf/go-tools
-  version: bcfd18c97e1cdae3aa432337bb17d3927c3e4fc0
+  version: 19004f22be08c82a22e679726ca22853c65919ae
