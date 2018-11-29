@@ -1,14 +1,14 @@
 # Kelp
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/lightyeario/kelp.svg?style=for-the-badge)][github-last-commit]
-[![Github All Releases](https://img.shields.io/github/downloads/lightyeario/kelp/total.svg?style=for-the-badge)][github-releases]
+[![GitHub last commit](https://img.shields.io/github/last-commit/interstellar/kelp.svg?style=for-the-badge)][github-last-commit]
+[![Github All Releases](https://img.shields.io/github/downloads/interstellar/kelp/total.svg?style=for-the-badge)][github-releases]
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
 
-[![Build Status](https://travis-ci.com/lightyeario/kelp.svg?branch=master)](https://travis-ci.com/lightyeario/kelp)
-[![GitHub issues](https://img.shields.io/github/issues/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-issues]
-[![GitHub closed issues](https://img.shields.io/github/issues-closed/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-pulls]
-[![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/lightyeario/kelp.svg?style=flat-square&longCache=true)][github-pulls-closed]
+[![Build Status](https://travis-ci.com/interstellar/kelp.svg?branch=master)](https://travis-ci.com/interstellar/kelp)
+[![GitHub issues](https://img.shields.io/github/issues/interstellar/kelp.svg?style=flat-square&longCache=true)][github-issues]
+[![GitHub closed issues](https://img.shields.io/github/issues-closed/interstellar/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/interstellar/kelp.svg?style=flat-square&longCache=true)][github-pulls]
+[![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/interstellar/kelp.svg?style=flat-square&longCache=true)][github-pulls-closed]
 
 Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
 
@@ -95,7 +95,7 @@ To compile Kelp from source:
 2. [Install Glide][glide-install] for dependency management
     * `curl https://glide.sh/get | sh`
 3. Clone the repo into `$GOPATH/src/github.com/interstellar/kelp`:
-    * `git clone git@github.com:lightyeario/kelp.git`
+    * `git clone git@github.com:interstellar/kelp.git`
 4. Change to the kelp directory and install the dependencies:
     * `glide install`
 5. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
