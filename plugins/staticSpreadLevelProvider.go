@@ -3,9 +3,9 @@ package plugins
 import (
 	"log"
 
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/utils"
 )
 
 // staticLevel represents a layer in the orderbook defined statically

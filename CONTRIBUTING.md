@@ -13,7 +13,7 @@ We want to make it as easy as possible to contribute changes that help the proje
 ### Getting Started
 
 * Make sure you have a [GitHub account](https://github.com/signup/free).
-* [Create a GitHub issue](https://github.com/lightyeario/kelp/issues) for your contribution, assuming one does not already exist.
+* [Create a GitHub issue](https://github.com/interstellar/kelp/issues) for your contribution, assuming one does not already exist.
   * Clearly describe the issue including steps to reproduce it (if it is a bug).
 * Fork the repository on GitHub and start working on your change.
 * When your change is ready then [submit a Pull Request].

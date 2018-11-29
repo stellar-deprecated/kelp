@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/plugins"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/plugins"
 	"github.com/stellar/go/clients/horizon"
 )
 

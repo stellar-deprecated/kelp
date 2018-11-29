@@ -22,20 +22,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v1.2.0] - 2018-11-26
 
 ### Added
-- support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/lightyeario/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
+- support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/interstellar/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
 - support for logging to a file with the `--log` or `-l` command-line option followed by the prefix of the log filename
-- support for basic monitoring with a health check service, run `glide up` to update the dependency ([c6374c35cff9dfa46da342aa5342f312dcd337c4](https://github.com/lightyeario/kelp/commit/c6374c35cff9dfa46da342aa5342f312dcd337c4))
+- support for basic monitoring with a health check service, run `glide up` to update the dependency ([c6374c35cff9dfa46da342aa5342f312dcd337c4](https://github.com/interstellar/kelp/commit/c6374c35cff9dfa46da342aa5342f312dcd337c4))
 - `iter` command line param to run for only a fixed number of iterations, run `glide up` to update the dependencies
-- new DELETE_CYCLES_THRESHOLD config value in trader config file to allow some tolerance of errors before deleting all offers ([f2537cafee8d620e1c4aabdd3d072d90628801b8](https://github.com/lightyeario/kelp/commit/f2537cafee8d620e1c4aabdd3d072d90628801b8))
+- new DELETE_CYCLES_THRESHOLD config value in trader config file to allow some tolerance of errors before deleting all offers ([f2537cafee8d620e1c4aabdd3d072d90628801b8](https://github.com/interstellar/kelp/commit/f2537cafee8d620e1c4aabdd3d072d90628801b8))
 
 ### Changed
 - reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
 - levels are now logged with prices in the quote asset and amounts in the base asset for the sell, buysell, and balanced strategies
-- clock tick is now synchronized at the start of each cycle ([cd33d91b2d468bfbce6d38a6186d12c86777b7d5](https://github.com/lightyeario/kelp/commit/cd33d91b2d468bfbce6d38a6186d12c86777b7d5))
+- clock tick is now synchronized at the start of each cycle ([cd33d91b2d468bfbce6d38a6186d12c86777b7d5](https://github.com/interstellar/kelp/commit/cd33d91b2d468bfbce6d38a6186d12c86777b7d5))
 
 ### Fixed
 - conversion of asset symbols in the GetOpenOrders() API for Kraken, reducing the number of tested asset symbols with this API
-- fix op_underfunded errors when we hit capacity limits for non-XLM assets ([e6bebee9aeadf6e00a829a28c125f5dffad8c05c](https://github.com/lightyeario/kelp/commit/e6bebee9aeadf6e00a829a28c125f5dffad8c05c))
+- fix op_underfunded errors when we hit capacity limits for non-XLM assets ([e6bebee9aeadf6e00a829a28c125f5dffad8c05c](https://github.com/interstellar/kelp/commit/e6bebee9aeadf6e00a829a28c125f5dffad8c05c))
 
 ## [v1.1.2] - 2018-10-30
 
@@ -51,12 +51,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v1.1.1] - 2018-10-22
 
 ### Fixed
-- fixed bot panicing when it cannot cast ticker bid/ask values to a float64 from CCXT's FetchTicker endpoint (0ccbc495e18b1e3b207dad5d3421c7556c63c004) ([issue #31](https://github.com/lightyeario/kelp/issues/31))
+- fixed bot panicing when it cannot cast ticker bid/ask values to a float64 from CCXT's FetchTicker endpoint (0ccbc495e18b1e3b207dad5d3421c7556c63c004) ([issue #31](https://github.com/interstellar/kelp/issues/31))
 
 ## [v1.1.0] - 2018-10-19
 
 ### Added
-- support for [CCXT](https://github.com/ccxt/ccxt) via [CCXT-REST API](https://github.com/franz-see/ccxt-rest), increasing exchange integrations for priceFeeds and mirroring [diff](https://github.com/lightyeario/kelp/compare/0db8f2d42580aa87867470e428d5f0f63eed5ec6^...33bc7b98418129011b151d0f56c9c0770a3d897e)
+- support for [CCXT](https://github.com/ccxt/ccxt) via [CCXT-REST API](https://github.com/franz-see/ccxt-rest), increasing exchange integrations for priceFeeds and mirroring [diff](https://github.com/interstellar/kelp/compare/0db8f2d42580aa87867470e428d5f0f63eed5ec6^...33bc7b98418129011b151d0f56c9c0770a3d897e)
 
 ## [v1.0.0] - 2018-10-15
 
@@ -81,7 +81,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - If `SOURCE_SECRET_SEED` is missing or empty then the bot will not crash now.
-- support for [CAP-0003](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0003.md) introduced in stellar-core protocol v10 ([issue #2](https://github.com/lightyeario/kelp/issues/2))
+- support for [CAP-0003](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0003.md) introduced in stellar-core protocol v10 ([issue #2](https://github.com/interstellar/kelp/issues/2))
 
 
 ## v1.0.0-rc1 - 2018-08-13
@@ -93,11 +93,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/lightyeario/kelp/compare/v1.2.0...HEAD
-[v1.2.0]: https://github.com/lightyeario/kelp/compare/v1.1.2...v1.2.0
-[v1.1.2]: https://github.com/lightyeario/kelp/compare/v1.1.1...v1.1.2
-[v1.1.1]: https://github.com/lightyeario/kelp/compare/v1.1.0...v1.1.1
-[v1.1.0]: https://github.com/lightyeario/kelp/compare/v1.0.0...v1.1.0
-[v1.0.0]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc3...v1.0.0
-[v1.0.0-rc3]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
-[v1.0.0-rc2]: https://github.com/lightyeario/kelp/compare/v1.0.0-rc1...v1.0.0-rc2
+[Unreleased]: https://github.com/interstellar/kelp/compare/v1.2.0...HEAD
+[v1.2.0]: https://github.com/interstellar/kelp/compare/v1.1.2...v1.2.0
+[v1.1.2]: https://github.com/interstellar/kelp/compare/v1.1.1...v1.1.2
+[v1.1.1]: https://github.com/interstellar/kelp/compare/v1.1.0...v1.1.1
+[v1.1.0]: https://github.com/interstellar/kelp/compare/v1.0.0...v1.1.0
+[v1.0.0]: https://github.com/interstellar/kelp/compare/v1.0.0-rc3...v1.0.0
+[v1.0.0-rc3]: https://github.com/interstellar/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
+[v1.0.0-rc2]: https://github.com/interstellar/kelp/compare/v1.0.0-rc1...v1.0.0-rc2

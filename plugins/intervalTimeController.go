@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/lightyeario/kelp/api"
+	"github.com/interstellar/kelp/api"
 )
 
 // IntervalTimeController provides a standard time interval

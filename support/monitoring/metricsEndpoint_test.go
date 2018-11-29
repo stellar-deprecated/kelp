@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/lightyeario/kelp/support/networking"
+	"github.com/interstellar/kelp/support/networking"
 	"github.com/stretchr/testify/assert"
 )
 

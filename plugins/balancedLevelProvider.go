@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/utils"
 )
 
 // balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.

@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/support/utils"
 )
 
 // OrderAction is the action of buy / sell

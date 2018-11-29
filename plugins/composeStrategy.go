@@ -3,10 +3,10 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/model"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/errors"

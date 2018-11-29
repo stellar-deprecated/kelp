@@ -3,10 +3,10 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/sdk"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/sdk"
+	"github.com/interstellar/kelp/support/utils"
 )
 
 // ensure that ccxtExchange conforms to the Exchange interface

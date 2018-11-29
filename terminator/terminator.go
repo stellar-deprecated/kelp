@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/plugins"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/plugins"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )

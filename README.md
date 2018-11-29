@@ -65,13 +65,13 @@ Here is a list of binaries for the most recent release **v1.2.0**:
 
 | Platform       | Architecture | Binary File Name |
 | -------------- | ------------ | ---------------- |
-| MacOS (Darwin) | 64-bit       | [kelp-v1.2.0-darwin-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-darwin-amd64.tar) |
-| Windows        | 64-bit       | [kelp-v1.2.0-windows-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-windows-amd64.tar) |
-| Linux          | 64-bit       | [kelp-v1.2.0-linux-amd64.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-amd64.tar) |
-| Linux          | 64-bit arm   | [kelp-v1.2.0-linux-arm64.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm64.tar) |
-| Linux          | 32-bit arm5  | [kelp-v1.2.0-linux-arm5.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm5.tar) |
-| Linux          | 32-bit arm6  | [kelp-v1.2.0-linux-arm6.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm6.tar) |
-| Linux          | 32-bit arm7  | [kelp-v1.2.0-linux-arm7.tar](https://github.com/lightyeario/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm7.tar) |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.2.0-darwin-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-darwin-amd64.tar) |
+| Windows        | 64-bit       | [kelp-v1.2.0-windows-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-windows-amd64.tar) |
+| Linux          | 64-bit       | [kelp-v1.2.0-linux-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-amd64.tar) |
+| Linux          | 64-bit arm   | [kelp-v1.2.0-linux-arm64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm64.tar) |
+| Linux          | 32-bit arm5  | [kelp-v1.2.0-linux-arm5.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm5.tar) |
+| Linux          | 32-bit arm6  | [kelp-v1.2.0-linux-arm6.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm6.tar) |
+| Linux          | 32-bit arm7  | [kelp-v1.2.0-linux-arm7.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm7.tar) |
 
 After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.2.0`) and invoke the `kelp` binary.
 
@@ -94,7 +94,7 @@ To compile Kelp from source:
 1. [Download][golang-download] and [setup][golang-setup] Golang.
 2. [Install Glide][glide-install] for dependency management
     * `curl https://glide.sh/get | sh`
-3. Clone the repo into `$GOPATH/src/github.com/lightyeario/kelp`:
+3. Clone the repo into `$GOPATH/src/github.com/interstellar/kelp`:
     * `git clone git@github.com:lightyeario/kelp.git`
 4. Change to the kelp directory and install the dependencies:
     * `glide install`
@@ -225,7 +225,7 @@ These interfaces make it easy to create plugins:
 The folders are organized to make it easy to find code and streamline development flow.
 Each folder is its own package **without any sub-packages**.
 
-    github.com/lightyeario/kelp
+    github.com/interstellar/kelp
     ├── api/            # API interfaces live here (strategy, exchange, price feeds, etc.)
     ├── cmd/            # Cobra commands (trade, exchanges, strategies, etc.)
     ├── examples/       # Sample config files and walkthroughs
@@ -288,13 +288,13 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 - [Raise an issue][github-new-issue] that is not a bug report or a feature request
 - [Contribute a PR][github-pulls]
 
-[github-last-commit]: https://github.com/lightyeario/kelp/commit/HEAD
-[github-releases]: https://github.com/lightyeario/kelp/releases
+[github-last-commit]: https://github.com/interstellar/kelp/commit/HEAD
+[github-releases]: https://github.com/interstellar/kelp/releases
 [license-apache]: https://opensource.org/licenses/Apache-2.0
-[github-issues]: https://github.com/lightyeario/kelp/issues
-[github-issues-closed]: https://github.com/lightyeario/kelp/issues?q=is%3Aissue+is%3Aclosed
-[github-pulls]: https://github.com/lightyeario/kelp/pulls
-[github-pulls-closed]: https://github.com/lightyeario/kelp/pulls?q=is%3Apr+is%3Aclosed
+[github-issues]: https://github.com/interstellar/kelp/issues
+[github-issues-closed]: https://github.com/interstellar/kelp/issues?q=is%3Aissue+is%3Aclosed
+[github-pulls]: https://github.com/interstellar/kelp/pulls
+[github-pulls-closed]: https://github.com/interstellar/kelp/pulls?q=is%3Apr+is%3Aclosed
 [stellarx]: https://www.stellarx.com
 [stablecoin]: https://en.wikipedia.org/wiki/Stablecoin
 [stellar q&a]: https://stellarx.zendesk.com/hc/en-us/sections/360001295034-Traders
@@ -319,6 +319,6 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
 [announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
 [discussions-group]: https://groups.google.com/forum/#!forum/kelp-talk
-[github-bug-report]: https://github.com/lightyeario/kelp/issues/new?template=bug_report.md
-[github-feature-request]: https://github.com/lightyeario/kelp/issues/new?template=feature_request.md
-[github-new-issue]: https://github.com/lightyeario/kelp/issues/new
+[github-bug-report]: https://github.com/interstellar/kelp/issues/new?template=bug_report.md
+[github-feature-request]: https://github.com/interstellar/kelp/issues/new?template=feature_request.md
+[github-new-issue]: https://github.com/interstellar/kelp/issues/new

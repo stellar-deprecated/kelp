@@ -1,6 +1,6 @@
 language: go
 
-go_import_path: github.com/lightyeario/kelp
+go_import_path: github.com/interstellar/kelp
 
 go:
 - "1.10.x"

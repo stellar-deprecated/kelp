@@ -31,7 +31,7 @@ GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS="-X github.com/lightyeario/kelp/cmd.version=$VERSION_STRING -X github.com/lightyeario/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/lightyeario/kelp/cmd.gitHash=$GIT_HASH -X github.com/lightyeario/kelp/cmd.buildDate=$DATE"
+LDFLAGS="-X github.com/interstellar/kelp/cmd.version=$VERSION_STRING -X github.com/interstellar/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/interstellar/kelp/cmd.gitHash=$GIT_HASH -X github.com/interstellar/kelp/cmd.buildDate=$DATE"
 
 echo "version: $VERSION_STRING"
 echo "git branch: $GIT_BRANCH"

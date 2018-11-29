@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/lightyeario/kelp/plugins"
+	"github.com/interstellar/kelp/plugins"
 
 	"github.com/spf13/cobra"
 )

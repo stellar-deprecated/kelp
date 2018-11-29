@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/model"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stretchr/testify/assert"
 )

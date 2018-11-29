@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/lightyeario/kelp/plugins"
-	"github.com/lightyeario/kelp/support/utils"
-	"github.com/lightyeario/kelp/terminator"
+	"github.com/interstellar/kelp/plugins"
+	"github.com/interstellar/kelp/support/utils"
+	"github.com/interstellar/kelp/terminator"
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"

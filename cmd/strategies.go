@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/plugins"
+	"github.com/interstellar/kelp/plugins"
 
 	"github.com/spf13/cobra"
 )

@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/model"
-	"github.com/lightyeario/kelp/support/networking"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/networking"
 )
 
 // ensure that krakenExchange conforms to the Exchange interface

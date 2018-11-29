@@ -3,7 +3,7 @@ package trader
 import (
 	"fmt"
 
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )

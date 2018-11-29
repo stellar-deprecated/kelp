@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lightyeario/kelp/support/networking"
+	"github.com/interstellar/kelp/support/networking"
 )
 
 // Ccxt Rest SDK (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)

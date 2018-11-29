@@ -6,7 +6,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/build"

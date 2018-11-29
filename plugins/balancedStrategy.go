@@ -1,8 +1,8 @@
 package plugins
 
 import (
-	"github.com/lightyeario/kelp/api"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
