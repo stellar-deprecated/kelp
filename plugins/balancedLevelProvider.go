@@ -31,11 +31,10 @@ type balancedLevelProvider struct {
 	// precomputed before construction
 	randGen *rand.Rand
 
-	//keeps the starting balances from the previous run to check if anything has changed
-	lastMaxAssetBase  float64
-	lastMaxAssetQuote float64
-	//keeps the levels generated on the previous run to use if asset balances haven't changed
-	lastLevels []api.Level
+	// uninitialized
+	lastMaxAssetBase  float64     // keeps the starting base balance from the previous run to check if anything has changed
+	lastMaxAssetQuote float64     // keeps the starting quote balance from the previous run to check if anything has changed
+	lastLevels        []api.Level // keeps the levels generated on the previous run to use if asset balances haven't changed
 }
 
 // ensure it implements LevelProvider
@@ -75,11 +74,6 @@ func makeBalancedLevelProvider(
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	//set starting values for the previous-run variables
-	lastLevels := []api.Level{}
-	lastMaxAssetBase := 0.0
-	lastMaxAssetQuote := 0.0
-
 	return &balancedLevelProvider{
 		spread:                        spread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
@@ -94,9 +88,6 @@ func makeBalancedLevelProvider(
 		virtualBalanceBase:            virtualBalanceBase,
 		virtualBalanceQuote:           virtualBalanceQuote,
 		randGen:                       randGen,
-		lastLevels:                    lastLevels,
-		lastMaxAssetBase:              lastMaxAssetBase,
-		lastMaxAssetQuote:             lastMaxAssetQuote,
 	}
 }
 
@@ -108,54 +99,25 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	log.Printf("Last base balance was: %v", p.lastMaxAssetBase)
-	log.Printf("Last quote balance was: %v", p.lastMaxAssetQuote)
+	log.Printf("balance for base asset: last=%.7f, current=%.7f\n", p.lastMaxAssetBase, maxAssetBase)
+	log.Printf("balance for quote asset: last=%.7f, current=%.7f\n", p.lastMaxAssetQuote, maxAssetQuote)
 
-	//Checking whether balances have changed meaningfully
-	//We have to give the balances some room to move because slightly different balance values come back from Horizon even if nothing changed
-	//Probably because floating point math is the worst
+	// checking whether balances have changed meaningfully
+	// this error buffer is a rough fix to allow XLM balances to shrink from fees
 	minValidBaseBalance := p.lastMaxAssetBase * 0.9999
-	maxValidBaseBalance := p.lastMaxAssetBase * 1.0001
-
 	minValidQuoteBalance := p.lastMaxAssetQuote * 0.9999
-	maxValidQuoteBalance := p.lastMaxAssetQuote * 1.0001
 
-	validBaseTrigger := maxAssetBase >= minValidBaseBalance && maxAssetBase <= maxValidBaseBalance
-	validQuoteTrigger := maxAssetQuote >= minValidQuoteBalance && maxAssetQuote <= maxValidQuoteBalance
+	validBaseTrigger := maxAssetBase > minValidBaseBalance && maxAssetBase <= p.lastMaxAssetBase
+	validQuoteTrigger := maxAssetQuote > minValidQuoteBalance && maxAssetQuote <= p.lastMaxAssetQuote
 
 	if validBaseTrigger && validQuoteTrigger {
-		log.Println("Balances remain essentially the same as the previous cycle, leave levels as they are.")
+		log.Println("balances remain essentially the same as the previous cycle, leave levels as they are\n")
 		return p.lastLevels, nil
 	}
 
-	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
-	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
-	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
-	amountCarryover := 0.0
-	levels := []api.Level{}
-	for i := int16(0); i < p.maxLevels; i++ {
-		level, e := p.getLevel(_maxAssetBase, _maxAssetQuote)
-		if e != nil {
-			return nil, e
-		}
-
-		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
-		_maxAssetBase, _maxAssetQuote = updateAssetBalances(level, p.useMaxQuoteInTargetAmountCalc, _maxAssetBase, _maxAssetQuote)
-
-		// always take a spread off the amountCarryover
-		amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
-		amountCarryover *= (1 - amountCarryoverSpread)
-
-		if !p.shouldIncludeLevel(i) {
-			// accummulate targetAmount into amountCarryover
-			amountCarryover += level.Amount.AsFloat()
-			continue
-		}
-
-		if p.shouldIncludeCarryover() {
-			level, amountCarryover = p.computeNewLevelWithCarryover(level, amountCarryover)
-		}
-		levels = append(levels, level)
+	levels, e := p.recomputeLevels(maxAssetBase, maxAssetQuote)
+	if e != nil {
+		log.Fatalf("unable to generate new levels: %s\n", e)
 	}
 
 	p.lastMaxAssetBase = maxAssetBase
@@ -241,4 +203,37 @@ func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote flo
 		Amount: *model.NumberFromFloat(targetAmount, utils.SdexPrecision),
 	}
 	return level, nil
+}
+
+func (p *balancedLevelProvider) recomputeLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
+	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
+	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
+	amountCarryover := 0.0
+	levels := []api.Level{}
+	for i := int16(0); i < p.maxLevels; i++ {
+		level, e := p.getLevel(_maxAssetBase, _maxAssetQuote)
+		if e != nil {
+			return nil, e
+		}
+
+		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
+		_maxAssetBase, _maxAssetQuote = updateAssetBalances(level, p.useMaxQuoteInTargetAmountCalc, _maxAssetBase, _maxAssetQuote)
+
+		// always take a spread off the amountCarryover
+		amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
+		amountCarryover *= (1 - amountCarryoverSpread)
+
+		if !p.shouldIncludeLevel(i) {
+			// accummulate targetAmount into amountCarryover
+			amountCarryover += level.Amount.AsFloat()
+			continue
+		}
+
+		if p.shouldIncludeCarryover() {
+			level, amountCarryover = p.computeNewLevelWithCarryover(level, amountCarryover)
+		}
+		levels = append(levels, level)
+	}
+	return levels, nil
 }
