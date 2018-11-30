@@ -111,7 +111,7 @@ func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	validQuoteTrigger := maxAssetQuote > minValidQuoteBalance && maxAssetQuote <= p.lastMaxAssetQuote
 
 	if validBaseTrigger && validQuoteTrigger {
-		log.Println("balances remain essentially the same as the previous cycle, leave levels as they are\n")
+		log.Println("balances remain essentially the same as the previous cycle, leave levels as they are")
 		return p.lastLevels, nil
 	}
 
