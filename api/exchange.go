@@ -54,9 +54,16 @@ type FillHandler interface {
 	HandleFill(trade model.Trade)
 }
 
-// TradeFetcher is temporarily extracted out from TradeAPI so SDEX has the flexibility to only implement this
+// TradeFetcher is the common method between FillTrackable and exchange
+// temporarily extracted out from TradeAPI so SDEX has the flexibility to only implement this rather than exchange and FillTrackable
 type TradeFetcher interface {
 	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
+}
+
+// FillTrackable enables any implementing exchange to support fill tracking
+type FillTrackable interface {
+	TradeFetcher
+	GetLatestTradeCursor() (interface{}, error)
 }
 
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange

@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/interstellar/kelp/api"
@@ -13,7 +14,7 @@ import (
 type FillTracker struct {
 	pair                   *model.TradingPair
 	threadTracker          *multithreading.ThreadTracker
-	tradeFetcher           api.TradeFetcher
+	fillTrackable          api.FillTrackable
 	fillTrackerSleepMillis uint32
 
 	// uninitialized
@@ -27,13 +28,13 @@ var _ api.FillTracker = &FillTracker{}
 func MakeFillTracker(
 	pair *model.TradingPair,
 	threadTracker *multithreading.ThreadTracker,
-	tradeFetcher api.TradeFetcher,
+	fillTrackable api.FillTrackable,
 	fillTrackerSleepMillis uint32,
 ) api.FillTracker {
 	return &FillTracker{
 		pair:                   pair,
 		threadTracker:          threadTracker,
-		tradeFetcher:           tradeFetcher,
+		fillTrackable:          fillTrackable,
 		fillTrackerSleepMillis: fillTrackerSleepMillis,
 	}
 }
@@ -45,21 +46,17 @@ func (f *FillTracker) GetPair() (pair *model.TradingPair) {
 
 // TrackFills impl
 func (f *FillTracker) TrackFills() error {
-	// use a separate bool to track if we're in the first iteration because we could be tracking an account that
-	// has no trades and so we cannot depend on the lastCursor alone
-	isFirstIteration := true
-	var lastCursor interface{}
+	// get the last cursor so we only start querying from the current position
+	lastCursor, e := f.fillTrackable.GetLatestTradeCursor()
+	if e != nil {
+		return fmt.Errorf("error while getting last trade: %s", e)
+	}
+	log.Printf("got latest trade cursor from where to start tracking fills: %v\n", lastCursor)
 
 	for {
-		tradeHistoryResult, e := f.tradeFetcher.GetTradeHistory(lastCursor, nil)
+		tradeHistoryResult, e := f.fillTrackable.GetTradeHistory(lastCursor, nil)
 		if e != nil {
 			return fmt.Errorf("error when fetching trades: %s", e)
-		}
-
-		lastCursor = tradeHistoryResult.Cursor
-		if isFirstIteration {
-			isFirstIteration = false
-			continue
 		}
 
 		for _, t := range tradeHistoryResult.Trades {
@@ -72,6 +69,7 @@ func (f *FillTracker) TrackFills() error {
 			}
 		}
 
+		lastCursor = tradeHistoryResult.Cursor
 		time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
 	}
 }

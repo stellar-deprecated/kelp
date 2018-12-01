@@ -22,6 +22,9 @@ const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
 const maxPageLimit = 200
 
+// TODO we need a reasonable value for the resolution here (currently arbitrary 300000 from a test in horizon)
+const fetchTradesResolution = 300000
+
 // SDEX helps with building and submitting transactions to the Stellar network
 type SDEX struct {
 	API                           *horizon.Client
@@ -614,23 +617,34 @@ func (sdex *SDEX) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*
 	return &liabilities, &pairLiabilities, nil
 }
 
-// enforce SDEX implementing api.TradeFetcher
-var _ api.TradeFetcher = &SDEX{}
+func (sdex *SDEX) pair2Assets() (baseAsset horizon.Asset, quoteAsset horizon.Asset, e error) {
+	var ok bool
+	baseAsset, ok = sdex.assetMap[sdex.pair.Base]
+	if !ok {
+		return horizon.Asset{}, horizon.Asset{}, fmt.Errorf("unexpected error, base asset was not found in sdex.assetMap")
+	}
+
+	quoteAsset, ok = sdex.assetMap[sdex.pair.Quote]
+	if !ok {
+		return horizon.Asset{}, horizon.Asset{}, fmt.Errorf("unexpected error, quote asset was not found in sdex.assetMap")
+	}
+
+	return baseAsset, quoteAsset, nil
+}
+
+// enforce SDEX implementing api.FillTrackable
+var _ api.FillTrackable = &SDEX{}
 
 // GetTradeHistory fetches trades for the trading account bound to this instance of SDEX
 func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
-	baseAsset, ok := sdex.assetMap[sdex.pair.Base]
-	if !ok {
-		return nil, fmt.Errorf("unexpected error, base asset was not found in sdex.assetMap")
-	}
-
-	quoteAsset, ok := sdex.assetMap[sdex.pair.Quote]
-	if !ok {
-		return nil, fmt.Errorf("unexpected error, quote asset was not found in sdex.assetMap")
+	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	if e != nil {
+		return nil, fmt.Errorf("error while convertig pair to base and quote asset: %s", e)
 	}
 
 	var cursorStart string
 	if maybeCursorStart != nil {
+		var ok bool
 		cursorStart, ok = maybeCursorStart.(string)
 		if !ok {
 			return nil, fmt.Errorf("could not convert maybeCursorStart to string, type=%s, maybeCursorStart=%v", reflect.TypeOf(maybeCursorStart), maybeCursorStart)
@@ -638,6 +652,7 @@ func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd i
 	}
 	var cursorEnd string
 	if maybeCursorEnd != nil {
+		var ok bool
 		cursorEnd, ok = maybeCursorEnd.(string)
 		if !ok {
 			return nil, fmt.Errorf("could not convert maybeCursorEnd to string, type=%s, maybeCursorEnd=%v", reflect.TypeOf(maybeCursorEnd), maybeCursorEnd)
@@ -646,8 +661,7 @@ func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd i
 
 	trades := []model.Trade{}
 	for {
-		// TODO we need a reasonable value for the resolution here (currently arbitrary 300000 from a test in horizon)
-		tradesPage, e := sdex.API.LoadTrades(baseAsset, quoteAsset, 0, 300000, horizon.Cursor(cursorStart), horizon.Order(horizon.OrderAsc), horizon.Limit(maxPageLimit))
+		tradesPage, e := sdex.API.LoadTrades(baseAsset, quoteAsset, 0, fetchTradesResolution, horizon.Cursor(cursorStart), horizon.Order(horizon.OrderAsc), horizon.Limit(maxPageLimit))
 		if e != nil {
 			if strings.Contains(e.Error(), "Rate limit exceeded") {
 				// return normally, we will continue loading trades in the next call from where we left off
@@ -725,4 +739,25 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(tradesPage horizon.TradesPage, c
 		Cursor: cursor,
 		Trades: trades,
 	}, false, nil
+}
+
+// GetLatestTradeCursor impl.
+func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
+	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	if e != nil {
+		return nil, fmt.Errorf("error while convertig pair to base and quote asset: %s", e)
+	}
+
+	tradesPage, e := sdex.API.LoadTrades(baseAsset, quoteAsset, 0, fetchTradesResolution, horizon.Order(horizon.OrderDesc), horizon.Limit(1))
+	if e != nil {
+		return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s", e)
+	}
+
+	records := tradesPage.Embedded.Records
+	if len(records) == 0 {
+		// we want to use nil as the latest trade cursor if there are no trades
+		return nil, nil
+	}
+
+	return records[0].PT, nil
 }
