@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -10,9 +11,10 @@ import (
 
 // FillTracker tracks fills
 type FillTracker struct {
-	pair          *model.TradingPair
-	threadTracker *multithreading.ThreadTracker
-	tradeFetcher  api.TradeFetcher
+	pair                   *model.TradingPair
+	threadTracker          *multithreading.ThreadTracker
+	tradeFetcher           api.TradeFetcher
+	fillTrackerSleepMillis uint32
 
 	// uninitialized
 	handlers []api.FillHandler
@@ -22,11 +24,17 @@ type FillTracker struct {
 var _ api.FillTracker = &FillTracker{}
 
 // MakeFillTracker impl.
-func MakeFillTracker(pair *model.TradingPair, threadTracker *multithreading.ThreadTracker, tradeFetcher api.TradeFetcher) api.FillTracker {
+func MakeFillTracker(
+	pair *model.TradingPair,
+	threadTracker *multithreading.ThreadTracker,
+	tradeFetcher api.TradeFetcher,
+	fillTrackerSleepMillis uint32,
+) api.FillTracker {
 	return &FillTracker{
-		pair:          pair,
-		threadTracker: threadTracker,
-		tradeFetcher:  tradeFetcher,
+		pair:                   pair,
+		threadTracker:          threadTracker,
+		tradeFetcher:           tradeFetcher,
+		fillTrackerSleepMillis: fillTrackerSleepMillis,
 	}
 }
 
@@ -63,6 +71,8 @@ func (f *FillTracker) TrackFills() error {
 				}, []interface{}{h, t})
 			}
 		}
+
+		time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
 	}
 }
 

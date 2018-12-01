@@ -187,9 +187,6 @@ func init() {
 			dataKey,
 			alert,
 		)
-
-		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex)
-		fillTracker.RegisterHandler(plugins.MakeFillLogger())
 		// --- end initialization of objects ---
 
 		log.Printf("validating trustlines...\n")
@@ -211,15 +208,21 @@ func init() {
 			}()
 		}
 
-		go func() {
-			e := fillTracker.TrackFills()
-			if e != nil {
-				log.Println()
-				log.Printf("problem encountered while running the fill tracker: %s\n", e)
-				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-				deleteAllOffersAndExit(botConfig, client, sdex)
-			}
-		}()
+		if botConfig.FillTrackerSleepMillis != 0 {
+			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
+			fillLogger := plugins.MakeFillLogger()
+			fillTracker.RegisterHandler(fillLogger)
+			log.Printf("Starting fill tracker\n")
+			go func() {
+				e := fillTracker.TrackFills()
+				if e != nil {
+					log.Println()
+					log.Printf("problem encountered while running the fill tracker: %s\n", e)
+					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
+					deleteAllOffersAndExit(botConfig, client, sdex)
+				}
+			}()
+		}
 		// --- end initialization of services ---
 
 		log.Println("Starting the trader bot...")
