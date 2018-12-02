@@ -104,13 +104,18 @@ type Order struct {
 
 // String is the stringer function
 func (o Order) String() string {
-	return fmt.Sprintf("Order[pair=%s, action=%s, type=%s, price=%s, vol=%s, ts=%d]",
+	tsString := "<nil>"
+	if o.Timestamp != nil {
+		tsString = fmt.Sprintf("%d", o.Timestamp.AsInt64())
+	}
+
+	return fmt.Sprintf("Order[pair=%s, action=%s, type=%s, price=%s, vol=%s, ts=%s]",
 		o.Pair,
 		o.OrderAction,
 		o.OrderType,
 		o.Price.AsString(),
 		o.Volume.AsString(),
-		o.Timestamp.AsInt64(),
+		tsString,
 	)
 }
 

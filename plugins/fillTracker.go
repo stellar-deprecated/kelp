@@ -67,22 +67,38 @@ func (f *FillTracker) TrackFills() error {
 			return fmt.Errorf("error when fetching trades: %s", e)
 		}
 
-		for _, t := range tradeHistoryResult.Trades {
-			for _, h := range f.handlers {
-				f.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-					ech := inputs[0].(chan error)
-					h := inputs[1].(api.FillHandler)
-					t := inputs[2].(model.Trade)
-					e := h.HandleFill(t)
-					if e != nil {
-						ech <- fmt.Errorf("error in a fill handler: %s", e)
+		if len(tradeHistoryResult.Trades) > 0 {
+			// use a single goroutine so we handle trades sequentially and also respect the handler sequence
+			f.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+				ech := inputs[0].(chan error)
+				defer handlePanic(ech)
+
+				handlers := inputs[1].([]api.FillHandler)
+				trades := inputs[2].([]model.Trade)
+				for _, t := range trades {
+					for _, h := range handlers {
+						e := h.HandleFill(t)
+						if e != nil {
+							ech <- fmt.Errorf("error in a fill handler: %s", e)
+							// we do NOT want to exit from the goroutine immediately after encountering an error
+							// because we want to give all handlers a chance to get called for each trade
+						}
 					}
-				}, []interface{}{ech, h, t})
-			}
+				}
+			}, []interface{}{ech, f.handlers, tradeHistoryResult.Trades})
 		}
 
 		lastCursor = tradeHistoryResult.Cursor
 		time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
+	}
+}
+
+func handlePanic(ech chan error) {
+	if r := recover(); r != nil {
+		e := r.(error)
+
+		log.Printf("handling panic by passing onto error channel: %s\n", e)
+		ech <- e
 	}
 }
 

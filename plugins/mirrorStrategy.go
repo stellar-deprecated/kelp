@@ -306,7 +306,7 @@ func (s *mirrorStrategy) GetFillHandlers() ([]api.FillHandler, error) {
 
 // HandleFill impl
 func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
-	newOrder := &model.Order{
+	newOrder := model.Order{
 		Pair:        trade.Order.Pair,
 		OrderAction: trade.OrderAction.Reverse(),
 		OrderType:   model.OrderTypeLimit,
@@ -315,11 +315,10 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		Timestamp:   nil,
 	}
 
-	transactionID, e := s.tradeAPI.AddOrder(newOrder)
+	transactionID, e := s.tradeAPI.AddOrder(&newOrder)
 	if e != nil {
-		return fmt.Errorf("error when offsetting trade: %s", e)
+		return fmt.Errorf("error when offsetting trade (%s): %s", newOrder, e)
 	}
-
-	log.Printf("mirror strategy offset the trade on the primary exchange (transactionID=%s) onto the backing exchange (transactionID=%s)\n", trade.TransactionID, transactionID)
+	log.Printf("mirror strategy offset the trade from the primary exchange (transactionID=%s) onto the backing exchange (transactionID=%s): %s\n", trade.TransactionID, transactionID, newOrder)
 	return nil
 }
