@@ -202,7 +202,7 @@ type Trade struct {
 }
 
 func (t Trade) String() string {
-	return fmt.Sprintf("Trade[txid: %s, ts: %s, pair: %s, action: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
+	return fmt.Sprintf("Trade[txid: %s, ts: %s, pair: %s, action: %s, type: %s, counterPrice: %s, baseVolume: %s, counterCost: %s, fee: %s]",
 		utils.CheckedString(t.TransactionID),
 		utils.CheckedString(t.Timestamp),
 		*t.Pair,

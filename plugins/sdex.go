@@ -680,7 +680,7 @@ func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd i
 			}, nil
 		}
 
-		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(tradesPage, cursorEnd)
+		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(baseAsset, quoteAsset, tradesPage, cursorEnd)
 		if e != nil {
 			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 		}
@@ -696,16 +696,53 @@ func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd i
 	}
 }
 
+func (sdex *SDEX) getOrderAction(baseAsset horizon.Asset, quoteAsset horizon.Asset, trade horizon.Trade) *model.OrderAction {
+	if trade.BaseAccount != sdex.TradingAccount && trade.CounterAccount != sdex.TradingAccount {
+		return nil
+	}
+
+	tradeBaseAsset := utils.Native
+	if trade.BaseAssetType != utils.Native {
+		tradeBaseAsset = trade.BaseAssetCode + ":" + trade.BaseAssetIssuer
+	}
+	tradeQuoteAsset := utils.Native
+	if trade.CounterAssetType != utils.Native {
+		tradeQuoteAsset = trade.CounterAssetCode + ":" + trade.CounterAssetIssuer
+	}
+	sdexBaseAsset := utils.Asset2String(baseAsset)
+	sdexQuoteAsset := utils.Asset2String(quoteAsset)
+
+	// compare the base and quote asset on the trade to what we are using as our base and quote
+	// then compare whether it was the base or the quote that was the seller
+	actionSell := model.OrderActionSell
+	actionBuy := model.OrderActionBuy
+	if sdexBaseAsset == tradeBaseAsset && sdexQuoteAsset == tradeQuoteAsset {
+		if trade.BaseIsSeller {
+			return &actionSell
+		}
+		return &actionBuy
+	} else if sdexBaseAsset == tradeQuoteAsset && sdexQuoteAsset == tradeBaseAsset {
+		if trade.BaseIsSeller {
+			return &actionBuy
+		}
+		return &actionSell
+	} else {
+		return nil
+	}
+}
+
 // returns tradeHistoryResult, hitCursorEnd, and any error
-func (sdex *SDEX) tradesPage2TradeHistoryResult(tradesPage horizon.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
+func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset horizon.Asset, quoteAsset horizon.Asset, tradesPage horizon.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
 	var cursor string
 	trades := []model.Trade{}
 
 	for _, t := range tradesPage.Embedded.Records {
-		orderAction := model.OrderActionSell
-		if (t.BaseAccount == sdex.TradingAccount && !t.BaseIsSeller) || (t.CounterAccount == sdex.TradingAccount && t.BaseIsSeller) {
-			orderAction = model.OrderActionBuy
+		orderAction := sdex.getOrderAction(baseAsset, quoteAsset, t)
+		if orderAction == nil {
+			// we have encountered a trade that is different from the base and quote asset for our trading account
+			continue
 		}
+
 		vol, e := model.NumberFromString(t.BaseAmount, utils.SdexPrecision)
 		if e != nil {
 			return nil, false, fmt.Errorf("could not convert baseAmount to model.Number: %s", e)
@@ -715,7 +752,7 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(tradesPage horizon.TradesPage, c
 		trades = append(trades, model.Trade{
 			Order: model.Order{
 				Pair:        sdex.pair,
-				OrderAction: orderAction,
+				OrderAction: *orderAction,
 				OrderType:   model.OrderTypeLimit,
 				Price:       model.NumberFromFloat(floatPrice, utils.SdexPrecision),
 				Volume:      vol,
