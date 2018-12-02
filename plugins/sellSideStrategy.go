@@ -293,7 +293,9 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 			return nil, nil, fmt.Errorf("unable to update existing offers or create new offers: %s", e)
 		}
 		if op != nil {
-			if hitCapacityLimit && isModify {
+			reducedOrderSize := isModify && targetAmount.AsFloat() < utils.AmountStringAsFloat(offers[i].Amount)
+			hitCapacityLimitModify := isModify && hitCapacityLimit
+			if reducedOrderSize || hitCapacityLimitModify {
 				// prepend operations that reduce the size of an existing order because they decrease our liabilities
 				ops = append([]build.TransactionMutator{op}, ops...)
 			} else {
