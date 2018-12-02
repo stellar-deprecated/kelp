@@ -124,35 +124,50 @@ func Strategies() map[string]StrategyContainer {
 	return strategies
 }
 
-type exchangeContainer struct {
-	description string
-	makeFn      func() (api.Exchange, error)
+// exchangeFactoryData is a data container that has all the information needed to make an exchange
+type exchangeFactoryData struct {
+	apiKeys []api.ExchangeAPIKey
+}
+
+// ExchangeContainer contains the exchange factory method along with some metadata
+type ExchangeContainer struct {
+	SortOrder    uint8
+	Description  string
+	TradeEnabled bool
+	makeFn       func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error)
 }
 
 // exchanges is a map of all the exchange integrations available
-var exchanges = map[string]exchangeContainer{
-	"kraken": exchangeContainer{
-		description: "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
-		makeFn: func() (api.Exchange, error) {
-			apiKey := api.ExchangeAPIKey{Key: "", Secret: ""}
-			return makeKrakenExchange([]api.ExchangeAPIKey{apiKey})
+var exchanges = map[string]ExchangeContainer{
+	"kraken": ExchangeContainer{
+		SortOrder:    0,
+		Description:  "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
+		TradeEnabled: true,
+		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
+			return makeKrakenExchange(exchangeFactoryData.apiKeys)
 		},
 	},
-	"ccxt-binance": exchangeContainer{
-		description: "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
-		makeFn: func() (api.Exchange, error) {
+	"ccxt-binance": ExchangeContainer{
+		SortOrder:    1,
+		Description:  "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		TradeEnabled: false,
+		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 			return makeCcxtExchange("http://localhost:3000", "binance")
 		},
 	},
-	"ccxt-poloniex": exchangeContainer{
-		description: "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
-		makeFn: func() (api.Exchange, error) {
+	"ccxt-poloniex": ExchangeContainer{
+		SortOrder:    2,
+		Description:  "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		TradeEnabled: false,
+		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 			return makeCcxtExchange("http://localhost:3000", "poloniex")
 		},
 	},
-	"ccxt-bittrex": exchangeContainer{
-		description: "Bittrex is a popular centralized cryptocurrency exchange (via ccxt-rest) - partial implementation",
-		makeFn: func() (api.Exchange, error) {
+	"ccxt-bittrex": ExchangeContainer{
+		SortOrder:    3,
+		Description:  "Bittrex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		TradeEnabled: false,
+		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 			return makeCcxtExchange("http://localhost:3000", "bittrex")
 		},
 	},
@@ -161,7 +176,10 @@ var exchanges = map[string]exchangeContainer{
 // MakeExchange is a factory method to make an exchange based on a given type
 func MakeExchange(exchangeType string) (api.Exchange, error) {
 	if exchange, ok := exchanges[exchangeType]; ok {
-		x, e := exchange.makeFn()
+		exchangeAPIKey := api.ExchangeAPIKey{Key: "", Secret: ""}
+		x, e := exchange.makeFn(exchangeFactoryData{
+			apiKeys: []api.ExchangeAPIKey{exchangeAPIKey},
+		})
 		if e != nil {
 			return nil, fmt.Errorf("error when making the '%s' exchange: %s", exchangeType, e)
 		}
@@ -171,11 +189,30 @@ func MakeExchange(exchangeType string) (api.Exchange, error) {
 	return nil, fmt.Errorf("invalid exchange type: %s", exchangeType)
 }
 
-// Exchanges returns the list of exchanges along with the description
-func Exchanges() map[string]string {
-	m := make(map[string]string, len(exchanges))
-	for name := range exchanges {
-		m[name] = exchanges[name].description
+// MakeTradingExchange is a factory method to make an exchange based on a given type
+func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey) (api.Exchange, error) {
+	if exchange, ok := exchanges[exchangeType]; ok {
+		if !exchange.TradeEnabled {
+			return nil, fmt.Errorf("trading is not enabled on this exchange: %s", exchangeType)
+		}
+
+		if len(apiKeys) == 0 {
+			return nil, fmt.Errorf("cannot make trading exchange, apiKeys mising")
+		}
+
+		x, e := exchange.makeFn(exchangeFactoryData{
+			apiKeys: apiKeys,
+		})
+		if e != nil {
+			return nil, fmt.Errorf("error when making the '%s' exchange: %s", exchangeType, e)
+		}
+		return x, nil
 	}
-	return m
+
+	return nil, fmt.Errorf("invalid exchange type: %s", exchangeType)
+}
+
+// Exchanges returns the list of exchanges
+func Exchanges() map[string]ExchangeContainer {
+	return exchanges
 }

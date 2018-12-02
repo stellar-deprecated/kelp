@@ -11,15 +11,32 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
+type exchangeAPIKeysToml []struct {
+	Key    string `valid:"-" toml:"KEY"`
+	Secret string `valid:"-" toml:"SECRET"`
+}
+
+func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
+	apiKeys := []api.ExchangeAPIKey{}
+	for _, apiKey := range *t {
+		apiKeys = append(apiKeys, api.ExchangeAPIKey{
+			Key:    apiKey.Key,
+			Secret: apiKey.Secret,
+		})
+	}
+	return apiKeys
+}
+
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange       string  `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase   string  `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote  string  `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	OffsetTrades   bool    `valid:"-" toml:"OFFSET_TRADES"`
+	Exchange        string              `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase    string              `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote   string              `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth  int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	VolumeDivideBy  float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
+	PerLevelSpread  float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
+	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
 }
 
 // String impl.
@@ -46,9 +63,19 @@ var _ api.FillHandler = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
 func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) (api.Strategy, error) {
-	exchange, e := MakeExchange(config.Exchange)
-	if e != nil {
-		return nil, e
+	var exchange api.Exchange
+	var e error
+	if config.OffsetTrades {
+		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
+		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys)
+		if e != nil {
+			return nil, e
+		}
+	} else {
+		exchange, e = MakeExchange(config.Exchange)
+		if e != nil {
+			return nil, e
+		}
 	}
 
 	orderbookPair := &model.TradingPair{
