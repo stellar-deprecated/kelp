@@ -485,3 +485,8 @@ func (s *sellSideStrategy) placeOrderWithRetry(
 	return true, nil, fmt.Errorf("error: (programmer?) unable to place offer with the new (reduced) selling and buying amounts, oldSellingAmount=%.7f, newSellingAmount=%.7f, oldBuyingAmount=%.7f, newBuyingAmount=%.7f",
 		incrementalSellAmount, newSellingAmount, incrementalBuyAmount, newBuyingAmount)
 }
+
+// GetFillHandlers impl
+func (s *sellSideStrategy) GetFillHandlers() ([]api.FillHandler, error) {
+	return s.levelsProvider.GetFillHandlers()
+}

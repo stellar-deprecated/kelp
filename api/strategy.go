@@ -12,6 +12,7 @@ type Strategy interface {
 	PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error
 	UpdateWithOps(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, error)
 	PostUpdate() error
+	GetFillHandlers() ([]FillHandler, error)
 }
 
 // SideStrategy represents a strategy on a single side of the orderbook
@@ -20,4 +21,5 @@ type SideStrategy interface {
 	PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error
 	UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error)
 	PostUpdate() error
+	GetFillHandlers() ([]FillHandler, error)
 }

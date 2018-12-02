@@ -202,3 +202,8 @@ func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote flo
 	}
 	return level, nil
 }
+
+// GetFillHandlers impl
+func (p *balancedLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
+	return nil, nil
+}

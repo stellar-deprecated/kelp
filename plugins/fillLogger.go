@@ -18,6 +18,7 @@ func MakeFillLogger() api.FillHandler {
 }
 
 // HandleFill impl.
-func (f *FillLogger) HandleFill(trade model.Trade) {
+func (f *FillLogger) HandleFill(trade model.Trade) error {
 	log.Printf("received fill: %s\n", trade)
+	return nil
 }

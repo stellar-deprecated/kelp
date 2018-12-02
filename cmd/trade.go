@@ -212,7 +212,19 @@ func init() {
 			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
 			fillLogger := plugins.MakeFillLogger()
 			fillTracker.RegisterHandler(fillLogger)
-			log.Printf("Starting fill tracker\n")
+			strategyFillHandlers, e := strat.GetFillHandlers()
+			if e != nil {
+				log.Println()
+				log.Printf("problem encountered while instantiating the fill tracker: %s\n", e)
+				deleteAllOffersAndExit(botConfig, client, sdex)
+			}
+			if strategyFillHandlers != nil {
+				for _, h := range strategyFillHandlers {
+					fillTracker.RegisterHandler(h)
+				}
+			}
+
+			log.Printf("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
 			go func() {
 				e := fillTracker.TrackFills()
 				if e != nil {

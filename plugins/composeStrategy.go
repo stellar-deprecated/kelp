@@ -103,3 +103,24 @@ func (s *composeStrategy) UpdateWithOps(
 func (s *composeStrategy) PostUpdate() error {
 	return nil
 }
+
+// GetFillHandlers impl
+func (s *composeStrategy) GetFillHandlers() ([]api.FillHandler, error) {
+	buyFillHandlers, e := s.buyStrat.GetFillHandlers()
+	if e != nil {
+		return nil, fmt.Errorf("error while getting fill handlers for buy side")
+	}
+	sellFillHandlers, e := s.sellStrat.GetFillHandlers()
+	if e != nil {
+		return nil, fmt.Errorf("error while getting fill handlers for sell side")
+	}
+
+	handlers := []api.FillHandler{}
+	if buyFillHandlers != nil {
+		handlers = append(handlers, buyFillHandlers...)
+	}
+	if sellFillHandlers != nil {
+		handlers = append(handlers, sellFillHandlers...)
+	}
+	return handlers, nil
+}

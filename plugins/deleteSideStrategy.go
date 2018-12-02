@@ -57,3 +57,8 @@ func (s *deleteSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.
 func (s *deleteSideStrategy) PostUpdate() error {
 	return nil
 }
+
+// GetFillHandlers impl
+func (s *deleteSideStrategy) GetFillHandlers() ([]api.FillHandler, error) {
+	return nil, nil
+}

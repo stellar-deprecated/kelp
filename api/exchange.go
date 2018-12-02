@@ -47,11 +47,12 @@ type FillTracker interface {
 	// TrackFills should be executed in a new thread
 	TrackFills() error
 	RegisterHandler(handler FillHandler)
+	NumHandlers() uint8
 }
 
 // FillHandler is invoked by the FillTracker (once registered) anytime an order is filled
 type FillHandler interface {
-	HandleFill(trade model.Trade)
+	HandleFill(trade model.Trade) error
 }
 
 // TradeFetcher is the common method between FillTrackable and exchange

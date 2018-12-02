@@ -53,7 +53,15 @@ func (f *FillTracker) TrackFills() error {
 	}
 	log.Printf("got latest trade cursor from where to start tracking fills: %v\n", lastCursor)
 
+	ech := make(chan error, len(f.handlers))
 	for {
+		select {
+		case e := <-ech:
+			return fmt.Errorf("caught an error when tracking fills: %s", e)
+		default:
+			// do nothing
+		}
+
 		tradeHistoryResult, e := f.fillTrackable.GetTradeHistory(lastCursor, nil)
 		if e != nil {
 			return fmt.Errorf("error when fetching trades: %s", e)
@@ -62,10 +70,14 @@ func (f *FillTracker) TrackFills() error {
 		for _, t := range tradeHistoryResult.Trades {
 			for _, h := range f.handlers {
 				f.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-					h := inputs[0].(api.FillHandler)
-					t := inputs[1].(model.Trade)
-					h.HandleFill(t)
-				}, []interface{}{h, t})
+					ech := inputs[0].(chan error)
+					h := inputs[1].(api.FillHandler)
+					t := inputs[2].(model.Trade)
+					e := h.HandleFill(t)
+					if e != nil {
+						ech <- fmt.Errorf("error in a fill handler: %s", e)
+					}
+				}, []interface{}{ech, h, t})
 			}
 		}
 
@@ -77,4 +89,9 @@ func (f *FillTracker) TrackFills() error {
 // RegisterHandler impl
 func (f *FillTracker) RegisterHandler(handler api.FillHandler) {
 	f.handlers = append(f.handlers, handler)
+}
+
+// NumHandlers impl
+func (f *FillTracker) NumHandlers() uint8 {
+	return uint8(len(f.handlers))
 }
