@@ -25,6 +25,14 @@ func (a OrderAction) IsSell() bool {
 	return a == OrderActionSell
 }
 
+// Reverse returns the opposite action
+func (a OrderAction) Reverse() OrderAction {
+	if a.IsSell() {
+		return OrderActionBuy
+	}
+	return OrderActionSell
+}
+
 // String is the stringer function
 func (a OrderAction) String() string {
 	if a == OrderActionBuy {

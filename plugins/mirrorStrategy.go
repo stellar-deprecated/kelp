@@ -306,8 +306,14 @@ func (s *mirrorStrategy) GetFillHandlers() ([]api.FillHandler, error) {
 
 // HandleFill impl
 func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
-	newOrder := &trade.Order
-	newOrder.Timestamp = nil
+	newOrder := &model.Order{
+		Pair:        trade.Order.Pair,
+		OrderAction: trade.OrderAction.Reverse(),
+		OrderType:   model.OrderTypeLimit,
+		Price:       trade.Price,
+		Volume:      trade.Volume,
+		Timestamp:   nil,
+	}
 
 	transactionID, e := s.tradeAPI.AddOrder(newOrder)
 	if e != nil {
