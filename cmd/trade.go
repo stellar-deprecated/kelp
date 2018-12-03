@@ -137,6 +137,17 @@ func init() {
 		// --- start initialization of objects ----
 		threadTracker := multithreading.MakeThreadTracker()
 
+		assetBase := botConfig.AssetBase()
+		assetQuote := botConfig.AssetQuote()
+		tradingPair := &model.TradingPair{
+			Base:  model.Asset(utils.Asset2CodeString(assetBase)),
+			Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
+		}
+
+		sdexAssetMap := map[model.Asset]horizon.Asset{
+			tradingPair.Base:  assetBase,
+			tradingPair.Quote: assetQuote,
+		}
 		sdex := plugins.MakeSDEX(
 			client,
 			botConfig.SourceSecretSeed,
@@ -148,12 +159,12 @@ func init() {
 			*operationalBuffer,
 			*operationalBufferNonNativePct,
 			*simMode,
+			tradingPair,
+			sdexAssetMap,
 		)
 
-		assetBase := botConfig.AssetBase()
-		assetQuote := botConfig.AssetQuote()
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-		strat, e := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath)
+		strat, e := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
 		if e != nil {
 			log.Println()
 			log.Println(e)
@@ -192,6 +203,34 @@ func init() {
 					// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 					// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 					// aren't outstanding offers.
+					deleteAllOffersAndExit(botConfig, client, sdex)
+				}
+			}()
+		}
+
+		if botConfig.FillTrackerSleepMillis != 0 {
+			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
+			fillLogger := plugins.MakeFillLogger()
+			fillTracker.RegisterHandler(fillLogger)
+			strategyFillHandlers, e := strat.GetFillHandlers()
+			if e != nil {
+				log.Println()
+				log.Printf("problem encountered while instantiating the fill tracker: %s\n", e)
+				deleteAllOffersAndExit(botConfig, client, sdex)
+			}
+			if strategyFillHandlers != nil {
+				for _, h := range strategyFillHandlers {
+					fillTracker.RegisterHandler(h)
+				}
+			}
+
+			log.Printf("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
+			go func() {
+				e := fillTracker.TrackFills()
+				if e != nil {
+					log.Println()
+					log.Printf("problem encountered while running the fill tracker: %s\n", e)
+					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 					deleteAllOffersAndExit(botConfig, client, sdex)
 				}
 			}()

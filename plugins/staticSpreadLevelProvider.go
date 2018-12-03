@@ -89,3 +89,8 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 	}
 	return levels, nil
 }
+
+// GetFillHandlers impl
+func (p *staticSpreadLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
+	return nil, nil
+}

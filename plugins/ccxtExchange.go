@@ -18,10 +18,11 @@ type ccxtExchange struct {
 	delimiter      string
 	api            *sdk.Ccxt
 	precision      int8
+	simMode        bool
 }
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
-func makeCcxtExchange(ccxtBaseURL string, exchangeName string) (api.Exchange, error) {
+func makeCcxtExchange(ccxtBaseURL string, exchangeName string, simMode bool) (api.Exchange, error) {
 	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName)
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
@@ -32,6 +33,7 @@ func makeCcxtExchange(ccxtBaseURL string, exchangeName string) (api.Exchange, er
 		delimiter:      "/",
 		api:            c,
 		precision:      utils.SdexPrecision,
+		simMode:        simMode,
 	}, nil
 }
 

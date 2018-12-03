@@ -20,7 +20,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 	case "exchange":
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
-		exchange, e := MakeExchange(urlParts[0])
+		exchange, e := MakeExchange(urlParts[0], true)
 		if e != nil {
 			return nil, fmt.Errorf("cannot make priceFeed because of an error when making the '%s' exchange: %s", urlParts[0], e)
 		}

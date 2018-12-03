@@ -173,7 +173,7 @@ The following strategies are available **out of the box** with Kelp:
 
 - mirror ([source](plugins/mirrorStrategy.go)):
 
-    - **What:** mirrors an orderbook from another exchange by placing the same orders on Stellar after including a [spread][spread]. _Note: covering your trades on the backing exchange is not currently supported out-of-the-box_.
+    - **What:** mirrors an orderbook from another exchange by placing the same orders on Stellar after including a [spread][spread].
     - **Why:** To [hedge][hedge] your position on another exchange whenever a trade is executed to reduce inventory risk while keeping a spread
     - **Who:** Anyone who wants to reduce inventory risk and also has the capacity to take on a higher operational overhead in maintaining the bot system.
     - **Complexity:** Advanced

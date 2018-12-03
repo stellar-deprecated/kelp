@@ -48,7 +48,7 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 
 // makeKrakenExchange is a factory method to make the kraken exchange
 // TODO 2, should take in config file for withdrawalKeys mapping
-func makeKrakenExchange(apiKeys []api.ExchangeAPIKey) (api.Exchange, error) {
+func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exchange, error) {
 	if len(apiKeys) == 0 || len(apiKeys) > math.MaxUint8 {
 		return nil, fmt.Errorf("invalid number of apiKeys: %d", len(apiKeys))
 	}
@@ -65,8 +65,9 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey) (api.Exchange, error) {
 		apis:         krakenAPIs,
 		apiNextIndex: 0,
 		delimiter:    "",
-		withdrawKeys: asset2Address2Key{},
 		precision:    8,
+		withdrawKeys: asset2Address2Key{},
+		isSimulated:  isSimulated,
 	}, nil
 }
 
@@ -86,12 +87,13 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 		return nil, e
 	}
 
+	if k.isSimulated {
+		log.Printf("not adding order to Kraken in simulation mode, order=%s\n", *order)
+		return nil, nil
+	}
+
 	args := map[string]string{
 		"price": order.Price.AsString(),
-	}
-	// validate should not be present if it's false, otherwise Kraken treats it as true
-	if k.isSimulated {
-		args["validate"] = "true"
 	}
 	resp, e := k.nextAPI().AddOrder(
 		pairStr,
@@ -113,9 +115,6 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 		return nil, fmt.Errorf("there was more than 1 transctionId: %s", resp.TransactionIds)
 	}
 
-	if k.isSimulated {
-		return nil, nil
-	}
 	return nil, fmt.Errorf("no transactionIds returned from order creation")
 }
 
@@ -347,6 +346,7 @@ func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd
 			Cost:          model.MustNumberFromString(_cost, k.precision),
 			Fee:           model.MustNumberFromString(_fee, k.precision),
 		})
+		res.Cursor = _time
 	}
 	return &res, nil
 }

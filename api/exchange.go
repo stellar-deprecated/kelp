@@ -30,13 +30,41 @@ type TradesResult struct {
 }
 
 // TradeHistoryResult is the result of a GetTradeHistory call
+// this should be the same object as TradesResult but it's a separate object for backwards compatibility
 type TradeHistoryResult struct {
+	Cursor interface{}
 	Trades []model.Trade
 }
 
 // TickerAPI is the interface we use as a generic API for getting ticker data from any crypto exchange
 type TickerAPI interface {
 	GetTickerPrice(pairs []model.TradingPair) (map[model.TradingPair]Ticker, error)
+}
+
+// FillTracker knows how to track fills against open orders
+type FillTracker interface {
+	GetPair() (pair *model.TradingPair)
+	// TrackFills should be executed in a new thread
+	TrackFills() error
+	RegisterHandler(handler FillHandler)
+	NumHandlers() uint8
+}
+
+// FillHandler is invoked by the FillTracker (once registered) anytime an order is filled
+type FillHandler interface {
+	HandleFill(trade model.Trade) error
+}
+
+// TradeFetcher is the common method between FillTrackable and exchange
+// temporarily extracted out from TradeAPI so SDEX has the flexibility to only implement this rather than exchange and FillTrackable
+type TradeFetcher interface {
+	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
+}
+
+// FillTrackable enables any implementing exchange to support fill tracking
+type FillTrackable interface {
+	TradeFetcher
+	GetLatestTradeCursor() (interface{}, error)
 }
 
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange
@@ -47,7 +75,7 @@ type TradeAPI interface {
 
 	GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
-	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
+	TradeFetcher
 
 	GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error)
 

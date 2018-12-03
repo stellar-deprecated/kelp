@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/interstellar/kelp/api"
@@ -10,14 +11,32 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
+type exchangeAPIKeysToml []struct {
+	Key    string `valid:"-" toml:"KEY"`
+	Secret string `valid:"-" toml:"SECRET"`
+}
+
+func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
+	apiKeys := []api.ExchangeAPIKey{}
+	for _, apiKey := range *t {
+		apiKeys = append(apiKeys, api.ExchangeAPIKey{
+			Key:    apiKey.Key,
+			Secret: apiKey.Secret,
+		})
+	}
+	return apiKeys
+}
+
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange       string  `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase   string  `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote  string  `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	Exchange        string              `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase    string              `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote   string              `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth  int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	VolumeDivideBy  float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
+	PerLevelSpread  float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
+	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
 }
 
 // String impl.
@@ -33,16 +52,30 @@ type mirrorStrategy struct {
 	quoteAsset    *horizon.Asset
 	config        *mirrorConfig
 	tradeAPI      api.TradeAPI
+	offsetTrades  bool
 }
 
-// ensure this implements Strategy
+// ensure this implements api.Strategy
 var _ api.Strategy = &mirrorStrategy{}
 
+// ensure this implements api.FillHandler
+var _ api.FillHandler = &mirrorStrategy{}
+
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) (api.Strategy, error) {
-	exchange, e := MakeExchange(config.Exchange)
-	if e != nil {
-		return nil, e
+func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+	var exchange api.Exchange
+	var e error
+	if config.OffsetTrades {
+		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
+		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, simMode)
+		if e != nil {
+			return nil, e
+		}
+	} else {
+		exchange, e = MakeExchange(config.Exchange, simMode)
+		if e != nil {
+			return nil, e
+		}
 	}
 
 	orderbookPair := &model.TradingPair{
@@ -56,6 +89,7 @@ func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizo
 		quoteAsset:    quoteAsset,
 		config:        config,
 		tradeAPI:      api.TradeAPI(exchange),
+		offsetTrades:  config.OffsetTrades,
 	}, nil
 }
 
@@ -259,5 +293,34 @@ func (s *mirrorStrategy) doModifyOffer(
 
 // PostUpdate changes the strategy's state after the update has taken place
 func (s *mirrorStrategy) PostUpdate() error {
+	return nil
+}
+
+// GetFillHandlers impl
+func (s *mirrorStrategy) GetFillHandlers() ([]api.FillHandler, error) {
+	if s.offsetTrades {
+		return []api.FillHandler{s}, nil
+	}
+	return nil, nil
+}
+
+// HandleFill impl
+func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
+	newOrder := model.Order{
+		Pair:        s.orderbookPair, // we want to offset trades on the backing exchange so use the backing exchange's trading pair
+		OrderAction: trade.OrderAction.Reverse(),
+		OrderType:   model.OrderTypeLimit,
+		Price:       trade.Price,
+		Volume:      trade.Volume,
+		Timestamp:   nil,
+	}
+
+	log.Printf("mirror strategy is going to offset the trade from the primary exchange (transactionID=%s) onto the backing exchange with the order: %s\n", trade.TransactionID, newOrder)
+	transactionID, e := s.tradeAPI.AddOrder(&newOrder)
+	if e != nil {
+		return fmt.Errorf("error when offsetting trade (%s): %s", newOrder, e)
+	}
+
+	log.Printf("...mirror strategy successfully offset the trade from the primary exchange (transactionID=%s) onto the backing exchange (transactionID=%s) with the order %s\n", trade.TransactionID, transactionID, newOrder)
 	return nil
 }

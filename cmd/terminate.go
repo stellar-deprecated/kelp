@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/interstellar/kelp/terminator"
@@ -51,6 +52,8 @@ func init() {
 			-1, // not needed here
 			-1, // not needed here
 			false,
+			nil, // not needed here
+			map[model.Asset]horizon.Asset{},
 		)
 		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes)
 		// --- end initialization of objects ----

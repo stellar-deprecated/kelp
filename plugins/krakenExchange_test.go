@@ -148,6 +148,10 @@ func TestGetTradeHistory(t *testing.T) {
 		return
 	}
 
+	if !assert.NotNil(t, tradeHistoryResult.Cursor) {
+		return
+	}
+
 	assert.Fail(t, "force fail")
 }
 

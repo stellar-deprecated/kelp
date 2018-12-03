@@ -25,6 +25,14 @@ func (a OrderAction) IsSell() bool {
 	return a == OrderActionSell
 }
 
+// Reverse returns the opposite action
+func (a OrderAction) Reverse() OrderAction {
+	if a.IsSell() {
+		return OrderActionBuy
+	}
+	return OrderActionSell
+}
+
 // String is the stringer function
 func (a OrderAction) String() string {
 	if a == OrderActionBuy {
@@ -96,13 +104,18 @@ type Order struct {
 
 // String is the stringer function
 func (o Order) String() string {
-	return fmt.Sprintf("Order[pair=%s, action=%s, type=%s, price=%s, vol=%s, ts=%d]",
+	tsString := "<nil>"
+	if o.Timestamp != nil {
+		tsString = fmt.Sprintf("%d", o.Timestamp.AsInt64())
+	}
+
+	return fmt.Sprintf("Order[pair=%s, action=%s, type=%s, price=%s, vol=%s, ts=%s]",
 		o.Pair,
 		o.OrderAction,
 		o.OrderType,
 		o.Price.AsString(),
 		o.Volume.AsString(),
-		o.Timestamp.AsInt64(),
+		tsString,
 	)
 }
 
@@ -202,7 +215,7 @@ type Trade struct {
 }
 
 func (t Trade) String() string {
-	return fmt.Sprintf("Trades[txid: %s, ts: %s, pair: %s, action: %s, type: %s, price: %s, volume: %s, cost: %s, fee: %s]",
+	return fmt.Sprintf("Trade[txid: %s, ts: %s, pair: %s, action: %s, type: %s, counterPrice: %s, baseVolume: %s, counterCost: %s, fee: %s]",
 		utils.CheckedString(t.TransactionID),
 		utils.CheckedString(t.Timestamp),
 		*t.Pair,
