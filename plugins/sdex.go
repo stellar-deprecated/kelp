@@ -22,6 +22,8 @@ const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
 const maxPageLimit = 200
 
+var sdexOrderConstraints = model.MakeOrderConstraints(7, 7, 0.0000001)
+
 // TODO we need a reasonable value for the resolution here (currently arbitrary 300000 from a test in horizon)
 const fetchTradesResolution = 300000
 
@@ -118,6 +120,11 @@ func (sdex *SDEX) incrementSeqNum() {
 		sdex.reloadSeqNum = false
 	}
 	sdex.seqNum++
+}
+
+// GetOrderConstraints impl
+func (sdex *SDEX) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
+	return sdexOrderConstraints
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
