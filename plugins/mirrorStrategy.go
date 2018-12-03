@@ -307,7 +307,7 @@ func (s *mirrorStrategy) GetFillHandlers() ([]api.FillHandler, error) {
 // HandleFill impl
 func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	newOrder := model.Order{
-		Pair:        trade.Order.Pair,
+		Pair:        s.orderbookPair, // we want to offset trades on the backing exchange so use the backing exchange's trading pair
 		OrderAction: trade.OrderAction.Reverse(),
 		OrderType:   model.OrderTypeLimit,
 		Price:       trade.Price,
