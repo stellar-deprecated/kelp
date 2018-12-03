@@ -87,12 +87,13 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 		return nil, e
 	}
 
+	if k.isSimulated {
+		log.Printf("not adding order to Kraken in simulation mode, order=%s\n", *order)
+		return nil, nil
+	}
+
 	args := map[string]string{
 		"price": order.Price.AsString(),
-	}
-	// validate should not be present if it's false, otherwise Kraken treats it as true
-	if k.isSimulated {
-		args["validate"] = "true"
 	}
 	resp, e := k.nextAPI().AddOrder(
 		pairStr,
@@ -114,9 +115,6 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 		return nil, fmt.Errorf("there was more than 1 transctionId: %s", resp.TransactionIds)
 	}
 
-	if k.isSimulated {
-		return nil, nil
-	}
 	return nil, fmt.Errorf("no transactionIds returned from order creation")
 }
 
