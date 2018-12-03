@@ -127,6 +127,46 @@ func TestMath(t *testing.T) {
 	}
 }
 
+func TestScale(t *testing.T) {
+	testCases := []struct {
+		n           *Number
+		scaleFactor float64
+		wantString  string
+		wantFloat   float64
+	}{
+		{
+			n:           NumberFromFloat(1.1, 1),
+			scaleFactor: 2.103,
+			wantString:  "2.3",
+			wantFloat:   2.3,
+		}, {
+			n:           NumberFromFloat(1.1, 2),
+			scaleFactor: 2.103,
+			wantString:  "2.31",
+			wantFloat:   2.31,
+		}, {
+			n:           NumberFromFloat(1.1, 2),
+			scaleFactor: 1 / 2.103,
+			wantString:  "0.52",
+			wantFloat:   0.52,
+		},
+	}
+
+	for i, kase := range testCases {
+		t.Run(fmt.Sprintf("%d__%f_%d__%f", i, kase.n.AsFloat(), kase.n.Precision(), kase.scaleFactor), func(t *testing.T) {
+			n := kase.n.Scale(kase.scaleFactor)
+
+			if !assert.Equal(t, kase.wantString, n.AsString()) {
+				return
+			}
+
+			if !assert.Equal(t, kase.wantFloat, n.AsFloat()) {
+				return
+			}
+		})
+	}
+}
+
 func TestAsRatio(t *testing.T) {
 	testCases := []struct {
 		n     *Number

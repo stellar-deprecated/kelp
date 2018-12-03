@@ -71,6 +71,11 @@ func (n Number) Divide(n2 Number) *Number {
 	return NumberFromFloat(n.AsFloat()/n2.AsFloat(), newPrecision)
 }
 
+// Scale takes in a scalar with which to multiply the number using the same precision of the original number
+func (n Number) Scale(scaleFactor float64) *Number {
+	return NumberFromFloat(n.AsFloat()*scaleFactor, n.precision)
+}
+
 // String is the Stringer interface impl.
 func (n Number) String() string {
 	return n.AsString()
