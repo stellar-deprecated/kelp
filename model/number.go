@@ -47,6 +47,30 @@ func (n Number) AsRatio() (int32, int32, error) {
 	return numerator, denominator, nil
 }
 
+// Add returns a new Number after adding the passed in Number
+func (n Number) Add(n2 Number) *Number {
+	newPrecision := minPrecision(n, n2)
+	return NumberFromFloat(n.AsFloat()+n2.AsFloat(), newPrecision)
+}
+
+// Subtract returns a new Number after subtracting out the passed in Number
+func (n Number) Subtract(n2 Number) *Number {
+	newPrecision := minPrecision(n, n2)
+	return NumberFromFloat(n.AsFloat()-n2.AsFloat(), newPrecision)
+}
+
+// Multiply returns a new Number after multiplying with the passed in Number
+func (n Number) Multiply(n2 Number) *Number {
+	newPrecision := minPrecision(n, n2)
+	return NumberFromFloat(n.AsFloat()*n2.AsFloat(), newPrecision)
+}
+
+// Divide returns a new Number after dividing by the passed in Number
+func (n Number) Divide(n2 Number) *Number {
+	newPrecision := minPrecision(n, n2)
+	return NumberFromFloat(n.AsFloat()/n2.AsFloat(), newPrecision)
+}
+
 // String is the Stringer interface impl.
 func (n Number) String() string {
 	return n.AsString()
@@ -101,4 +125,11 @@ func round(num float64) int {
 func toFixed(num float64, precision int8) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
+}
+
+func minPrecision(n1 Number, n2 Number) int8 {
+	if n1.precision < n2.precision {
+		return n1.precision
+	}
+	return n2.precision
 }
