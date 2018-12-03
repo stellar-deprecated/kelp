@@ -62,17 +62,17 @@ var _ api.Strategy = &mirrorStrategy{}
 var _ api.FillHandler = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig) (api.Strategy, error) {
+func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
 		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
-		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys)
+		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, simMode)
 		if e != nil {
 			return nil, e
 		}
 	} else {
-		exchange, e = MakeExchange(config.Exchange)
+		exchange, e = MakeExchange(config.Exchange, simMode)
 		if e != nil {
 			return nil, e
 		}
@@ -315,10 +315,12 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		Timestamp:   nil,
 	}
 
+	log.Printf("mirror strategy is going to offset the trade from the primary exchange (transactionID=%s) onto the backing exchange with the order: %s\n", trade.TransactionID, newOrder)
 	transactionID, e := s.tradeAPI.AddOrder(&newOrder)
 	if e != nil {
 		return fmt.Errorf("error when offsetting trade (%s): %s", newOrder, e)
 	}
-	log.Printf("mirror strategy offset the trade from the primary exchange (transactionID=%s) onto the backing exchange (transactionID=%s): %s\n", trade.TransactionID, transactionID, newOrder)
+
+	log.Printf("...mirror strategy successfully offset the trade from the primary exchange (transactionID=%s) onto the backing exchange (transactionID=%s) with the order %s\n", trade.TransactionID, transactionID, newOrder)
 	return nil
 }

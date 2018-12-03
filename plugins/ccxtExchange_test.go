@@ -17,7 +17,7 @@ func TestGetTickerPrice_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -44,7 +44,7 @@ func TestGetOrderBook_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -77,7 +77,7 @@ func TestGetTrades_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, false)
 			if !assert.NoError(t, e) {
 				return
 			}
