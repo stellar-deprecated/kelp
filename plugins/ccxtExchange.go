@@ -74,6 +74,12 @@ func (c ccxtExchange) GetAssetConverter() *model.AssetConverter {
 	return c.assetConverter
 }
 
+// GetOrderConstraints impl
+func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
+	// TODO implement
+	return nil
+}
+
 // GetAccountBalances impl
 func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
 	// TODO implement

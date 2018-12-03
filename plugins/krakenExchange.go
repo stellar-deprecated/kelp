@@ -171,6 +171,15 @@ func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float64 {
 	return f.Interface().(float64)
 }
 
+// GetOrderConstraints impl
+func (k *krakenExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
+	constraints, ok := krakenPrecisionMatrix[*pair]
+	if !ok {
+		return nil
+	}
+	return &constraints
+}
+
 // GetAssetConverter impl.
 func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
 	return k.assetConverter
@@ -763,4 +772,12 @@ func parseWithdrawResponse(resp interface{}) (*api.WithdrawFunds, error) {
 	default:
 		return nil, fmt.Errorf("could not parse response type from Withdraw: %s", reflect.TypeOf(m))
 	}
+}
+
+// krakenPrecisionMatrix describes the price and volume precision and min base volume for each trading pair
+// taken from this URL: https://support.kraken.com/hc/en-us/articles/360001389366-Price-and-volume-decimal-precision
+var krakenPrecisionMatrix = map[model.TradingPair]model.OrderConstraints{
+	*model.MakeTradingPair(model.XLM, model.USD): *model.MakeOrderConstraints(1, 8, 0.002),
+	*model.MakeTradingPair(model.XLM, model.BTC): *model.MakeOrderConstraints(8, 8, 30.0),
+	*model.MakeTradingPair(model.BTC, model.USD): *model.MakeOrderConstraints(1, 1, 30.0),
 }

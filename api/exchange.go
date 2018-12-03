@@ -71,6 +71,9 @@ type FillTrackable interface {
 type TradeAPI interface {
 	GetAssetConverter() *model.AssetConverter
 
+	// return nil if the constraint does not exist for the exchange
+	GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints
+
 	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)
 
 	GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*TradesResult, error)
