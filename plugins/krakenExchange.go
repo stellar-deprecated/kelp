@@ -92,6 +92,14 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 		return nil, nil
 	}
 
+	orderConstraints := k.GetOrderConstraints(order.Pair)
+	if order.Price.Precision() > orderConstraints.PricePrecision {
+		return nil, fmt.Errorf("kraken price precision can be a maximum of %d, got %d, value = %.12f", orderConstraints.PricePrecision, order.Price.Precision(), order.Price.AsFloat())
+	}
+	if order.Volume.Precision() > orderConstraints.VolumePrecision {
+		return nil, fmt.Errorf("kraken volume precision can be a maximum of %d, got %d, value = %.12f", orderConstraints.VolumePrecision, order.Volume.Precision(), order.Volume.AsFloat())
+	}
+
 	args := map[string]string{
 		"price": order.Price.AsString(),
 	}
