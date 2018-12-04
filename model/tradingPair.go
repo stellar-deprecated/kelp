@@ -14,6 +14,14 @@ type TradingPair struct {
 	Quote Asset
 }
 
+// MakeTradingPair is a factory method
+func MakeTradingPair(base Asset, quote Asset) *TradingPair {
+	return &TradingPair{
+		Base:  base,
+		Quote: quote,
+	}
+}
+
 // String is the stringer function
 func (p TradingPair) String() string {
 	s, e := p.ToString(Display, "/")

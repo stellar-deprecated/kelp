@@ -5,7 +5,6 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
-	"github.com/interstellar/kelp/support/utils"
 )
 
 // staticLevel represents a layer in the orderbook defined statically
@@ -35,22 +34,24 @@ type rateOffset struct {
 
 // staticSpreadLevelProvider provides a fixed number of levels using a static percentage spread
 type staticSpreadLevelProvider struct {
-	staticLevels []staticLevel
-	amountOfBase float64
-	offset       rateOffset
-	pf           *api.FeedPair
+	staticLevels     []staticLevel
+	amountOfBase     float64
+	offset           rateOffset
+	pf               *api.FeedPair
+	orderConstraints *model.OrderConstraints
 }
 
 // ensure it implements the LevelProvider interface
 var _ api.LevelProvider = &staticSpreadLevelProvider{}
 
 // makeStaticSpreadLevelProvider is a factory method
-func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair) api.LevelProvider {
+func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair, orderConstraints *model.OrderConstraints) api.LevelProvider {
 	return &staticSpreadLevelProvider{
-		staticLevels: staticLevels,
-		amountOfBase: amountOfBase,
-		offset:       offset,
-		pf:           pf,
+		staticLevels:     staticLevels,
+		amountOfBase:     amountOfBase,
+		offset:           offset,
+		pf:               pf,
+		orderConstraints: orderConstraints,
 	}
 }
 
@@ -83,8 +84,8 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 		absoluteSpread := centerPrice * sl.SPREAD
 		levels = append(levels, api.Level{
 			// we always add here because it is only used in the context of selling so we always charge a higher price to include a spread
-			Price:  *model.NumberFromFloat(centerPrice+absoluteSpread, utils.SdexPrecision),
-			Amount: *model.NumberFromFloat(sl.AMOUNT*p.amountOfBase, utils.SdexPrecision),
+			Price:  *model.NumberFromFloat(centerPrice+absoluteSpread, p.orderConstraints.PricePrecision),
+			Amount: *model.NumberFromFloat(sl.AMOUNT*p.amountOfBase, p.orderConstraints.VolumePrecision),
 		})
 	}
 	return levels, nil

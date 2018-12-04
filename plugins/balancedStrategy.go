@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -31,12 +32,15 @@ func (c balancedConfig) String() string {
 // makeBalancedStrategy is a factory method for balancedStrategy
 func makeBalancedStrategy(
 	sdex *SDEX,
+	pair *model.TradingPair,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *balancedConfig,
 ) api.Strategy {
+	orderConstraints := sdex.GetOrderConstraints(pair)
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
+		orderConstraints,
 		assetBase,
 		assetQuote,
 		makeBalancedLevelProvider(
@@ -51,7 +55,8 @@ func makeBalancedStrategy(
 			config.MaxAmountCarryoverSpread,
 			config.CarryoverInclusionProbability,
 			config.VirtualBalanceBase,
-			config.VirtualBalanceQuote),
+			config.VirtualBalanceQuote,
+			orderConstraints),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		false,
@@ -59,6 +64,7 @@ func makeBalancedStrategy(
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
 		sdex,
+		orderConstraints,
 		assetQuote,
 		assetBase,
 		makeBalancedLevelProvider(
@@ -73,7 +79,8 @@ func makeBalancedStrategy(
 			config.MaxAmountCarryoverSpread,
 			config.CarryoverInclusionProbability,
 			config.VirtualBalanceQuote,
-			config.VirtualBalanceBase),
+			config.VirtualBalanceBase,
+			orderConstraints),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		true,

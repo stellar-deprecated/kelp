@@ -227,3 +227,19 @@ func (t Trade) String() string {
 		utils.CheckedString(t.Fee),
 	)
 }
+
+// OrderConstraints describes constraints when placing orders on an excahnge
+type OrderConstraints struct {
+	PricePrecision  int8
+	VolumePrecision int8
+	MinBaseVolume   Number
+}
+
+// MakeOrderConstraints is a factory method for OrderConstraints
+func MakeOrderConstraints(pricePrecision int8, volumePrecision int8, minBaseVolume float64) *OrderConstraints {
+	return &OrderConstraints{
+		PricePrecision:  pricePrecision,
+		VolumePrecision: volumePrecision,
+		MinBaseVolume:   *NumberFromFloat(minBaseVolume, volumePrecision),
+	}
+}

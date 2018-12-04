@@ -67,9 +67,17 @@ type FillTrackable interface {
 	GetLatestTradeCursor() (interface{}, error)
 }
 
+// Constrainable extracts out the method that SDEX can implement for now
+type Constrainable interface {
+	// return nil if the constraint does not exist for the exchange
+	GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints
+}
+
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange
 type TradeAPI interface {
 	GetAssetConverter() *model.AssetConverter
+
+	Constrainable
 
 	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)
 

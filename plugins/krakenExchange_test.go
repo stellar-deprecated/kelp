@@ -18,7 +18,6 @@ var testKrakenExchange api.Exchange = &krakenExchange{
 	apis:         []*krakenapi.KrakenApi{krakenapi.New("", "")},
 	apiNextIndex: 0,
 	delimiter:    "",
-	precision:    8,
 	withdrawKeys: asset2Address2Key{},
 	isSimulated:  true,
 }
@@ -185,12 +184,13 @@ func TestAddOrder(t *testing.T) {
 		return
 	}
 
+	tradingPair := &model.TradingPair{Base: model.XLM, Quote: model.USD}
 	txID, e := testKrakenExchange.AddOrder(&model.Order{
-		Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USD},
+		Pair:        tradingPair,
 		OrderAction: model.OrderActionSell,
 		OrderType:   model.OrderTypeLimit,
-		Price:       model.NumberFromFloat(5.123456, 6),
-		Volume:      model.NumberFromFloat(30.12345678, 8),
+		Price:       model.NumberFromFloat(5.123456, testKrakenExchange.GetOrderConstraints(tradingPair).PricePrecision),
+		Volume:      model.NumberFromFloat(30.12345678, testKrakenExchange.GetOrderConstraints(tradingPair).VolumePrecision),
 	})
 	if !assert.NoError(t, e) {
 		return

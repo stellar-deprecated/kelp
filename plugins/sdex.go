@@ -22,6 +22,8 @@ const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
 const maxPageLimit = 200
 
+var sdexOrderConstraints = model.MakeOrderConstraints(7, 7, 0.0000001)
+
 // TODO we need a reasonable value for the resolution here (currently arbitrary 300000 from a test in horizon)
 const fetchTradesResolution = 300000
 
@@ -50,6 +52,9 @@ type SDEX struct {
 	// cache balances to avoid redundant requests
 	cachedBalances map[horizon.Asset]Balance
 }
+
+// enforce SDEX implements api.Constrainable
+var _ api.Constrainable = &SDEX{}
 
 // Liabilities represents the "committed" units of an asset on both the buy and sell sides
 type Liabilities struct {
@@ -118,6 +123,11 @@ func (sdex *SDEX) incrementSeqNum() {
 		sdex.reloadSeqNum = false
 	}
 	sdex.seqNum++
+}
+
+// GetOrderConstraints impl
+func (sdex *SDEX) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
+	return sdexOrderConstraints
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
@@ -279,7 +289,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		return nil, nil
 	}
 
-	stringPrice := strconv.FormatFloat(price, 'f', int(utils.SdexPrecision), 64)
+	stringPrice := strconv.FormatFloat(price, 'f', int(sdexOrderConstraints.PricePrecision), 64)
 	rate := build.Rate{
 		Selling: utils.Asset2Asset(selling),
 		Buying:  utils.Asset2Asset(buying),
@@ -288,7 +298,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 
 	mutators := []interface{}{
 		rate,
-		build.Amount(strconv.FormatFloat(amount, 'f', int(utils.SdexPrecision), 64)),
+		build.Amount(strconv.FormatFloat(amount, 'f', int(sdexOrderConstraints.VolumePrecision), 64)),
 	}
 	if offer != nil {
 		mutators = append(mutators, build.OfferID(offer.ID))
@@ -743,24 +753,25 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset horizon.Asset, quoteAs
 			continue
 		}
 
-		vol, e := model.NumberFromString(t.BaseAmount, utils.SdexPrecision)
+		vol, e := model.NumberFromString(t.BaseAmount, sdexOrderConstraints.VolumePrecision)
 		if e != nil {
 			return nil, false, fmt.Errorf("could not convert baseAmount to model.Number: %s", e)
 		}
 		floatPrice := float64(t.Price.N) / float64(t.Price.D)
+		price := model.NumberFromFloat(floatPrice, sdexOrderConstraints.PricePrecision)
 
 		trades = append(trades, model.Trade{
 			Order: model.Order{
 				Pair:        sdex.pair,
 				OrderAction: *orderAction,
 				OrderType:   model.OrderTypeLimit,
-				Price:       model.NumberFromFloat(floatPrice, utils.SdexPrecision),
+				Price:       price,
 				Volume:      vol,
 				Timestamp:   model.MakeTimestampFromTime(t.LedgerCloseTime),
 			},
 			TransactionID: model.MakeTransactionID(t.ID),
-			Cost:          model.NumberFromFloat(floatPrice*vol.AsFloat(), utils.SdexPrecision),
-			Fee:           model.NumberFromFloat(baseFee, utils.SdexPrecision),
+			Cost:          price.Multiply(*vol),
+			Fee:           model.NumberFromFloat(baseFee, sdexOrderConstraints.PricePrecision),
 		})
 
 		cursor = t.PT

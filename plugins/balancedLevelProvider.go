@@ -7,7 +7,6 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
-	"github.com/interstellar/kelp/support/utils"
 )
 
 // balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.
@@ -27,6 +26,7 @@ type balancedLevelProvider struct {
 	carryoverInclusionProbability float64 // probability of including the carryover at a level that will be added
 	virtualBalanceBase            float64 // virtual balance to use so we can smoothen out the curve
 	virtualBalanceQuote           float64 // virtual balance to use so we can smoothen out the curve
+	orderConstraints              *model.OrderConstraints
 
 	// precomputed before construction
 	randGen *rand.Rand
@@ -49,6 +49,7 @@ func makeBalancedLevelProvider(
 	carryoverInclusionProbability float64,
 	virtualBalanceBase float64,
 	virtualBalanceQuote float64,
+	orderConstraints *model.OrderConstraints,
 ) api.LevelProvider {
 	if minAmountSpread <= 0 {
 		log.Fatalf("minAmountSpread (%.7f) needs to be > 0 for the algorithm to work sustainably\n", minAmountSpread)
@@ -81,6 +82,7 @@ func makeBalancedLevelProvider(
 		carryoverInclusionProbability: carryoverInclusionProbability,
 		virtualBalanceBase:            virtualBalanceBase,
 		virtualBalanceQuote:           virtualBalanceQuote,
+		orderConstraints:              orderConstraints,
 		randGen:                       randGen,
 	}
 }
@@ -133,7 +135,7 @@ func (p *balancedLevelProvider) computeNewLevelWithCarryover(level api.Level, am
 	// include the amountCarryover we computed, price of the level remains unchanged
 	level = api.Level{
 		Price:  level.Price,
-		Amount: *model.NumberFromFloat(level.Amount.AsFloat()+amountCarryoverToInclude, level.Amount.Precision()),
+		Amount: *level.Amount.Add(*model.NumberFromFloat(amountCarryoverToInclude, level.Amount.Precision())),
 	}
 
 	return level, amountCarryover
@@ -197,8 +199,8 @@ func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote flo
 	// since targetAmount needs to be less then what we've set above based on the inequality formula, let's reduce it by 5%
 	targetAmount *= (1 - p.getRandomSpread(p.minAmountSpread, p.maxAmountSpread))
 	level := api.Level{
-		Price:  *model.NumberFromFloat(targetPrice, utils.SdexPrecision),
-		Amount: *model.NumberFromFloat(targetAmount, utils.SdexPrecision),
+		Price:  *model.NumberFromFloat(targetPrice, p.orderConstraints.PricePrecision),
+		Amount: *model.NumberFromFloat(targetAmount, p.orderConstraints.VolumePrecision),
 	}
 	return level, nil
 }
