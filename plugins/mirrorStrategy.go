@@ -46,13 +46,17 @@ func (c mirrorConfig) String() string {
 
 // mirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type mirrorStrategy struct {
-	sdex          *SDEX
-	orderbookPair *model.TradingPair
-	baseAsset     *horizon.Asset
-	quoteAsset    *horizon.Asset
-	config        *mirrorConfig
-	tradeAPI      api.TradeAPI
-	offsetTrades  bool
+	sdex               *SDEX
+	baseAsset          *horizon.Asset
+	quoteAsset         *horizon.Asset
+	primaryConstraints *model.OrderConstraints
+	backingPair        *model.TradingPair
+	backingConstraints *model.OrderConstraints
+	orderbookDepth     int32
+	perLevelSpread     float64
+	volumeDivideBy     float64
+	tradeAPI           api.TradeAPI
+	offsetTrades       bool
 }
 
 // ensure this implements api.Strategy
@@ -62,7 +66,7 @@ var _ api.Strategy = &mirrorStrategy{}
 var _ api.FillHandler = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
@@ -78,18 +82,26 @@ func makeMirrorStrategy(sdex *SDEX, baseAsset *horizon.Asset, quoteAsset *horizo
 		}
 	}
 
-	orderbookPair := &model.TradingPair{
+	// we have two sets of (tradingPair, orderConstraints): the primaryExchange and the backingExchange
+	primaryConstraints := sdex.GetOrderConstraints(pair)
+	// backingPair is taken from the mirror strategy config not from the passed in trading pair
+	backingPair := &model.TradingPair{
 		Base:  exchange.GetAssetConverter().MustFromString(config.ExchangeBase),
 		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
+	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	return &mirrorStrategy{
-		sdex:          sdex,
-		orderbookPair: orderbookPair,
-		baseAsset:     baseAsset,
-		quoteAsset:    quoteAsset,
-		config:        config,
-		tradeAPI:      api.TradeAPI(exchange),
-		offsetTrades:  config.OffsetTrades,
+		sdex:               sdex,
+		baseAsset:          baseAsset,
+		quoteAsset:         quoteAsset,
+		primaryConstraints: primaryConstraints,
+		backingPair:        backingPair,
+		backingConstraints: backingConstraints,
+		orderbookDepth:     config.OrderbookDepth,
+		perLevelSpread:     config.PerLevelSpread,
+		volumeDivideBy:     config.VolumeDivideBy,
+		tradeAPI:           api.TradeAPI(exchange),
+		offsetTrades:       config.OffsetTrades,
 	}, nil
 }
 
@@ -108,7 +120,7 @@ func (s mirrorStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.tradeAPI.GetOrderBook(s.orderbookPair, s.config.OrderbookDepth)
+	ob, e := s.tradeAPI.GetOrderBook(s.backingPair, s.orderbookDepth)
 	if e != nil {
 		return nil, e
 	}
@@ -128,7 +140,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		bids,
 		s.sdex.ModifyBuyOffer,
 		s.sdex.CreateBuyOffer,
-		(1 - s.config.PerLevelSpread),
+		(1 - s.perLevelSpread),
 		true,
 	)
 	if e != nil {
@@ -141,7 +153,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		asks,
 		s.sdex.ModifySellOffer,
 		s.sdex.CreateSellOffer,
-		(1 + s.config.PerLevelSpread),
+		(1 + s.perLevelSpread),
 		false,
 	)
 	if e != nil {
@@ -173,7 +185,7 @@ func (s *mirrorStrategy) updateLevels(
 	deleteOps := []build.TransactionMutator{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VolumeDivideBy, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
 			}
@@ -187,8 +199,8 @@ func (s *mirrorStrategy) updateLevels(
 
 		// create offers for remaining new bids
 		for i := len(oldOffers); i < len(newOrders); i++ {
-			price := model.NumberFromFloat(newOrders[i].Price.AsFloat()*priceMultiplier, utils.SdexPrecision).AsFloat()
-			vol := model.NumberFromFloat(newOrders[i].Volume.AsFloat()/s.config.VolumeDivideBy, utils.SdexPrecision).AsFloat()
+			price := newOrders[i].Price.Scale(priceMultiplier).AsFloat()
+			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy).AsFloat()
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
 			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
 			if e != nil {
@@ -206,7 +218,7 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, s.config.VolumeDivideBy, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, e
 			}
@@ -237,40 +249,40 @@ func (s *mirrorStrategy) doModifyOffer(
 	oldOffer horizon.Offer,
 	newOrder model.Order,
 	priceMultiplier float64,
-	volumeDivideBy float64,
 	modifyOffer func(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) (build.TransactionMutator, build.TransactionMutator, error) {
-	price := newOrder.Price.AsFloat() * priceMultiplier
-	vol := newOrder.Volume.AsFloat() / volumeDivideBy
-	oldPrice := model.MustNumberFromString(oldOffer.Price, 6)
-	oldVol := model.MustNumberFromString(oldOffer.Amount, 6)
+	price := newOrder.Price.Scale(priceMultiplier)
+	vol := newOrder.Volume.Scale(1.0 / s.volumeDivideBy)
+	oldPrice := model.MustNumberFromString(oldOffer.Price, s.primaryConstraints.PricePrecision)
+	oldVol := model.MustNumberFromString(oldOffer.Amount, s.primaryConstraints.VolumePrecision)
 	if hackPriceInvertForBuyOrderChangeCheck {
 		// we want to multiply oldVol by the original oldPrice so we can get the correct oldVol, since ModifyBuyOffer multiplies price * vol
-		oldVol = model.NumberFromFloat(oldVol.AsFloat()*oldPrice.AsFloat(), 6)
-		oldPrice = model.NumberFromFloat(1/oldPrice.AsFloat(), 6)
+		oldVol = oldVol.Multiply(*oldPrice)
+		oldPrice = model.InvertNumber(oldPrice)
 	}
-	newPrice := model.NumberFromFloat(price, 6)
-	newVol := model.NumberFromFloat(vol, 6)
+	newPrice := price
+	newVol := vol
 	epsilon := 0.0001
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
-	sameOrderParams := utils.FloatEquals(oldPrice.AsFloat(), newPrice.AsFloat(), epsilon) && utils.FloatEquals(oldVol.AsFloat(), newVol.AsFloat(), epsilon)
+	sameOrderParams := oldPrice.EqualsPrecisionNormalized(*newPrice, epsilon) && oldVol.EqualsPrecisionNormalized(*newVol, epsilon)
 	if sameOrderParams {
 		// update the cached liabilities if we keep the existing offer
 		if hackPriceInvertForBuyOrderChangeCheck {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat()*oldPrice.AsFloat(), oldVol.AsFloat(), incrementalNativeAmountRaw)
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.Multiply(*oldPrice).AsFloat(), oldVol.AsFloat(), incrementalNativeAmountRaw)
 		} else {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat(), oldVol.AsFloat()*oldPrice.AsFloat(), incrementalNativeAmountRaw)
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat(), oldVol.Multiply(*oldPrice).AsFloat(), incrementalNativeAmountRaw)
 		}
 		return nil, nil, nil
 	}
 
-	offerPrice := model.NumberFromFloat(price, utils.SdexPrecision).AsFloat()
-	offerAmount := model.NumberFromFloat(vol, utils.SdexPrecision).AsFloat()
+	// convert the precision from the backing exchange to the primary exchange
+	offerPrice := model.NumberByCappingPrecision(price, s.primaryConstraints.PricePrecision)
+	offerAmount := model.NumberByCappingPrecision(vol, s.primaryConstraints.VolumePrecision)
 	mo, e := modifyOffer(
 		oldOffer,
-		offerPrice,
-		offerAmount,
+		offerPrice.AsFloat(),
+		offerAmount.AsFloat(),
 		incrementalNativeAmountRaw,
 	)
 	if e != nil {
@@ -279,9 +291,9 @@ func (s *mirrorStrategy) doModifyOffer(
 	if mo != nil {
 		// update the cached liabilities if we create a valid operation to modify the offer
 		if hackPriceInvertForBuyOrderChangeCheck {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount*offerPrice, offerAmount, incrementalNativeAmountRaw)
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount.Multiply(*offerPrice).AsFloat(), offerAmount.AsFloat(), incrementalNativeAmountRaw)
 		} else {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount, offerAmount*offerPrice, incrementalNativeAmountRaw)
+			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount.AsFloat(), offerAmount.Multiply(*offerPrice).AsFloat(), incrementalNativeAmountRaw)
 		}
 		return *mo, nil, nil
 	}
@@ -307,11 +319,11 @@ func (s *mirrorStrategy) GetFillHandlers() ([]api.FillHandler, error) {
 // HandleFill impl
 func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	newOrder := model.Order{
-		Pair:        s.orderbookPair, // we want to offset trades on the backing exchange so use the backing exchange's trading pair
+		Pair:        s.backingPair, // we want to offset trades on the backing exchange so use the backing exchange's trading pair
 		OrderAction: trade.OrderAction.Reverse(),
 		OrderType:   model.OrderTypeLimit,
-		Price:       trade.Price,
-		Volume:      trade.Volume,
+		Price:       model.NumberByCappingPrecision(trade.Price, s.backingConstraints.PricePrecision),
+		Volume:      model.NumberByCappingPrecision(trade.Volume, s.backingConstraints.VolumePrecision),
 		Timestamp:   nil,
 	}
 

@@ -164,7 +164,7 @@ func init() {
 		)
 
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-		strat, e := plugins.MakeStrategy(sdex, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
+		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
 		if e != nil {
 			log.Println()
 			log.Println(e)

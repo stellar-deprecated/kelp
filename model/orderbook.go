@@ -230,16 +230,16 @@ func (t Trade) String() string {
 
 // OrderConstraints describes constraints when placing orders on an excahnge
 type OrderConstraints struct {
-	PricePrecision  uint8
-	VolumePrecision uint8
+	PricePrecision  int8
+	VolumePrecision int8
 	MinBaseVolume   Number
 }
 
 // MakeOrderConstraints is a factory method for OrderConstraints
-func MakeOrderConstraints(pricePrecision uint8, volumePrecision uint8, minBaseVolume float64) *OrderConstraints {
+func MakeOrderConstraints(pricePrecision int8, volumePrecision int8, minBaseVolume float64) *OrderConstraints {
 	return &OrderConstraints{
 		PricePrecision:  pricePrecision,
 		VolumePrecision: volumePrecision,
-		MinBaseVolume:   *NumberFromFloat(minBaseVolume, int8(volumePrecision)),
+		MinBaseVolume:   *NumberFromFloat(minBaseVolume, volumePrecision),
 	}
 }

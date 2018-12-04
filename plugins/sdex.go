@@ -286,7 +286,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 		return nil, nil
 	}
 
-	stringPrice := strconv.FormatFloat(price, 'f', int(utils.SdexPrecision), 64)
+	stringPrice := strconv.FormatFloat(price, 'f', int(sdexOrderConstraints.PricePrecision), 64)
 	rate := build.Rate{
 		Selling: utils.Asset2Asset(selling),
 		Buying:  utils.Asset2Asset(buying),
@@ -295,7 +295,7 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 
 	mutators := []interface{}{
 		rate,
-		build.Amount(strconv.FormatFloat(amount, 'f', int(utils.SdexPrecision), 64)),
+		build.Amount(strconv.FormatFloat(amount, 'f', int(sdexOrderConstraints.VolumePrecision), 64)),
 	}
 	if offer != nil {
 		mutators = append(mutators, build.OfferID(offer.ID))
@@ -750,24 +750,25 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset horizon.Asset, quoteAs
 			continue
 		}
 
-		vol, e := model.NumberFromString(t.BaseAmount, utils.SdexPrecision)
+		vol, e := model.NumberFromString(t.BaseAmount, sdexOrderConstraints.VolumePrecision)
 		if e != nil {
 			return nil, false, fmt.Errorf("could not convert baseAmount to model.Number: %s", e)
 		}
 		floatPrice := float64(t.Price.N) / float64(t.Price.D)
+		price := model.NumberFromFloat(floatPrice, sdexOrderConstraints.PricePrecision)
 
 		trades = append(trades, model.Trade{
 			Order: model.Order{
 				Pair:        sdex.pair,
 				OrderAction: *orderAction,
 				OrderType:   model.OrderTypeLimit,
-				Price:       model.NumberFromFloat(floatPrice, utils.SdexPrecision),
+				Price:       price,
 				Volume:      vol,
 				Timestamp:   model.MakeTimestampFromTime(t.LedgerCloseTime),
 			},
 			TransactionID: model.MakeTransactionID(t.ID),
-			Cost:          model.NumberFromFloat(floatPrice*vol.AsFloat(), utils.SdexPrecision),
-			Fee:           model.NumberFromFloat(baseFee, utils.SdexPrecision),
+			Cost:          price.Multiply(*vol),
+			Fee:           model.NumberFromFloat(baseFee, sdexOrderConstraints.PricePrecision),
 		})
 
 		cursor = t.PT

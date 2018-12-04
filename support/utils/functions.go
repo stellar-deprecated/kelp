@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -57,11 +56,6 @@ func AmountStringAsFloat(amount string) float64 {
 		return 0
 	}
 	return p
-}
-
-// FloatEquals returns true if the two floats are equal within the epsilon of error (avoids mismatched equality because of floating point noise)
-func FloatEquals(f1 float64, f2 float64, epsilon float64) bool {
-	return math.Abs(f1-f2) < epsilon
 }
 
 // GetPrice gets the price from an offer

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -31,6 +32,7 @@ func (c buySellConfig) String() string {
 // makeBuySellStrategy is a factory method
 func makeBuySellStrategy(
 	sdex *SDEX,
+	pair *model.TradingPair,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *buySellConfig,
@@ -49,8 +51,10 @@ func makeBuySellStrategy(
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the sell side feed pair: %s", e)
 	}
+	orderConstraints := sdex.GetOrderConstraints(pair)
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
+		orderConstraints,
 		assetBase,
 		assetQuote,
 		makeStaticSpreadLevelProvider(
@@ -58,6 +62,7 @@ func makeBuySellStrategy(
 			config.AmountOfABase,
 			offsetSell,
 			sellSideFeedPair,
+			orderConstraints,
 		),
 		config.PriceTolerance,
 		config.AmountTolerance,
@@ -82,6 +87,7 @@ func makeBuySellStrategy(
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
 		sdex,
+		orderConstraints,
 		assetQuote,
 		assetBase,
 		makeStaticSpreadLevelProvider(
@@ -89,6 +95,7 @@ func makeBuySellStrategy(
 			config.AmountOfABase,
 			offsetBuy,
 			buySideFeedPair,
+			orderConstraints,
 		),
 		config.PriceTolerance,
 		config.AmountTolerance,

@@ -17,6 +17,7 @@ const actionBuy = "buy "
 // sellSideStrategy is a strategy to sell a specific currency on SDEX on a single side by reading prices from an exchange
 type sellSideStrategy struct {
 	sdex                *SDEX
+	orderConstraints    *model.OrderConstraints
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
 	levelsProvider      api.LevelProvider
@@ -37,6 +38,7 @@ var _ api.SideStrategy = &sellSideStrategy{}
 // makeSellSideStrategy is a factory method for sellSideStrategy
 func makeSellSideStrategy(
 	sdex *SDEX,
+	orderConstraints *model.OrderConstraints,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	levelsProvider api.LevelProvider,
@@ -50,6 +52,7 @@ func makeSellSideStrategy(
 	}
 	return &sellSideStrategy{
 		sdex:                sdex,
+		orderConstraints:    orderConstraints,
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
 		levelsProvider:      levelsProvider,
@@ -191,6 +194,7 @@ func (s *sellSideStrategy) computeTargets(level api.Level) (targetPrice *model.N
 	}
 
 	if s.divideAmountByPrice {
+		// for now we want to maintain the amount's precision here so we're not using number.Divide
 		targetAmount = model.NumberFromFloat(targetAmount.AsFloat()/targetPrice.AsFloat(), targetAmount.Precision())
 	}
 
@@ -360,8 +364,8 @@ func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64,
 // createSellLevel returns offerPrice, hitCapacityLimit, op, error.
 func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
-	targetPrice = *model.NumberByCappingPrecision(&targetPrice, utils.SdexPrecision)
-	targetAmount = *model.NumberByCappingPrecision(&targetAmount, utils.SdexPrecision)
+	targetPrice = *model.NumberByCappingPrecision(&targetPrice, s.orderConstraints.PricePrecision)
+	targetAmount = *model.NumberByCappingPrecision(&targetAmount, s.orderConstraints.VolumePrecision)
 
 	hitCapacityLimit, op, e := s.placeOrderWithRetry(
 		targetPrice.AsFloat(),
@@ -401,12 +405,12 @@ func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, ta
 	if !priceTrigger && !amountTrigger {
 		// always add back the current offer in the cached liabilities when we don't modify it
 		s.sdex.AddLiabilities(offers[index].Selling, offers[index].Buying, curAmount, curAmount*curPrice, incrementalNativeAmountRaw)
-		offerPrice := model.NumberFromFloat(curPrice, utils.SdexPrecision)
+		offerPrice := model.NumberFromFloat(curPrice, s.orderConstraints.PricePrecision)
 		return offerPrice, false, nil, nil
 	}
 
-	targetPrice = *model.NumberByCappingPrecision(&targetPrice, utils.SdexPrecision)
-	targetAmount = *model.NumberByCappingPrecision(&targetAmount, utils.SdexPrecision)
+	targetPrice = *model.NumberByCappingPrecision(&targetPrice, s.orderConstraints.PricePrecision)
+	targetAmount = *model.NumberByCappingPrecision(&targetAmount, s.orderConstraints.VolumePrecision)
 	hitCapacityLimit, op, e := s.placeOrderWithRetry(
 		targetPrice.AsFloat(),
 		targetAmount.AsFloat(),

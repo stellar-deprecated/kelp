@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -13,6 +14,7 @@ import (
 // strategyFactoryData is a data container that has all the information needed to make a strategy
 type strategyFactoryData struct {
 	sdex            *SDEX
+	tradingPair     *model.TradingPair
 	assetBase       *horizon.Asset
 	assetQuote      *horizon.Asset
 	stratConfigPath string
@@ -40,7 +42,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeBuySellStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
+			s, e := makeBuySellStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -57,7 +59,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.simMode)
+			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.simMode)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -74,7 +76,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeSellStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
+			s, e := makeSellStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -91,7 +93,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			return makeBalancedStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg), nil
+			return makeBalancedStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg), nil
 		},
 	},
 	"delete": StrategyContainer{
@@ -108,6 +110,7 @@ var strategies = map[string]StrategyContainer{
 // MakeStrategy makes a strategy
 func MakeStrategy(
 	sdex *SDEX,
+	tradingPair *model.TradingPair,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	strategy string,
@@ -121,6 +124,7 @@ func MakeStrategy(
 		}
 		s, e := strat.makeFn(strategyFactoryData{
 			sdex:            sdex,
+			tradingPair:     tradingPair,
 			assetBase:       assetBase,
 			assetQuote:      assetQuote,
 			stratConfigPath: stratConfigPath,

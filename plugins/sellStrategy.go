@@ -3,6 +3,8 @@ package plugins
 import (
 	"fmt"
 
+	"github.com/interstellar/kelp/model"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
@@ -31,6 +33,7 @@ func (c sellConfig) String() string {
 // makeSellStrategy is a factory method for SellStrategy
 func makeSellStrategy(
 	sdex *SDEX,
+	pair *model.TradingPair,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *sellConfig,
@@ -45,6 +48,7 @@ func makeSellStrategy(
 		return nil, fmt.Errorf("cannot make the sell strategy because we could not make the feed pair: %s", e)
 	}
 
+	orderConstraints := sdex.GetOrderConstraints(pair)
 	offset := rateOffset{
 		percent:      config.RateOffsetPercent,
 		absolute:     config.RateOffset,
@@ -52,9 +56,10 @@ func makeSellStrategy(
 	}
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
+		orderConstraints,
 		assetBase,
 		assetQuote,
-		makeStaticSpreadLevelProvider(config.Levels, config.AmountOfABase, offset, pf),
+		makeStaticSpreadLevelProvider(config.Levels, config.AmountOfABase, offset, pf, orderConstraints),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		false,
