@@ -167,6 +167,104 @@ func TestScale(t *testing.T) {
 	}
 }
 
+func TestEqualsPrecisionNormalized(t *testing.T) {
+	testCases := []struct {
+		n1      *Number
+		n2      *Number
+		epsilon float64
+		want    bool
+	}{
+		{
+			n1:      NumberFromFloat(2.0, 1),
+			n2:      NumberFromFloat(1.0, 1),
+			epsilon: 0.01,
+			want:    false,
+		}, {
+			n1:      NumberFromFloat(1.0, 1),
+			n2:      NumberFromFloat(2.0, 1),
+			epsilon: 0.01,
+			want:    false,
+		}, {
+			n1:      NumberFromFloat(-1.0, 1),
+			n2:      NumberFromFloat(1.0, 1),
+			epsilon: 0.01,
+			want:    false,
+		}, {
+			n1:      NumberFromFloat(1.0, 1),
+			n2:      NumberFromFloat(-1.0, 1),
+			epsilon: 0.01,
+			want:    false,
+		}, {
+			n1:      NumberFromFloat(-1.0, 1),
+			n2:      NumberFromFloat(-1.0, 1),
+			epsilon: 0.01,
+			want:    true,
+		}, {
+			n1:      NumberFromFloat(0.0, 2),
+			n2:      NumberFromFloat(0.0, 1),
+			epsilon: 0.01,
+			want:    true,
+		}, {
+			n1:      NumberFromFloat(2.1001, 4),
+			n2:      NumberFromFloat(2.10009, 5),
+			epsilon: 0.00001,
+			want:    true,
+		}, {
+			n1:      NumberFromFloat(2.1001, 4),
+			n2:      NumberFromFloat(2.10009, 5),
+			epsilon: 0.0001,
+			want:    true,
+		},
+	}
+
+	for i, kase := range testCases {
+		t.Run(fmt.Sprintf("%d__%f_%d__%f_%d", i, kase.n1.AsFloat(), kase.n1.Precision(), kase.n2.AsFloat(), kase.n2.Precision()), func(t *testing.T) {
+			res := kase.n1.EqualsPrecisionNormalized(*kase.n2, kase.epsilon)
+			assert.Equal(t, kase.want, res)
+		})
+	}
+}
+
+func TestUnaryOperations(t *testing.T) {
+	testCases := []struct {
+		n          *Number
+		wantAbs    float64
+		wantNegate float64
+		wantInvert float64
+	}{
+		{
+			n:          NumberFromFloat(-0.2, 1),
+			wantAbs:    0.2,
+			wantNegate: 0.2,
+			wantInvert: -5.0,
+		}, {
+			n:          NumberFromFloat(0.2812, 3),
+			wantAbs:    0.281,
+			wantNegate: -0.281,
+			wantInvert: 3.559,
+		},
+	}
+
+	for _, kase := range testCases {
+		t.Run(kase.n.AsString(), func(t *testing.T) {
+			abs := kase.n.Abs()
+			if !assert.Equal(t, kase.wantAbs, abs.AsFloat()) {
+				return
+			}
+
+			negative := kase.n.Negate()
+			if !assert.Equal(t, kase.wantNegate, negative.AsFloat()) {
+				return
+			}
+
+			inverted := InvertNumber(kase.n)
+			if !assert.Equal(t, kase.wantInvert, inverted.AsFloat()) {
+				return
+			}
+		})
+	}
+}
+
 func TestAsRatio(t *testing.T) {
 	testCases := []struct {
 		n     *Number

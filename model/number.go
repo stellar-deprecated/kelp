@@ -7,6 +7,15 @@ import (
 	"strconv"
 )
 
+// NumberConstants holds some useful constants
+var NumberConstants = struct {
+	Zero *Number
+	One  *Number
+}{
+	Zero: NumberFromFloat(0.0, 16),
+	One:  NumberFromFloat(1.0, 16),
+}
+
 // Number abstraction
 type Number struct {
 	value     float64
@@ -47,6 +56,19 @@ func (n Number) AsRatio() (int32, int32, error) {
 	return numerator, denominator, nil
 }
 
+// Abs returns the absolute of the number
+func (n Number) Abs() *Number {
+	if n.AsFloat() < 0 {
+		return n.Negate()
+	}
+	return &n
+}
+
+// Negate returns the negative value of the number
+func (n Number) Negate() *Number {
+	return NumberConstants.Zero.Subtract(n)
+}
+
 // Add returns a new Number after adding the passed in Number
 func (n Number) Add(n2 Number) *Number {
 	newPrecision := minPrecision(n, n2)
@@ -74,6 +96,11 @@ func (n Number) Divide(n2 Number) *Number {
 // Scale takes in a scalar with which to multiply the number using the same precision of the original number
 func (n Number) Scale(scaleFactor float64) *Number {
 	return NumberFromFloat(n.AsFloat()*scaleFactor, n.precision)
+}
+
+// EqualsPrecisionNormalized returns true if the two numbers are the same after comparing them at the same (lowest) precision level
+func (n Number) EqualsPrecisionNormalized(n2 Number, epsilon float64) bool {
+	return n.Subtract(n2).Abs().AsFloat() < epsilon
 }
 
 // String is the Stringer interface impl.
@@ -112,7 +139,7 @@ func InvertNumber(n *Number) *Number {
 	if n == nil {
 		return nil
 	}
-	return NumberFromFloat(1/n.AsFloat(), n.Precision())
+	return NumberConstants.One.Divide(*n)
 }
 
 // NumberByCappingPrecision returns a number with a precision that is at max the passed in precision
@@ -123,8 +150,8 @@ func NumberByCappingPrecision(n *Number, precision int8) *Number {
 	return n
 }
 
-func round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
+func round(num float64) int64 {
+	return int64(num + math.Copysign(0.5, num))
 }
 
 func toFixed(num float64, precision int8) float64 {
