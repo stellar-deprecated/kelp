@@ -18,6 +18,8 @@ import (
 // ensure that krakenExchange conforms to the Exchange interface
 var _ api.Exchange = &krakenExchange{}
 
+const precisionBalances = 10
+
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
 	assetConverter           *model.AssetConverter
@@ -25,7 +27,6 @@ type krakenExchange struct {
 	apis                     []*krakenapi.KrakenApi
 	apiNextIndex             uint8
 	delimiter                string
-	precision                int8
 	withdrawKeys             asset2Address2Key
 	isSimulated              bool // will simulate add and cancel orders if this is true
 }
@@ -65,7 +66,6 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exc
 		apis:         krakenAPIs,
 		apiNextIndex: 0,
 		delimiter:    "",
-		precision:    8,
 		withdrawKeys: asset2Address2Key{},
 		isSimulated:  isSimulated,
 	}, nil
@@ -160,7 +160,7 @@ func (k *krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *model.NumberFromFloat(bal, k.precision)
+		m[a] = *model.NumberFromFloat(bal, precisionBalances)
 	}
 	return m, nil
 }
@@ -206,19 +206,20 @@ func (k *krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrde
 			return nil, fmt.Errorf("open orders are listed with repeated base/quote pairs for %s", *pair)
 		}
 
+		orderConstraints := k.GetOrderConstraints(pair)
 		m[*pair] = append(m[*pair], model.OpenOrder{
 			Order: model.Order{
 				Pair:        pair,
 				OrderAction: model.OrderActionFromString(o.Description.Type),
 				OrderType:   model.OrderTypeFromString(o.Description.OrderType),
-				Price:       model.MustNumberFromString(o.Description.PrimaryPrice, k.precision),
-				Volume:      model.MustNumberFromString(o.Volume, k.precision),
+				Price:       model.MustNumberFromString(o.Description.PrimaryPrice, orderConstraints.PricePrecision),
+				Volume:      model.MustNumberFromString(o.Volume, orderConstraints.VolumePrecision),
 				Timestamp:   model.MakeTimestamp(int64(o.OpenTime)),
 			},
 			ID:             ID,
 			StartTime:      model.MakeTimestamp(int64(o.StartTime)),
 			ExpireTime:     model.MakeTimestamp(int64(o.ExpireTime)),
-			VolumeExecuted: model.NumberFromFloat(o.VolumeExecuted, k.precision),
+			VolumeExecuted: model.NumberFromFloat(o.VolumeExecuted, orderConstraints.VolumePrecision),
 		})
 	}
 	return m, nil
@@ -243,14 +244,15 @@ func (k *krakenExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (
 }
 
 func (k *krakenExchange) readOrders(obi []krakenapi.OrderBookItem, pair *model.TradingPair, orderAction model.OrderAction) []model.Order {
+	orderConstraints := k.GetOrderConstraints(pair)
 	orders := []model.Order{}
 	for _, item := range obi {
 		orders = append(orders, model.Order{
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   model.OrderTypeLimit,
-			Price:       model.NumberFromFloat(item.Price, k.precision),
-			Volume:      model.NumberFromFloat(item.Amount, k.precision),
+			Price:       model.NumberFromFloat(item.Price, orderConstraints.PricePrecision),
+			Volume:      model.NumberFromFloat(item.Amount, orderConstraints.VolumePrecision),
 			Timestamp:   model.MakeTimestamp(item.Ts),
 		})
 	}
@@ -271,10 +273,11 @@ func (k *krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tr
 
 	priceResult := map[model.TradingPair]api.Ticker{}
 	for _, p := range pairs {
+		orderConstraints := k.GetOrderConstraints(&p)
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = api.Ticker{
-			AskPrice: model.MustNumberFromString(pairTickerInfo.Ask[0], k.precision),
-			BidPrice: model.MustNumberFromString(pairTickerInfo.Bid[0], k.precision),
+			AskPrice: model.MustNumberFromString(pairTickerInfo.Ask[0], orderConstraints.PricePrecision),
+			BidPrice: model.MustNumberFromString(pairTickerInfo.Bid[0], orderConstraints.PricePrecision),
 		}
 	}
 
@@ -341,19 +344,25 @@ func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd
 		if e != nil {
 			return nil, e
 		}
+		orderConstraints := k.GetOrderConstraints(pair)
+		// for now use the max precision between price and volume for fee and cost
+		feeCostPrecision := orderConstraints.PricePrecision
+		if orderConstraints.VolumePrecision > feeCostPrecision {
+			feeCostPrecision = orderConstraints.VolumePrecision
+		}
 
 		res.Trades = append(res.Trades, model.Trade{
 			Order: model.Order{
 				Pair:        pair,
 				OrderAction: model.OrderActionFromString(_type),
 				OrderType:   model.OrderTypeFromString(_ordertype),
-				Price:       model.MustNumberFromString(_price, k.precision),
-				Volume:      model.MustNumberFromString(_vol, k.precision),
+				Price:       model.MustNumberFromString(_price, orderConstraints.PricePrecision),
+				Volume:      model.MustNumberFromString(_vol, orderConstraints.VolumePrecision),
 				Timestamp:   ts,
 			},
 			TransactionID: model.MakeTransactionID(_txid),
-			Cost:          model.MustNumberFromString(_cost, k.precision),
-			Fee:           model.MustNumberFromString(_fee, k.precision),
+			Cost:          model.MustNumberFromString(_cost, feeCostPrecision),
+			Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
 		})
 		res.Cursor = _time
 	}
@@ -385,6 +394,7 @@ func (k *krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) 
 		return nil, e
 	}
 
+	orderConstraints := k.GetOrderConstraints(pair)
 	tradesResult := &api.TradesResult{
 		Cursor: tradesResp.Last,
 		Trades: []model.Trade{},
@@ -404,8 +414,8 @@ func (k *krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) 
 				Pair:        pair,
 				OrderAction: action,
 				OrderType:   orderType,
-				Price:       model.NumberFromFloat(tInfo.PriceFloat, k.precision),
-				Volume:      model.NumberFromFloat(tInfo.VolumeFloat, k.precision),
+				Price:       model.NumberFromFloat(tInfo.PriceFloat, orderConstraints.PricePrecision),
+				Volume:      model.NumberFromFloat(tInfo.VolumeFloat, orderConstraints.VolumePrecision),
 				Timestamp:   model.MakeTimestamp(tInfo.Time),
 			},
 			// TransactionID unavailable
