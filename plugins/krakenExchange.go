@@ -777,7 +777,7 @@ func parseWithdrawResponse(resp interface{}) (*api.WithdrawFunds, error) {
 // krakenPrecisionMatrix describes the price and volume precision and min base volume for each trading pair
 // taken from this URL: https://support.kraken.com/hc/en-us/articles/360001389366-Price-and-volume-decimal-precision
 var krakenPrecisionMatrix = map[model.TradingPair]model.OrderConstraints{
-	*model.MakeTradingPair(model.XLM, model.USD): *model.MakeOrderConstraints(1, 8, 0.002),
+	*model.MakeTradingPair(model.XLM, model.USD): *model.MakeOrderConstraints(6, 8, 30.0),
 	*model.MakeTradingPair(model.XLM, model.BTC): *model.MakeOrderConstraints(8, 8, 30.0),
-	*model.MakeTradingPair(model.BTC, model.USD): *model.MakeOrderConstraints(1, 1, 30.0),
+	*model.MakeTradingPair(model.BTC, model.USD): *model.MakeOrderConstraints(1, 8, 0.002),
 }
