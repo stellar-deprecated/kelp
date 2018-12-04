@@ -53,6 +53,9 @@ type SDEX struct {
 	cachedBalances map[horizon.Asset]Balance
 }
 
+// enforce SDEX implements api.Constrainable
+var _ api.Constrainable = &SDEX{}
+
 // Liabilities represents the "committed" units of an asset on both the buy and sell sides
 type Liabilities struct {
 	Buying  float64 // affects how much more can be bought
