@@ -202,6 +202,11 @@ func (s *mirrorStrategy) updateLevels(
 			price := newOrders[i].Price.Scale(priceMultiplier).AsFloat()
 			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy).AsFloat()
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
+
+			if vol < s.backingConstraints.MinBaseVolume.AsFloat() {
+				log.Printf("skip level creation, baseVolume (%f) < minBaseVolume (%f) of backing exchange\n", vol, s.backingConstraints.MinBaseVolume.AsFloat())
+				continue
+			}
 			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
 			if e != nil {
 				return nil, e
@@ -261,11 +266,9 @@ func (s *mirrorStrategy) doModifyOffer(
 		oldVol = oldVol.Multiply(*oldPrice)
 		oldPrice = model.InvertNumber(oldPrice)
 	}
-	newPrice := price
-	newVol := vol
 	epsilon := 0.0001
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
-	sameOrderParams := oldPrice.EqualsPrecisionNormalized(*newPrice, epsilon) && oldVol.EqualsPrecisionNormalized(*newVol, epsilon)
+	sameOrderParams := oldPrice.EqualsPrecisionNormalized(*price, epsilon) && oldVol.EqualsPrecisionNormalized(*vol, epsilon)
 	if sameOrderParams {
 		// update the cached liabilities if we keep the existing offer
 		if hackPriceInvertForBuyOrderChangeCheck {
@@ -279,6 +282,12 @@ func (s *mirrorStrategy) doModifyOffer(
 	// convert the precision from the backing exchange to the primary exchange
 	offerPrice := model.NumberByCappingPrecision(price, s.primaryConstraints.PricePrecision)
 	offerAmount := model.NumberByCappingPrecision(vol, s.primaryConstraints.VolumePrecision)
+	if offerAmount.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
+		log.Printf("deleting level, baseVolume (%f) on backing exchange dropped below minBaseVolume of backing exchange (%f)\n",
+			offerAmount.AsFloat(), s.backingConstraints.MinBaseVolume.AsFloat())
+		deleteOp := s.sdex.DeleteOffer(oldOffer)
+		return nil, deleteOp, nil
+	}
 	mo, e := modifyOffer(
 		oldOffer,
 		offerPrice.AsFloat(),
