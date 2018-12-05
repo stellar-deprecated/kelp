@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -51,6 +52,14 @@ type assetSurplus struct {
 	committed *model.Number // base asset units that are already committed to being offset
 }
 
+// makeAssetSurplus is a factory method
+func makeAssetSurplus() *assetSurplus {
+	return &assetSurplus{
+		total:     model.NumberConstants.Zero,
+		committed: model.NumberConstants.Zero,
+	}
+}
+
 // mirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type mirrorStrategy struct {
 	sdex               *SDEX
@@ -64,6 +73,7 @@ type mirrorStrategy struct {
 	volumeDivideBy     float64
 	tradeAPI           api.TradeAPI
 	offsetTrades       bool
+	mutex              *sync.Mutex
 	baseSurplus        map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
 }
 
@@ -110,15 +120,10 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 		volumeDivideBy:     config.VolumeDivideBy,
 		tradeAPI:           api.TradeAPI(exchange),
 		offsetTrades:       config.OffsetTrades,
+		mutex:              &sync.Mutex{},
 		baseSurplus: map[model.OrderAction]*assetSurplus{
-			model.OrderActionBuy: &assetSurplus{
-				total:     model.NumberConstants.Zero,
-				committed: model.NumberConstants.Zero,
-			},
-			model.OrderActionSell: &assetSurplus{
-				total:     model.NumberConstants.Zero,
-				committed: model.NumberConstants.Zero,
-			},
+			model.OrderActionBuy:  makeAssetSurplus(),
+			model.OrderActionSell: makeAssetSurplus(),
 		},
 	}, nil
 }
@@ -370,6 +375,10 @@ func (s *mirrorStrategy) baseVolumeToOffset(trade model.Trade, newOrderAction mo
 
 // HandleFill impl
 func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
+	// we should only ever have one active fill handler to avoid inconsistent R/W on baseSurplus
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	newOrderAction := trade.OrderAction.Reverse()
 	// increase the baseSurplus for the additional amount that needs to be offset because of the incoming trade
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Add(*trade.Volume)
