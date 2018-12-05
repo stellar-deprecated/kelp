@@ -89,7 +89,7 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 
 	if k.isSimulated {
 		log.Printf("not adding order to Kraken in simulation mode, order=%s\n", *order)
-		return nil, nil
+		return model.MakeTransactionID("simulated"), nil
 	}
 
 	orderConstraints := k.GetOrderConstraints(order.Pair)
