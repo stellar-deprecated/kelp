@@ -27,13 +27,20 @@ type balancedLevelProvider struct {
 	virtualBalanceBase            float64 // virtual balance to use so we can smoothen out the curve
 	virtualBalanceQuote           float64 // virtual balance to use so we can smoothen out the curve
 	orderConstraints              *model.OrderConstraints
+	needNewLevels                 bool // boolean for whether to generate levels, starts true
 
 	// precomputed before construction
 	randGen *rand.Rand
+
+	// uninitialized
+	lastLevels []api.Level // keeps the levels generated on the previous run to use if no offers were taken
 }
 
 // ensure it implements LevelProvider
 var _ api.LevelProvider = &balancedLevelProvider{}
+
+// ensure this implements api.FillHandler
+var _ api.FillHandler = &balancedLevelProvider{}
 
 // makeBalancedLevelProvider is the factory method
 func makeBalancedLevelProvider(
@@ -69,8 +76,10 @@ func makeBalancedLevelProvider(
 	validateSpread(carryoverInclusionProbability)
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	needNewLevels := true
+
 	return &balancedLevelProvider{
-		spread: spread,
+		spread:                        spread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
 		maxAmountSpread:               maxAmountSpread,
@@ -84,6 +93,7 @@ func makeBalancedLevelProvider(
 		virtualBalanceQuote:           virtualBalanceQuote,
 		orderConstraints:              orderConstraints,
 		randGen:                       randGen,
+		needNewLevels:                 needNewLevels,
 	}
 }
 
@@ -95,35 +105,19 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
-	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
-	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
-	amountCarryover := 0.0
-	levels := []api.Level{}
-	for i := int16(0); i < p.maxLevels; i++ {
-		level, e := p.getLevel(_maxAssetBase, _maxAssetQuote)
-		if e != nil {
-			return nil, e
-		}
-
-		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
-		_maxAssetBase, _maxAssetQuote = updateAssetBalances(level, p.useMaxQuoteInTargetAmountCalc, _maxAssetBase, _maxAssetQuote)
-
-		// always take a spread off the amountCarryover
-		amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
-		amountCarryover *= (1 - amountCarryoverSpread)
-
-		if !p.shouldIncludeLevel(i) {
-			// accummulate targetAmount into amountCarryover
-			amountCarryover += level.Amount.AsFloat()
-			continue
-		}
-
-		if p.shouldIncludeCarryover() {
-			level, amountCarryover = p.computeNewLevelWithCarryover(level, amountCarryover)
-		}
-		levels = append(levels, level)
+	if !p.needNewLevels {
+		log.Println("no offers were taken, leave levels as they are")
+		return p.lastLevels, nil
 	}
+
+	levels, e := p.recomputeLevels(maxAssetBase, maxAssetQuote)
+	if e != nil {
+		log.Fatalf("unable to generate new levels: %s\n", e)
+	}
+
+	p.lastLevels = levels
+	p.needNewLevels = false
+
 	return levels, nil
 }
 
@@ -207,5 +201,45 @@ func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote flo
 
 // GetFillHandlers impl
 func (p *balancedLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
-	return nil, nil
+	return []api.FillHandler{p}, nil
+}
+
+// HandleFill impl
+func (p *balancedLevelProvider) HandleFill(trade model.Trade) error {
+	log.Println("an offer was taken, levels will be recomputed")
+	p.needNewLevels = true
+	return nil
+}
+
+func (p *balancedLevelProvider) recomputeLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+	_maxAssetBase := maxAssetBase + p.virtualBalanceBase
+	_maxAssetQuote := maxAssetQuote + p.virtualBalanceQuote
+	// represents the amount that was meant to be included in a previous level that we excluded because we skipped that level
+	amountCarryover := 0.0
+	levels := []api.Level{}
+	for i := int16(0); i < p.maxLevels; i++ {
+		level, e := p.getLevel(_maxAssetBase, _maxAssetQuote)
+		if e != nil {
+			return nil, e
+		}
+
+		// always update _maxAssetBase and _maxAssetQuote to account for the level we just calculated, ensures price moves across levels regardless of inclusion of prior levels
+		_maxAssetBase, _maxAssetQuote = updateAssetBalances(level, p.useMaxQuoteInTargetAmountCalc, _maxAssetBase, _maxAssetQuote)
+
+		// always take a spread off the amountCarryover
+		amountCarryoverSpread := p.getRandomSpread(p.minAmountCarryoverSpread, p.maxAmountCarryoverSpread)
+		amountCarryover *= (1 - amountCarryoverSpread)
+
+		if !p.shouldIncludeLevel(i) {
+			// accummulate targetAmount into amountCarryover
+			amountCarryover += level.Amount.AsFloat()
+			continue
+		}
+
+		if p.shouldIncludeCarryover() {
+			level, amountCarryover = p.computeNewLevelWithCarryover(level, amountCarryover)
+		}
+		levels = append(levels, level)
+	}
+	return levels, nil
 }
