@@ -44,6 +44,13 @@ func (c mirrorConfig) String() string {
 	return utils.StructString(c, nil)
 }
 
+// assetSurplus holds information about how many units of an asset needs to be offset on the exchange
+// negative values mean we have eagerly offset an asset, likely because of minBaseVolume requirements of the backingExchange
+type assetSurplus struct {
+	total     *model.Number // total value in base asset units that are pending to be offset
+	committed *model.Number // base asset units that are already committed to being offset
+}
+
 // mirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type mirrorStrategy struct {
 	sdex               *SDEX
@@ -57,6 +64,7 @@ type mirrorStrategy struct {
 	volumeDivideBy     float64
 	tradeAPI           api.TradeAPI
 	offsetTrades       bool
+	baseSurplus        map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
 }
 
 // ensure this implements api.Strategy
@@ -102,6 +110,16 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 		volumeDivideBy:     config.VolumeDivideBy,
 		tradeAPI:           api.TradeAPI(exchange),
 		offsetTrades:       config.OffsetTrades,
+		baseSurplus: map[model.OrderAction]*assetSurplus{
+			model.OrderActionBuy: &assetSurplus{
+				total:     model.NumberConstants.Zero,
+				committed: model.NumberConstants.Zero,
+			},
+			model.OrderActionSell: &assetSurplus{
+				total:     model.NumberConstants.Zero,
+				committed: model.NumberConstants.Zero,
+			},
+		},
 	}, nil
 }
 
@@ -325,23 +343,86 @@ func (s *mirrorStrategy) GetFillHandlers() ([]api.FillHandler, error) {
 	return nil, nil
 }
 
+func (s *mirrorStrategy) baseVolumeToOffset(trade model.Trade, newOrderAction model.OrderAction) (newVolume *model.Number, ok bool) {
+	uncommittedBase := s.baseSurplus[newOrderAction].total.Subtract(*s.baseSurplus[newOrderAction].committed)
+
+	if uncommittedBase.AsFloat() < s.backingConstraints.MinBaseVolume.Scale(0.5).AsFloat() {
+		log.Printf("offset-skip | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | minBaseVolume=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f\n",
+			trade.TransactionID.String(),
+			trade.Volume.AsFloat(),
+			trade.Volume.Multiply(*trade.Price).AsFloat(),
+			trade.Price.AsFloat(),
+			s.backingConstraints.MinBaseVolume.AsFloat(),
+			newOrderAction.String(),
+			s.baseSurplus[newOrderAction].total.AsFloat(),
+			s.baseSurplus[newOrderAction].committed.AsFloat())
+		return nil, false
+	}
+
+	if uncommittedBase.AsFloat() > s.backingConstraints.MinBaseVolume.AsFloat() {
+		newVolume = uncommittedBase
+	} else {
+		// we want to offset the MinBaseVolume and take a deficit in the baseSurplus on success
+		newVolume = &s.backingConstraints.MinBaseVolume
+	}
+	return model.NumberByCappingPrecision(newVolume, s.backingConstraints.VolumePrecision), true
+}
+
 // HandleFill impl
 func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
+	newOrderAction := trade.OrderAction.Reverse()
+	// increase the baseSurplus for the additional amount that needs to be offset because of the incoming trade
+	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Add(*trade.Volume)
+
+	newVolume, ok := s.baseVolumeToOffset(trade, newOrderAction)
+	if !ok {
+		return nil
+	}
+	// commit the newVolume that we are trying to use so the next handler does not double-count this amount
+	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Add(*newVolume)
+
 	newOrder := model.Order{
 		Pair:        s.backingPair, // we want to offset trades on the backing exchange so use the backing exchange's trading pair
-		OrderAction: trade.OrderAction.Reverse(),
+		OrderAction: newOrderAction,
 		OrderType:   model.OrderTypeLimit,
 		Price:       model.NumberByCappingPrecision(trade.Price, s.backingConstraints.PricePrecision),
-		Volume:      model.NumberByCappingPrecision(trade.Volume, s.backingConstraints.VolumePrecision),
+		Volume:      newVolume,
 		Timestamp:   nil,
 	}
-
-	log.Printf("mirror strategy is going to offset the trade from the primary exchange (transactionID=%s) onto the backing exchange with the order: %s\n", trade.TransactionID, newOrder)
+	log.Printf("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
+		trade.TransactionID.String(),
+		trade.Volume.AsFloat(),
+		trade.Volume.Multiply(*trade.Price).AsFloat(),
+		trade.Price.AsFloat(),
+		newOrderAction.String(),
+		s.baseSurplus[newOrderAction].total.AsFloat(),
+		s.baseSurplus[newOrderAction].committed.AsFloat(),
+		newOrder.Volume.AsFloat(),
+		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
+		newOrder.Price.AsFloat())
 	transactionID, e := s.tradeAPI.AddOrder(&newOrder)
 	if e != nil {
-		return fmt.Errorf("error when offsetting trade (%s): %s", newOrder, e)
+		return fmt.Errorf("error when offsetting trade (newOrder=%s): %s", newOrder, e)
+	}
+	if transactionID == nil {
+		return fmt.Errorf("error when offsetting trade (newOrder=%s): transactionID was <nil>", newOrder)
 	}
 
-	log.Printf("...mirror strategy successfully offset the trade from the primary exchange (transactionID=%s) onto the backing exchange (transactionID=%s) with the order %s\n", trade.TransactionID, transactionID, newOrder)
+	// update the baseSurplus on success
+	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
+	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
+
+	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
+		trade.TransactionID.String(),
+		trade.Volume.AsFloat(),
+		trade.Volume.Multiply(*trade.Price).AsFloat(),
+		trade.Price.AsFloat(),
+		newOrderAction.String(),
+		s.baseSurplus[newOrderAction].total.AsFloat(),
+		s.baseSurplus[newOrderAction].committed.AsFloat(),
+		newOrder.Volume.AsFloat(),
+		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
+		newOrder.Price.AsFloat(),
+		transactionID)
 	return nil
 }
