@@ -86,8 +86,25 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 
 // GetAccountBalances impl
 func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
-	// TODO implement
-	return nil, nil
+	balanceResponse, e := c.api.FetchBalance()
+	if e != nil {
+		return nil, e
+	}
+
+	m := map[model.Asset]model.Number{}
+	for _, asset := range assetList {
+		ccxtAssetString, e := c.GetAssetConverter().ToString(asset)
+		if e != nil {
+			return nil, e
+		}
+
+		if ccxtBalance, ok := balanceResponse[ccxtAssetString]; ok {
+			m[asset] = *model.NumberFromFloat(ccxtBalance.Total, c.precision)
+		} else {
+			m[asset] = *model.NumberFromFloat(0, c.precision)
+		}
+	}
+	return m, nil
 }
 
 // GetOrderBook impl

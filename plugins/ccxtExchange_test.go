@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/stretchr/testify/assert"
 )
 
 var supportedExchanges = []string{"binance", "poloniex", "bittrex"}
+var emptyAPIKey = api.ExchangeAPIKey{}
+var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
+	"binance": api.ExchangeAPIKey{},
+}
 
 func TestGetTickerPrice_Ccxt(t *testing.T) {
 	if testing.Short() {
@@ -17,7 +22,7 @@ func TestGetTickerPrice_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{emptyAPIKey}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -44,7 +49,7 @@ func TestGetOrderBook_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{emptyAPIKey}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -77,7 +82,7 @@ func TestGetTrades_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{emptyAPIKey}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -119,6 +124,42 @@ func TestGetTrades_Ccxt(t *testing.T) {
 				if trade.Cost != nil && !assert.True(t, trade.Cost.AsFloat() > 0, fmt.Sprintf("%.7f", trade.Cost.AsFloat())) {
 					return
 				}
+			}
+		})
+	}
+}
+
+func TestGetAccountBalances_Ccxt(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	for exchangeName, apiKey := range supportedTradingExchanges {
+		t.Run(exchangeName, func(t *testing.T) {
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{apiKey}, false)
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			balances, e := testCcxtExchange.GetAccountBalances([]model.Asset{
+				model.XLM,
+				model.BTC,
+				model.USD,
+			})
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			if !assert.Equal(t, balances[model.XLM].AsFloat(), 20.0) {
+				return
+			}
+
+			if !assert.Equal(t, balances[model.BTC].AsFloat(), 0.0) {
+				return
+			}
+
+			if !assert.Equal(t, balances[model.USD].AsFloat(), 0.0) {
+				return
 			}
 		})
 	}
