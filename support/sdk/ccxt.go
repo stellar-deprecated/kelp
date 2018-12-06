@@ -3,6 +3,7 @@ package sdk
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"net/http"
 	"strings"
@@ -27,13 +28,18 @@ func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey
 		return nil, fmt.Errorf("invalid format for ccxtBaseURL: %s", ccxtBaseURL)
 	}
 
+	instanceName, e := makeInstanceName(exchangeName, apiKey)
+	if e != nil {
+		return nil, fmt.Errorf("cannot make instance name: %s", e)
+	}
 	c := &Ccxt{
 		httpClient:   http.DefaultClient,
 		ccxtBaseURL:  ccxtBaseURL,
 		exchangeName: exchangeName,
-		// don't initialize instanceName since it's initialized in the call to init() below
+		instanceName: instanceName,
 	}
-	e := c.init(apiKey)
+
+	e = c.init(apiKey)
 	if e != nil {
 		return nil, fmt.Errorf("error when initializing Ccxt exchange: %s", e)
 	}
@@ -69,16 +75,14 @@ func (c *Ccxt) init(apiKey api.ExchangeAPIKey) error {
 	}
 
 	// make a new instance if needed
-	if len(instanceList) == 0 {
-		instanceName := c.exchangeName + "1"
-		e = c.newInstance(instanceName, apiKey)
+	if !c.hasInstance(instanceList) {
+		e = c.newInstance(apiKey)
 		if e != nil {
-			return fmt.Errorf("error creating new instance '%s' for exchange '%s': %s", instanceName, c.exchangeName, e)
+			return fmt.Errorf("error creating new instance '%s' for exchange '%s': %s", c.instanceName, c.exchangeName, e)
 		}
-		log.Printf("created new instance '%s' for exchange '%s'\n", instanceName, c.exchangeName)
-		c.instanceName = instanceName
+		log.Printf("created new instance '%s' for exchange '%s'\n", c.instanceName, c.exchangeName)
 	} else {
-		c.instanceName = instanceList[0]
+		log.Printf("instance '%s' for exchange '%s' already exists\n", c.instanceName, c.exchangeName)
 	}
 
 	// load markets to populate fields related to markets
@@ -91,18 +95,48 @@ func (c *Ccxt) init(apiKey api.ExchangeAPIKey) error {
 	return nil
 }
 
-func (c *Ccxt) newInstance(instanceName string, apiKey api.ExchangeAPIKey) error {
+func makeInstanceName(exchangeName string, apiKey api.ExchangeAPIKey) (string, error) {
+	if apiKey.Key == "" {
+		return exchangeName, nil
+	}
+
+	number, e := hashString(apiKey.Key)
+	if e != nil {
+		return "", fmt.Errorf("could not hash apiKey.Key: %s", e)
+	}
+	return fmt.Sprintf("%s%d", exchangeName, number), nil
+}
+
+func hashString(s string) (uint32, error) {
+	h := fnv.New32a()
+	_, e := h.Write([]byte(s))
+	if e != nil {
+		return 0, fmt.Errorf("error while hashing string: %s", e)
+	}
+	return h.Sum32(), nil
+}
+
+func (c *Ccxt) hasInstance(instanceList []string) bool {
+	for _, i := range instanceList {
+		if i == c.instanceName {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey) error {
 	data, e := json.Marshal(&struct {
 		ID     string `json:"id"`
 		APIKey string `json:"apiKey"`
 		Secret string `json:"secret"`
 	}{
-		ID:     instanceName,
+		ID:     c.instanceName,
 		APIKey: apiKey.Key,
 		Secret: apiKey.Secret,
 	})
 	if e != nil {
-		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", instanceName, c.exchangeName, e)
+		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", c.instanceName, c.exchangeName, e)
 	}
 
 	var newInstance map[string]interface{}
@@ -112,7 +146,7 @@ func (c *Ccxt) newInstance(instanceName string, apiKey api.ExchangeAPIKey) error
 	}
 
 	if _, ok := newInstance["urls"]; !ok {
-		return fmt.Errorf("check for new instance of exchange '%s' failed for instanceName: %s", c.exchangeName, instanceName)
+		return fmt.Errorf("check for new instance of exchange '%s' failed for instanceName: %s", c.exchangeName, c.instanceName)
 	}
 	return nil
 }

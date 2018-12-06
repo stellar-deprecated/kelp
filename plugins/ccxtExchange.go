@@ -23,6 +23,10 @@ type ccxtExchange struct {
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
 func makeCcxtExchange(ccxtBaseURL string, exchangeName string, apiKeys []api.ExchangeAPIKey, simMode bool) (api.Exchange, error) {
+	if len(apiKeys) == 0 {
+		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
+	}
+
 	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName, apiKeys[0])
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
