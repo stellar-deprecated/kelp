@@ -312,3 +312,42 @@ func runTestFetchTrades(k tradesTest, t *testing.T) {
 		}
 	}
 }
+
+func TestFetchBalance(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	for _, k := range []struct {
+		exchangeName string
+		apiKey       api.ExchangeAPIKey
+	}{
+		{
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{},
+		},
+	} {
+		t.Run(k.exchangeName, func(t *testing.T) {
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+				return
+			}
+
+			balances, e := c.FetchBalance()
+			if !assert.Nil(t, e) {
+				return
+			}
+
+			if !assert.True(t, len(balances) > 0, fmt.Sprintf("%d", len(balances))) {
+				return
+			}
+
+			for asset, ccxtBalance := range balances {
+				if !assert.True(t, ccxtBalance.Total > 0, fmt.Sprintf("total balance for asset '%s' should have been > 0, was %f", asset, ccxtBalance.Total)) {
+					return
+				}
+			}
+		})
+	}
+}

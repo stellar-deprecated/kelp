@@ -10,6 +10,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/networking"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Ccxt Rest SDK (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
@@ -297,4 +298,50 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
 	}
 	return output, nil
+}
+
+// CcxtBalance represents the balance for an asset
+type CcxtBalance struct {
+	Total float64
+	Used  float64
+	Free  float64
+}
+
+// FetchBalance calls the /fetchBalance endpoint on CCXT
+func (c *Ccxt) FetchBalance() (map[string]CcxtBalance, error) {
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchBalance"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e := networking.JSONRequest(c.httpClient, "POST", url, "", map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching balance: %s", e)
+	}
+
+	outputMap := output.(map[string]interface{})
+	if _, ok := outputMap["total"]; !ok {
+		return nil, fmt.Errorf("result from call to fetchBalance did not contain 'total' field")
+	}
+	totals := outputMap["total"].(map[string]interface{})
+
+	result := map[string]CcxtBalance{}
+	for asset, v := range totals {
+		var totalBalance float64
+		if b, ok := v.(float64); ok {
+			totalBalance = b
+		} else {
+			return nil, fmt.Errorf("could not convert total balance for asset '%s' from interface{} to float64", asset)
+		}
+		if totalBalance == 0 {
+			continue
+		}
+
+		assetData := outputMap[asset].(map[string]interface{})
+		var assetBalance CcxtBalance
+		e = mapstructure.Decode(assetData, &assetBalance)
+		if e != nil {
+			return nil, fmt.Errorf("error converting balance map to CcxtBalance for asset '%s': %s", asset, e)
+		}
+		result[asset] = assetBalance
+	}
+	return result, nil
 }

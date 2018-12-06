@@ -1,5 +1,5 @@
-hash: ae83d6a72fa620aca2edba83aa180580ecf8d4ffa1d6c96212e10492a857f5db
-updated: 2018-11-30T16:56:13.813823058-08:00
+hash: 846bc46b777e613b79332fe3dd038931e16d76b8b9da1c096bb2082fc232b82e
+updated: 2018-12-06T12:00:37.303778558-08:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -41,6 +41,8 @@ imports:
   - oid
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/mitchellh/mapstructure
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nikhilsaraf/go-tools
   version: 19004f22be08c82a22e679726ca22853c65919ae
   subpackages:
