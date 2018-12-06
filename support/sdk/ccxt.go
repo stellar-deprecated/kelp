@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/networking"
 )
 
@@ -21,7 +22,7 @@ type Ccxt struct {
 const pathExchanges = "/exchanges"
 
 // MakeInitializedCcxtExchange constructs an instance of Ccxt that is bound to a specific exchange instance on the CCXT REST server
-func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string) (*Ccxt, error) {
+func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey api.ExchangeAPIKey) (*Ccxt, error) {
 	if strings.HasSuffix(ccxtBaseURL, "/") {
 		return nil, fmt.Errorf("invalid format for ccxtBaseURL: %s", ccxtBaseURL)
 	}
@@ -32,7 +33,7 @@ func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string) (*Ccxt
 		exchangeName: exchangeName,
 		// don't initialize instanceName since it's initialized in the call to init() below
 	}
-	e := c.init()
+	e := c.init(apiKey)
 	if e != nil {
 		return nil, fmt.Errorf("error when initializing Ccxt exchange: %s", e)
 	}
@@ -40,7 +41,7 @@ func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string) (*Ccxt
 	return c, nil
 }
 
-func (c *Ccxt) init() error {
+func (c *Ccxt) init(apiKey api.ExchangeAPIKey) error {
 	// get exchange list
 	var exchangeList []string
 	e := networking.JSONRequest(c.httpClient, "GET", c.ccxtBaseURL+pathExchanges, "", map[string]string{}, &exchangeList)
@@ -70,7 +71,7 @@ func (c *Ccxt) init() error {
 	// make a new instance if needed
 	if len(instanceList) == 0 {
 		instanceName := c.exchangeName + "1"
-		e = c.newInstance(instanceName)
+		e = c.newInstance(instanceName, apiKey)
 		if e != nil {
 			return fmt.Errorf("error creating new instance '%s' for exchange '%s': %s", instanceName, c.exchangeName, e)
 		}
@@ -90,11 +91,15 @@ func (c *Ccxt) init() error {
 	return nil
 }
 
-func (c *Ccxt) newInstance(instanceName string) error {
+func (c *Ccxt) newInstance(instanceName string, apiKey api.ExchangeAPIKey) error {
 	data, e := json.Marshal(&struct {
-		ID string `json:"id"`
+		ID     string `json:"id"`
+		APIKey string `json:"apiKey"`
+		Secret string `json:"secret"`
 	}{
-		ID: instanceName,
+		ID:     instanceName,
+		APIKey: apiKey.Key,
+		Secret: apiKey.Secret,
 	})
 	if e != nil {
 		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", instanceName, c.exchangeName, e)
