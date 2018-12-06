@@ -29,11 +29,11 @@ var RootCmd = &cobra.Command{
 	Example: kelpExamples,
 	Run: func(ccmd *cobra.Command, args []string) {
 		intro := `
-  __        _______ _     ____ ___  __  __ _____    _____ ___      _  _______ _     ____  
-  \ \      / / ____| |   / ___/ _ \|  \/  | ____|  |_   _/ _ \    | |/ / ____| |   |  _ \ 
+  __        _______ _     ____ ___  __  __ _____    _____ ___      _  _______ _     ____
+  \ \      / / ____| |   / ___/ _ \|  \/  | ____|  |_   _/ _ \    | |/ / ____| |   |  _ \
    \ \ /\ / /|  _| | |  | |  | | | | |\/| |  _|      | || | | |   | ' /|  _| | |   | |_) |
-    \ V  V / | |___| |__| |__| |_| | |  | | |___     | || |_| |   | . \| |___| |___|  __/ 
-     \_/\_/  |_____|_____\____\___/|_|  |_|_____|    |_| \___/    |_|\_\_____|_____|_|    
+    \ V  V / | |___| |__| |__| |_| | |  | | |___     | || |_| |   | . \| |___| |___|  __/
+     \_/\_/  |_____|_____\____\___/|_|  |_|_____|    |_| \___/    |_|\_\_____|_____|_|
                                                                             ` + version + `
 `
 		fmt.Println(intro)
@@ -49,9 +49,10 @@ func init() {
 
 	RootCmd.AddCommand(tradeCmd)
 	RootCmd.AddCommand(strategiesCmd)
-	RootCmd.AddCommand(exchanagesCmd)
+	RootCmd.AddCommand(exchangesCmd)
 	RootCmd.AddCommand(terminateCmd)
 	RootCmd.AddCommand(versionCmd)
+	RootCmd.AddCommand(serveCmd)
 }
 
 func validateBuild() {
