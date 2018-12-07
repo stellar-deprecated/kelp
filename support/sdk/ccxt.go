@@ -6,6 +6,7 @@ import (
 	"hash/fnv"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/interstellar/kelp/api"
@@ -342,6 +343,70 @@ func (c *Ccxt) FetchBalance() (map[string]CcxtBalance, error) {
 			return nil, fmt.Errorf("error converting balance map to CcxtBalance for asset '%s': %s", asset, e)
 		}
 		result[asset] = assetBalance
+	}
+	return result, nil
+}
+
+// CcxtOpenOrder represents an open order
+type CcxtOpenOrder struct {
+	Amount    float64
+	Cost      float64
+	Filled    float64
+	ID        string
+	Price     float64
+	Side      string
+	Status    string
+	Symbol    string
+	Type      string
+	Timestamp int64
+}
+
+// FetchOpenOrders calls the /fetchOpenOrders endpoint on CCXT
+func (c *Ccxt) FetchOpenOrders(tradingPairs []string) (map[string][]CcxtOpenOrder, error) {
+	for _, p := range tradingPairs {
+		e := c.symbolExists(p)
+		if e != nil {
+			return nil, fmt.Errorf("symbol does not exist: %s", e)
+		}
+	}
+
+	// marshal input data
+	data, e := json.Marshal(&tradingPairs)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (tradingPairs=%v) for exchange '%s': %s", tradingPairs, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOpenOrders"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching open orders: %s", e)
+	}
+
+	result := map[string][]CcxtOpenOrder{}
+	outputList := output.([]interface{})
+	for _, elem := range outputList {
+		elemMap, ok := elem.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("could not convert the element in the result to a map[string]interface{}, type = %s", reflect.TypeOf(elem))
+		}
+
+		var openOrder CcxtOpenOrder
+		e = mapstructure.Decode(elemMap, &openOrder)
+		if e != nil {
+			return nil, fmt.Errorf("could not decode open order element (%v): %s", elemMap, e)
+		}
+
+		var orderList []CcxtOpenOrder
+		if l, ok := result[openOrder.Symbol]; ok {
+			orderList = l
+		} else {
+			orderList = []CcxtOpenOrder{}
+		}
+
+		orderList = append(orderList, openOrder)
+		result[openOrder.Symbol] = orderList
 	}
 	return result, nil
 }

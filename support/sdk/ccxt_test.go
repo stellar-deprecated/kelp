@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -346,6 +347,68 @@ func TestFetchBalance(t *testing.T) {
 			for asset, ccxtBalance := range balances {
 				if !assert.True(t, ccxtBalance.Total > 0, fmt.Sprintf("total balance for asset '%s' should have been > 0, was %f", asset, ccxtBalance.Total)) {
 					return
+				}
+			}
+		})
+	}
+}
+
+func TestOpenOrders(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	for _, k := range []struct {
+		exchangeName string
+		apiKey       api.ExchangeAPIKey
+		tradingPair  model.TradingPair
+	}{
+		{
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{},
+			tradingPair: model.TradingPair{
+				Base:  model.XLM,
+				Quote: model.BTC,
+			},
+		},
+	} {
+		t.Run(k.exchangeName, func(t *testing.T) {
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+				return
+			}
+
+			openOrders, e := c.FetchOpenOrders([]string{k.tradingPair.String()})
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			if !assert.True(t, len(openOrders) > 0, fmt.Sprintf("%d", len(openOrders))) {
+				return
+			}
+
+			for asset, orderList := range openOrders {
+				if !assert.Equal(t, k.tradingPair.String(), asset) {
+					return
+				}
+
+				for _, o := range orderList {
+					if !assert.Equal(t, k.tradingPair.String(), o.Symbol) {
+						return
+					}
+
+					if !assert.True(t, o.Amount > 0, o.Amount) {
+						return
+					}
+
+					if !assert.True(t, o.Price > 0, o.Price) {
+						return
+					}
+
+					if !assert.Equal(t, "limit", o.Type) {
+						return
+					}
 				}
 			}
 		})
