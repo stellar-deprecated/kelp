@@ -216,7 +216,7 @@ func (c ccxtExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorE
 }
 
 // GetOpenOrders impl
-func (c ccxtExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error) {
+func (c ccxtExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error) {
 	// TODO implement
 	return nil, nil
 }

@@ -85,7 +85,7 @@ type TradeAPI interface {
 
 	TradeFetcher
 
-	GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error)
+	GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error)
 
 	AddOrder(order *model.Order) (*model.TransactionID, error)
 

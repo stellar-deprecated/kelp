@@ -194,8 +194,15 @@ func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
 }
 
 // GetOpenOrders impl.
-func (k *krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error) {
+func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error) {
 	openOrdersResponse, e := k.nextAPI().OpenOrders(map[string]string{})
+	if e != nil {
+		return nil, e
+	}
+
+	// convert to a map so we can easily search for the existence of a trading pair
+	// kraken uses different symbols when fetching open orders!
+	pairsMap, e := model.TradingPairs2Strings2(k.assetConverterOpenOrders, "", pairs)
 	if e != nil {
 		return nil, e
 	}
@@ -207,6 +214,12 @@ func (k *krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrde
 		if e != nil {
 			return nil, e
 		}
+
+		if _, ok := pairsMap[*pair]; !ok {
+			// skip open orders for pairs that were not requested
+			continue
+		}
+
 		if _, ok := m[*pair]; !ok {
 			m[*pair] = []model.OpenOrder{}
 		}

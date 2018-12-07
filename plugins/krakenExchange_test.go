@@ -159,7 +159,8 @@ func TestGetOpenOrders(t *testing.T) {
 		return
 	}
 
-	m, e := testKrakenExchange.GetOpenOrders()
+	pair := &model.TradingPair{Base: model.XLM, Quote: model.USD}
+	m, e := testKrakenExchange.GetOpenOrders([]*model.TradingPair{pair})
 	if !assert.NoError(t, e) {
 		return
 	}

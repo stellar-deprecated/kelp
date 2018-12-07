@@ -73,3 +73,16 @@ func TradingPairs2Strings(c *AssetConverter, delim string, pairs []TradingPair) 
 	}
 	return m, nil
 }
+
+// TradingPairs2Strings2 converts the trading pairs to an array of strings
+func TradingPairs2Strings2(c *AssetConverter, delim string, pairs []*TradingPair) (map[TradingPair]string, error) {
+	m := map[TradingPair]string{}
+	for _, p := range pairs {
+		pairString, e := p.ToString(c, delim)
+		if e != nil {
+			return nil, e
+		}
+		m[*p] = pairString
+	}
+	return m, nil
+}
