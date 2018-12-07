@@ -217,8 +217,59 @@ func (c ccxtExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorE
 
 // GetOpenOrders impl
 func (c ccxtExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error) {
-	// TODO implement
-	return nil, nil
+	pairStrings := []string{}
+	string2Pair := map[string]model.TradingPair{}
+	for _, pair := range pairs {
+		pairString, e := pair.ToString(c.assetConverter, c.delimiter)
+		if e != nil {
+			return nil, fmt.Errorf("error converting pairs to strings: %s", e)
+		}
+		pairStrings = append(pairStrings, pairString)
+		string2Pair[pairString] = *pair
+	}
+
+	openOrdersMap, e := c.api.FetchOpenOrders(pairStrings)
+	if e != nil {
+		return nil, fmt.Errorf("error while fetching open orders for trading pairs '%v': %s", pairStrings, e)
+	}
+
+	result := map[model.TradingPair][]model.OpenOrder{}
+	for asset, ccxtOrderList := range openOrdersMap {
+		pair, ok := string2Pair[asset]
+		if !ok {
+			return nil, fmt.Errorf("traing symbol %s returned from FetchOpenOrders was not in the original list of trading pairs: %v", asset, pairStrings)
+		}
+
+		openOrderList := []model.OpenOrder{}
+		for _, o := range ccxtOrderList {
+			if o.Type != "limit" {
+				return nil, fmt.Errorf("we currently only support limit order types")
+			}
+
+			orderAction := model.OrderActionSell
+			if o.Side == "buy" {
+				orderAction = model.OrderActionBuy
+			}
+			ts := model.MakeTimestamp(o.Timestamp)
+
+			openOrderList = append(openOrderList, model.OpenOrder{
+				Order: model.Order{
+					Pair:        &pair,
+					OrderAction: orderAction,
+					OrderType:   model.OrderTypeLimit,
+					Price:       model.NumberFromFloat(o.Price, c.precision),
+					Volume:      model.NumberFromFloat(o.Amount, c.precision),
+					Timestamp:   ts,
+				},
+				ID:             o.ID,
+				StartTime:      ts,
+				ExpireTime:     nil,
+				VolumeExecuted: model.NumberFromFloat(o.Filled, c.precision),
+			})
+		}
+		result[pair] = openOrderList
+	}
+	return result, nil
 }
 
 // AddOrder impl

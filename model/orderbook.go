@@ -175,11 +175,15 @@ type OpenOrder struct {
 
 // String is the stringer function
 func (o OpenOrder) String() string {
-	return fmt.Sprintf("OpenOrder[order=%s, ID=%s, startTime=%d, expireTime=%d, volumeExecuted=%s]",
+	expireTimeString := "<nil>"
+	if o.ExpireTime != nil {
+		expireTimeString = fmt.Sprintf("%d", o.ExpireTime.AsInt64())
+	}
+	return fmt.Sprintf("OpenOrder[order=%s, ID=%s, startTime=%d, expireTime=%s, volumeExecuted=%s]",
 		o.Order.String(),
 		o.ID,
 		o.StartTime.AsInt64(),
-		o.ExpireTime.AsInt64(),
+		expireTimeString,
 		o.VolumeExecuted.AsString(),
 	)
 }
