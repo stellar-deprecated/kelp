@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -27,7 +28,7 @@ type balancedLevelProvider struct {
 	virtualBalanceBase            float64 // virtual balance to use so we can smoothen out the curve
 	virtualBalanceQuote           float64 // virtual balance to use so we can smoothen out the curve
 	orderConstraints              *model.OrderConstraints
-	needNewLevels                 bool // boolean for whether to generate levels, starts true
+	shouldRefresh                 bool // boolean for whether to generate levels, starts true
 
 	// precomputed before construction
 	randGen *rand.Rand
@@ -76,7 +77,7 @@ func makeBalancedLevelProvider(
 	validateSpread(carryoverInclusionProbability)
 
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
-	needNewLevels := true
+	shouldRefresh := true
 
 	return &balancedLevelProvider{
 		spread:                        spread,
@@ -93,7 +94,7 @@ func makeBalancedLevelProvider(
 		virtualBalanceQuote:           virtualBalanceQuote,
 		orderConstraints:              orderConstraints,
 		randGen:                       randGen,
-		needNewLevels:                 needNewLevels,
+		shouldRefresh:                 shouldRefresh,
 	}
 }
 
@@ -105,18 +106,18 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	if !p.needNewLevels {
+	if !p.shouldRefresh {
 		log.Println("no offers were taken, leave levels as they are")
 		return p.lastLevels, nil
 	}
 
 	levels, e := p.recomputeLevels(maxAssetBase, maxAssetQuote)
 	if e != nil {
-		log.Fatalf("unable to generate new levels: %s\n", e)
+		fmt.Errorf("unable to generate new levels: %s", e)
 	}
 
 	p.lastLevels = levels
-	p.needNewLevels = false
+	p.shouldRefresh = false
 
 	return levels, nil
 }
@@ -207,7 +208,7 @@ func (p *balancedLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
 // HandleFill impl
 func (p *balancedLevelProvider) HandleFill(trade model.Trade) error {
 	log.Println("an offer was taken, levels will be recomputed")
-	p.needNewLevels = true
+	p.shouldRefresh = true
 	return nil
 }
 
