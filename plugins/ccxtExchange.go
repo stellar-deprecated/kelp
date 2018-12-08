@@ -242,40 +242,61 @@ func (c ccxtExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tradi
 
 		openOrderList := []model.OpenOrder{}
 		for _, o := range ccxtOrderList {
-			if o.Type != "limit" {
-				return nil, fmt.Errorf("we currently only support limit order types")
+			openOrder, e := c.convertOpenOrderFromCcxt(&pair, o)
+			if e != nil {
+				return nil, fmt.Errorf("cannot convertOpenOrderFromCcxt: %s", e)
 			}
-
-			orderAction := model.OrderActionSell
-			if o.Side == "buy" {
-				orderAction = model.OrderActionBuy
-			}
-			ts := model.MakeTimestamp(o.Timestamp)
-
-			openOrderList = append(openOrderList, model.OpenOrder{
-				Order: model.Order{
-					Pair:        &pair,
-					OrderAction: orderAction,
-					OrderType:   model.OrderTypeLimit,
-					Price:       model.NumberFromFloat(o.Price, c.precision),
-					Volume:      model.NumberFromFloat(o.Amount, c.precision),
-					Timestamp:   ts,
-				},
-				ID:             o.ID,
-				StartTime:      ts,
-				ExpireTime:     nil,
-				VolumeExecuted: model.NumberFromFloat(o.Filled, c.precision),
-			})
+			openOrderList = append(openOrderList, *openOrder)
 		}
 		result[pair] = openOrderList
 	}
 	return result, nil
 }
 
+func (c ccxtExchange) convertOpenOrderFromCcxt(pair *model.TradingPair, o sdk.CcxtOpenOrder) (*model.OpenOrder, error) {
+	if o.Type != "limit" {
+		return nil, fmt.Errorf("we currently only support limit order types")
+	}
+
+	orderAction := model.OrderActionSell
+	if o.Side == "buy" {
+		orderAction = model.OrderActionBuy
+	}
+	ts := model.MakeTimestamp(o.Timestamp)
+
+	return &model.OpenOrder{
+		Order: model.Order{
+			Pair:        pair,
+			OrderAction: orderAction,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(o.Price, c.precision),
+			Volume:      model.NumberFromFloat(o.Amount, c.precision),
+			Timestamp:   ts,
+		},
+		ID:             o.ID,
+		StartTime:      ts,
+		ExpireTime:     nil,
+		VolumeExecuted: model.NumberFromFloat(o.Filled, c.precision),
+	}, nil
+}
+
 // AddOrder impl
 func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
-	// TODO implement
-	return nil, nil
+	pairString, e := order.Pair.ToString(c.assetConverter, c.delimiter)
+	if e != nil {
+		return nil, fmt.Errorf("error converting pair to string: %s", e)
+	}
+
+	side := "sell"
+	if order.OrderAction.IsBuy() {
+		side = "buy"
+	}
+	ccxtOpenOrder, e := c.api.CreateLimitOrder(pairString, side, order.Volume.AsFloat(), order.Price.AsFloat())
+	if e != nil {
+		return nil, fmt.Errorf("error while creating limit order %s: %s", *order, e)
+	}
+
+	return model.MakeTransactionID(ccxtOpenOrder.ID), nil
 }
 
 // CancelOrder impl

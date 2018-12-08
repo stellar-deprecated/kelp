@@ -240,3 +240,66 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 		})
 	}
 }
+
+func TestAddOrder_Ccxt(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	for exchangeName, apiKey := range supportedTradingExchanges {
+		for _, kase := range []struct {
+			pair        *model.TradingPair
+			orderAction model.OrderAction
+			orderType   model.OrderType
+			price       *model.Number
+			volume      *model.Number
+		}{
+			{
+				pair:        &model.TradingPair{Base: model.XLM, Quote: model.BTC},
+				orderAction: model.OrderActionSell,
+				orderType:   model.OrderTypeLimit,
+				price:       model.NumberFromFloat(0.000041, 6),
+				volume:      model.NumberFromFloat(60.12345678, 6),
+			}, {
+				pair:        &model.TradingPair{Base: model.XLM, Quote: model.BTC},
+				orderAction: model.OrderActionBuy,
+				orderType:   model.OrderTypeLimit,
+				price:       model.NumberFromFloat(0.000026, 6),
+				volume:      model.NumberFromFloat(40.012345, 6),
+			}, {
+				pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+				orderAction: model.OrderActionSell,
+				orderType:   model.OrderTypeLimit,
+				price:       model.NumberFromFloat(0.15, 6),
+				volume:      model.NumberFromFloat(51.5, 6),
+			},
+		} {
+			t.Run(exchangeName, func(t *testing.T) {
+				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{apiKey}, false)
+				if !assert.NoError(t, e) {
+					return
+				}
+
+				txID, e := testCcxtExchange.AddOrder(&model.Order{
+					Pair:        kase.pair,
+					OrderAction: kase.orderAction,
+					OrderType:   kase.orderType,
+					Price:       kase.price,
+					Volume:      kase.volume,
+				})
+				if !assert.NoError(t, e) {
+					return
+				}
+
+				fmt.Printf("transactionID from order: %s\n", txID)
+				if !assert.NotNil(t, txID) {
+					return
+				}
+
+				if !assert.NotEqual(t, "", txID.String()) {
+					return
+				}
+			})
+		}
+	}
+}
