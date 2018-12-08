@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 
@@ -348,7 +349,11 @@ func TestFetchBalance(t *testing.T) {
 				if !assert.True(t, ccxtBalance.Total > 0, fmt.Sprintf("total balance for asset '%s' should have been > 0, was %f", asset, ccxtBalance.Total)) {
 					return
 				}
+
+				log.Printf("balance for asset '%s': %+v\n", asset, ccxtBalance)
 			}
+
+			assert.Fail(t, "force fail")
 		})
 	}
 }
@@ -409,8 +414,12 @@ func TestOpenOrders(t *testing.T) {
 					if !assert.Equal(t, "limit", o.Type) {
 						return
 					}
+
+					log.Printf("order: %+v\n", o)
 				}
 			}
+
+			assert.Fail(t, "force fail")
 		})
 	}
 }
@@ -502,6 +511,95 @@ func TestCreateLimitOrder(t *testing.T) {
 			if !assert.Equal(t, "open", openOrder.Status) {
 				return
 			}
+		})
+	}
+}
+
+func TestCancelOrder(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	apiKey := api.ExchangeAPIKey{}
+	for _, k := range []struct {
+		exchangeName string
+		apiKey       api.ExchangeAPIKey
+		orderID      string
+		tradingPair  model.TradingPair
+	}{
+		{
+			exchangeName: "binance",
+			apiKey:       apiKey,
+			orderID:      "67391789",
+			tradingPair: model.TradingPair{
+				Base:  model.XLM,
+				Quote: model.BTC,
+			},
+		}, {
+			exchangeName: "binance",
+			apiKey:       apiKey,
+			orderID:      "67391791",
+			tradingPair: model.TradingPair{
+				Base:  model.XLM,
+				Quote: model.BTC,
+			},
+		},
+	} {
+		t.Run(k.exchangeName, func(t *testing.T) {
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+				return
+			}
+
+			openOrder, e := c.CancelOrder(k.orderID, k.tradingPair.String())
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			if !assert.NotNil(t, openOrder) {
+				return
+			}
+
+			if !assert.Equal(t, k.tradingPair.String(), openOrder.Symbol) {
+				return
+			}
+
+			if !assert.NotEqual(t, "", openOrder.ID) {
+				return
+			}
+
+			if !assert.True(t, openOrder.Amount > 0, fmt.Sprintf("%f", openOrder.Amount)) {
+				return
+			}
+
+			if !assert.True(t, openOrder.Price > 0, fmt.Sprintf("%f", openOrder.Price)) {
+				return
+			}
+
+			if !assert.Equal(t, "limit", openOrder.Type) {
+				return
+			}
+
+			if !assert.True(t, openOrder.Side == "buy" || openOrder.Side == "sell", openOrder.Side) {
+				return
+			}
+
+			if !assert.Equal(t, 0.0, openOrder.Cost) {
+				return
+			}
+
+			if !assert.Equal(t, 0.0, openOrder.Filled) {
+				return
+			}
+
+			if !assert.Equal(t, "canceled", openOrder.Status) {
+				return
+			}
+
+			log.Printf("canceled order %+v\n", openOrder)
+
+			assert.Fail(t, "force fail")
 		})
 	}
 }
