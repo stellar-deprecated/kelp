@@ -414,3 +414,94 @@ func TestOpenOrders(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateLimitOrder(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	apiKey := api.ExchangeAPIKey{}
+	for _, k := range []struct {
+		exchangeName string
+		apiKey       api.ExchangeAPIKey
+		tradingPair  model.TradingPair
+		side         string
+		amount       float64
+		price        float64
+	}{
+		{
+			exchangeName: "binance",
+			apiKey:       apiKey,
+			tradingPair: model.TradingPair{
+				Base:  model.XLM,
+				Quote: model.BTC,
+			},
+			side:   "sell",
+			amount: 40,
+			price:  0.00004228,
+		}, {
+			exchangeName: "binance",
+			apiKey:       apiKey,
+			tradingPair: model.TradingPair{
+				Base:  model.XLM,
+				Quote: model.BTC,
+			},
+			side:   "buy",
+			amount: 42,
+			price:  0.00002536,
+		},
+	} {
+		t.Run(k.exchangeName, func(t *testing.T) {
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+				return
+			}
+
+			openOrder, e := c.CreateLimitOrder(k.tradingPair.String(), k.side, k.amount, k.price)
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			if !assert.NotNil(t, openOrder) {
+				return
+			}
+
+			if !assert.Equal(t, k.tradingPair.String(), openOrder.Symbol) {
+				return
+			}
+
+			if !assert.NotEqual(t, "", openOrder.ID) {
+				return
+			}
+
+			if !assert.Equal(t, k.amount, openOrder.Amount) {
+				return
+			}
+
+			if !assert.Equal(t, k.price, openOrder.Price) {
+				return
+			}
+
+			if !assert.Equal(t, "limit", openOrder.Type) {
+				return
+			}
+
+			if !assert.Equal(t, k.side, openOrder.Side) {
+				return
+			}
+
+			if !assert.Equal(t, 0.0, openOrder.Cost) {
+				return
+			}
+
+			if !assert.Equal(t, 0.0, openOrder.Filled) {
+				return
+			}
+
+			if !assert.Equal(t, "open", openOrder.Status) {
+				return
+			}
+		})
+	}
+}

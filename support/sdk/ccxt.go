@@ -410,3 +410,46 @@ func (c *Ccxt) FetchOpenOrders(tradingPairs []string) (map[string][]CcxtOpenOrde
 	}
 	return result, nil
 }
+
+// CreateLimitOrder calls the /createOrder endpoint on CCXT with a limit price and the order type set to "limit"
+func (c *Ccxt) CreateLimitOrder(tradingPair string, side string, amount float64, price float64) (*CcxtOpenOrder, error) {
+	orderType := "limit"
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	inputData := []interface{}{
+		tradingPair,
+		orderType,
+		side,
+		amount,
+		price,
+	}
+	data, e := json.Marshal(&inputData)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (%v) for exchange '%s': %s", inputData, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/createOrder"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error creating order: %s", e)
+	}
+
+	outputMap, ok := output.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("could not convert the output to a map[string]interface{}, type = %s", reflect.TypeOf(output))
+	}
+
+	var openOrder CcxtOpenOrder
+	e = mapstructure.Decode(outputMap, &openOrder)
+	if e != nil {
+		return nil, fmt.Errorf("could not decode outputMap to openOrder (%v): %s", outputMap, e)
+	}
+
+	return &openOrder, nil
+}
