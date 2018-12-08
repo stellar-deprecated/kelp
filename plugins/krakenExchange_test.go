@@ -211,8 +211,9 @@ func TestCancelOrder(t *testing.T) {
 	}
 
 	// need to add some transactionID here to run this test
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
 	txID := model.MakeTransactionID("")
-	result, e := testKrakenExchange.CancelOrder(txID)
+	result, e := testKrakenExchange.CancelOrder(txID, pair)
 	if !assert.NoError(t, e) {
 		return
 	}

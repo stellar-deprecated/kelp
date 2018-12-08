@@ -127,11 +127,12 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 }
 
 // CancelOrder impl.
-func (k *krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
+func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error) {
 	if k.isSimulated {
 		return model.CancelResultCancelSuccessful, nil
 	}
 
+	// we don't actually use the pair for kraken
 	resp, e := k.nextAPI().CancelOrder(txID.String())
 	if e != nil {
 		return model.CancelResultFailed, e

@@ -89,7 +89,7 @@ type TradeAPI interface {
 
 	AddOrder(order *model.Order) (*model.TransactionID, error)
 
-	CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error)
+	CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error)
 }
 
 // PrepareDepositResult is the result of a PrepareDeposit call

@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -291,6 +292,9 @@ func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error)
 	if order.OrderAction.IsBuy() {
 		side = "buy"
 	}
+
+	log.Printf("ccxt is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
+		pairString, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString())
 	ccxtOpenOrder, e := c.api.CreateLimitOrder(pairString, side, order.Volume.AsFloat(), order.Price.AsFloat())
 	if e != nil {
 		return nil, fmt.Errorf("error while creating limit order %s: %s", *order, e)
@@ -300,8 +304,17 @@ func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error)
 }
 
 // CancelOrder impl
-func (c ccxtExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
-	// TODO implement
+func (c ccxtExchange) CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error) {
+	log.Printf("ccxt is canceling order: ID=%s, tradingPair: %s\n", txID.String(), pair.String())
+
+	resp, e := c.api.CancelOrder(txID.String(), pair.String())
+	if e != nil {
+		return model.CancelResultFailed, e
+	}
+
+	if resp == nil {
+		return model.CancelResultFailed, fmt.Errorf("response from CancelOrder was nil")
+	}
 	return model.CancelResultCancelSuccessful, nil
 }
 

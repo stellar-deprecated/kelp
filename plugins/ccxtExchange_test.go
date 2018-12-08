@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/interstellar/kelp/api"
@@ -299,6 +300,46 @@ func TestAddOrder_Ccxt(t *testing.T) {
 				if !assert.NotEqual(t, "", txID.String()) {
 					return
 				}
+			})
+		}
+	}
+}
+
+func TestCancelOrder_Ccxt(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	for exchangeName, apiKey := range supportedTradingExchanges {
+		for _, kase := range []struct {
+			orderID string
+			pair    *model.TradingPair
+		}{
+			{
+				orderID: "",
+				pair:    &model.TradingPair{Base: model.XLM, Quote: model.BTC},
+			}, {
+				orderID: "",
+				pair:    &model.TradingPair{Base: model.XLM, Quote: model.BTC},
+			},
+		} {
+			t.Run(exchangeName, func(t *testing.T) {
+				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{apiKey}, false)
+				if !assert.NoError(t, e) {
+					return
+				}
+
+				result, e := testCcxtExchange.CancelOrder(model.MakeTransactionID(kase.orderID), *kase.pair)
+				if !assert.NoError(t, e) {
+					return
+				}
+
+				log.Printf("result from cancel order (transactionID=%s): %s\n", kase.orderID, result.String())
+				if !assert.Equal(t, model.CancelResultCancelSuccessful, result) {
+					return
+				}
+
+				assert.Fail(t, "force fail")
 			})
 		}
 	}
