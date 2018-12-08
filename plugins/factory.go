@@ -171,7 +171,7 @@ var exchanges = map[string]ExchangeContainer{
 	"ccxt-binance": ExchangeContainer{
 		SortOrder:    1,
 		Description:  "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
-		TradeEnabled: false,
+		TradeEnabled: true,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 			return makeCcxtExchange("http://localhost:3000", "binance", exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
 		},
