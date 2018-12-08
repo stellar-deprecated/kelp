@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var supportedExchanges = []string{"binance", "poloniex", "bittrex"}
+var supportedExchanges = []string{"binance"}
 var emptyAPIKey = api.ExchangeAPIKey{}
 var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
 	"binance": api.ExchangeAPIKey{},
@@ -151,17 +151,20 @@ func TestGetAccountBalances_Ccxt(t *testing.T) {
 				return
 			}
 
-			if !assert.Equal(t, balances[model.XLM].AsFloat(), 20.0) {
+			log.Printf("balances: %+v\n", balances)
+			if !assert.Equal(t, 20.0, balances[model.XLM].AsFloat()) {
 				return
 			}
 
-			if !assert.Equal(t, balances[model.BTC].AsFloat(), 0.0) {
+			if !assert.Equal(t, 0.0, balances[model.BTC].AsFloat()) {
 				return
 			}
 
-			if !assert.Equal(t, balances[model.USD].AsFloat(), 0.0) {
+			if !assert.Equal(t, 0.0, balances[model.USD].AsFloat()) {
 				return
 			}
+
+			assert.Fail(t, "force fail")
 		})
 	}
 }
@@ -171,74 +174,83 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 		return
 	}
 
+	tradingPairs := []model.TradingPair{
+		model.TradingPair{Base: model.XLM, Quote: model.BTC},
+		model.TradingPair{Base: model.XLM, Quote: model.USDT},
+	}
+
 	for exchangeName, apiKey := range supportedTradingExchanges {
-		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{apiKey}, false)
-			if !assert.NoError(t, e) {
-				return
-			}
-
-			pair := &model.TradingPair{Base: model.XLM, Quote: model.BTC}
-			m, e := testCcxtExchange.GetOpenOrders([]*model.TradingPair{pair})
-			if !assert.NoError(t, e) {
-				return
-			}
-
-			if !assert.Equal(t, 1, len(m)) {
-				return
-			}
-
-			openOrders := m[*pair]
-			if !assert.True(t, len(openOrders) > 0, fmt.Sprintf("%d", len(openOrders))) {
-				return
-			}
-
-			for _, o := range openOrders {
-				if !assert.Equal(t, pair, o.Order.Pair) {
+		for _, pair := range tradingPairs {
+			t.Run(exchangeName, func(t *testing.T) {
+				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, []api.ExchangeAPIKey{apiKey}, false)
+				if !assert.NoError(t, e) {
 					return
 				}
 
-				// OrderAction has it's underlying type as a boolean so will always be valid
-
-				if !assert.Equal(t, model.OrderTypeLimit, o.Order.OrderType) {
+				m, e := testCcxtExchange.GetOpenOrders([]*model.TradingPair{&pair})
+				if !assert.NoError(t, e) {
 					return
 				}
 
-				if !assert.True(t, o.Order.Price.AsFloat() > 0, o.Order.Price.AsString()) {
+				if !assert.Equal(t, 1, len(m)) {
 					return
 				}
 
-				if !assert.True(t, o.Order.Volume.AsFloat() > 0, o.Order.Volume.AsString()) {
+				openOrders := m[pair]
+				if !assert.True(t, len(openOrders) > 0, fmt.Sprintf("%d", len(openOrders))) {
 					return
 				}
 
-				if !assert.NotNil(t, o.Order.Timestamp) {
-					return
-				}
+				for _, o := range openOrders {
+					log.Printf("open order: %+v\n", o)
 
-				if !assert.True(t, len(o.ID) > 0, o.ID) {
-					return
-				}
+					if !assert.Equal(t, &pair, o.Order.Pair) {
+						return
+					}
 
-				if !assert.NotNil(t, o.StartTime) {
-					return
-				}
+					// OrderAction has it's underlying type as a boolean so will always be valid
 
-				// ExpireTime is always nil for now
-				if !assert.Nil(t, o.ExpireTime) {
-					return
-				}
+					if !assert.Equal(t, model.OrderTypeLimit, o.Order.OrderType) {
+						return
+					}
 
-				if !assert.NotNil(t, o.VolumeExecuted) {
-					return
-				}
+					if !assert.True(t, o.Order.Price.AsFloat() > 0, o.Order.Price.AsString()) {
+						return
+					}
 
-				// additional check to see if the two timestamps match
-				if !assert.Equal(t, o.Order.Timestamp, o.StartTime) {
-					return
+					if !assert.True(t, o.Order.Volume.AsFloat() > 0, o.Order.Volume.AsString()) {
+						return
+					}
+
+					if !assert.NotNil(t, o.Order.Timestamp) {
+						return
+					}
+
+					if !assert.True(t, len(o.ID) > 0, o.ID) {
+						return
+					}
+
+					if !assert.NotNil(t, o.StartTime) {
+						return
+					}
+
+					// ExpireTime is always nil for now
+					if !assert.Nil(t, o.ExpireTime) {
+						return
+					}
+
+					if !assert.NotNil(t, o.VolumeExecuted) {
+						return
+					}
+
+					// additional check to see if the two timestamps match
+					if !assert.Equal(t, o.Order.Timestamp, o.StartTime) {
+						return
+					}
 				}
-			}
-		})
+				assert.Fail(t, "force fail")
+			})
+		}
 	}
 }
 
@@ -292,7 +304,7 @@ func TestAddOrder_Ccxt(t *testing.T) {
 					return
 				}
 
-				fmt.Printf("transactionID from order: %s\n", txID)
+				log.Printf("transactionID from order: %s\n", txID)
 				if !assert.NotNil(t, txID) {
 					return
 				}
@@ -300,6 +312,8 @@ func TestAddOrder_Ccxt(t *testing.T) {
 				if !assert.NotEqual(t, "", txID.String()) {
 					return
 				}
+
+				assert.Fail(t, "force fail")
 			})
 		}
 	}
@@ -320,7 +334,7 @@ func TestCancelOrder_Ccxt(t *testing.T) {
 				pair:    &model.TradingPair{Base: model.XLM, Quote: model.BTC},
 			}, {
 				orderID: "",
-				pair:    &model.TradingPair{Base: model.XLM, Quote: model.BTC},
+				pair:    &model.TradingPair{Base: model.XLM, Quote: model.USDT},
 			},
 		} {
 			t.Run(exchangeName, func(t *testing.T) {
