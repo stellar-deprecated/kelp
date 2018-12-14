@@ -10,20 +10,28 @@ import (
 	"github.com/interstellar/kelp/support/utils"
 )
 
+const ccxtBalancePrecision = 10
+
 // ensure that ccxtExchange conforms to the Exchange interface
 var _ api.Exchange = ccxtExchange{}
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
 type ccxtExchange struct {
-	assetConverter *model.AssetConverter
-	delimiter      string
-	api            *sdk.Ccxt
-	precision      int8
-	simMode        bool
+	assetConverter   *model.AssetConverter
+	delimiter        string
+	orderConstraints map[model.TradingPair]model.OrderConstraints
+	api              *sdk.Ccxt
+	simMode          bool
 }
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
-func makeCcxtExchange(ccxtBaseURL string, exchangeName string, apiKeys []api.ExchangeAPIKey, simMode bool) (api.Exchange, error) {
+func makeCcxtExchange(
+	ccxtBaseURL string,
+	exchangeName string,
+	orderConstraints map[model.TradingPair]model.OrderConstraints,
+	apiKeys []api.ExchangeAPIKey,
+	simMode bool,
+) (api.Exchange, error) {
 	if len(apiKeys) == 0 {
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
 	}
@@ -34,11 +42,11 @@ func makeCcxtExchange(ccxtBaseURL string, exchangeName string, apiKeys []api.Exc
 	}
 
 	return ccxtExchange{
-		assetConverter: model.CcxtAssetConverter,
-		delimiter:      "/",
-		api:            c,
-		precision:      utils.SdexPrecision,
-		simMode:        simMode,
+		assetConverter:   model.CcxtAssetConverter,
+		delimiter:        "/",
+		orderConstraints: orderConstraints,
+		api:              c,
+		simMode:          simMode,
 	}, nil
 }
 
@@ -66,8 +74,8 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 		}
 
 		priceResult[p] = api.Ticker{
-			AskPrice: model.NumberFromFloat(askPrice, c.precision),
-			BidPrice: model.NumberFromFloat(bidPrice, c.precision),
+			AskPrice: model.NumberFromFloat(askPrice, c.orderConstraints[p].PricePrecision),
+			BidPrice: model.NumberFromFloat(bidPrice, c.orderConstraints[p].PricePrecision),
 		}
 	}
 
@@ -81,8 +89,8 @@ func (c ccxtExchange) GetAssetConverter() *model.AssetConverter {
 
 // GetOrderConstraints impl
 func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	// TODO implement
-	return nil
+	oc := c.orderConstraints[*pair]
+	return &oc
 }
 
 // GetAccountBalances impl
@@ -100,9 +108,9 @@ func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Ass
 		}
 
 		if ccxtBalance, ok := balanceResponse[ccxtAssetString]; ok {
-			m[asset] = *model.NumberFromFloat(ccxtBalance.Total, c.precision)
+			m[asset] = *model.NumberFromFloat(ccxtBalance.Total, ccxtBalancePrecision)
 		} else {
-			m[asset] = *model.NumberFromFloat(0, c.precision)
+			m[asset] = *model.NumberConstants.Zero
 		}
 	}
 	return m, nil
@@ -134,14 +142,17 @@ func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*mo
 }
 
 func (c ccxtExchange) readOrders(orders []sdk.CcxtOrder, pair *model.TradingPair, orderAction model.OrderAction) []model.Order {
+	pricePrecision := c.orderConstraints[*pair].PricePrecision
+	volumePrecision := c.orderConstraints[*pair].VolumePrecision
+
 	result := []model.Order{}
 	for _, o := range orders {
 		result = append(result, model.Order{
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   model.OrderTypeLimit,
-			Price:       model.NumberFromFloat(o.Price, c.precision),
-			Volume:      model.NumberFromFloat(o.Amount, c.precision),
+			Price:       model.NumberFromFloat(o.Price, pricePrecision),
+			Volume:      model.NumberFromFloat(o.Amount, volumePrecision),
 			Timestamp:   nil,
 		})
 	}
@@ -182,11 +193,14 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 		return nil, fmt.Errorf("expected '%s' for 'symbol' field, got: %s", pairString, rawTrade.Symbol)
 	}
 
+	pricePrecision := c.orderConstraints[*pair].PricePrecision
+	volumePrecision := c.orderConstraints[*pair].VolumePrecision
+
 	trade := model.Trade{
 		Order: model.Order{
 			Pair:      pair,
-			Price:     model.NumberFromFloat(rawTrade.Price, c.precision),
-			Volume:    model.NumberFromFloat(rawTrade.Amount, c.precision),
+			Price:     model.NumberFromFloat(rawTrade.Price, pricePrecision),
+			Volume:    model.NumberFromFloat(rawTrade.Amount, volumePrecision),
 			OrderType: model.OrderTypeLimit,
 			Timestamp: model.MakeTimestamp(rawTrade.Timestamp),
 		},
@@ -203,8 +217,12 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 	}
 
 	if rawTrade.Cost != 0.0 {
-		// use 2x the precision for cost since it's logically derived from amount and price
-		trade.Cost = model.NumberFromFloat(rawTrade.Cost, c.precision*2)
+		// use smaller precision for cost since it's logically derived from amount and price
+		costPrecision := pricePrecision
+		if volumePrecision < pricePrecision {
+			costPrecision = volumePrecision
+		}
+		trade.Cost = model.NumberFromFloat(rawTrade.Cost, costPrecision)
 	}
 
 	return &trade, nil
@@ -270,14 +288,14 @@ func (c ccxtExchange) convertOpenOrderFromCcxt(pair *model.TradingPair, o sdk.Cc
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   model.OrderTypeLimit,
-			Price:       model.NumberFromFloat(o.Price, c.precision),
-			Volume:      model.NumberFromFloat(o.Amount, c.precision),
+			Price:       model.NumberFromFloat(o.Price, c.orderConstraints[*pair].PricePrecision),
+			Volume:      model.NumberFromFloat(o.Amount, c.orderConstraints[*pair].VolumePrecision),
 			Timestamp:   ts,
 		},
 		ID:             o.ID,
 		StartTime:      ts,
 		ExpireTime:     nil,
-		VolumeExecuted: model.NumberFromFloat(o.Filled, c.precision),
+		VolumeExecuted: model.NumberFromFloat(o.Filled, c.orderConstraints[*pair].VolumePrecision),
 	}, nil
 }
 
