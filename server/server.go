@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -140,7 +141,11 @@ func getExchanges(w http.ResponseWriter, r *http.Request) {
 
 func configPath(id string) string {
 	result := ""
-	configsDir := "./configs"
+
+	usr, _ := user.Current()
+	configsDir := filepath.Join(usr.HomeDir, ".kelp")
+
+	log.Println(configsDir)
 
 	// on docker the configs are located at /configs, otherwise ./configs
 	if _, err := os.Stat(configsDir); os.IsNotExist(err) {
@@ -152,7 +157,7 @@ func configPath(id string) string {
 		result = configsDir + "/trader.toml"
 		break
 	case "buysell":
-		result = configsDir + "/buysell.toml"
+		result = configsDir + "/buysell/buysell.toml"
 		break
 	default:
 		break
