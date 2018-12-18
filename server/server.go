@@ -145,19 +145,20 @@ func configPath(id string) string {
 	usr, _ := user.Current()
 	configsDir := filepath.Join(usr.HomeDir, ".kelp")
 
-	log.Println(configsDir)
-
 	// on docker the configs are located at /configs, otherwise ./configs
 	if _, err := os.Stat(configsDir); os.IsNotExist(err) {
 		configsDir = "/configs"
 	}
 
+	// get project folder, will be a param, for now just use default
+	configsDir = filepath.Join(configsDir, "default")
+
 	switch id {
 	case "botConf":
-		result = configsDir + "/trader.toml"
+		result = filepath.Join(configsDir, "trader.toml")
 		break
 	case "buysell":
-		result = configsDir + "/buysell/buysell.toml"
+		result = filepath.Join(configsDir, "buysell.toml")
 		break
 	default:
 		break
