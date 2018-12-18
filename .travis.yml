@@ -1,16 +1,16 @@
-language: go
+language:        go
 
-go_import_path: github.com/interstellar/kelp
+go_import_path:  github.com/interstellar/kelp
 
 go:
 - "1.10.x"
 - "1.11"
 
 before_install:
-- curl https://glide.sh/get | sh
+- curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
 install:
-- glide install
+- dep ensure
 
 script:
 - ./scripts/build.sh
