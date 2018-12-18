@@ -1,0 +1,52 @@
+{
+  "name": "kelpweb",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "electron-is-dev": "^0.3.0",
+    "@material-ui/core": "^3.6.2",
+    "@material-ui/icons": "^3.0.1",
+    "@material-ui/lab": "^3.0.0-alpha.25",
+    "axios": "^0.18.0",
+    "eventsource": "^1.0.7",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-scripts": "2.1.1",
+    "tinycolor2": "^1.4.1",
+    "typeface-roboto": "0.0.54"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron-start": "cross-env BROWSER=none react-scripts start",
+    "electron": "concurrently \"npm run electron-start\" \"wait-on http://localhost:3000/ && electron .\"",
+    "postinstall": "electron-builder install-app-deps",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "devDependencies": {
+    "concurrently": "^4.1.0",
+    "cross-env": "^5.2.0",
+    "electron": "^3.0.11",
+    "electron-builder": "^20.38.3",
+    "wait-on": "^3.2.0"
+  },
+  "homepage": "./",
+  "main": "public/electron.js",
+  "build": {
+    "win": {
+      "target": "NSIS"
+    }
+  }
+}
