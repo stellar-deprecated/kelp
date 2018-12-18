@@ -48,8 +48,11 @@ func Start() {
 	r.Get("/version", getVersion)
 	r.Get("/strategies", getStrategies)
 	r.Get("/exchanges", getExchanges)
-	r.Get("/trade", updateTrade)
-	r.Get("/delete", deleteTrade)
+	r.Get("/buysell", launchBuySell)
+	r.Get("/sell", launchSell)
+	r.Get("/mirror", launchMirror)
+	r.Get("/balanced", launchBalanced)
+	r.Get("/delete", launchDelete)
 	r.Get("/list", getProcesses)
 	r.Get("/offers", getOffers)
 	r.Put("/params", launchWithParams)
@@ -157,6 +160,15 @@ func configPath(id string) string {
 	case "botConf":
 		result = filepath.Join(configsDir, "trader.toml")
 		break
+	case "sell":
+		result = filepath.Join(configsDir, "sell.toml")
+		break
+	case "mirror":
+		result = filepath.Join(configsDir, "mirror.toml")
+		break
+	case "balanced":
+		result = filepath.Join(configsDir, "balanced.toml")
+		break
 	case "buysell":
 		result = filepath.Join(configsDir, "buysell.toml")
 		break
@@ -167,17 +179,33 @@ func configPath(id string) string {
 	return result
 }
 
-func updateTrade(w http.ResponseWriter, r *http.Request) {
+func launchBuySell(w http.ResponseWriter, r *http.Request) {
+	launchTrade(w, r, "buysell")
+}
+
+func launchSell(w http.ResponseWriter, r *http.Request) {
+	launchTrade(w, r, "sell")
+}
+
+func launchMirror(w http.ResponseWriter, r *http.Request) {
+	launchTrade(w, r, "mirror")
+}
+
+func launchBalanced(w http.ResponseWriter, r *http.Request) {
+	launchTrade(w, r, "balanced")
+}
+
+func launchTrade(w http.ResponseWriter, r *http.Request, tradeType string) {
 	// don't hang here, we don't need a result
 	// also elliminates zombies as it calls .Wait()
-	go runTool("kelp", "trade", "--botConf", configPath("botConf"), "--strategy", "buysell", "--stratConf", configPath("buysell"))
+	go runTool("kelp", "trade", "--botConf", configPath("botConf"), "--strategy", tradeType, "--stratConf", configPath(tradeType))
 
 	delayedSendEvent()
 
-	w.Write([]byte("trade started"))
+	w.Write([]byte(tradeType + "started"))
 }
 
-func deleteTrade(w http.ResponseWriter, r *http.Request) {
+func launchDelete(w http.ResponseWriter, r *http.Request) {
 	// don't hang here, we don't need a result
 	// also elliminates zombies as it calls .Wait()
 	go runTool("kelp", "trade", "--botConf", configPath("botConf"), "--strategy", "delete")

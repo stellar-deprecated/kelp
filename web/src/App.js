@@ -146,9 +146,6 @@ class App extends Component {
         </header>
 
         <div>
-          <TButton variant="contained" onClick={(e) => this.handleClick('trade')}>
-            Trade buy-sell
-          </TButton>
           <TButton variant="contained" onClick={(e) => this.handleClick('delete')}>
             Delete
           </TButton>
@@ -219,7 +216,7 @@ class App extends Component {
   }
 
   handleTaskButtons = (id) => {
-    console.log(id)
+    KelpTalk.get(id)
   }
 
   handleTasksRefresh = () => {
