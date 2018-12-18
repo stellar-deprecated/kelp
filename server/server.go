@@ -221,7 +221,7 @@ func getConfig(w http.ResponseWriter, r *http.Request) {
 		log.Println(fmt.Errorf("error config file: %s \n", err))
 	}
 
-	log.Println(t.Get("horizon_url"))
+	// log.Println(t.Get("horizon_url"))
 
 	w.Write([]byte(t.String()))
 }
