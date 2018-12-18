@@ -1,10 +1,15 @@
 ## Available Scripts
 
-In the project directory, you can run:
+In the project directory:
 
-### `npm start`
+### `$ npm install`
 
-Runs the app in the development mode.<br>
+You only need to run this the first time
+
+### `$ npm start`
+
+Runs the app in the development mode:
+
 Open <http://localhost:3000> to view it in the browser.
 
 The page will reload if you make edits.<br>

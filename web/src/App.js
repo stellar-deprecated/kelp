@@ -12,6 +12,7 @@ import ButtonBar from './ButtonBar.js'
 import {withStyles} from '@material-ui/core/styles';
 import KelpTalk from './KelpTalk.js'
 import tinycolor from 'tinycolor2'
+import LaunchTaskDialog from './LaunchTaskDialog.js'
 
 const TButton = withStyles({
   root: {
@@ -28,7 +29,9 @@ class App extends Component {
       kelpTasks: [],
       kelpOffers: [],
       version: '',
-      darkMode: false
+      darkMode: false,
+      dialogOpen: false,
+      dialogTaskId: null
     }
 
     this.themeCache = null
@@ -123,16 +126,16 @@ class App extends Component {
 
     const buttons = [
       {
-        title: 'New Buysell',
+        title: 'Buysell',
         id: 'buysell'
       }, {
-        title: 'New Sell',
+        title: 'Sell',
         id: 'sell'
       }, {
-        title: 'New Balanced',
+        title: 'Balanced',
         id: 'balanced'
       }, {
-        title: 'New Mirror',
+        title: 'Mirror',
         id: 'mirror'
       }
     ]
@@ -162,6 +165,9 @@ class App extends Component {
           </Card>
         </div>
       </div>
+
+      <LaunchTaskDialog close={this.dialogClose} taskId={this.state.dialogTaskId} open={this.state.dialogOpen}></LaunchTaskDialog>
+
     </MuiThemeProvider>);
   }
 
@@ -216,7 +222,15 @@ class App extends Component {
   }
 
   handleTaskButtons = (id) => {
-    KelpTalk.get(id)
+    this.setState({dialogOpen: true, dialogTaskId: id})
+  }
+
+  dialogClose = (okClicked, project) => {
+    this.setState({dialogOpen: false})
+
+    if (okClicked) {
+      KelpTalk.get(this.state.dialogTaskId)
+    }
   }
 
   handleTasksRefresh = () => {
