@@ -3,15 +3,9 @@ import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
-import AppBar from '@material-ui/core/AppBar';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import PropTypes from 'prop-types';
-import Typography from '@material-ui/core/Typography';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
 import FilledInput from '@material-ui/core/FilledInput';
 import {withStyles} from '@material-ui/core/styles';
 
@@ -40,9 +34,6 @@ class LaunchTaskDialog extends Component {
   };
 
   render() {
-    const {value} = this.state;
-    // const {theme} = this.props;
-    // const primaryText = theme.palette.text.primary;
     const {classes} = this.props;
 
     return (<div >
@@ -55,7 +46,7 @@ class LaunchTaskDialog extends Component {
               <div>New {this.props.taskId}</div>
               <FormControl variant="filled" className={classes.formControl}>
                 <InputLabel htmlFor="filled-project-native-simple">Token</InputLabel>
-                <Select native="native" value={this.state.project} onChange={this.handleChange('project')} input={<FilledInput name = "project" id = "filled-project-native-simple" />}>
+                <Select native={true} value={this.state.project} onChange={this.handleChange('project')} input={<FilledInput name = "project" id = "filled-project-native-simple" />}>
                   <option value={'default'}>default</option>
                   <option value={'kelpr'}>kelpr</option>
                 </Select>

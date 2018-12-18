@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import Button from '@material-ui/core/Button';
 import 'typeface-roboto';
 import EventSource from 'eventsource'
 import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles';
@@ -9,16 +8,9 @@ import TasksTable from './TasksTable.js'
 import NetworkSwitch from './NetworkSwitch.js'
 import env from './env.js'
 import ButtonBar from './ButtonBar.js'
-import {withStyles} from '@material-ui/core/styles';
 import KelpTalk from './KelpTalk.js'
 import tinycolor from 'tinycolor2'
 import LaunchTaskDialog from './LaunchTaskDialog.js'
-
-const TButton = withStyles({
-  root: {
-    margin: '0 8px'
-  }
-})(Button)
 
 class App extends Component {
   constructor(props) {
@@ -147,12 +139,6 @@ class App extends Component {
           Kelp
           <div style={styles.subheader}>{this.state.version}</div>
         </header>
-
-        <div>
-          <TButton variant="contained" onClick={(e) => this.handleClick('delete')}>
-            Delete
-          </TButton>
-        </div>
 
         <div style={styles.cardWrapper}>
           <Card title='Kelp bots' refresh={this.handleTasksRefresh}>

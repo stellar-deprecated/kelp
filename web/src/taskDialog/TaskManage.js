@@ -1,5 +1,6 @@
 import React from "react";
 import Button from '@material-ui/core/Button';
+import KelpTalk from '../KelpTalk.js'
 
 import {withTheme, withStyles} from '@material-ui/core/styles';
 
@@ -60,6 +61,9 @@ class TaskOffers extends React.Component {
       case 'start':
         break
       case 'delete':
+        // WARNING: need to add the projectId for this task
+        const projectId = 'default'
+        KelpTalk.get('delete', projectId)
         break
       case 'trustlines':
         break
