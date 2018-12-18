@@ -9,7 +9,7 @@ import (
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Serves and API for kelp",
+	Short: "Provides an API for managing kelp processes",
 }
 
 func init() {
