@@ -17,8 +17,8 @@ class KelpTalk extends EventEmitter {
     return '<empty>'
   }
 
-  get(path) {
-    axios.get(env.REST_Url + path).then(res => {
+  get(path, params = {}) {
+    axios.get(env.REST_Url + path, {params: params}).then(res => {
       let stringData = this.convertString(res.data)
       this.emit('console', stringData)
 

@@ -229,7 +229,7 @@ class App extends Component {
     this.setState({dialogOpen: false})
 
     if (okClicked) {
-      KelpTalk.get(this.state.dialogTaskId)
+      KelpTalk.get(this.state.dialogTaskId, {project: project})
     }
   }
 

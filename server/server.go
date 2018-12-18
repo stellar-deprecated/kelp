@@ -142,7 +142,7 @@ func getExchanges(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(result))
 }
 
-func configPath(id string) string {
+func configPath(id string, projectID string) string {
 	result := ""
 
 	usr, _ := user.Current()
@@ -154,7 +154,12 @@ func configPath(id string) string {
 	}
 
 	// get project folder, will be a param, for now just use default
-	configsDir = filepath.Join(configsDir, "default")
+	dirName := projectID
+	if len(dirName) == 0 {
+		dirName = "default"
+	}
+
+	configsDir = filepath.Join(configsDir, dirName)
 
 	switch id {
 	case "botConf":
@@ -179,6 +184,19 @@ func configPath(id string) string {
 	return result
 }
 
+func getURLParam(r *http.Request, key string) string {
+	keys, ok := r.URL.Query()[key]
+
+	if !ok || len(keys[0]) < 1 {
+		log.Println("Url Param " + key + " is missing")
+		return ""
+	}
+
+	// Query()["key"] will return an array of items,
+	// we only want the single item.
+	return keys[0]
+}
+
 func launchBuySell(w http.ResponseWriter, r *http.Request) {
 	launchTrade(w, r, "buysell")
 }
@@ -196,9 +214,11 @@ func launchBalanced(w http.ResponseWriter, r *http.Request) {
 }
 
 func launchTrade(w http.ResponseWriter, r *http.Request, tradeType string) {
+	projectId := getURLParam(r, "project")
+
 	// don't hang here, we don't need a result
 	// also elliminates zombies as it calls .Wait()
-	go runTool("kelp", "trade", "--botConf", configPath("botConf"), "--strategy", tradeType, "--stratConf", configPath(tradeType))
+	go runTool("kelp", "trade", "--botConf", configPath("botConf", projectId), "--strategy", tradeType, "--stratConf", configPath(tradeType, projectId))
 
 	delayedSendEvent()
 
@@ -206,9 +226,11 @@ func launchTrade(w http.ResponseWriter, r *http.Request, tradeType string) {
 }
 
 func launchDelete(w http.ResponseWriter, r *http.Request) {
+	projectId := getURLParam(r, "project")
+
 	// don't hang here, we don't need a result
 	// also elliminates zombies as it calls .Wait()
-	go runTool("kelp", "trade", "--botConf", configPath("botConf"), "--strategy", "delete")
+	go runTool("kelp", "trade", "--botConf", configPath("botConf", projectId), "--strategy", "delete")
 
 	delayedSendEvent()
 
@@ -216,7 +238,9 @@ func launchDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) {
-	t, err := toml.TreeFromMap(configFields())
+	projectId := getURLParam(r, "project")
+
+	t, err := toml.TreeFromMap(configFields(projectId))
 	if err != nil {
 		log.Println(fmt.Errorf("error config file: %s \n", err))
 	}
@@ -226,8 +250,8 @@ func getConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(t.String()))
 }
 
-func configFields() map[string]interface{} {
-	configPath := configPath("botConf")
+func configFields(projectId string) map[string]interface{} {
+	configPath := configPath("botConf", projectId)
 
 	nameNoExt := filepath.Base(configPath)
 	nameNoExt = strings.TrimSuffix(nameNoExt, filepath.Ext(configPath))
@@ -243,7 +267,9 @@ func configFields() map[string]interface{} {
 }
 
 func getOffers(w http.ResponseWriter, r *http.Request) {
-	t, err := toml.TreeFromMap(configFields())
+	projectId := getURLParam(r, "project")
+
+	t, err := toml.TreeFromMap(configFields(projectId))
 	if err != nil {
 		log.Println(fmt.Errorf("error config file: %s \n", err))
 	}
