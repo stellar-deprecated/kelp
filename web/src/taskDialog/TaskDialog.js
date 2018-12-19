@@ -49,7 +49,6 @@ class TaskDialog extends Component {
 
     return (<div >
       <Dialog maxWidth={false} open={this.props.open} onClose={(e) => this.handleClick('dialogCancel')}>
-
         <DialogContent>
           <div>
             <AppBar position="static" color="default">
@@ -61,7 +60,7 @@ class TaskDialog extends Component {
               </Tabs>
             </AppBar>
             {value === 0 && <TaskManage tabStyles={tabStyles}/>}
-            {value === 1 && <TaskOffers tabStyles={tabStyles}/>}
+            {value === 1 && <TaskOffers project={this.props.data.project} tabStyles={tabStyles}/>}
             {value === 2 && <TaskConfig tabStyles={tabStyles}/>}
             {value === 3 && <TaskLog tabStyles={tabStyles}/>}
           </div>

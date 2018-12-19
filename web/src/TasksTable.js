@@ -30,7 +30,7 @@ class TasksTable extends Component {
     const TableContents = (props) => {
       if (offers.length > 0) {
         return offers.map((row) => {
-          return (<TableRow hover={true} onClick={event => this.handleClick(event, row.pid)} key={row.pid}>
+          return (<TableRow hover={true} onClick={event => this.handleRowClick(event, row)} key={row.pid}>
             <Dense>{row.pid}</Dense>
             <Dense>{row.name}</Dense>
             <Dense>{row.cmd}</Dense>
@@ -83,25 +83,27 @@ class TasksTable extends Component {
     this.props.handler(row)
   }
 
-  handleClick = (event, pid) => {
-    if (pid === 'refresh') {
-      this.props.refresh()
-    } else {
-      const {selected} = this.state;
-      let newPid = pid
+  handleRowClick = (event, row) => {
+    const {selected} = this.state;
+    let newPid = row.pid
 
-      // turn off if clicked twice
-      if (pid === selected) {
-        newPid = ''
+    // turn off if clicked twice
+    if (row.pid === selected) {
+      newPid = ''
+    }
+
+    this.setState({
+      selected: newPid,
+      dialogOpen: true,
+      dialogData: {
+        project: row.project
       }
+    })
+  }
 
-      this.setState({
-        selected: newPid,
-        dialogOpen: true,
-        dialogData: {
-          some: 'data'
-        }
-      })
+  handleClick = (event, id) => {
+    if (id === 'refresh') {
+      this.props.refresh()
     }
   }
 }

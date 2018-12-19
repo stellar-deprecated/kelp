@@ -25,7 +25,7 @@ class TaskOffers extends React.Component {
   }
 
   componentDidMount() {
-    KelpTalk.get('offers')
+    KelpTalk.get('offers', {project: this.props.project})
   }
 
   render() {

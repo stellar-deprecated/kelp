@@ -173,7 +173,7 @@ func launchTrade(w http.ResponseWriter, r *http.Request, tradeType string) {
 
 	delayedSendEvent()
 
-	w.Write([]byte(tradeType + "started"))
+	w.Write([]byte(tradeType + " started"))
 }
 
 func launchDelete(w http.ResponseWriter, r *http.Request) {

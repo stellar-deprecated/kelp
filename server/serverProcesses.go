@@ -22,17 +22,20 @@ func getProcesses(w http.ResponseWriter, r *http.Request) {
 
 	for _, p := range v {
 		name, _ := p.Name()
-		cmd, _ := p.Cmdline()
-		cmdSlice, _ := p.CmdlineSlice()
-
-		pid := fmt.Sprintf("%v", p.Pid)
 
 		if name == "kelp" {
+			cmdSlice, _ := p.CmdlineSlice()
+
 			if len(cmdSlice) > 1 && cmdSlice[1] != "serve" {
+				pid := fmt.Sprintf("%v", p.Pid)
+				cmd, _ := p.Cmdline()
+				project := getProjectFromCmd(cmdSlice)
+
 				m := make(map[string]string)
 				m["pid"] = pid
 				m["cmd"] = cmd
 				m["name"] = name
+				m["project"] = project
 
 				result = append(result, m)
 			}
