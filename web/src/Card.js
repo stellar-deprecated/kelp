@@ -13,8 +13,6 @@ const css = (theme) => {
     wrapper: {
       color: theme.palette.text.primary,
       background: background,
-      minWidth: "400px",
-      maxWidth: "900px",
       display: "flex",
       flexDirection: "column",
       borderRadius: "6px",

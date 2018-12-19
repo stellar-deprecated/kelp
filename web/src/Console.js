@@ -13,12 +13,16 @@ class Console extends Component {
     contents: ''
   }
 
-  constructor(props) {
-    super(props)
+  kelpTalkListener = (value) => {
+    this.setState({"contents": value})
+  }
 
-    KelpTalk.on('console', (value) => {
-      this.setState({"contents": value})
-    })
+  componentDidMount() {
+    KelpTalk.addListener('console', this.kelpTalkListener)
+  }
+
+  componentWillUnmount() {
+    KelpTalk.removeListener('console', this.kelpTalkListener)
   }
 
   render() {

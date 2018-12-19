@@ -8,24 +8,26 @@ class TaskOffers extends React.Component {
     kelpOffers: []
   }
 
-  constructor(props) {
-    super(props)
+  kelpTalkListener = (key, value) => {
+    switch (key) {
+      case 'offers':
+        const json = this.offersToJSON(value)
 
-    KelpTalk.on('updated', (key, value) => {
-      switch (key) {
-        case 'offers':
-          const json = this.offersToJSON(value)
-
-          this.setState({kelpOffers: json})
-          break
-        default:
-          break
-      }
-    })
+        this.setState({kelpOffers: json})
+        break
+      default:
+        break
+    }
   }
 
   componentDidMount() {
+    KelpTalk.addListener('updated', this.kelpTalkListener)
+
     KelpTalk.get('offers', {project: this.props.project})
+  }
+
+  componentWillUnmount() {
+    KelpTalk.removeListener('updated', this.kelpTalkListener)
   }
 
   render() {
