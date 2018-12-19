@@ -45,6 +45,7 @@ class KelpTalk extends EventEmitter {
 
     }).catch(err => {
       this.emit('console', JSON.stringify(err, null, '  '))
+      this.emit('error', path, JSON.stringify(err, null, '  '))
 
       console.error(err)
     });

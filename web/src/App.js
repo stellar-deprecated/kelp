@@ -42,6 +42,18 @@ class App extends Component {
         }
       }
     })
+    KelpTalk.on('error', (key, data) => {
+      if (key && data) {
+        switch (key) {
+          case 'version':
+            // alert user to run kelp serve
+            this.setState({version: "Server not responding. Run '$ kelp serve' to launch."})
+            break
+          default:
+            break
+        }
+      }
+    })
 
     // fill out the version of kelp
     KelpTalk.get('version')
