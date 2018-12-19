@@ -61,9 +61,7 @@ class TaskOffers extends React.Component {
       case 'start':
         break
       case 'delete':
-        // WARNING: need to add the projectId for this task
-        const projectId = 'default'
-        KelpTalk.get('delete', projectId)
+        KelpTalk.get('delete', {project: this.props.project})
         break
       case 'trustlines':
         break

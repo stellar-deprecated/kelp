@@ -59,8 +59,8 @@ class TaskDialog extends Component {
                 <Tab label="Log"/>
               </Tabs>
             </AppBar>
-            {value === 0 && <TaskManage tabStyles={tabStyles}/>}
-            {value === 1 && <TaskOffers project={this.props.data.project} tabStyles={tabStyles}/>}
+            {value === 0 && <TaskManage project={this.props.data && this.props.data.project} tabStyles={tabStyles}/>}
+            {value === 1 && <TaskOffers project={this.props.data && this.props.data.project} tabStyles={tabStyles}/>}
             {value === 2 && <TaskConfig tabStyles={tabStyles}/>}
             {value === 3 && <TaskLog tabStyles={tabStyles}/>}
           </div>
