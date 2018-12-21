@@ -113,7 +113,7 @@ func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 
 	levels, e := p.recomputeLevels(maxAssetBase, maxAssetQuote)
 	if e != nil {
-		fmt.Errorf("unable to generate new levels: %s", e)
+		return nil, fmt.Errorf("unable to generate new levels: %s", e)
 	}
 
 	p.lastLevels = levels
