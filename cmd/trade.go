@@ -208,16 +208,16 @@ func init() {
 			}()
 		}
 
+		strategyFillHandlers, e := strat.GetFillHandlers()
+		if e != nil {
+			log.Println()
+			log.Printf("problem encountered while instantiating the fill tracker: %s\n", e)
+			deleteAllOffersAndExit(botConfig, client, sdex)
+		}
 		if botConfig.FillTrackerSleepMillis != 0 {
 			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
 			fillLogger := plugins.MakeFillLogger()
 			fillTracker.RegisterHandler(fillLogger)
-			strategyFillHandlers, e := strat.GetFillHandlers()
-			if e != nil {
-				log.Println()
-				log.Printf("problem encountered while instantiating the fill tracker: %s\n", e)
-				deleteAllOffersAndExit(botConfig, client, sdex)
-			}
 			if strategyFillHandlers != nil {
 				for _, h := range strategyFillHandlers {
 					fillTracker.RegisterHandler(h)
@@ -234,6 +234,11 @@ func init() {
 					deleteAllOffersAndExit(botConfig, client, sdex)
 				}
 			}()
+		} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
+			log.Println()
+			log.Printf("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)\n")
+			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
+			deleteAllOffersAndExit(botConfig, client, sdex)
 		}
 		// --- end initialization of services ---
 
