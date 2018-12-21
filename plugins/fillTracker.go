@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"runtime/debug"
 	"time"
 
 	"github.com/interstellar/kelp/api"
@@ -97,7 +98,7 @@ func handlePanic(ech chan error) {
 	if r := recover(); r != nil {
 		e := r.(error)
 
-		log.Printf("handling panic by passing onto error channel: %s\n", e)
+		log.Printf("handling panic by passing onto error channel: %s\n%s", e, string(debug.Stack()))
 		ech <- e
 	}
 }
