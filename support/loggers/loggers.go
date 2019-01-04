@@ -25,29 +25,29 @@ type Logger interface {
 	Fatalf(e error, args ...interface{})
 }
 
-type BasicLogger struct {
+type basicLogger struct {
 }
 
-func (l BasicLogger) Info(msg string) {
+func (l basicLogger) Info(msg string) {
 	log.Println(msg)
 }
 
-func (l BasicLogger) Infof(msg string, args ...interface{}) {
+func (l basicLogger) Infof(msg string, args ...interface{}) {
 	log.Printf(msg, args...)
 }
 
-func (l BasicLogger) Error(msg string) {
+func (l basicLogger) Error(msg string) {
 	log.Println(msg) // isn't actually differnt from Info until we do structured logs
 }
 
-func (l BasicLogger) Errorf(msg string, args ...interface{}) {
+func (l basicLogger) Errorf(msg string, args ...interface{}) {
 	log.Printf(msg, args...) // isn't actually differnt from Infof until we do structured logs
 }
 
-func (l BasicLogger) Fatal(e error) {
+func (l basicLogger) Fatal(e error) {
 	log.Fatal(e)
 }
 
-func (l BasicLogger) Fatalf(e string, args ...interface{}) {
+func (l basicLogger) Fatalf(e string, args ...interface{}) {
 	log.Fatalf(e, args...)
 }
