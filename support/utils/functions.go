@@ -74,6 +74,16 @@ func GetInvertedPrice(offer horizon.Offer) float64 {
 	return PriceAsFloat(big.NewRat(int64(offer.PriceR.D), int64(offer.PriceR.N)).FloatString(10))
 }
 
+// GetOrderBook gets the SDEX order book
+func GetOrderBook(api *horizon.Client, assetBase *horizon.Asset, assetQuote *horizon.Asset) (orderBook horizon.OrderBookSummary, e error) {
+	b, e := api.LoadOrderBook(*assetBase, *assetQuote)
+	if e != nil {
+		log.Printf("Can't get SDEX orderbook: %s\n", e)
+		return
+	}
+	return b, e
+}
+
 // Asset2Asset is a Boyz2Men cover band on the blockchain
 func Asset2Asset(Asset horizon.Asset) build.Asset {
 	a := build.Asset{}
