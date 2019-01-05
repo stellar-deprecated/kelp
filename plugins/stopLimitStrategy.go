@@ -9,9 +9,9 @@ import (
 
 // stopLimitConfig contains the configuration params for this Strategy
 type stopLimitConfig struct {
-	AmountOfA       float64 `valid:"-" toml:"AMOUNT_OF_A"` // the size of order
-	StopPrice       float64 `valid:"-" toml:"STOP_PRICE"`  //the price the bid must fall below to trigger the order
-	LimitPrice      float64 `valid:"-" toml:"LIMIT_PRICE"` //the price at which the order is placed
+	AmountOfBase    float64 `valid:"-" toml:"AMOUNT_OF_BASE"` // the size of the sell order
+	StopPrice       float64 `valid:"-" toml:"STOP_PRICE"`     //the price the bid must fall below to trigger the order
+	LimitPrice      float64 `valid:"-" toml:"LIMIT_PRICE"`    //the price at which the order is placed
 	PriceTolerance  float64 `valid:"-" toml:"PRICE_TOLERANCE"`
 	AmountTolerance float64 `valid:"-" toml:"AMOUNT_TOLERANCE"`
 }
@@ -28,7 +28,7 @@ func makeStopLimitStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *stopLimitConfig,
-) (api.Strategy, error) {
+) api.Strategy {
 	orderConstraints := sdex.GetOrderConstraints(pair)
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
@@ -36,7 +36,10 @@ func makeStopLimitStrategy(
 		assetBase,
 		assetQuote,
 		makeStopLimitLevelProvider(
-			config.AmountOfA,
+			sdex,
+			assetBase,
+			assetQuote,
+			config.AmountOfBase,
 			config.StopPrice,
 			config.LimitPrice,
 			orderConstraints),
@@ -52,5 +55,5 @@ func makeStopLimitStrategy(
 		assetQuote,
 		deleteSideStrategy,
 		sellSideStrategy,
-	), nil
+	)
 }
