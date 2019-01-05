@@ -6,7 +6,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
-	"github.com/lightyeario/kelp/support/utils"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -37,10 +37,10 @@ func (p *stopLimitLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote f
 	}
 
 	levels := []api.Level{}
-	topBidPrice := getTopBid(p.sdex, p.assetBase, p.assetQuote)
+	topBidPrice, e := getTopBid(p.sdex, p.assetBase, p.assetQuote)
 
 	if topBidPrice <= p.stopPrice {
-		level := getLevel()
+		level, e := p.getLevel()
 		levels = append(levels, level)
 		return levels, nil
 	}
@@ -57,16 +57,6 @@ func (p *stopLimitLevelProvider) getLevel() (api.Level, error) {
 	return level, nil
 }
 
-func getTopBid(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset) (float64, error) {
-	orderBook, e := utils.GetOrderBook(sdex.API, assetBase, assetQuote)
-	if e != nil {
-		return 0, e
-	}
-	bids := orderBook.Bids
-	topBidPrice := utils.PriceAsFloat(bids[0].Price)
-	return topBidPrice, nil
-}
-
 // GetFillHandlers impl
 func (p *stopLimitLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
 	return []api.FillHandler{p}, nil
@@ -77,4 +67,14 @@ func (p *stopLimitLevelProvider) HandleFill(trade model.Trade) error {
 	log.Println("the order was taken, will exit next cycle")
 	p.orderFilled = true
 	return nil
+}
+
+func getTopBid(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset) (float64, error) {
+	orderBook, e := utils.GetOrderBook(sdex.API, assetBase, assetQuote)
+	if e != nil {
+		return 0, e
+	}
+	bids := orderBook.Bids
+	topBidPrice := utils.PriceAsFloat(bids[0].Price)
+	return topBidPrice, nil
 }
