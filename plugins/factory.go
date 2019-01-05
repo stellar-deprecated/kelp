@@ -105,6 +105,19 @@ var strategies = map[string]StrategyContainer{
 			return makeDeleteStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote), nil
 		},
 	},
+	"stoplimit": StrategyContainer{
+		SortOrder:   5,
+		Description: "Places a sell order when the top bid drops below a specified price",
+		NeedsConfig: true,
+		Complexity:  "Intermediate",
+		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			var cfg stopLimitConfig
+			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
+			utils.LogConfig(cfg)
+			return makeStopLimitStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg), nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy

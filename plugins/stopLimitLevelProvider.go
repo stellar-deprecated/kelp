@@ -15,7 +15,7 @@ type stopLimitLevelProvider struct {
 	sdex             *SDEX
 	assetBase        *horizon.Asset
 	assetQuote       *horizon.Asset
-	amountOfA        float64
+	amountOfBase     float64
 	stopPrice        float64
 	limitPrice       float64
 	orderFilled      bool // tracks whether the order was filled (at any amount)
@@ -25,31 +25,64 @@ type stopLimitLevelProvider struct {
 // ensure it implements LevelProvider
 var _ api.LevelProvider = &stopLimitLevelProvider{}
 
+// ensure this implements api.FillHandler
+var _ api.FillHandler = &balancedLevelProvider{}
+
+// makeStopLimitLevelProvider is the factory method
+func makeStopLimitLevelProvider(
+	sdex *SDEX,
+	assetBase *horizon.Asset,
+	assetQuote *horizon.Asset,
+	amountOfBase float64,
+	stopPrice float64,
+	limitPrice float64,
+	orderConstraints *model.OrderConstraints,
+) api.LevelProvider {
+	orderFilled := false
+	return &stopLimitLevelProvider{
+		sdex:             sdex,
+		assetBase:        assetBase,
+		assetQuote:       assetQuote,
+		amountOfBase:     amountOfBase,
+		stopPrice:        stopPrice,
+		limitPrice:       limitPrice,
+		orderFilled:      orderFilled,
+		orderConstraints: orderConstraints,
+	}
+}
+
 // GetLevels impl.
 func (p *stopLimitLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-
 	if p.orderFilled {
-		log.Fatal("the order was filled (at least partially), exiting")
+		log.Fatal("the order was placed and filled, exiting")
 	}
 
-	if p.amountOfA > maxAssetBase {
+	if p.amountOfBase > maxAssetBase {
 		return nil, fmt.Errorf("account balance is less than specified amount order")
 	}
 
 	levels := []api.Level{}
 	topBidPrice, e := getTopBid(p.sdex, p.assetBase, p.assetQuote)
+	if e != nil {
+		return nil, fmt.Errorf("unable to get top bid from SDEX")
+	}
 
 	if topBidPrice <= p.stopPrice {
 		level, e := p.getLevel()
+		if e != nil {
+			return nil, fmt.Errorf("unable to generate the order level")
+		}
 		levels = append(levels, level)
+		log.Println("stop was triggered, placing order")
 		return levels, nil
 	}
+	log.Println("stop was not triggered")
 	return nil, nil
 }
 
 func (p *stopLimitLevelProvider) getLevel() (api.Level, error) {
 	targetPrice := p.limitPrice
-	targetAmount := p.amountOfA
+	targetAmount := p.amountOfBase
 	level := api.Level{
 		Price:  *model.NumberFromFloat(targetPrice, p.orderConstraints.PricePrecision),
 		Amount: *model.NumberFromFloat(targetAmount, p.orderConstraints.VolumePrecision),
