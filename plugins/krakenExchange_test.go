@@ -132,7 +132,8 @@ func TestGetTradeHistory(t *testing.T) {
 		return
 	}
 
-	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(nil, nil)
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
+	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(pair, nil, nil)
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -159,7 +160,8 @@ func TestGetOpenOrders(t *testing.T) {
 		return
 	}
 
-	m, e := testKrakenExchange.GetOpenOrders()
+	pair := &model.TradingPair{Base: model.XLM, Quote: model.USD}
+	m, e := testKrakenExchange.GetOpenOrders([]*model.TradingPair{pair})
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -210,8 +212,9 @@ func TestCancelOrder(t *testing.T) {
 	}
 
 	// need to add some transactionID here to run this test
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
 	txID := model.MakeTransactionID("")
-	result, e := testKrakenExchange.CancelOrder(txID)
+	result, e := testKrakenExchange.CancelOrder(txID, pair)
 	if !assert.NoError(t, e) {
 		return
 	}

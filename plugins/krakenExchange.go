@@ -127,11 +127,12 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 }
 
 // CancelOrder impl.
-func (k *krakenExchange) CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error) {
+func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error) {
 	if k.isSimulated {
 		return model.CancelResultCancelSuccessful, nil
 	}
 
+	// we don't actually use the pair for kraken
 	resp, e := k.nextAPI().CancelOrder(txID.String())
 	if e != nil {
 		return model.CancelResultFailed, e
@@ -194,8 +195,15 @@ func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
 }
 
 // GetOpenOrders impl.
-func (k *krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error) {
+func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error) {
 	openOrdersResponse, e := k.nextAPI().OpenOrders(map[string]string{})
+	if e != nil {
+		return nil, e
+	}
+
+	// convert to a map so we can easily search for the existence of a trading pair
+	// kraken uses different symbols when fetching open orders!
+	pairsMap, e := model.TradingPairs2Strings2(k.assetConverterOpenOrders, "", pairs)
 	if e != nil {
 		return nil, e
 	}
@@ -207,6 +215,12 @@ func (k *krakenExchange) GetOpenOrders() (map[model.TradingPair][]model.OpenOrde
 		if e != nil {
 			return nil, e
 		}
+
+		if _, ok := pairsMap[*pair]; !ok {
+			// skip open orders for pairs that were not requested
+			continue
+		}
+
 		if _, ok := m[*pair]; !ok {
 			m[*pair] = []model.OpenOrder{}
 		}
@@ -303,7 +317,7 @@ func values(m map[model.TradingPair]string) []string {
 }
 
 // GetTradeHistory impl.
-func (k *krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
 	var mcs *int64
 	if maybeCursorStart != nil {
 		i := maybeCursorStart.(int64)
@@ -316,10 +330,10 @@ func (k *krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCurs
 		mce = &i
 	}
 
-	return k.getTradeHistory(mcs, mce)
+	return k.getTradeHistory(pair, mcs, mce)
 }
 
-func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
 	input := map[string]string{}
 	if maybeCursorStart != nil {
 		input["start"] = strconv.FormatInt(*maybeCursorStart, 10)
@@ -359,19 +373,21 @@ func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd
 			feeCostPrecision = orderConstraints.VolumePrecision
 		}
 
-		res.Trades = append(res.Trades, model.Trade{
-			Order: model.Order{
-				Pair:        pair,
-				OrderAction: model.OrderActionFromString(_type),
-				OrderType:   model.OrderTypeFromString(_ordertype),
-				Price:       model.MustNumberFromString(_price, orderConstraints.PricePrecision),
-				Volume:      model.MustNumberFromString(_vol, orderConstraints.VolumePrecision),
-				Timestamp:   ts,
-			},
-			TransactionID: model.MakeTransactionID(_txid),
-			Cost:          model.MustNumberFromString(_cost, feeCostPrecision),
-			Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
-		})
+		if *pair == tradingPair {
+			res.Trades = append(res.Trades, model.Trade{
+				Order: model.Order{
+					Pair:        pair,
+					OrderAction: model.OrderActionFromString(_type),
+					OrderType:   model.OrderTypeFromString(_ordertype),
+					Price:       model.MustNumberFromString(_price, orderConstraints.PricePrecision),
+					Volume:      model.MustNumberFromString(_vol, orderConstraints.VolumePrecision),
+					Timestamp:   ts,
+				},
+				TransactionID: model.MakeTransactionID(_txid),
+				Cost:          model.MustNumberFromString(_cost, feeCostPrecision),
+				Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
+			})
+		}
 		res.Cursor = _time
 	}
 	return &res, nil

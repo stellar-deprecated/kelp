@@ -3,11 +3,15 @@ package sdk
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/networking"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Ccxt Rest SDK (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
@@ -21,18 +25,23 @@ type Ccxt struct {
 const pathExchanges = "/exchanges"
 
 // MakeInitializedCcxtExchange constructs an instance of Ccxt that is bound to a specific exchange instance on the CCXT REST server
-func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string) (*Ccxt, error) {
+func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey api.ExchangeAPIKey) (*Ccxt, error) {
 	if strings.HasSuffix(ccxtBaseURL, "/") {
 		return nil, fmt.Errorf("invalid format for ccxtBaseURL: %s", ccxtBaseURL)
 	}
 
+	instanceName, e := makeInstanceName(exchangeName, apiKey)
+	if e != nil {
+		return nil, fmt.Errorf("cannot make instance name: %s", e)
+	}
 	c := &Ccxt{
 		httpClient:   http.DefaultClient,
 		ccxtBaseURL:  ccxtBaseURL,
 		exchangeName: exchangeName,
-		// don't initialize instanceName since it's initialized in the call to init() below
+		instanceName: instanceName,
 	}
-	e := c.init()
+
+	e = c.init(apiKey)
 	if e != nil {
 		return nil, fmt.Errorf("error when initializing Ccxt exchange: %s", e)
 	}
@@ -40,7 +49,7 @@ func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string) (*Ccxt
 	return c, nil
 }
 
-func (c *Ccxt) init() error {
+func (c *Ccxt) init(apiKey api.ExchangeAPIKey) error {
 	// get exchange list
 	var exchangeList []string
 	e := networking.JSONRequest(c.httpClient, "GET", c.ccxtBaseURL+pathExchanges, "", map[string]string{}, &exchangeList)
@@ -68,16 +77,14 @@ func (c *Ccxt) init() error {
 	}
 
 	// make a new instance if needed
-	if len(instanceList) == 0 {
-		instanceName := c.exchangeName + "1"
-		e = c.newInstance(instanceName)
+	if !c.hasInstance(instanceList) {
+		e = c.newInstance(apiKey)
 		if e != nil {
-			return fmt.Errorf("error creating new instance '%s' for exchange '%s': %s", instanceName, c.exchangeName, e)
+			return fmt.Errorf("error creating new instance '%s' for exchange '%s': %s", c.instanceName, c.exchangeName, e)
 		}
-		log.Printf("created new instance '%s' for exchange '%s'\n", instanceName, c.exchangeName)
-		c.instanceName = instanceName
+		log.Printf("created new instance '%s' for exchange '%s'\n", c.instanceName, c.exchangeName)
 	} else {
-		c.instanceName = instanceList[0]
+		log.Printf("instance '%s' for exchange '%s' already exists\n", c.instanceName, c.exchangeName)
 	}
 
 	// load markets to populate fields related to markets
@@ -90,14 +97,48 @@ func (c *Ccxt) init() error {
 	return nil
 }
 
-func (c *Ccxt) newInstance(instanceName string) error {
+func makeInstanceName(exchangeName string, apiKey api.ExchangeAPIKey) (string, error) {
+	if apiKey.Key == "" {
+		return exchangeName, nil
+	}
+
+	number, e := hashString(apiKey.Key)
+	if e != nil {
+		return "", fmt.Errorf("could not hash apiKey.Key: %s", e)
+	}
+	return fmt.Sprintf("%s%d", exchangeName, number), nil
+}
+
+func hashString(s string) (uint32, error) {
+	h := fnv.New32a()
+	_, e := h.Write([]byte(s))
+	if e != nil {
+		return 0, fmt.Errorf("error while hashing string: %s", e)
+	}
+	return h.Sum32(), nil
+}
+
+func (c *Ccxt) hasInstance(instanceList []string) bool {
+	for _, i := range instanceList {
+		if i == c.instanceName {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey) error {
 	data, e := json.Marshal(&struct {
-		ID string `json:"id"`
+		ID     string `json:"id"`
+		APIKey string `json:"apiKey"`
+		Secret string `json:"secret"`
 	}{
-		ID: instanceName,
+		ID:     c.instanceName,
+		APIKey: apiKey.Key,
+		Secret: apiKey.Secret,
 	})
 	if e != nil {
-		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", instanceName, c.exchangeName, e)
+		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", c.instanceName, c.exchangeName, e)
 	}
 
 	var newInstance map[string]interface{}
@@ -107,7 +148,7 @@ func (c *Ccxt) newInstance(instanceName string) error {
 	}
 
 	if _, ok := newInstance["urls"]; !ok {
-		return fmt.Errorf("check for new instance of exchange '%s' failed for instanceName: %s", c.exchangeName, instanceName)
+		return fmt.Errorf("check for new instance of exchange '%s' failed for instanceName: %s", c.exchangeName, c.instanceName)
 	}
 	return nil
 }
@@ -258,4 +299,218 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
 	}
 	return output, nil
+}
+
+func (c *Ccxt) FetchMyTrades(tradingPair string) ([]CcxtTrade, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	data, e := json.Marshal(&[]string{tradingPair})
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (tradingPair=%s) as an array for exchange '%s': %s", tradingPair, c.exchangeName, e)
+	}
+	// fetch trades for symbol
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchMyTrades"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	output := []CcxtTrade{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
+	}
+	return output, nil
+}
+
+// CcxtBalance represents the balance for an asset
+type CcxtBalance struct {
+	Total float64
+	Used  float64
+	Free  float64
+}
+
+// FetchBalance calls the /fetchBalance endpoint on CCXT
+func (c *Ccxt) FetchBalance() (map[string]CcxtBalance, error) {
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchBalance"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e := networking.JSONRequest(c.httpClient, "POST", url, "", map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching balance: %s", e)
+	}
+
+	outputMap := output.(map[string]interface{})
+	if _, ok := outputMap["total"]; !ok {
+		return nil, fmt.Errorf("result from call to fetchBalance did not contain 'total' field")
+	}
+	totals := outputMap["total"].(map[string]interface{})
+
+	result := map[string]CcxtBalance{}
+	for asset, v := range totals {
+		var totalBalance float64
+		if b, ok := v.(float64); ok {
+			totalBalance = b
+		} else {
+			return nil, fmt.Errorf("could not convert total balance for asset '%s' from interface{} to float64", asset)
+		}
+		if totalBalance == 0 {
+			continue
+		}
+
+		assetData := outputMap[asset].(map[string]interface{})
+		var assetBalance CcxtBalance
+		e = mapstructure.Decode(assetData, &assetBalance)
+		if e != nil {
+			return nil, fmt.Errorf("error converting balance map to CcxtBalance for asset '%s': %s", asset, e)
+		}
+		result[asset] = assetBalance
+	}
+	return result, nil
+}
+
+// CcxtOpenOrder represents an open order
+type CcxtOpenOrder struct {
+	Amount    float64
+	Cost      float64
+	Filled    float64
+	ID        string
+	Price     float64
+	Side      string
+	Status    string
+	Symbol    string
+	Type      string
+	Timestamp int64
+}
+
+// FetchOpenOrders calls the /fetchOpenOrders endpoint on CCXT
+func (c *Ccxt) FetchOpenOrders(tradingPairs []string) (map[string][]CcxtOpenOrder, error) {
+	for _, p := range tradingPairs {
+		e := c.symbolExists(p)
+		if e != nil {
+			return nil, fmt.Errorf("symbol does not exist: %s", e)
+		}
+	}
+
+	// marshal input data
+	data, e := json.Marshal(&tradingPairs)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (tradingPairs=%v) for exchange '%s': %s", tradingPairs, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOpenOrders"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching open orders: %s", e)
+	}
+
+	result := map[string][]CcxtOpenOrder{}
+	outputList := output.([]interface{})
+	for _, elem := range outputList {
+		elemMap, ok := elem.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("could not convert the element in the result to a map[string]interface{}, type = %s", reflect.TypeOf(elem))
+		}
+
+		var openOrder CcxtOpenOrder
+		e = mapstructure.Decode(elemMap, &openOrder)
+		if e != nil {
+			return nil, fmt.Errorf("could not decode open order element (%v): %s", elemMap, e)
+		}
+
+		var orderList []CcxtOpenOrder
+		if l, ok := result[openOrder.Symbol]; ok {
+			orderList = l
+		} else {
+			orderList = []CcxtOpenOrder{}
+		}
+
+		orderList = append(orderList, openOrder)
+		result[openOrder.Symbol] = orderList
+	}
+	return result, nil
+}
+
+// CreateLimitOrder calls the /createOrder endpoint on CCXT with a limit price and the order type set to "limit"
+func (c *Ccxt) CreateLimitOrder(tradingPair string, side string, amount float64, price float64) (*CcxtOpenOrder, error) {
+	orderType := "limit"
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	inputData := []interface{}{
+		tradingPair,
+		orderType,
+		side,
+		amount,
+		price,
+	}
+	data, e := json.Marshal(&inputData)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (%v) for exchange '%s': %s", inputData, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/createOrder"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error creating order: %s", e)
+	}
+
+	outputMap, ok := output.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("could not convert the output to a map[string]interface{}, type = %s", reflect.TypeOf(output))
+	}
+
+	var openOrder CcxtOpenOrder
+	e = mapstructure.Decode(outputMap, &openOrder)
+	if e != nil {
+		return nil, fmt.Errorf("could not decode outputMap to openOrder (%v): %s", outputMap, e)
+	}
+
+	return &openOrder, nil
+}
+
+// CancelOrder calls the /cancelOrder endpoint on CCXT with the orderID and tradingPair
+func (c *Ccxt) CancelOrder(orderID string, tradingPair string) (*CcxtOpenOrder, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	inputData := []interface{}{
+		orderID,
+		tradingPair,
+	}
+	data, e := json.Marshal(&inputData)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (%v) for exchange '%s': %s", inputData, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/cancelOrder"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error canceling order: %s", e)
+	}
+
+	outputMap, ok := output.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("could not convert the output to a map[string]interface{}, type = %s", reflect.TypeOf(output))
+	}
+
+	var openOrder CcxtOpenOrder
+	e = mapstructure.Decode(outputMap, &openOrder)
+	if e != nil {
+		return nil, fmt.Errorf("could not decode outputMap to openOrder (%v): %s", outputMap, e)
+	}
+
+	return &openOrder, nil
 }

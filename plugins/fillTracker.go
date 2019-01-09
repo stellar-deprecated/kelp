@@ -63,7 +63,7 @@ func (f *FillTracker) TrackFills() error {
 			// do nothing
 		}
 
-		tradeHistoryResult, e := f.fillTrackable.GetTradeHistory(lastCursor, nil)
+		tradeHistoryResult, e := f.fillTrackable.GetTradeHistory(*f.GetPair(), lastCursor, nil)
 		if e != nil {
 			return fmt.Errorf("error when fetching trades: %s", e)
 		}

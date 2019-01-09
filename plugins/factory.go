@@ -171,9 +171,22 @@ var exchanges = map[string]ExchangeContainer{
 	"ccxt-binance": ExchangeContainer{
 		SortOrder:    1,
 		Description:  "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
-		TradeEnabled: false,
+		TradeEnabled: true,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange("http://localhost:3000", "binance", exchangeFactoryData.simMode)
+			// https://www.binance.com/api/v1/exchangeInfo
+			// https://support.binance.com/hc/en-us/articles/115000594711-Trading-Rule
+			binanceOrderConstraints := map[model.TradingPair]model.OrderConstraints{
+				*model.MakeTradingPair(model.XLM, model.USDT): *model.MakeOrderConstraints(5, 2, 100.0), // converted USDT value to XLM for minBaseVolume with a lot of slack
+				*model.MakeTradingPair(model.XLM, model.BTC):  *model.MakeOrderConstraints(8, 0, 100.0), // converted BTC value to XLM for minBaseVolume with a lot of slack
+			}
+
+			return makeCcxtExchange(
+				"http://localhost:3000",
+				"binance",
+				binanceOrderConstraints,
+				exchangeFactoryData.apiKeys,
+				exchangeFactoryData.simMode,
+			)
 		},
 	},
 	"ccxt-poloniex": ExchangeContainer{
@@ -181,7 +194,13 @@ var exchanges = map[string]ExchangeContainer{
 		Description:  "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		TradeEnabled: false,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange("http://localhost:3000", "poloniex", exchangeFactoryData.simMode)
+			return makeCcxtExchange(
+				"http://localhost:3000",
+				"poloniex",
+				map[model.TradingPair]model.OrderConstraints{}, // TODO when enabling trading
+				exchangeFactoryData.apiKeys,
+				exchangeFactoryData.simMode,
+			)
 		},
 	},
 	"ccxt-bittrex": ExchangeContainer{
@@ -189,7 +208,13 @@ var exchanges = map[string]ExchangeContainer{
 		Description:  "Bittrex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		TradeEnabled: false,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange("http://localhost:3000", "bittrex", exchangeFactoryData.simMode)
+			return makeCcxtExchange(
+				"http://localhost:3000",
+				"bittrex",
+				map[model.TradingPair]model.OrderConstraints{}, // TODO when enabling trading
+				exchangeFactoryData.apiKeys,
+				exchangeFactoryData.simMode,
+			)
 		},
 	},
 }

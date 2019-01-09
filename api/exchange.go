@@ -58,7 +58,7 @@ type FillHandler interface {
 // TradeFetcher is the common method between FillTrackable and exchange
 // temporarily extracted out from TradeAPI so SDEX has the flexibility to only implement this rather than exchange and FillTrackable
 type TradeFetcher interface {
-	GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
+	GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*TradeHistoryResult, error)
 }
 
 // FillTrackable enables any implementing exchange to support fill tracking
@@ -85,11 +85,11 @@ type TradeAPI interface {
 
 	TradeFetcher
 
-	GetOpenOrders() (map[model.TradingPair][]model.OpenOrder, error)
+	GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error)
 
 	AddOrder(order *model.Order) (*model.TransactionID, error)
 
-	CancelOrder(txID *model.TransactionID) (model.CancelOrderResult, error)
+	CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error)
 }
 
 // PrepareDepositResult is the result of a PrepareDeposit call
