@@ -132,7 +132,8 @@ func TestGetTradeHistory(t *testing.T) {
 		return
 	}
 
-	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(nil, nil)
+	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
+	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(pair, nil, nil)
 	if !assert.NoError(t, e) {
 		return
 	}

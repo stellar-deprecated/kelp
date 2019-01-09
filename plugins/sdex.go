@@ -646,10 +646,14 @@ func (sdex *SDEX) pair2Assets() (baseAsset horizon.Asset, quoteAsset horizon.Ass
 var _ api.FillTrackable = &SDEX{}
 
 // GetTradeHistory fetches trades for the trading account bound to this instance of SDEX
-func (sdex *SDEX) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+	if pair != *sdex.pair {
+		return nil, fmt.Errorf("passed in pair (%s) did not match sdex.pair (%s)", pair.String(), sdex.pair.String())
+	}
+
 	baseAsset, quoteAsset, e := sdex.pair2Assets()
 	if e != nil {
-		return nil, fmt.Errorf("error while convertig pair to base and quote asset: %s", e)
+		return nil, fmt.Errorf("error while converting pair to base and quote asset: %s", e)
 	}
 
 	var cursorStart string

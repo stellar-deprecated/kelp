@@ -224,7 +224,11 @@ func TestFetchTrades(t *testing.T) {
 	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
 	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 
-	for _, k := range []tradesTest{
+	for _, k := range []struct {
+		exchangeName   string
+		tradingPair    string
+		expectedFields []string
+	}{
 		{
 			exchangeName:   "poloniex",
 			tradingPair:    "BTC/USDT",
@@ -248,37 +252,77 @@ func TestFetchTrades(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			runTestFetchTrades(k, t)
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{})
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+				return
+			}
+
+			trades, e := c.FetchTrades(k.tradingPair)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when fetching trades: %s", e))
+				return
+			}
+
+			validateTrades(trades, k.expectedFields, k.tradingPair, t)
 		})
 	}
 }
 
-type tradesTest struct {
-	exchangeName   string
-	tradingPair    string
-	expectedFields []string
-}
-
-func runTestFetchTrades(k tradesTest, t *testing.T) {
+func TestFetchMyTrades(t *testing.T) {
 	if testing.Short() {
 		return
 	}
 
-	c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{})
-	if e != nil {
-		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
-		return
-	}
+	poloniexFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
+	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
+	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 
-	trades, e := c.FetchTrades(k.tradingPair)
-	if e != nil {
-		assert.Fail(t, fmt.Sprintf("error when fetching trades: %s", e))
-		return
-	}
+	for _, k := range []struct {
+		exchangeName   string
+		tradingPair    string
+		expectedFields []string
+		apiKey         api.ExchangeAPIKey
+	}{
+		{
+			exchangeName:   "poloniex",
+			tradingPair:    "BTC/USDT",
+			expectedFields: poloniexFields,
+			apiKey:         api.ExchangeAPIKey{},
+		}, {
+			exchangeName:   "binance",
+			tradingPair:    "XLM/USDT",
+			expectedFields: binanceFields,
+			apiKey:         api.ExchangeAPIKey{},
+		}, {
+			exchangeName:   "bittrex",
+			tradingPair:    "XLM/BTC",
+			expectedFields: bittrexFields,
+			apiKey:         api.ExchangeAPIKey{},
+		},
+	} {
+		t.Run(k.exchangeName, func(t *testing.T) {
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+				return
+			}
 
+			trades, e := c.FetchMyTrades(k.tradingPair)
+			if e != nil {
+				assert.Fail(t, fmt.Sprintf("error when fetching my trades: %s", e))
+				return
+			}
+
+			validateTrades(trades, k.expectedFields, k.tradingPair, t)
+		})
+	}
+}
+
+func validateTrades(trades []CcxtTrade, expectedFields []string, tradingPair string, t *testing.T) {
 	// convert expectedFields to a map and create the supportsField function
 	fieldsMap := map[string]bool{}
-	for _, f := range k.expectedFields {
+	for _, f := range expectedFields {
 		fieldsMap[f] = true
 	}
 	supportsField := func(field string) bool {
@@ -306,7 +350,7 @@ func runTestFetchTrades(k tradesTest, t *testing.T) {
 		if supportsField("side") && !assert.True(t, trade.Side == "sell" || trade.Side == "buy") {
 			return
 		}
-		if supportsField("symbol") && !assert.True(t, trade.Symbol == k.tradingPair) {
+		if supportsField("symbol") && !assert.True(t, trade.Symbol == tradingPair) {
 			return
 		}
 		if supportsField("timestamp") && !assert.True(t, trade.Timestamp > 0) {

@@ -301,6 +301,28 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	return output, nil
 }
 
+func (c *Ccxt) FetchMyTrades(tradingPair string) ([]CcxtTrade, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	// marshal input data
+	data, e := json.Marshal(&[]string{tradingPair})
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (tradingPair=%s) as an array for exchange '%s': %s", tradingPair, c.exchangeName, e)
+	}
+	// fetch trades for symbol
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchMyTrades"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	output := []CcxtTrade{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
+	}
+	return output, nil
+}
+
 // CcxtBalance represents the balance for an asset
 type CcxtBalance struct {
 	Total float64

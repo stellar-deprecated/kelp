@@ -317,7 +317,7 @@ func values(m map[model.TradingPair]string) []string {
 }
 
 // GetTradeHistory impl.
-func (k *krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
 	var mcs *int64
 	if maybeCursorStart != nil {
 		i := maybeCursorStart.(int64)
@@ -330,10 +330,10 @@ func (k *krakenExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCurs
 		mce = &i
 	}
 
-	return k.getTradeHistory(mcs, mce)
+	return k.getTradeHistory(pair, mcs, mce)
 }
 
-func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
 	input := map[string]string{}
 	if maybeCursorStart != nil {
 		input["start"] = strconv.FormatInt(*maybeCursorStart, 10)
@@ -373,19 +373,21 @@ func (k *krakenExchange) getTradeHistory(maybeCursorStart *int64, maybeCursorEnd
 			feeCostPrecision = orderConstraints.VolumePrecision
 		}
 
-		res.Trades = append(res.Trades, model.Trade{
-			Order: model.Order{
-				Pair:        pair,
-				OrderAction: model.OrderActionFromString(_type),
-				OrderType:   model.OrderTypeFromString(_ordertype),
-				Price:       model.MustNumberFromString(_price, orderConstraints.PricePrecision),
-				Volume:      model.MustNumberFromString(_vol, orderConstraints.VolumePrecision),
-				Timestamp:   ts,
-			},
-			TransactionID: model.MakeTransactionID(_txid),
-			Cost:          model.MustNumberFromString(_cost, feeCostPrecision),
-			Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
-		})
+		if *pair == tradingPair {
+			res.Trades = append(res.Trades, model.Trade{
+				Order: model.Order{
+					Pair:        pair,
+					OrderAction: model.OrderActionFromString(_type),
+					OrderType:   model.OrderTypeFromString(_ordertype),
+					Price:       model.MustNumberFromString(_price, orderConstraints.PricePrecision),
+					Volume:      model.MustNumberFromString(_vol, orderConstraints.VolumePrecision),
+					Timestamp:   ts,
+				},
+				TransactionID: model.MakeTransactionID(_txid),
+				Cost:          model.MustNumberFromString(_cost, feeCostPrecision),
+				Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
+			})
+		}
 		res.Cursor = _time
 	}
 	return &res, nil

@@ -159,6 +159,35 @@ func (c ccxtExchange) readOrders(orders []sdk.CcxtOrder, pair *model.TradingPair
 	return result
 }
 
+// GetTradeHistory impl
+func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
+	if e != nil {
+		return nil, fmt.Errorf("error converting pair to string: %s", e)
+	}
+
+	// TODO use cursor when fetching trade history
+	tradesRaw, e := c.api.FetchMyTrades(pairString)
+	if e != nil {
+		return nil, fmt.Errorf("error while fetching trade history for trading pair '%s': %s", pairString, e)
+	}
+
+	trades := []model.Trade{}
+	for _, raw := range tradesRaw {
+		t, e := c.readTrade(&pair, pairString, raw)
+		if e != nil {
+			return nil, fmt.Errorf("error while reading trade: %s", e)
+		}
+		trades = append(trades, *t)
+	}
+
+	// TODO implement cursor logic
+	return &api.TradeHistoryResult{
+		Cursor: nil,
+		Trades: trades,
+	}, nil
+}
+
 // GetTrades impl
 func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*api.TradesResult, error) {
 	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
@@ -217,21 +246,15 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 	}
 
 	if rawTrade.Cost != 0.0 {
-		// use smaller precision for cost since it's logically derived from amount and price
+		// use bigger precision for cost since it's logically derived from amount and price
 		costPrecision := pricePrecision
-		if volumePrecision < pricePrecision {
+		if volumePrecision > pricePrecision {
 			costPrecision = volumePrecision
 		}
 		trade.Cost = model.NumberFromFloat(rawTrade.Cost, costPrecision)
 	}
 
 	return &trade, nil
-}
-
-// GetTradeHistory impl
-func (c ccxtExchange) GetTradeHistory(maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
-	// TODO implement
-	return nil, nil
 }
 
 // GetOpenOrders impl
