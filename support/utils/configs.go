@@ -74,3 +74,8 @@ func SecretKey2PublicKey(i interface{}) interface{} {
 func passthrough(i interface{}) interface{} {
 	return i
 }
+
+// Hide returns an empty string
+func Hide(i interface{}) interface{} {
+	return ""
+}

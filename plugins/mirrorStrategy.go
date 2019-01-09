@@ -42,7 +42,9 @@ type mirrorConfig struct {
 
 // String impl.
 func (c mirrorConfig) String() string {
-	return utils.StructString(c, nil)
+	return utils.StructString(c, map[string]func(interface{}) interface{}{
+		"EXCHANGE_API_KEYS": utils.Hide,
+	})
 }
 
 // assetSurplus holds information about how many units of an asset needs to be offset on the exchange
