@@ -73,10 +73,14 @@ type mirrorStrategy struct {
 	orderbookDepth     int32
 	perLevelSpread     float64
 	volumeDivideBy     float64
-	tradeAPI           api.TradeAPI
+	exchange           api.Exchange
 	offsetTrades       bool
 	mutex              *sync.Mutex
 	baseSurplus        map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
+
+	// uninitialized
+	maxBackingBase  *model.Number
+	maxBackingQuote *model.Number
 }
 
 // ensure this implements api.Strategy
@@ -120,7 +124,7 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 		orderbookDepth:     config.OrderbookDepth,
 		perLevelSpread:     config.PerLevelSpread,
 		volumeDivideBy:     config.VolumeDivideBy,
-		tradeAPI:           api.TradeAPI(exchange),
+		exchange:           exchange,
 		offsetTrades:       config.OffsetTrades,
 		mutex:              &sync.Mutex{},
 		baseSurplus: map[model.OrderAction]*assetSurplus{
@@ -131,21 +135,43 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 }
 
 // PruneExistingOffers deletes any extra offers
-func (s mirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
 	return []build.TransactionMutator{}, buyingAOffers, sellingAOffers
 }
 
 // PreUpdate changes the strategy's state in prepration for the update
 func (s *mirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error {
+	return s.recordBalances()
+}
+
+func (s *mirrorStrategy) recordBalances() error {
+	balanceMap, e := s.exchange.GetAccountBalances([]model.Asset{s.backingPair.Base, s.backingPair.Quote})
+	if e != nil {
+		return fmt.Errorf("unable to fetch balances for assets: %s", e)
+	}
+
+	// save asset balances from backing exchange to be used when placing offers in offset mode
+	if baseBalance, ok := balanceMap[s.backingPair.Base]; ok {
+		s.maxBackingBase = &baseBalance
+	} else {
+		return fmt.Errorf("unable to fetch balance for base asset: %s", string(s.backingPair.Base))
+	}
+
+	if quoteBalance, ok := balanceMap[s.backingPair.Quote]; ok {
+		s.maxBackingQuote = &quoteBalance
+	} else {
+		return fmt.Errorf("unable to fetch balance for quote asset: %s", string(s.backingPair.Quote))
+	}
+
 	return nil
 }
 
 // UpdateWithOps builds the operations we want performed on the account
-func (s mirrorStrategy) UpdateWithOps(
+func (s *mirrorStrategy) UpdateWithOps(
 	buyingAOffers []horizon.Offer,
 	sellingAOffers []horizon.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.tradeAPI.GetOrderBook(s.backingPair, s.orderbookDepth)
+	ob, e := s.exchange.GetOrderBook(s.backingPair, s.orderbookDepth)
 	if e != nil {
 		return nil, e
 	}
@@ -160,6 +186,12 @@ func (s mirrorStrategy) UpdateWithOps(
 		asks = asks[:50]
 	}
 
+	sellBalanceCoordinator := balanceCoordinator{
+		placedUnits:      model.NumberConstants.Zero,
+		backingBalance:   s.maxBackingBase,
+		backingAssetType: "base",
+		isBackingBuy:     false,
+	}
 	buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
@@ -167,12 +199,19 @@ func (s mirrorStrategy) UpdateWithOps(
 		s.sdex.CreateBuyOffer,
 		(1 - s.perLevelSpread),
 		true,
+		sellBalanceCoordinator, // we sell on the backing exchange to offset trades that are bought on the primary exchange
 	)
 	if e != nil {
 		return nil, e
 	}
 	log.Printf("num. buyOps in this update: %d\n", len(buyOps))
 
+	buyBalanceCoordinator := balanceCoordinator{
+		placedUnits:      model.NumberConstants.Zero,
+		backingBalance:   s.maxBackingQuote,
+		backingAssetType: "quote",
+		isBackingBuy:     true,
+	}
 	sellOps, e := s.updateLevels(
 		sellingAOffers,
 		asks,
@@ -180,6 +219,7 @@ func (s mirrorStrategy) UpdateWithOps(
 		s.sdex.CreateSellOffer,
 		(1 + s.perLevelSpread),
 		false,
+		buyBalanceCoordinator, // we buy on the backing exchange to offset trades that are sold on the primary exchange
 	)
 	if e != nil {
 		return nil, e
@@ -205,6 +245,7 @@ func (s *mirrorStrategy) updateLevels(
 	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
+	bc balanceCoordinator,
 ) ([]build.TransactionMutator, error) {
 	ops := []build.TransactionMutator{}
 	deleteOps := []build.TransactionMutator{}
@@ -215,6 +256,9 @@ func (s *mirrorStrategy) updateLevels(
 				return nil, e
 			}
 			if modifyOp != nil {
+				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
+					continue
+				}
 				ops = append(ops, modifyOp)
 			}
 			if deleteOp != nil {
@@ -224,15 +268,20 @@ func (s *mirrorStrategy) updateLevels(
 
 		// create offers for remaining new bids
 		for i := len(oldOffers); i < len(newOrders); i++ {
-			price := newOrders[i].Price.Scale(priceMultiplier).AsFloat()
-			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy).AsFloat()
+			price := newOrders[i].Price.Scale(priceMultiplier)
+			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
 
-			if vol < s.backingConstraints.MinBaseVolume.AsFloat() {
-				log.Printf("skip level creation, baseVolume (%f) < minBaseVolume (%f) of backing exchange\n", vol, s.backingConstraints.MinBaseVolume.AsFloat())
+			if vol.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
+				log.Printf("skip level creation, baseVolume (%s) < minBaseVolume (%s) of backing exchange\n", vol.AsString(), s.backingConstraints.MinBaseVolume.AsString())
 				continue
 			}
-			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price, vol, incrementalNativeAmountRaw)
+
+			if s.offsetTrades && !bc.checkBalance(vol, price) {
+				continue
+			}
+
+			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price.AsFloat(), vol.AsFloat(), incrementalNativeAmountRaw)
 			if e != nil {
 				return nil, e
 			}
@@ -240,9 +289,9 @@ func (s *mirrorStrategy) updateLevels(
 				ops = append(ops, *mo)
 				// update the cached liabilities if we create a valid operation to create an offer
 				if hackPriceInvertForBuyOrderChangeCheck {
-					s.sdex.AddLiabilities(*s.quoteAsset, *s.baseAsset, vol*price, vol, incrementalNativeAmountRaw)
+					s.sdex.AddLiabilities(*s.quoteAsset, *s.baseAsset, vol.Multiply(*price).AsFloat(), vol.AsFloat(), incrementalNativeAmountRaw)
 				} else {
-					s.sdex.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol, vol*price, incrementalNativeAmountRaw)
+					s.sdex.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol.AsFloat(), vol.Multiply(*price).AsFloat(), incrementalNativeAmountRaw)
 				}
 			}
 		}
@@ -253,6 +302,9 @@ func (s *mirrorStrategy) updateLevels(
 				return nil, e
 			}
 			if modifyOp != nil {
+				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
+					continue
+				}
 				ops = append(ops, modifyOp)
 			}
 			if deleteOp != nil {
@@ -411,7 +463,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat())
-	transactionID, e := s.tradeAPI.AddOrder(&newOrder)
+	transactionID, e := s.exchange.AddOrder(&newOrder)
 	if e != nil {
 		return fmt.Errorf("error when offsetting trade (newOrder=%s): %s", newOrder, e)
 	}
@@ -436,4 +488,28 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrder.Price.AsFloat(),
 		transactionID)
 	return nil
+}
+
+// balanceCoordinator coordinates the balances from the backing exchange with orders placed on the primary exchange
+type balanceCoordinator struct {
+	placedUnits      *model.Number
+	backingBalance   *model.Number
+	backingAssetType string
+	isBackingBuy     bool
+}
+
+func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) bool {
+	additionalUnits := vol
+	if b.isBackingBuy {
+		additionalUnits = vol.Multiply(*price)
+	}
+
+	newPlacedUnits := b.placedUnits.Add(*additionalUnits)
+	if newPlacedUnits.AsFloat() > b.backingBalance.AsFloat() {
+		log.Printf("skip level creation, not enough balance of %s asset on backing exchange: %s (needs at least %s)\n", b.backingAssetType, b.backingBalance.AsString(), newPlacedUnits.AsString())
+		return false
+	}
+
+	b.placedUnits = newPlacedUnits
+	return true
 }
