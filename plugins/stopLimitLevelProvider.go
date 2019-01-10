@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -54,7 +55,8 @@ func makeStopLimitLevelProvider(
 // GetLevels impl.
 func (p *stopLimitLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	if p.orderFilled {
-		log.Fatal("the order was placed and filled, exiting")
+		log.Println("the order was placed and filled, exiting")
+		os.Exit(0)
 	}
 
 	if p.amountOfBase > maxAssetBase {
