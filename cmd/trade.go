@@ -12,7 +12,7 @@ import (
 
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
-	"github.com/interstellar/kelp/support/loggers"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/monitoring"
 	"github.com/interstellar/kelp/support/networking"
 	"github.com/interstellar/kelp/support/utils"
@@ -32,7 +32,7 @@ var tradeCmd = &cobra.Command{
 	Example: tradeExamples,
 }
 
-var logger loggers.BasicLogger
+var l *logger.BasicLogger
 
 func requiredFlag(flag string) {
 	e := tradeCmd.MarkFlagRequired(flag)
@@ -51,7 +51,8 @@ func hiddenFlag(flag string) {
 func logPanic(l logger.Logger) {
 	if r := recover(); r != nil {
 		st := debug.Stack()
-		logger.Errorf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
+		l.Errorf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
+		os.Exit(1)
 	}
 }
 
@@ -84,9 +85,9 @@ func init() {
 
 		if *fixedIterations == 0 {
 			fixedIterations = nil
-			logger.Info("will run unbounded iterations")
+			l.Info("will run unbounded iterations")
 		} else {
-			logger.Infof("will run only %d update iterations\n", *fixedIterations)
+			l.Infof("will run only %d update iterations\n", *fixedIterations)
 		}
 	}
 
@@ -97,8 +98,8 @@ func init() {
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
 		e = botConfig.Init()
 		if e != nil {
-			logger.Info("")
-			logger.Fatal(e)
+			l.Info("")
+			logger.Fatal(l, e)
 		}
 
 		if *logPrefix != "" {
@@ -106,11 +107,11 @@ func init() {
 			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
 			e = setLogFile(fileName)
 			if e != nil {
-				logger.Info("")
-				logger.Fatal(e)
+				l.Info("")
+				logger.Fatal(l, e)
 				return
 			}
-			logger.Infof("logging to file: %s", fileName)
+			l.Infof("logging to file: %s", fileName)
 
 			// we want to create a deferred recovery function here that will log panics to the log file and then exit
 			defer logPanic(l)
@@ -120,14 +121,14 @@ func init() {
 		if *simMode {
 			startupMessage += " (simulation mode)"
 		}
-		logger.Info(startupMessage)
+		l.Info(startupMessage)
 
 		// now that we've got the basic messages logged, validate the cli params
 		validateCliParams(l)
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
-		logger.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
+		l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
 			URL:  botConfig.HorizonURL,
@@ -136,7 +137,7 @@ func init() {
 
 		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
 		if e != nil {
-			logger.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
+			l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 		}
 		// --- start initialization of objects ----
 		threadTracker := multithreading.MakeThreadTracker()
@@ -170,8 +171,8 @@ func init() {
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
 		if e != nil {
-			logger.Info("")
-			logger.Fatal(e)
+			l.Info("")
+			logger.Fatal(l, e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
@@ -196,17 +197,18 @@ func init() {
 		)
 		// --- end initialization of objects ---
 
-		logger.Infof("validating trustlines...\n")
+		l.Infof("validating trustlines...\n")
 		validateTrustlines(client, &botConfig)
-		logger.Infof("trustlines valid\n")
+		l.Infof("trustlines valid\n")
 
 		// --- start initialization of services ---
 		if botConfig.MonitoringPort != 0 {
 			go func() {
 				e := startMonitoringServer(l, botConfig)
 				if e != nil {
-					logger.Info("")
-					logger.Infof("unable to start the monitoring server or problem encountered while running server: %s\n", e)
+					l.Info("")
+					l.Info("unable to start the monitoring server or problem encountered while running server:")
+					logger.Fatal(l, e)
 					// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 					// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 					// aren't outstanding offers.
@@ -218,9 +220,14 @@ func init() {
 		strategyFillHandlers, e := strat.GetFillHandlers()
 		if e != nil {
 			l.Info("")
+<<<<<<< HEAD
 			l.Info("problem encountered while instantiating the fill tracker:")
 			l.Errorf("%s", e)
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
+=======
+			l.Infof("problem encountered while instantiating the fill tracker: %s\n", e)
+			deleteAllOffersAndExit(botConfig, client, sdex)
+>>>>>>> major rework
 		}
 		if botConfig.FillTrackerSleepMillis != 0 {
 			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
@@ -237,21 +244,29 @@ func init() {
 				e := fillTracker.TrackFills()
 				if e != nil {
 					l.Info("")
+<<<<<<< HEAD
 					l.Info("problem encountered while running the fill tracker:")
 					l.Errorf("%s", e)
+=======
+					l.Infof("problem encountered while running the fill tracker: %s\n", e)
+>>>>>>> major rework
 					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
 			l.Info("")
+<<<<<<< HEAD
 			l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
+=======
+			l.Infof("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)\n")
+>>>>>>> major rework
 			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 		// --- end initialization of services ---
 
-		logger.Info("Starting the trader bot...")
+		l.Info("Starting the trader bot...")
 		bot.Start()
 	}
 }
@@ -290,15 +305,14 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 		return fmt.Errorf("unable to initialize the metrics server: %s", e)
 	}
 
-	logger.Infof("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
+	l.Infof("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
 	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTLSCert, botConfig.MonitoringTLSKey)
 }
 
 func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {
 	account, e := client.LoadAccount(botConfig.TradingAccount())
 	if e != nil {
-		logger.Info("")
-		logger.Fatal(e)
+		logger.Fatal(l, e)
 	}
 
 	missingTrustlines := []string{}
@@ -317,49 +331,48 @@ func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trad
 	}
 
 	if len(missingTrustlines) > 0 {
-		logger.Info("")
-		logger.Fatalf("error: your trading account does not have the required trustlines: %v\n", missingTrustlines)
+		e := fmt.Errorf("error: your trading account does not have the required trustlines: %v", missingTrustlines)
+		logger.Fatal(l, e)
 	}
 }
 
 func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX) {
-	logger.Info("")
-	logger.Infof("deleting all offers and then exiting...\n")
+	l.Info("")
+	l.Infof("deleting all offers and then exiting...\n")
 
 	offers, e := utils.LoadAllOffers(botConfig.TradingAccount(), client)
 	if e != nil {
-		logger.Info("")
-		logger.Fatal(e)
+		logger.Fatal(l, e)
 		return
 	}
 	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, botConfig.AssetBase(), botConfig.AssetQuote())
 	allOffers := append(sellingAOffers, buyingAOffers...)
 
 	dOps := sdex.DeleteAllOffers(allOffers)
-	logger.Infof("created %d operations to delete offers\n", len(dOps))
+	l.Infof("created %d operations to delete offers\n", len(dOps))
 
 	if len(dOps) > 0 {
 		e := sdex.SubmitOps(dOps, func(hash string, e error) {
 			if e != nil {
-				logger.Info("")
-				logger.Fatal(e)
+				logger.Fatal(l, e)
 				return
 			}
-			logger.Fatalf("...deleted all offers, exiting")
+			e = fmt.Errorf("...deleted all offers, exiting")
+			logger.Fatal(l, e)
 		})
 		if e != nil {
-			logger.Info("")
-			logger.Fatal(e)
+			logger.Fatal(l, e)
 			return
 		}
 
 		for {
 			sleepSeconds := 10
-			logger.Infof("sleeping for %d seconds until our deletion is confirmed and we exit...\n", sleepSeconds)
+			l.Infof("sleeping for %d seconds until our deletion is confirmed and we exit...\n", sleepSeconds)
 			time.Sleep(time.Duration(sleepSeconds) * time.Second)
 		}
 	} else {
-		logger.Fatalf("...nothing to delete, exiting")
+		e := fmt.Errorf("...nothing to delete, exiting")
+		logger.Fatal(l, e)
 	}
 }
 
