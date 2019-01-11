@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - mirror strategy offsets trades onto the backing exchange, run `glide up` to udpate dependencies ([3a703a359db541b636cab38c3dd8a7fbe6df7193](https://github.com/interstellar/kelp/commit/3a703a359db541b636cab38c3dd8a7fbe6df7193))
+- ccxt integration now supports trading APIs for all exchanges ([5cf0aedc67eff89a8f82082326f878844ac7b5d5](https://github.com/interstellar/kelp/commit/5cf0aedc67eff89a8f82082326f878844ac7b5d5))
+- randomized delay via the MAX_TICK_DELAY_MILLIS ([4b74affb9933bf08a093ee66cea46c1b3fb87753](https://github.com/interstellar/kelp/commit/4b74affb9933bf08a093ee66cea46c1b3fb87753))
 
 ### Changed
+- balanced strategy avoids unncessary re-randomization on every update cycle ([0be414c77c2f12c9b4b624922aea5841e84c704c](https://github.com/interstellar/kelp/commit/0be414c77c2f12c9b4b624922aea5841e84c704c))
 
 ### Deprecated
 
