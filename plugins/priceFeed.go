@@ -12,7 +12,7 @@ import (
 func MakePriceFeed(sdex *SDEX, feedType, url string) (api.PriceFeed, error) {
 	switch feedType {
 	case "crypto":
-		return newCMCFeed(url), nil
+		return NewCMCFeed(url), nil
 	case "fiat":
 		return newFiatFeed(url), nil
 	case "fixed":
