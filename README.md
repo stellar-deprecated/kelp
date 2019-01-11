@@ -4,7 +4,7 @@
 [![Github All Releases](https://img.shields.io/github/downloads/interstellar/kelp/total.svg?style=for-the-badge)][github-releases]
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
 
-[![Build Status](https://travis-ci.com/interstellar/kelp.svg?branch=master)](https://travis-ci.com/interstellar/kelp)
+[![Build Status](https://travis-ci.org/interstellar/kelp.svg?branch=master)](https://travis-ci.com/interstellar/kelp)
 [![GitHub issues](https://img.shields.io/github/issues/interstellar/kelp.svg?style=flat-square&longCache=true)][github-issues]
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/interstellar/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/interstellar/kelp.svg?style=flat-square&longCache=true)][github-pulls]
