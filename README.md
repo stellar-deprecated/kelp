@@ -4,7 +4,7 @@
 [![Github All Releases](https://img.shields.io/github/downloads/interstellar/kelp/total.svg?style=for-the-badge)][github-releases]
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
 
-[![Build Status](https://travis-ci.com/interstellar/kelp.svg?branch=master)](https://travis-ci.com/interstellar/kelp)
+[![Build Status](https://travis-ci.org/interstellar/kelp.svg?branch=master)](https://travis-ci.com/interstellar/kelp)
 [![GitHub issues](https://img.shields.io/github/issues/interstellar/kelp.svg?style=flat-square&longCache=true)][github-issues]
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/interstellar/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/interstellar/kelp.svg?style=flat-square&longCache=true)][github-pulls]
@@ -61,24 +61,24 @@ There is **one** binary associated with this project: `kelp`. Once the binary is
 
 You can find the pre-compiled binary for your platform from the [Github Releases Page][github-releases].
 
-Here is a list of binaries for the most recent release **v1.2.0**:
+Here is a list of binaries for the most recent release **v1.3.0**:
 
 | Platform       | Architecture | Binary File Name |
 | -------------- | ------------ | ---------------- |
-| MacOS (Darwin) | 64-bit       | [kelp-v1.2.0-darwin-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-darwin-amd64.tar) |
-| Windows        | 64-bit       | [kelp-v1.2.0-windows-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-windows-amd64.tar) |
-| Linux          | 64-bit       | [kelp-v1.2.0-linux-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-amd64.tar) |
-| Linux          | 64-bit arm   | [kelp-v1.2.0-linux-arm64.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm64.tar) |
-| Linux          | 32-bit arm5  | [kelp-v1.2.0-linux-arm5.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm5.tar) |
-| Linux          | 32-bit arm6  | [kelp-v1.2.0-linux-arm6.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm6.tar) |
-| Linux          | 32-bit arm7  | [kelp-v1.2.0-linux-arm7.tar](https://github.com/interstellar/kelp/releases/download/v1.2.0/kelp-v1.2.0-linux-arm7.tar) |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.3.0-darwin-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-darwin-amd64.tar) |
+| Windows        | 64-bit       | [kelp-v1.3.0-windows-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-windows-amd64.tar) |
+| Linux          | 64-bit       | [kelp-v1.3.0-linux-amd64.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-linux-amd64.tar) |
+| Linux          | 64-bit arm   | [kelp-v1.3.0-linux-arm64.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-linux-arm64.tar) |
+| Linux          | 32-bit arm5  | [kelp-v1.3.0-linux-arm5.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-linux-arm5.tar) |
+| Linux          | 32-bit arm6  | [kelp-v1.3.0-linux-arm6.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-linux-arm6.tar) |
+| Linux          | 32-bit arm7  | [kelp-v1.3.0-linux-arm7.tar](https://github.com/interstellar/kelp/releases/download/v1.3.0/kelp-v1.3.0-linux-arm7.tar) |
 
-After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.2.0`) and invoke the `kelp` binary.
+After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.3.0`) and invoke the `kelp` binary.
 
 Here's an example to get you started (replace `filename` with the name of the file that you download):
 
     tar xvf filename
-    cd kelp-v1.2.0
+    cd kelp-v1.3.0
     ./kelp
 
 To run the bot in simulation mode, try this command:
