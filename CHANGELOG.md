@@ -4,8 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-
 ## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [v1.3.0] - 2019-01-10
 
 ### Added
 - mirror strategy offsets trades onto the backing exchange, run `glide up` to udpate dependencies ([3a703a359db541b636cab38c3dd8a7fbe6df7193](https://github.com/interstellar/kelp/commit/3a703a359db541b636cab38c3dd8a7fbe6df7193))
@@ -15,14 +28,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - balanced strategy avoids unncessary re-randomization on every update cycle ([0be414c77c2f12c9b4b624922aea5841e84c704c](https://github.com/interstellar/kelp/commit/0be414c77c2f12c9b4b624922aea5841e84c704c))
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - fix op_underfunded issue when hitting capacity limits ([d339e421f82de9e2996e45e71d745d81dff2f3f0](https://github.com/interstellar/kelp/commit/d339e421f82de9e2996e45e71d745d81dff2f3f0))
-
-### Security
 
 ## [v1.2.0] - 2018-11-26
 
@@ -88,7 +95,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - If `SOURCE_SECRET_SEED` is missing or empty then the bot will not crash now.
 - support for [CAP-0003](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0003.md) introduced in stellar-core protocol v10 ([issue #2](https://github.com/interstellar/kelp/issues/2))
 
-
 ## v1.0.0-rc1 - 2018-08-13
 
 ### Added
@@ -98,7 +104,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/interstellar/kelp/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/interstellar/kelp/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/interstellar/kelp/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/interstellar/kelp/compare/v1.1.2...v1.2.0
 [v1.1.2]: https://github.com/interstellar/kelp/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/interstellar/kelp/compare/v1.1.0...v1.1.1
