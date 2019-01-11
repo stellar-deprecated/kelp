@@ -9,7 +9,7 @@ import (
 )
 
 // MakePriceFeed makes a PriceFeed
-func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
+func MakePriceFeed(sdex *SDEX, feedType, url string) (api.PriceFeed, error) {
 	switch feedType {
 	case "crypto":
 		return newCMCFeed(url), nil
@@ -38,18 +38,24 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		}
 		tickerAPI := api.TickerAPI(exchange)
 		return newExchangeFeed(url, &tickerAPI, &tradingPair), nil
+	case "sdex":
+		SDEXfeed, e := newSDEXFeed(sdex, url)
+		if e != nil {
+			return nil, fmt.Errorf("unable to create SDEX priceFeed ")
+		}
+		return SDEXfeed, nil
 	}
 	return nil, nil
 }
 
 // MakeFeedPair is the factory method that we expose
-func MakeFeedPair(dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) (*api.FeedPair, error) {
-	feedA, e := MakePriceFeed(dataTypeA, dataFeedAUrl)
+func MakeFeedPair(sdex *SDEX, dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) (*api.FeedPair, error) {
+	feedA, e := MakePriceFeed(sdex, dataTypeA, dataFeedAUrl)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed A: %s", e)
 	}
 
-	feedB, e := MakePriceFeed(dataTypeB, dataFeedBUrl)
+	feedB, e := MakePriceFeed(sdex, dataTypeB, dataFeedBUrl)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed B: %s", e)
 	}
