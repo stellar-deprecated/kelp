@@ -82,6 +82,7 @@ func (p *stopLimitLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote f
 	return nil, nil
 }
 
+// getLevel generates the single level to place the limit order
 func (p *stopLimitLevelProvider) getLevel() (api.Level, error) {
 	targetPrice := p.limitPrice
 	targetAmount := p.amountOfBase
@@ -104,8 +105,9 @@ func (p *stopLimitLevelProvider) HandleFill(trade model.Trade) error {
 	return nil
 }
 
+// getTopBid gets the trading pair's top bid to check for stop trigger
 func getTopBid(sdex *SDEX, assetBase *horizon.Asset, assetQuote *horizon.Asset) (float64, error) {
-	orderBook, e := utils.GetOrderBook(sdex.API, assetBase, assetQuote)
+	orderBook, e := GetOrderBook(sdex.API, assetBase, assetQuote)
 	if e != nil {
 		return 0, e
 	}
