@@ -94,9 +94,9 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:  simMode,
-		pair:     pair,
-		assetMap: assetMap,
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
@@ -812,4 +812,14 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 	}
 
 	return records[0].PT, nil
+}
+
+// GetOrderBook gets the SDEX order book
+func GetOrderBook(api *horizon.Client, assetBase *horizon.Asset, assetQuote *horizon.Asset) (orderBook horizon.OrderBookSummary, e error) {
+	b, e := api.LoadOrderBook(*assetBase, *assetQuote)
+	if e != nil {
+		log.Printf("Can't get SDEX orderbook: %s\n", e)
+		return
+	}
+	return b, e
 }

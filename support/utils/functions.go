@@ -86,16 +86,6 @@ func Asset2Asset(Asset horizon.Asset) build.Asset {
 	return a
 }
 
-// GetOrderBook gets the SDEX order book
-func GetOrderBook(api *horizon.Client, assetBase *horizon.Asset, assetQuote *horizon.Asset) (orderBook horizon.OrderBookSummary, e error) {
-	b, e := api.LoadOrderBook(*assetBase, *assetQuote)
-	if e != nil {
-		log.Printf("Can't get SDEX orderbook: %s\n", e)
-		return
-	}
-	return b, e
-}
-
 // Asset2Asset2 converts a build.Asset to a horizon.Asset
 func Asset2Asset2(Asset build.Asset) horizon.Asset {
 	a := horizon.Asset{}

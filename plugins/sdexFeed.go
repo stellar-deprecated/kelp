@@ -41,8 +41,9 @@ func newSDEXFeed(sdex *SDEX, url string) (*sdexFeed, error) {
 	return s, nil
 }
 
+// GetPrice returns the SDEX mid price for the trading pair
 func (s *sdexFeed) GetPrice() (float64, error) {
-	orderBook, e := utils.GetOrderBook(s.sdex.API, s.assetBase, s.assetQuote)
+	orderBook, e := GetOrderBook(s.sdex.API, s.assetBase, s.assetQuote)
 	if e != nil {
 		return 0, fmt.Errorf("unable to get sdex price: %s", e)
 	}
