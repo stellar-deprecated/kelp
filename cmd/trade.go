@@ -32,8 +32,6 @@ var tradeCmd = &cobra.Command{
 	Example: tradeExamples,
 }
 
-var l *logger.BasicLogger
-
 func requiredFlag(flag string) {
 	e := tradeCmd.MarkFlagRequired(flag)
 	if e != nil {
@@ -48,11 +46,10 @@ func hiddenFlag(flag string) {
 	}
 }
 
-func logPanic() {
+func logPanic(l logger.Logger) {
 	if r := recover(); r != nil {
 		st := debug.Stack()
 		l.Errorf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
-		os.Exit(1)
 	}
 }
 
@@ -74,7 +71,7 @@ func init() {
 	hiddenFlag("operationalBufferNonNativePct")
 	tradeCmd.Flags().SortFlags = false
 
-	validateCliParams := func() {
+	validateCliParams := func(l logger.Logger) {
 		if *operationalBuffer < 0 {
 			panic(fmt.Sprintf("invalid operationalBuffer argument, must be non-negative: %f", *operationalBuffer))
 		}
@@ -92,12 +89,12 @@ func init() {
 	}
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
+		l := logger.MakeBasicLogger()
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
 		e = botConfig.Init()
 		if e != nil {
-			l.Info("")
 			logger.Fatal(l, e)
 		}
 
@@ -110,10 +107,10 @@ func init() {
 				logger.Fatal(l, e)
 				return
 			}
-			l.Infof("logging to file: %s", fileName)
+			l.Infof("logging to file: %s\n", fileName)
 
 			// we want to create a deferred recovery function here that will log panics to the log file and then exit
-			defer logPanic()
+			defer logPanic(l)
 		}
 
 		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
@@ -123,7 +120,7 @@ func init() {
 		l.Info(startupMessage)
 
 		// now that we've got the basic messages logged, validate the cli params
-		validateCliParams()
+		validateCliParams(l)
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
@@ -173,7 +170,7 @@ func init() {
 			l.Info("")
 			logger.Fatal(l, e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(botConfig, client, sdex)
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 
 		timeController := plugins.MakeIntervalTimeController(time.Duration(botConfig.TickIntervalSeconds) * time.Second)
@@ -193,14 +190,14 @@ func init() {
 		)
 		// --- end initialization of objects ---
 
-		l.Infof("validating trustlines...\n")
-		validateTrustlines(client, &botConfig)
-		l.Infof("trustlines valid\n")
+		l.Info("validating trustlines...")
+		validateTrustlines(l, client, &botConfig)
+		l.Info("trustlines valid")
 
 		// --- start initialization of services ---
 		if botConfig.MonitoringPort != 0 {
 			go func() {
-				e := startMonitoringServer(botConfig)
+				e := startMonitoringServer(l, botConfig)
 				if e != nil {
 					l.Info("")
 					l.Info("unable to start the monitoring server or problem encountered while running server:")
@@ -208,7 +205,7 @@ func init() {
 					// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 					// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 					// aren't outstanding offers.
-					deleteAllOffersAndExit(botConfig, client, sdex)
+					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		}
@@ -216,8 +213,9 @@ func init() {
 		strategyFillHandlers, e := strat.GetFillHandlers()
 		if e != nil {
 			l.Info("")
-			l.Infof("problem encountered while instantiating the fill tracker: %s\n", e)
-			deleteAllOffersAndExit(botConfig, client, sdex)
+			l.Info("problem encountered while instantiating the fill tracker:")
+			logger.Fatal(l, e)
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 		if botConfig.FillTrackerSleepMillis != 0 {
 			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
@@ -234,16 +232,17 @@ func init() {
 				e := fillTracker.TrackFills()
 				if e != nil {
 					l.Info("")
-					l.Infof("problem encountered while running the fill tracker: %s\n", e)
+					l.Info("problem encountered while running the fill tracker:")
+					logger.Fatal(l, e)
 					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-					deleteAllOffersAndExit(botConfig, client, sdex)
+					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
 			l.Info("")
-			l.Infof("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)\n")
+			l.Info("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
 			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-			deleteAllOffersAndExit(botConfig, client, sdex)
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 		// --- end initialization of services ---
 
@@ -252,7 +251,7 @@ func init() {
 	}
 }
 
-func startMonitoringServer(botConfig trader.BotConfig) error {
+func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 	serverConfig := &networking.Config{
 		GoogleClientID:     botConfig.GoogleClientID,
 		GoogleClientSecret: botConfig.GoogleClientSecret,
@@ -290,7 +289,7 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTLSCert, botConfig.MonitoringTLSKey)
 }
 
-func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
+func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {
 	account, e := client.LoadAccount(botConfig.TradingAccount())
 	if e != nil {
 		logger.Fatal(l, e)
@@ -312,14 +311,13 @@ func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
 	}
 
 	if len(missingTrustlines) > 0 {
-		e := fmt.Errorf("error: your trading account does not have the required trustlines: %v", missingTrustlines)
-		logger.Fatal(l, e)
+		logger.Fatal(l, fmt.Errorf("error: your trading account does not have the required trustlines: %v", missingTrustlines))
 	}
 }
 
-func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX) {
+func deleteAllOffersAndExit(l logger.Logger, botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX) {
 	l.Info("")
-	l.Infof("deleting all offers and then exiting...\n")
+	l.Info("deleting all offers and then exiting...")
 
 	offers, e := utils.LoadAllOffers(botConfig.TradingAccount(), client)
 	if e != nil {
@@ -352,8 +350,7 @@ func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, 
 			time.Sleep(time.Duration(sleepSeconds) * time.Second)
 		}
 	} else {
-		e := fmt.Errorf("...nothing to delete, exiting")
-		logger.Fatal(l, e)
+		logger.Fatal(l, fmt.Errorf("...nothing to delete, exiting"))
 	}
 }
 
