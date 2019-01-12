@@ -95,9 +95,9 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:  simMode,
-		pair:     pair,
-		assetMap: assetMap,
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
