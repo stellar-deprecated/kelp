@@ -20,6 +20,7 @@ type BotConfig struct {
 	AssetCodeB             string `valid:"-" toml:"ASSET_CODE_B"`
 	IssuerB                string `valid:"-" toml:"ISSUER_B"`
 	TickIntervalSeconds    int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
+	MaxTickDelayMillis     int64  `valid:"-" toml:"MAX_TICK_DELAY_MILLIS"`
 	DeleteCyclesThreshold  int64  `valid:"-" toml:"DELETE_CYCLES_THRESHOLD"`
 	FillTrackerSleepMillis uint32 `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS"`
 	HorizonURL             string `valid:"-" toml:"HORIZON_URL"`
