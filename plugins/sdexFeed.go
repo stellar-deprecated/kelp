@@ -4,16 +4,21 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )
 
+// sdexFeed represents a pricefeed from the SDEX
 type sdexFeed struct {
 	sdex       *SDEX
 	assetBase  *horizon.Asset
 	assetQuote *horizon.Asset
 }
+
+// ensure that it implements PriceFeed
+var _ api.PriceFeed = &sdexFeed{}
 
 // newSDEXFeed creates a price feed from buysell's url fields
 func newSDEXFeed(sdex *SDEX, url string) (*sdexFeed, error) {
