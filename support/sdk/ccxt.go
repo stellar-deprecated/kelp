@@ -301,6 +301,7 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	return output, nil
 }
 
+// FetchMyTrades calls the /fetchMyTrades endpoint on CCXT
 func (c *Ccxt) FetchMyTrades(tradingPair string) ([]CcxtTrade, error) {
 	e := c.symbolExists(tradingPair)
 	if e != nil {
@@ -513,4 +514,57 @@ func (c *Ccxt) CancelOrder(orderID string, tradingPair string) (*CcxtOpenOrder, 
 	}
 
 	return &openOrder, nil
+}
+
+// CcxtCandle represents an OHLCV candlestick
+type CcxtCandle struct {
+	TimeStamp int64
+	Open      float64
+	High      float64
+	Low       float64
+	Close     float64
+	Volume    float64
+}
+
+// FetchOHLCV calls the /fetchOHLCV endpoint on CCXT
+func (c *Ccxt) FetchOHLCV(tradingPair string, timeframe string) ([]CcxtCandle, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	inputData := []interface{}{
+		tradingPair,
+		timeframe,
+	}
+	data, e := json.Marshal(&inputData)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (%v) for exchange '%s': %s", inputData, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOHLCV"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching candlestick data: %s", e)
+	}
+
+	outputList := output.([]interface{})
+	var candleList []CcxtCandle
+
+	for _, c := range outputList {
+		rawOCHLCV := c.([]interface{})
+		var candle CcxtCandle
+		candle = CcxtCandle{
+			TimeStamp: int64(rawOCHLCV[0].(float64)),
+			Open:      rawOCHLCV[1].(float64),
+			High:      rawOCHLCV[2].(float64),
+			Low:       rawOCHLCV[3].(float64),
+			Close:     rawOCHLCV[4].(float64),
+			Volume:    rawOCHLCV[5].(float64),
+		}
+		candleList = append(candleList, candle)
+	}
+	return candleList, nil
 }
