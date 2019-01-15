@@ -103,7 +103,6 @@ func init() {
 			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
 			e = setLogFile(fileName)
 			if e != nil {
-				l.Info("")
 				logger.Fatal(l, e)
 				return
 			}
@@ -168,7 +167,7 @@ func init() {
 		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
 		if e != nil {
 			l.Info("")
-			logger.Fatal(l, e)
+			l.Errorf("%s", e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
@@ -204,7 +203,7 @@ func init() {
 				if e != nil {
 					l.Info("")
 					l.Info("unable to start the monitoring server or problem encountered while running server:")
-					logger.Fatal(l, e)
+					l.Errorf("%s", e)
 					// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 					// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 					// aren't outstanding offers.
@@ -227,7 +226,7 @@ func init() {
 >>>>>>> major rework
 =======
 			l.Info("problem encountered while instantiating the fill tracker:")
-			logger.Fatal(l, e)
+			l.Errorf("%s", e)
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 >>>>>>> remove gloval var, format edits
 		}
@@ -255,14 +254,19 @@ func init() {
 >>>>>>> major rework
 =======
 					l.Info("problem encountered while running the fill tracker:")
+<<<<<<< HEAD
 					logger.Fatal(l, e)
 >>>>>>> remove gloval var, format edits
+=======
+					l.Errorf("%s", e)
+>>>>>>> remove bad Fatals
 					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
 			l.Info("")
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 			l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
@@ -272,6 +276,9 @@ func init() {
 =======
 			l.Info("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
 >>>>>>> remove gloval var, format edits
+=======
+			l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
+>>>>>>> remove bad Fatals
 			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
@@ -367,8 +374,7 @@ func deleteAllOffersAndExit(l logger.Logger, botConfig trader.BotConfig, client 
 				logger.Fatal(l, e)
 				return
 			}
-			e = fmt.Errorf("...deleted all offers, exiting")
-			logger.Fatal(l, e)
+			logger.Fatal(l, fmt.Errorf("...deleted all offers, exiting"))
 		})
 		if e != nil {
 			logger.Fatal(l, e)
