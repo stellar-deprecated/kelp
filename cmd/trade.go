@@ -181,6 +181,7 @@ func init() {
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 
+		submitMode := trader.ParseSubmitMode(botConfig.SubmitMode)
 		timeController := plugins.MakeIntervalTimeController(
 			time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 			botConfig.MaxTickDelayMillis,
@@ -194,6 +195,7 @@ func init() {
 			strat,
 			timeController,
 			botConfig.DeleteCyclesThreshold,
+			submitMode,
 			threadTracker,
 			fixedIterations,
 			dataKey,

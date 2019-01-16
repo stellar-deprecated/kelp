@@ -28,6 +28,7 @@ type Trader struct {
 	strat                 api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
+	submitMode            SubmitMode
 	threadTracker         *multithreading.ThreadTracker
 	fixedIterations       *uint64
 	dataKey               *model.BotKey
@@ -55,6 +56,7 @@ func MakeBot(
 	strat api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
+	submitMode SubmitMode,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
@@ -69,6 +71,7 @@ func MakeBot(
 		strat:                 strat,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
+		submitMode:            submitMode,
 		threadTracker:         threadTracker,
 		fixedIterations:       fixedIterations,
 		dataKey:               dataKey,
