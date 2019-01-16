@@ -28,7 +28,7 @@ type Trader struct {
 	strat                 api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
-	submitMode            SubmitMode
+	submitFilters         []submitFilter
 	threadTracker         *multithreading.ThreadTracker
 	fixedIterations       *uint64
 	dataKey               *model.BotKey
@@ -62,6 +62,12 @@ func MakeBot(
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
+	sdexSubmitFilter := makeSubmitFilter(submitMode, sdex)
+	submitFilters := []submitFilter{}
+	if sdexSubmitFilter != nil {
+		submitFilters = append(submitFilters, sdexSubmitFilter)
+	}
+
 	return &Trader{
 		api:                   api,
 		assetBase:             assetBase,
@@ -71,7 +77,7 @@ func MakeBot(
 		strat:                 strat,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
-		submitMode:            submitMode,
+		submitFilters:         submitFilters,
 		threadTracker:         threadTracker,
 		fixedIterations:       fixedIterations,
 		dataKey:               dataKey,
@@ -204,6 +210,15 @@ func (t *Trader) update() {
 		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
+	}
+
+	for i, filter := range t.submitFilters {
+		ops, e = filter.apply(ops)
+		if e != nil {
+			log.Printf("error in filter index %d: %s\n", i, e)
+			t.deleteAllOffers()
+			return
+		}
 	}
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
