@@ -46,7 +46,7 @@ type cmcFeed struct {
 var _ api.PriceFeed = &cmcFeed{}
 
 // NewCMCFeed creates a new CMC Feed from a URL
-func NewCMCFeed(url string) *cmcFeed {
+func newCMCFeed(url string) *cmcFeed {
 	m := new(cmcFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}

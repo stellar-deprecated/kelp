@@ -8,11 +8,14 @@ import (
 	"github.com/interstellar/kelp/model"
 )
 
+// PrivateSdexHack is a temporary hack variable for SDEX price feeds pending refactor
+var PrivateSdexHack *SDEX
+
 // MakePriceFeed makes a PriceFeed
-func MakePriceFeed(sdex *SDEX, feedType, url string) (api.PriceFeed, error) {
+func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 	switch feedType {
 	case "crypto":
-		return NewCMCFeed(url), nil
+		return newCMCFeed(url), nil
 	case "fiat":
 		return newFiatFeed(url), nil
 	case "fixed":
@@ -39,23 +42,23 @@ func MakePriceFeed(sdex *SDEX, feedType, url string) (api.PriceFeed, error) {
 		tickerAPI := api.TickerAPI(exchange)
 		return newExchangeFeed(url, &tickerAPI, &tradingPair), nil
 	case "sdex":
-		SDEXfeed, e := newSDEXFeed(sdex, url)
+		sdexFeed, e := newSDEXFeed(url)
 		if e != nil {
-			return nil, fmt.Errorf("unable to create SDEX priceFeed ")
+			return nil, fmt.Errorf("error occured while making the SDEX price feed: %s", e)
 		}
-		return SDEXfeed, nil
+		return sdexFeed, nil
 	}
 	return nil, nil
 }
 
 // MakeFeedPair is the factory method that we expose
-func MakeFeedPair(sdex *SDEX, dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) (*api.FeedPair, error) {
-	feedA, e := MakePriceFeed(sdex, dataTypeA, dataFeedAUrl)
+func MakeFeedPair(dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) (*api.FeedPair, error) {
+	feedA, e := MakePriceFeed(dataTypeA, dataFeedAUrl)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed A: %s", e)
 	}
 
-	feedB, e := MakePriceFeed(sdex, dataTypeB, dataFeedBUrl)
+	feedB, e := MakePriceFeed(dataTypeB, dataFeedBUrl)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed B: %s", e)
 	}

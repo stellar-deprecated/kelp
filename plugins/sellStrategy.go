@@ -39,7 +39,6 @@ func makeSellStrategy(
 	config *sellConfig,
 ) (api.Strategy, error) {
 	pf, e := MakeFeedPair(
-		sdex,
 		config.DataTypeA,
 		config.DataFeedAURL,
 		config.DataTypeB,

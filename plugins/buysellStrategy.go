@@ -43,7 +43,6 @@ func makeBuySellStrategy(
 		percentFirst: config.RateOffsetPercentFirst,
 	}
 	sellSideFeedPair, e := MakeFeedPair(
-		sdex,
 		config.DataTypeA,
 		config.DataFeedAURL,
 		config.DataTypeB,
@@ -77,7 +76,6 @@ func makeBuySellStrategy(
 		invert:       true,
 	}
 	buySideFeedPair, e := MakeFeedPair(
-		sdex,
 		config.DataTypeB,
 		config.DataFeedBURL,
 		config.DataTypeA,

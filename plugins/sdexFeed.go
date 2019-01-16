@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -21,29 +21,55 @@ type sdexFeed struct {
 var _ api.PriceFeed = &sdexFeed{}
 
 // newSDEXFeed creates a price feed from buysell's url fields
-func newSDEXFeed(sdex *SDEX, url string) (*sdexFeed, error) {
-	s := new(sdexFeed)
-	s.sdex = sdex
+func newSDEXFeed(url string) (*sdexFeed, error) {
 	urlParts := strings.Split(url, "/")
 
-	baseURL := strings.Split(urlParts[0], ":")
-	baseCode := baseURL[0]
-	baseIssuer := baseURL[1]
-	baseConvert, e := parseAsset(baseCode, baseIssuer)
+	baseParts := strings.Split(urlParts[0], ":")
+	baseCode := baseParts[0]
+	baseIssuer := baseParts[1]
+	baseConvert, e := utils.ParseAsset(baseCode, baseIssuer)
 	if e != nil {
-		return nil, fmt.Errorf("unable to convert base asset url to sdex asset")
+		return nil, fmt.Errorf("unable to convert base asset url to sdex asset: %s", e)
 	}
-	s.assetBase = baseConvert
 
-	quoteURL := strings.Split(urlParts[1], ":")
-	quoteCode := quoteURL[0]
-	quoteIssuer := quoteURL[1]
-	quoteConvert, e := parseAsset(quoteCode, quoteIssuer)
+	quoteParts := strings.Split(urlParts[1], ":")
+	quoteCode := quoteParts[0]
+	quoteIssuer := quoteParts[1]
+	quoteConvert, e := utils.ParseAsset(quoteCode, quoteIssuer)
 	if e != nil {
-		return nil, fmt.Errorf("unable to convert quote asset url to sdex asset")
+		return nil, fmt.Errorf("unable to convert quote asset url to sdex asset: %s", e)
 	}
-	s.assetQuote = quoteConvert
-	return s, nil
+
+	tradingPair := &model.TradingPair{
+		Base:  model.Asset(utils.Asset2CodeString(*baseConvert)),
+		Quote: model.Asset(utils.Asset2CodeString(*quoteConvert)),
+	}
+
+	sdexAssetMap := map[model.Asset]horizon.Asset{
+		tradingPair.Base:  *baseConvert,
+		tradingPair.Quote: *quoteConvert,
+	}
+
+	feedSDEX := MakeSDEX(
+		PrivateSdexHack.API,
+		"",
+		"",
+		"",
+		"",
+		PrivateSdexHack.Network,
+		nil,
+		0,
+		0,
+		true,
+		tradingPair,
+		sdexAssetMap,
+	)
+
+	return &sdexFeed{
+		sdex:       feedSDEX,
+		assetBase:  baseConvert,
+		assetQuote: quoteConvert,
+	}, nil
 }
 
 // GetPrice returns the SDEX mid price for the trading pair
@@ -52,28 +78,13 @@ func (s *sdexFeed) GetPrice() (float64, error) {
 	if e != nil {
 		return 0, fmt.Errorf("unable to get sdex price: %s", e)
 	}
+
 	bids := orderBook.Bids
 	topBidPrice := utils.PriceAsFloat(bids[0].Price)
+
 	asks := orderBook.Asks
 	lowAskPrice := utils.PriceAsFloat(asks[0].Price)
+
 	centerPrice := (topBidPrice + lowAskPrice) / 2
 	return centerPrice, nil
-}
-
-func parseAsset(code string, issuer string) (*horizon.Asset, error) {
-	if code != "XLM" && issuer == "" {
-		return nil, fmt.Errorf("error: issuer can only be empty if asset is XLM")
-	}
-
-	if code == "XLM" && issuer != "" {
-		return nil, fmt.Errorf("error: issuer needs to be empty if asset is XLM")
-	}
-
-	if code == "XLM" {
-		asset := utils.Asset2Asset2(build.NativeAsset())
-		return &asset, nil
-	}
-
-	asset := utils.Asset2Asset2(build.CreditAsset(code, issuer))
-	return &asset, nil
 }
