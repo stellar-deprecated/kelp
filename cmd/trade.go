@@ -12,6 +12,7 @@ import (
 
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/monitoring"
 	"github.com/interstellar/kelp/support/networking"
 	"github.com/interstellar/kelp/support/utils"
@@ -45,10 +46,10 @@ func hiddenFlag(flag string) {
 	}
 }
 
-func logPanic() {
+func logPanic(l logger.Logger) {
 	if r := recover(); r != nil {
 		st := debug.Stack()
-		log.Printf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
+		l.Errorf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
 	}
 }
 
@@ -70,7 +71,7 @@ func init() {
 	hiddenFlag("operationalBufferNonNativePct")
 	tradeCmd.Flags().SortFlags = false
 
-	validateCliParams := func() {
+	validateCliParams := func(l logger.Logger) {
 		if *operationalBuffer < 0 {
 			panic(fmt.Sprintf("invalid operationalBuffer argument, must be non-negative: %f", *operationalBuffer))
 		}
@@ -81,20 +82,20 @@ func init() {
 
 		if *fixedIterations == 0 {
 			fixedIterations = nil
-			log.Printf("will run unbounded iterations\n")
+			l.Info("will run unbounded iterations")
 		} else {
-			log.Printf("will run only %d update iterations\n", *fixedIterations)
+			l.Infof("will run only %d update iterations\n", *fixedIterations)
 		}
 	}
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
+		l := logger.MakeBasicLogger()
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
 		e = botConfig.Init()
 		if e != nil {
-			log.Println()
-			log.Fatal(e)
+			logger.Fatal(l, e)
 		}
 
 		if *logPrefix != "" {
@@ -102,28 +103,27 @@ func init() {
 			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
 			e = setLogFile(fileName)
 			if e != nil {
-				log.Println()
-				log.Fatal(e)
+				logger.Fatal(l, e)
 				return
 			}
-			log.Printf("logging to file: %s", fileName)
+			l.Infof("logging to file: %s\n", fileName)
 
 			// we want to create a deferred recovery function here that will log panics to the log file and then exit
-			defer logPanic()
+			defer logPanic(l)
 		}
 
 		startupMessage := "Starting Kelp Trader: " + version + " [" + gitHash + "]"
 		if *simMode {
 			startupMessage += " (simulation mode)"
 		}
-		log.Println(startupMessage)
+		l.Info(startupMessage)
 
 		// now that we've got the basic messages logged, validate the cli params
-		validateCliParams()
+		validateCliParams(l)
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
-		log.Printf("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
+		l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
 			URL:  botConfig.HorizonURL,
@@ -132,7 +132,7 @@ func init() {
 
 		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
 		if e != nil {
-			log.Printf("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
+			l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 		}
 		// --- start initialization of objects ----
 		threadTracker := multithreading.MakeThreadTracker()
@@ -166,10 +166,10 @@ func init() {
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
 		if e != nil {
-			log.Println()
-			log.Println(e)
+			l.Info("")
+			l.Errorf("%s", e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(botConfig, client, sdex)
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 
 		timeController := plugins.MakeIntervalTimeController(
@@ -192,30 +192,32 @@ func init() {
 		)
 		// --- end initialization of objects ---
 
-		log.Printf("validating trustlines...\n")
-		validateTrustlines(client, &botConfig)
-		log.Printf("trustlines valid\n")
+		l.Info("validating trustlines...")
+		validateTrustlines(l, client, &botConfig)
+		l.Info("trustlines valid")
 
 		// --- start initialization of services ---
 		if botConfig.MonitoringPort != 0 {
 			go func() {
-				e := startMonitoringServer(botConfig)
+				e := startMonitoringServer(l, botConfig)
 				if e != nil {
-					log.Println()
-					log.Printf("unable to start the monitoring server or problem encountered while running server: %s\n", e)
+					l.Info("")
+					l.Info("unable to start the monitoring server or problem encountered while running server:")
+					l.Errorf("%s", e)
 					// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 					// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 					// aren't outstanding offers.
-					deleteAllOffersAndExit(botConfig, client, sdex)
+					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		}
 
 		strategyFillHandlers, e := strat.GetFillHandlers()
 		if e != nil {
-			log.Println()
-			log.Printf("problem encountered while instantiating the fill tracker: %s\n", e)
-			deleteAllOffersAndExit(botConfig, client, sdex)
+			l.Info("")
+			l.Info("problem encountered while instantiating the fill tracker:")
+			l.Errorf("%s", e)
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 		if botConfig.FillTrackerSleepMillis != 0 {
 			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
@@ -227,30 +229,31 @@ func init() {
 				}
 			}
 
-			log.Printf("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
+			l.Infof("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
 			go func() {
 				e := fillTracker.TrackFills()
 				if e != nil {
-					log.Println()
-					log.Printf("problem encountered while running the fill tracker: %s\n", e)
+					l.Info("")
+					l.Info("problem encountered while running the fill tracker:")
+					l.Errorf("%s", e)
 					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-					deleteAllOffersAndExit(botConfig, client, sdex)
+					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
-			log.Println()
-			log.Printf("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)\n")
+			l.Info("")
+			l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
 			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-			deleteAllOffersAndExit(botConfig, client, sdex)
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 		// --- end initialization of services ---
 
-		log.Println("Starting the trader bot...")
+		l.Info("Starting the trader bot...")
 		bot.Start()
 	}
 }
 
-func startMonitoringServer(botConfig trader.BotConfig) error {
+func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 	serverConfig := &networking.Config{
 		GoogleClientID:     botConfig.GoogleClientID,
 		GoogleClientSecret: botConfig.GoogleClientSecret,
@@ -284,15 +287,14 @@ func startMonitoringServer(botConfig trader.BotConfig) error {
 		return fmt.Errorf("unable to initialize the metrics server: %s", e)
 	}
 
-	log.Printf("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
+	l.Infof("Starting monitoring server on port %d\n", botConfig.MonitoringPort)
 	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTLSCert, botConfig.MonitoringTLSKey)
 }
 
-func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
+func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {
 	account, e := client.LoadAccount(botConfig.TradingAccount())
 	if e != nil {
-		log.Println()
-		log.Fatal(e)
+		logger.Fatal(l, e)
 	}
 
 	missingTrustlines := []string{}
@@ -311,49 +313,45 @@ func validateTrustlines(client *horizon.Client, botConfig *trader.BotConfig) {
 	}
 
 	if len(missingTrustlines) > 0 {
-		log.Println()
-		log.Fatalf("error: your trading account does not have the required trustlines: %v\n", missingTrustlines)
+		logger.Fatal(l, fmt.Errorf("error: your trading account does not have the required trustlines: %v", missingTrustlines))
 	}
 }
 
-func deleteAllOffersAndExit(botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX) {
-	log.Println()
-	log.Printf("deleting all offers and then exiting...\n")
+func deleteAllOffersAndExit(l logger.Logger, botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX) {
+	l.Info("")
+	l.Info("deleting all offers and then exiting...")
 
 	offers, e := utils.LoadAllOffers(botConfig.TradingAccount(), client)
 	if e != nil {
-		log.Println()
-		log.Fatal(e)
+		logger.Fatal(l, e)
 		return
 	}
 	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, botConfig.AssetBase(), botConfig.AssetQuote())
 	allOffers := append(sellingAOffers, buyingAOffers...)
 
 	dOps := sdex.DeleteAllOffers(allOffers)
-	log.Printf("created %d operations to delete offers\n", len(dOps))
+	l.Infof("created %d operations to delete offers\n", len(dOps))
 
 	if len(dOps) > 0 {
 		e := sdex.SubmitOps(dOps, func(hash string, e error) {
 			if e != nil {
-				log.Println()
-				log.Fatal(e)
+				logger.Fatal(l, e)
 				return
 			}
-			log.Fatal("...deleted all offers, exiting")
+			logger.Fatal(l, fmt.Errorf("...deleted all offers, exiting"))
 		})
 		if e != nil {
-			log.Println()
-			log.Fatal(e)
+			logger.Fatal(l, e)
 			return
 		}
 
 		for {
 			sleepSeconds := 10
-			log.Printf("sleeping for %d seconds until our deletion is confirmed and we exit...\n", sleepSeconds)
+			l.Infof("sleeping for %d seconds until our deletion is confirmed and we exit...\n", sleepSeconds)
 			time.Sleep(time.Duration(sleepSeconds) * time.Second)
 		}
 	} else {
-		log.Fatal("...nothing to delete, exiting")
+		logger.Fatal(l, fmt.Errorf("...nothing to delete, exiting"))
 	}
 }
 
