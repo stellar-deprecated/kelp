@@ -190,6 +190,7 @@ func init() {
 			client,
 			botConfig.AssetBase(),
 			botConfig.AssetQuote(),
+			tradingPair,
 			botConfig.TradingAccount(),
 			sdex,
 			strat,
