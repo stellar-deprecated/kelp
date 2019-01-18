@@ -1,12 +1,12 @@
 package trader
 
 import (
+	"fmt"
+
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
 	"github.com/stellar/go/build"
 )
-
-const maxCountSubmitFilter int32 = 10
 
 // SubmitMode is the type of mode to be used when submitting orders to the trader bot
 type SubmitMode uint8
@@ -43,7 +43,6 @@ func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *mo
 			tradingPair: tradingPair,
 			sdex:        sdex,
 			submitMode:  submitMode,
-			maxCount:    maxCountSubmitFilter,
 		}
 	}
 	return nil
@@ -53,17 +52,18 @@ type sdexFilter struct {
 	tradingPair *model.TradingPair
 	sdex        *plugins.SDEX
 	submitMode  SubmitMode
-	maxCount    int32
 }
 
 var _ submitFilter = &sdexFilter{}
 
 func (f *sdexFilter) apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error) {
 	ob := &model.OrderBook{}
-	// ob, e := f.sdex.GetOrderBook(f.tradingPair, f.maxCount)
+	// we only want the top bid and ask values so use a maxCount of 1
+	// ob, e := f.sdex.GetOrderBook(f.tradingPair, 1)
 	// if e != nil {
 	// 	return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
 	// }
+	var e error
 
 	// TODO find intersection of orderbook and ops
 	/*
@@ -71,5 +71,24 @@ func (f *sdexFilter) apply(ops []build.TransactionMutator) ([]build.TransactionM
 		2. for each op remove or keep op if it is before/after top bid/ask depending on the mode we're in
 	*/
 
+	if f.submitMode == SubmitModeMakerOnly {
+		ops, e = filterMakerMode(ops, ob)
+		if e != nil {
+			return nil, fmt.Errorf("could not apply maker mode filter: %s", e)
+		}
+	} else {
+		ops, e = filterTakerMode(ops, ob)
+		if e != nil {
+			return nil, fmt.Errorf("could not apply taker mode filter: %s", e)
+		}
+	}
+	return ops, nil
+}
+
+func filterMakerMode(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
+	return nil, nil
+}
+
+func filterTakerMode(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
 	return nil, nil
 }
