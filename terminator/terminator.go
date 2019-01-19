@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
 	"github.com/interstellar/kelp/support/utils"
@@ -23,6 +25,7 @@ type Terminator struct {
 	tradingAccount       string
 	tickIntervalSeconds  int32
 	allowInactiveMinutes int32
+	l                    logger.Logger
 }
 
 // MakeTerminator is a factory method to make a Terminator
@@ -33,12 +36,14 @@ func MakeTerminator(
 	tickIntervalSeconds int32,
 	allowInactiveMinutes int32,
 ) *Terminator {
+	l := logger.MakeBasicLogger()
 	return &Terminator{
 		api:                  api,
 		sdex:                 sdex,
 		tradingAccount:       tradingAccount,
 		tickIntervalSeconds:  tickIntervalSeconds,
 		allowInactiveMinutes: allowInactiveMinutes,
+		l:                    l,
 	}
 }
 

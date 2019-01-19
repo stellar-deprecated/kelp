@@ -7,6 +7,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -77,6 +78,7 @@ type mirrorStrategy struct {
 	offsetTrades       bool
 	mutex              *sync.Mutex
 	baseSurplus        map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
+	l                  logger.Logger
 
 	// uninitialized
 	maxBackingBase  *model.Number
@@ -91,6 +93,7 @@ var _ api.FillHandler = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
 func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+	l := logger.MakeBasicLogger()
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
@@ -131,6 +134,7 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 			model.OrderActionBuy:  makeAssetSurplus(),
 			model.OrderActionSell: makeAssetSurplus(),
 		},
+		l: l,
 	}, nil
 }
 

@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 )
 
@@ -13,15 +15,18 @@ type IntervalTimeController struct {
 	tickInterval       time.Duration
 	maxTickDelayMillis int64
 	randGen            *rand.Rand
+	l                  logger.Logger
 }
 
 // MakeIntervalTimeController is a factory method
 func MakeIntervalTimeController(tickInterval time.Duration, maxTickDelayMillis int64) api.TimeController {
+	l := logger.MakeBasicLogger()
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &IntervalTimeController{
 		tickInterval:       tickInterval,
 		maxTickDelayMillis: maxTickDelayMillis,
 		randGen:            randGen,
+		l:                  l,
 	}
 }
 

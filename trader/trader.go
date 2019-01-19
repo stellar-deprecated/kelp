@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
@@ -32,6 +34,7 @@ type Trader struct {
 	fixedIterations       *uint64
 	dataKey               *model.BotKey
 	alert                 api.Alert
+	l                     logger.Logger
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -60,6 +63,7 @@ func MakeBot(
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
+	l := logger.MakeBasicLogger()
 	return &Trader{
 		api:                   api,
 		assetBase:             assetBase,
@@ -73,6 +77,7 @@ func MakeBot(
 		fixedIterations:       fixedIterations,
 		dataKey:               dataKey,
 		alert:                 alert,
+		l:                     l,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}

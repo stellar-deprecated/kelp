@@ -4,20 +4,25 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/PagerDuty/go-pagerduty"
+	"github.com/interstellar/kelp/support/logger"
+
+	pagerduty "github.com/PagerDuty/go-pagerduty"
 	"github.com/interstellar/kelp/api"
 )
 
 type pagerDuty struct {
 	serviceKey string
+	l          logger.Logger
 }
 
 // ensure pagerDuty implements the api.Alert interface
 var _ api.Alert = &pagerDuty{}
 
 func makePagerDuty(serviceKey string) (api.Alert, error) {
+	l := logger.MakeBasicLogger()
 	return &pagerDuty{
 		serviceKey: serviceKey,
+		l:          l,
 	}, nil
 }
 

@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
@@ -41,6 +43,7 @@ type SDEX struct {
 	simMode                       bool
 	pair                          *model.TradingPair
 	assetMap                      map[model.Asset]horizon.Asset // this is needed until we fully address putting SDEX behind the Exchange interface
+	l                             logger.Logger
 
 	// uninitialized
 	seqNum       uint64
@@ -84,6 +87,7 @@ func MakeSDEX(
 	pair *model.TradingPair,
 	assetMap map[model.Asset]horizon.Asset,
 ) *SDEX {
+	l := logger.MakeBasicLogger()
 	sdex := &SDEX{
 		API:                           api,
 		SourceSeed:                    sourceSeed,
@@ -94,9 +98,10 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:  simMode,
-		pair:     pair,
-		assetMap: assetMap,
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
+		l:                             l,
 	}
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)

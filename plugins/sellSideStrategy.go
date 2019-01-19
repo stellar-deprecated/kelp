@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
@@ -25,6 +27,7 @@ type sellSideStrategy struct {
 	amountTolerance     float64
 	divideAmountByPrice bool
 	action              string
+	l                   logger.Logger
 
 	// uninitialized
 	currentLevels []api.Level // levels for current iteration
@@ -46,6 +49,7 @@ func makeSellSideStrategy(
 	amountTolerance float64,
 	divideAmountByPrice bool,
 ) api.SideStrategy {
+	l := logger.MakeBasicLogger()
 	action := actionSell
 	if divideAmountByPrice {
 		action = actionBuy
@@ -60,6 +64,7 @@ func makeSellSideStrategy(
 		amountTolerance:     amountTolerance,
 		divideAmountByPrice: divideAmountByPrice,
 		action:              action,
+		l:                   l,
 	}
 }
 

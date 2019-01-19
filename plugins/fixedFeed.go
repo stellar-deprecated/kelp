@@ -2,15 +2,23 @@ package plugins
 
 import (
 	"strconv"
+
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/logger"
 )
 
 // fixedFeed represents a fixed feed
 type fixedFeed struct {
 	price float64
+	l     logger.Logger
 }
+
+// ensure that it implements PriceFeed
+var _ api.PriceFeed = &fixedFeed{}
 
 func newFixedFeed(url string) *fixedFeed {
 	m := new(fixedFeed)
+	m.l = logger.MakeBasicLogger()
 	pA, err := strconv.ParseFloat(url, 64)
 	if err != nil {
 		return nil
