@@ -6,7 +6,10 @@ import (
 
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
+	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
+	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/xdr"
 )
 
 // SubmitMode is the type of mode to be used when submitting orders to the trader bot
@@ -73,7 +76,7 @@ type sdexFilter struct {
 	tradingPair *model.TradingPair
 	sdex        *plugins.SDEX
 	submitMode  SubmitMode
-	filter      func(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error)
+	filter      func(f *sdexFilter, ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error)
 }
 
 var _ submitFilter = &sdexFilter{}
@@ -87,26 +90,41 @@ func (f *sdexFilter) apply(ops []build.TransactionMutator) ([]build.TransactionM
 	// }
 
 	var e error
-	ops, e = f.filter(ops, ob)
+	ops, e = f.filter(f, ops, ob)
 	if e != nil {
-		return nil, fmt.Errorf("could not apply filter (submitMode=%s): %s", f.submitMode, e)
+		return nil, fmt.Errorf("could not apply filter (submitMode=%s): %s", f.submitMode.String(), e)
 	}
 	return ops, nil
 }
 
-func filterMakerMode(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
+func filterMakerMode(f *sdexFilter, ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
+	baseAsset, quoteAsset, e := f.sdex.Assets()
+	if e != nil {
+		return nil, fmt.Errorf("could not get sdex assets: %s", e)
+	}
+
 	numDropped := 0
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
 		switch o := op.(type) {
 		case *build.ManageOfferBuilder:
-			if shouldKeepOfferMakerMode(ob, o) {
+			keep, e := shouldKeepOfferMakerMode(baseAsset, quoteAsset, ob, o)
+			if e != nil {
+				return nil, fmt.Errorf("could not check shouldKeepOfferMakerMode (pointer case): %s", e)
+			}
+
+			if keep {
 				filteredOps = append(filteredOps, o)
 			} else {
 				numDropped++
 			}
 		case build.ManageOfferBuilder:
-			if shouldKeepOfferMakerMode(ob, &o) {
+			keep, e := shouldKeepOfferMakerMode(baseAsset, quoteAsset, ob, &o)
+			if e != nil {
+				return nil, fmt.Errorf("could not check shouldKeepOfferMakerMode (non-pointer case): %s", e)
+			}
+
+			if keep {
 				filteredOps = append(filteredOps, o)
 			} else {
 				numDropped++
@@ -119,17 +137,53 @@ func filterMakerMode(ops []build.TransactionMutator, ob *model.OrderBook) ([]bui
 	return nil, nil
 }
 
-func shouldKeepOfferMakerMode(ob *model.OrderBook, o *build.ManageOfferBuilder) bool {
+func shouldKeepOfferMakerMode(baseAsset horizon.Asset, quoteAsset horizon.Asset, ob *model.OrderBook, o *build.ManageOfferBuilder) (bool, error) {
+	checkIsSelling, e := isSelling(baseAsset, quoteAsset, o.MO.Selling, o.MO.Buying)
+	if e != nil {
+		return false, fmt.Errorf("error when running the isSelling check: %s", e)
+	}
+
+	if checkIsSelling {
+		// TODO from here
+	}
 
 	// TODO find intersection of orderbook and ops
 	/*
 		1. get top bid and top ask in OB
 		2. for each op remove or keep op if it is before/after top bid/ask depending on the mode we're in
 	*/
-	float64(o.MO.Price.N) / float64(o.MO.Price.D)
-
+	// float64(o.MO.Price.N) / float64(o.MO.Price.D)
+	return false, nil
 }
 
-func filterTakerMode(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
+func isSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
+	sellingBase, e := utils.AssetEqualsXDR(sdexBase, selling)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexBase with selling asset")
+	}
+	buyingQuote, e := utils.AssetEqualsXDR(sdexQuote, buying)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexQuote with buying asset")
+	}
+	if sellingBase && buyingQuote {
+		return true, nil
+	}
+
+	sellingQuote, e := utils.AssetEqualsXDR(sdexQuote, selling)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexQuote with selling asset")
+	}
+	buyingBase, e := utils.AssetEqualsXDR(sdexBase, buying)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexBase with buying asset")
+	}
+	if sellingQuote && buyingBase {
+		return false, nil
+	}
+
+	return false, fmt.Errorf("invalid assets, there are more than 2 distinct assets: sdexBase=%s, sdexQuote=%s, selling=%s, buying=%s", sdexBase, sdexQuote, selling, buying)
+}
+
+func filterTakerMode(f *sdexFilter, ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
 	return nil, nil
 }

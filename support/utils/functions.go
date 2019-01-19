@@ -13,6 +13,7 @@ import (
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/protocols/horizon/base"
+	"github.com/stellar/go/xdr"
 )
 
 // Common Utilities needed by various bots
@@ -253,4 +254,20 @@ func ParseAsset(code string, issuer string) (*horizon.Asset, error) {
 
 	asset := Asset2Asset2(build.CreditAsset(code, issuer))
 	return &asset, nil
+}
+
+// AssetEqualsXDR is a helper method to compare horizon assets with xdr assets
+func AssetEqualsXDR(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
+	if xAsset.Type == xdr.AssetTypeAssetTypeNative {
+		return hAsset.Type == Native, nil
+	} else if hAsset.Type == Native {
+		return false, nil
+	}
+
+	var xAssetType, xAssetCode, xAssetIssuer string
+	e := xAsset.Extract(&xAssetType, &xAssetCode, &xAssetIssuer)
+	if e != nil {
+		return false, fmt.Errorf("could not extract asset information from xdr.Asset: %s", e)
+	}
+	return xAssetCode == hAsset.Code && xAssetIssuer == hAsset.Issuer, nil
 }
