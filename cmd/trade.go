@@ -164,7 +164,8 @@ func init() {
 		)
 
 		// setting the temp hack variables for the sdex price feeds
-		plugins.PrivateSdexHack = sdex
+		plugins.PrivateSdexHack.API = sdex.API
+		plugins.PrivateSdexHack.Network = sdex.Network
 
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)

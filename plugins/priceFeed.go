@@ -6,10 +6,15 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/stellar/go/build"
+	"github.com/stellar/go/clients/horizon"
 )
 
 // PrivateSdexHack is a temporary hack variable for SDEX price feeds pending refactor
-var PrivateSdexHack *SDEX
+var PrivateSdexHack struct {
+	API     *horizon.Client
+	Network build.Network
+}
 
 // MakePriceFeed makes a PriceFeed
 func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
@@ -42,11 +47,11 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		tickerAPI := api.TickerAPI(exchange)
 		return newExchangeFeed(url, &tickerAPI, &tradingPair), nil
 	case "sdex":
-		sdexFeed, e := newSDEXFeed(url)
+		sdex, e := makeSDEXFeed(url)
 		if e != nil {
 			return nil, fmt.Errorf("error occured while making the SDEX price feed: %s", e)
 		}
-		return sdexFeed, nil
+		return sdex, nil
 	}
 	return nil, nil
 }

@@ -20,8 +20,8 @@ type sdexFeed struct {
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &sdexFeed{}
 
-// newSDEXFeed creates a price feed from buysell's url fields
-func newSDEXFeed(url string) (*sdexFeed, error) {
+// makeSDEXFeed creates a price feed from buysell's url fields
+func makeSDEXFeed(url string) (*sdexFeed, error) {
 	urlParts := strings.Split(url, "/")
 
 	baseParts := strings.Split(urlParts[0], ":")
@@ -74,7 +74,7 @@ func newSDEXFeed(url string) (*sdexFeed, error) {
 
 // GetPrice returns the SDEX mid price for the trading pair
 func (s *sdexFeed) GetPrice() (float64, error) {
-	orderBook, e := GetOrderBook(s.sdex.API, s.assetBase, s.assetQuote)
+	orderBook, e := s.sdex.GetOrderBook(s.sdex.pair)
 	if e != nil {
 		return 0, fmt.Errorf("unable to get sdex price: %s", e)
 	}

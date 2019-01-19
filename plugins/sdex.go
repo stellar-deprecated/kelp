@@ -815,8 +815,14 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 }
 
 // GetOrderBook gets the SDEX order book
-func GetOrderBook(api *horizon.Client, assetBase *horizon.Asset, assetQuote *horizon.Asset) (orderBook horizon.OrderBookSummary, e error) {
-	b, e := api.LoadOrderBook(*assetBase, *assetQuote)
+func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (orderBook horizon.OrderBookSummary, e error) {
+	//b, e := api.LoadOrderBook(*assetBase, *assetQuote)
+	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	if e != nil {
+		log.Printf("%s", e)
+		return
+	}
+	b, e := sdex.API.LoadOrderBook(baseAsset, quoteAsset)
 	if e != nil {
 		log.Printf("Can't get SDEX orderbook: %s\n", e)
 		return
