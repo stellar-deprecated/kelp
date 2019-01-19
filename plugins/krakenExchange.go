@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Beldur/kraken-go-api-client"
+	"github.com/interstellar/kelp/support/logger"
+
+	krakenapi "github.com/Beldur/kraken-go-api-client"
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/networking"
@@ -29,6 +31,7 @@ type krakenExchange struct {
 	delimiter                string
 	withdrawKeys             asset2Address2Key
 	isSimulated              bool // will simulate add and cancel orders if this is true
+	l                        logger.Logger
 }
 
 type asset2Address2Key map[model.Asset]map[string]string
@@ -50,6 +53,7 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 // makeKrakenExchange is a factory method to make the kraken exchange
 // TODO 2, should take in config file for withdrawalKeys mapping
 func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exchange, error) {
+	l := logger.MakeBasicLogger()
 	if len(apiKeys) == 0 || len(apiKeys) > math.MaxUint8 {
 		return nil, fmt.Errorf("invalid number of apiKeys: %d", len(apiKeys))
 	}
@@ -63,11 +67,12 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exc
 	return &krakenExchange{
 		assetConverter:           model.KrakenAssetConverter,
 		assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-		apis:         krakenAPIs,
-		apiNextIndex: 0,
-		delimiter:    "",
-		withdrawKeys: asset2Address2Key{},
-		isSimulated:  isSimulated,
+		apis:                     krakenAPIs,
+		apiNextIndex:             0,
+		delimiter:                "",
+		withdrawKeys:             asset2Address2Key{},
+		isSimulated:              isSimulated,
+		l:                        l,
 	}, nil
 }
 

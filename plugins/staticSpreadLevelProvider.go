@@ -3,6 +3,8 @@ package plugins
 import (
 	"log"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 )
@@ -39,6 +41,7 @@ type staticSpreadLevelProvider struct {
 	offset           rateOffset
 	pf               *api.FeedPair
 	orderConstraints *model.OrderConstraints
+	l                logger.Logger
 }
 
 // ensure it implements the LevelProvider interface
@@ -46,12 +49,14 @@ var _ api.LevelProvider = &staticSpreadLevelProvider{}
 
 // makeStaticSpreadLevelProvider is a factory method
 func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair, orderConstraints *model.OrderConstraints) api.LevelProvider {
+	l := logger.MakeBasicLogger()
 	return &staticSpreadLevelProvider{
 		staticLevels:     staticLevels,
 		amountOfBase:     amountOfBase,
 		offset:           offset,
 		pf:               pf,
 		orderConstraints: orderConstraints,
+		l:                l,
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/networking"
 	"github.com/mitchellh/mapstructure"
 )
@@ -20,6 +21,7 @@ type Ccxt struct {
 	ccxtBaseURL  string
 	exchangeName string
 	instanceName string
+	l            logger.Logger
 }
 
 const pathExchanges = "/exchanges"
@@ -34,11 +36,13 @@ func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey
 	if e != nil {
 		return nil, fmt.Errorf("cannot make instance name: %s", e)
 	}
+	l := logger.MakeBasicLogger()
 	c := &Ccxt{
 		httpClient:   http.DefaultClient,
 		ccxtBaseURL:  ccxtBaseURL,
 		exchangeName: exchangeName,
 		instanceName: instanceName,
+		l:            l,
 	}
 
 	e = c.init(apiKey)

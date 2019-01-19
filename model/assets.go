@@ -3,7 +3,6 @@ package model
 import (
 	"errors"
 	"fmt"
-	"log"
 )
 
 // Asset is typed and enlists the allowed assets that are understood by the bot
@@ -82,12 +81,12 @@ func (c AssetConverter) FromString(s string) (Asset, error) {
 }
 
 // MustFromString converts from a string to an asset, failing on errors
-func (c AssetConverter) MustFromString(s string) Asset {
+func (c AssetConverter) MustFromString(s string) (Asset, error) {
 	a, e := c.FromString(s)
 	if e != nil {
-		log.Fatal(fmt.Errorf("exiting on an error-enforced asset conversion: %s", e))
+		return "", fmt.Errorf("exiting on an error-enforced asset conversion: %s", e)
 	}
-	return a
+	return a, nil
 }
 
 // Display is a basic converter for display purposes

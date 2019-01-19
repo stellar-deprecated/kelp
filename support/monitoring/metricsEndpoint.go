@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/support/networking"
 )
 
@@ -16,6 +18,7 @@ type metricsEndpoint struct {
 	path      string
 	metrics   Metrics
 	authLevel networking.AuthLevel
+	l         logger.Logger
 }
 
 // MakeMetricsEndpoint creates an Endpoint for the monitoring server with the desired auth level.
@@ -24,10 +27,12 @@ func MakeMetricsEndpoint(path string, metrics Metrics, authLevel networking.Auth
 	if !strings.HasPrefix(path, "/") {
 		return nil, fmt.Errorf("endpoint path must begin with /")
 	}
+	l := logger.MakeBasicLogger()
 	s := &metricsEndpoint{
 		path:      path,
 		metrics:   metrics,
 		authLevel: authLevel,
+		l:         l,
 	}
 	return s, nil
 }

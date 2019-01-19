@@ -6,6 +6,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -17,6 +19,7 @@ type FillTracker struct {
 	threadTracker          *multithreading.ThreadTracker
 	fillTrackable          api.FillTrackable
 	fillTrackerSleepMillis uint32
+	l                      logger.Logger
 
 	// uninitialized
 	handlers []api.FillHandler
@@ -32,11 +35,13 @@ func MakeFillTracker(
 	fillTrackable api.FillTrackable,
 	fillTrackerSleepMillis uint32,
 ) api.FillTracker {
+	l := logger.MakeBasicLogger()
 	return &FillTracker{
 		pair:                   pair,
 		threadTracker:          threadTracker,
 		fillTrackable:          fillTrackable,
 		fillTrackerSleepMillis: fillTrackerSleepMillis,
+		l:                      l,
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 )
 
 // encapsulates a priceFeed from a tickerAPI
@@ -13,16 +14,19 @@ type exchangeFeed struct {
 	name      string
 	tickerAPI *api.TickerAPI
 	pairs     []model.TradingPair
+	l         logger.Logger
 }
 
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &exchangeFeed{}
 
 func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair) *exchangeFeed {
+	l := logger.MakeBasicLogger()
 	return &exchangeFeed{
 		name:      name,
 		tickerAPI: tickerAPI,
 		pairs:     []model.TradingPair{*pair},
+		l:         l,
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/utils"
 )
@@ -26,6 +28,7 @@ type fiatAPIReturn struct {
 type fiatFeed struct {
 	url    string
 	client http.Client
+	l      logger.Logger
 }
 
 // ensure that it implements PriceFeed
@@ -35,7 +38,7 @@ func newFiatFeed(url string) *fiatFeed {
 	m := new(fiatFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
-
+	m.l = logger.MakeBasicLogger()
 	return m
 }
 

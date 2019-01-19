@@ -1,6 +1,10 @@
 package api
 
-import "log"
+import (
+	"log"
+
+	"github.com/interstellar/kelp/support/logger"
+)
 
 // PriceFeed allows you to fetch the price of a feed
 type PriceFeed interface {
@@ -11,6 +15,7 @@ type PriceFeed interface {
 type FeedPair struct {
 	FeedA PriceFeed
 	FeedB PriceFeed
+	l     logger.Logger
 }
 
 // GetCenterPrice fetches the center price from this feed

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/support/utils"
 )
@@ -40,6 +42,7 @@ type cmcAPIReturn struct {
 type cmcFeed struct {
 	url    string
 	client http.Client
+	l      logger.Logger
 }
 
 // ensure that it implements PriceFeed
@@ -50,6 +53,7 @@ func newCMCFeed(url string) *cmcFeed {
 	m := new(cmcFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
+	m.l = logger.MakeBasicLogger()
 	return m
 }
 

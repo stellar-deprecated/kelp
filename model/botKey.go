@@ -30,10 +30,10 @@ func (b BotKey) String() string {
 }
 
 // MakeSortedBotKey makes a BotKey by sorting the passed in assets
-func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
+func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) (*BotKey, error) {
 	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string
 	if assetA.Type == native && assetB.Type == native {
-		log.Fatal("invalid asset types, both cannot be native")
+		return nil, fmt.Errorf("invalid asset types, both cannot be native")
 	} else if assetA.Type == native {
 		assetBaseCode = native
 		assetBaseIssuer = ""
@@ -61,7 +61,7 @@ func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
 		AssetBaseIssuer:  assetBaseIssuer,
 		AssetQuoteCode:   assetQuoteCode,
 		AssetQuoteIssuer: assetQuoteIssuer,
-	}
+	}, nil
 }
 
 // IsBotKey checks whether a given string is a BotKey

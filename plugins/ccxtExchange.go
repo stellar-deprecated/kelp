@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/sdk"
@@ -22,6 +24,7 @@ type ccxtExchange struct {
 	orderConstraints map[model.TradingPair]model.OrderConstraints
 	api              *sdk.Ccxt
 	simMode          bool
+	l                logger.Logger
 }
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
@@ -32,6 +35,7 @@ func makeCcxtExchange(
 	apiKeys []api.ExchangeAPIKey,
 	simMode bool,
 ) (api.Exchange, error) {
+	l := logger.MakeBasicLogger()
 	if len(apiKeys) == 0 {
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
 	}
@@ -47,6 +51,7 @@ func makeCcxtExchange(
 		orderConstraints: orderConstraints,
 		api:              c,
 		simMode:          simMode,
+		l:                l,
 	}, nil
 }
 

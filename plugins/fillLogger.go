@@ -3,18 +3,25 @@ package plugins
 import (
 	"log"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 )
 
 // FillLogger is a FillHandler that logs fills
-type FillLogger struct{}
+type FillLogger struct {
+	l logger.Logger
+}
 
 var _ api.FillHandler = &FillLogger{}
 
 // MakeFillLogger is a factory method
 func MakeFillLogger() api.FillHandler {
-	return &FillLogger{}
+	l := logger.MakeBasicLogger()
+	return &FillLogger{
+		l,
+	}
 }
 
 // HandleFill impl.

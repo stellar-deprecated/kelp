@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 )
@@ -29,6 +31,7 @@ type balancedLevelProvider struct {
 	virtualBalanceQuote           float64 // virtual balance to use so we can smoothen out the curve
 	orderConstraints              *model.OrderConstraints
 	shouldRefresh                 bool // boolean for whether to generate levels, starts true
+	l                             logger.Logger
 
 	// precomputed before construction
 	randGen *rand.Rand
@@ -59,6 +62,7 @@ func makeBalancedLevelProvider(
 	virtualBalanceQuote float64,
 	orderConstraints *model.OrderConstraints,
 ) api.LevelProvider {
+	l := logger.MakeBasicLogger()
 	if minAmountSpread <= 0 {
 		log.Fatalf("minAmountSpread (%.7f) needs to be > 0 for the algorithm to work sustainably\n", minAmountSpread)
 	}
@@ -95,6 +99,7 @@ func makeBalancedLevelProvider(
 		orderConstraints:              orderConstraints,
 		randGen:                       randGen,
 		shouldRefresh:                 shouldRefresh,
+		l:                             l,
 	}
 }
 
