@@ -885,20 +885,3 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (*model.OrderBook, error
 	return APIBook, nil
 
 }
-
-// OrderBook encapsulates the concept of an orderbook on a market
-// type OrderBook struct {
-// 	pair *TradingPair
-// 	asks []Order
-// 	bids []Order
-// }
-
-// Order represents an order in the orderbook
-// type Order struct {
-// 	Pair        *TradingPair
-// 	OrderAction OrderAction
-// 	OrderType   OrderType
-// 	Price       *Number
-// 	Volume      *Number
-// 	Timestamp   *Timestamp
-// }
