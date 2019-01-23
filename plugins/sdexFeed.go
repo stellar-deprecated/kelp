@@ -79,12 +79,12 @@ func (s *sdexFeed) GetPrice() (float64, error) {
 		return 0, fmt.Errorf("unable to get sdex price: %s", e)
 	}
 
-	bids := orderBook.Bids
-	topBidPrice := utils.PriceAsFloat(bids[0].Price)
+	bids := orderBook.Bids()
+	topBidPrice := bids[0].Price
 
-	asks := orderBook.Asks
-	lowAskPrice := utils.PriceAsFloat(asks[0].Price)
+	asks := orderBook.Asks()
+	lowAskPrice := asks[0].Price
 
-	centerPrice := (topBidPrice + lowAskPrice) / 2
+	centerPrice := (topBidPrice.AsFloat() + lowAskPrice.AsFloat()) / 2
 	return centerPrice, nil
 }

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -815,17 +816,89 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 }
 
 // GetOrderBook gets the SDEX order book
-func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (orderBook horizon.OrderBookSummary, e error) {
-	//b, e := api.LoadOrderBook(*assetBase, *assetQuote)
+func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (*model.OrderBook, error) {
 	baseAsset, quoteAsset, e := sdex.pair2Assets()
 	if e != nil {
-		log.Printf("%s", e)
-		return
+		return nil, fmt.Errorf("Can't get SDEX orderbook: %s", e)
 	}
 	b, e := sdex.API.LoadOrderBook(baseAsset, quoteAsset)
 	if e != nil {
-		log.Printf("Can't get SDEX orderbook: %s\n", e)
-		return
+		return nil, fmt.Errorf("Can't get SDEX orderbook: %s", e)
 	}
-	return b, e
+
+	sdexBids := b.Bids
+	sdexAsks := b.Asks
+
+	var transformedBids []model.Order
+	var transformedAsks []model.Order
+
+	timeStamp := model.MakeTimestampFromTime(time.Now())
+
+	for i := 0; i < len(sdexBids); i++ {
+		price, e := model.NumberFromString(sdexBids[i].Price, sdexOrderConstraints.PricePrecision)
+		if e != nil {
+			return nil, fmt.Errorf("Error while transforming orderbook: %s", e)
+		}
+		volume, e := model.NumberFromString(sdexBids[i].Amount, sdexOrderConstraints.VolumePrecision)
+		if e != nil {
+			return nil, fmt.Errorf("Error while transforming orderbook: %s", e)
+		}
+		bid := model.Order{
+			Pair:        pair,
+			OrderAction: false,
+			OrderType:   1,
+			Price:       price,
+			Volume:      volume,
+			Timestamp:   timeStamp,
+		}
+		transformedBids = append(transformedBids, bid)
+
+	}
+
+	for i := 0; i < len(sdexAsks); i++ {
+		price, e := model.NumberFromString(sdexAsks[i].Price, sdexOrderConstraints.PricePrecision)
+		if e != nil {
+			return nil, fmt.Errorf("Error while transforming orderbook: %s", e)
+		}
+		volume, e := model.NumberFromString(sdexAsks[i].Amount, sdexOrderConstraints.VolumePrecision)
+		if e != nil {
+			return nil, fmt.Errorf("Error while transforming orderbook: %s", e)
+		}
+		ask := model.Order{
+			Pair:        pair,
+			OrderAction: true,
+			OrderType:   1,
+			Price:       price,
+			Volume:      volume,
+			Timestamp:   timeStamp,
+		}
+		transformedAsks = append(transformedAsks, ask)
+
+	}
+
+	APIBook := model.MakeOrderBook(
+		pair,
+		transformedAsks,
+		transformedBids,
+	)
+
+	return APIBook, nil
+
 }
+
+// OrderBook encapsulates the concept of an orderbook on a market
+// type OrderBook struct {
+// 	pair *TradingPair
+// 	asks []Order
+// 	bids []Order
+// }
+
+// Order represents an order in the orderbook
+// type Order struct {
+// 	Pair        *TradingPair
+// 	OrderAction OrderAction
+// 	OrderType   OrderType
+// 	Price       *Number
+// 	Volume      *Number
+// 	Timestamp   *Timestamp
+// }
