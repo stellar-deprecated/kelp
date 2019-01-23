@@ -102,13 +102,15 @@ func filterMakerMode(f *sdexFilter, ops []build.TransactionMutator, ob *model.Or
 	if e != nil {
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
+	topBid := ob.TopBid()
+	topAsk := ob.TopAsk()
 
 	numDropped := 0
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
 		switch o := op.(type) {
 		case *build.ManageOfferBuilder:
-			keep, e := shouldKeepOfferMakerMode(baseAsset, quoteAsset, ob, o)
+			keep, e := shouldKeepOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
 			if e != nil {
 				return nil, fmt.Errorf("could not check shouldKeepOfferMakerMode (pointer case): %s", e)
 			}
@@ -119,7 +121,7 @@ func filterMakerMode(f *sdexFilter, ops []build.TransactionMutator, ob *model.Or
 				numDropped++
 			}
 		case build.ManageOfferBuilder:
-			keep, e := shouldKeepOfferMakerMode(baseAsset, quoteAsset, ob, &o)
+			keep, e := shouldKeepOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
 			if e != nil {
 				return nil, fmt.Errorf("could not check shouldKeepOfferMakerMode (non-pointer case): %s", e)
 			}
@@ -137,23 +139,27 @@ func filterMakerMode(f *sdexFilter, ops []build.TransactionMutator, ob *model.Or
 	return nil, nil
 }
 
-func shouldKeepOfferMakerMode(baseAsset horizon.Asset, quoteAsset horizon.Asset, ob *model.OrderBook, o *build.ManageOfferBuilder) (bool, error) {
-	checkIsSelling, e := isSelling(baseAsset, quoteAsset, o.MO.Selling, o.MO.Buying)
+func shouldKeepOfferMakerMode(
+	baseAsset horizon.Asset,
+	quoteAsset horizon.Asset,
+	topBid *model.Order,
+	topAsk *model.Order,
+	op *build.ManageOfferBuilder,
+) (bool, error) {
+	isSell, e := isSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
 	if e != nil {
 		return false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
+	sellPrice := float64(op.MO.Price.N) / float64(op.MO.Price.D)
 
-	if checkIsSelling {
-		// TODO from here
+	if !isSell {
+		// invert price when buying
+		keep := 1/sellPrice < topAsk.Price.AsFloat()
+		return keep, nil
 	}
 
-	// TODO find intersection of orderbook and ops
-	/*
-		1. get top bid and top ask in OB
-		2. for each op remove or keep op if it is before/after top bid/ask depending on the mode we're in
-	*/
-	// float64(o.MO.Price.N) / float64(o.MO.Price.D)
-	return false, nil
+	keep := sellPrice > topBid.Price.AsFloat()
+	return keep, nil
 }
 
 func isSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {

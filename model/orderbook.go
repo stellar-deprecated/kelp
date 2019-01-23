@@ -141,6 +141,22 @@ func (o OrderBook) Bids() []Order {
 	return o.bids
 }
 
+// TopAsk returns the best ask in an orderbook
+func (o OrderBook) TopAsk() *Order {
+	if len(o.Asks()) > 0 {
+		return &o.Asks()[0]
+	}
+	return nil
+}
+
+// TopBid returns the best bid in an orderbook
+func (o OrderBook) TopBid() *Order {
+	if len(o.Bids()) > 0 {
+		return &o.Bids()[0]
+	}
+	return nil
+}
+
 // MakeOrderBook creates a new OrderBook from the asks and the bids
 func MakeOrderBook(pair *TradingPair, asks []Order, bids []Order) *OrderBook {
 	return &OrderBook{
