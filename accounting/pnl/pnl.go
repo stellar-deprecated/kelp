@@ -18,6 +18,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/plugins"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -109,6 +110,7 @@ func loadAccount(client *horizon.Client, address string) horizon.Account {
 }
 
 func makeCmcFeed(cmcRef string) (api.PriceFeed, error) {
+	l := logger.MakeBasicLogger()
 	url := fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", cmcRef)
-	return plugins.MakePriceFeed("crypto", url)
+	return plugins.MakePriceFeed("crypto", url, l)
 }
