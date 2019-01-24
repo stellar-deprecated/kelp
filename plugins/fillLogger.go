@@ -1,12 +1,9 @@
 package plugins
 
 import (
-	"github.com/interstellar/kelp/support/logger"
-
-	"github.com/interstellar/kelp/support/logger"
-
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 )
 
 // FillLogger is a FillHandler that logs fills
