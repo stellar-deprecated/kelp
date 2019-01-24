@@ -88,24 +88,24 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	numDropped := 0
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
-		var keep bool
+		var newOp build.TransactionMutator
 		switch o := op.(type) {
 		case *build.ManageOfferBuilder:
-			keep, e = f.keepOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
+			newOp, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
 			if e != nil {
 				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
 			}
 		case build.ManageOfferBuilder:
-			keep, e = f.keepOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
+			newOp, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
 			if e != nil {
 				return nil, fmt.Errorf("could not check transform offer (non-pointer case): %s", e)
 			}
 		default:
-			keep = true
+			newOp = o
 		}
 
-		if keep {
-			filteredOps = append(filteredOps, op)
+		if newOp != nil {
+			filteredOps = append(filteredOps, newOp)
 		} else {
 			numDropped++
 		}
@@ -114,16 +114,21 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	return nil, nil
 }
 
-func (f *sdexMakerFilter) keepOfferMakerMode(
+func (f *sdexMakerFilter) transformOfferMakerMode(
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
 	topBid *model.Order,
 	topAsk *model.Order,
 	op *build.ManageOfferBuilder,
-) (bool, error) {
+) (*build.ManageOfferBuilder, error) {
+	// delete operations should never be dropped
+	if op.MO.Amount == 0 {
+		return op, nil
+	}
+
 	isSell, e := isSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
 	if e != nil {
-		return false, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	// TODO test pricing mechanism here manually
@@ -137,7 +142,22 @@ func (f *sdexMakerFilter) keepOfferMakerMode(
 	} else {
 		keep = true
 	}
-	return keep, nil
+
+	if keep {
+		return op, nil
+	}
+
+	// figure out how to convert the offer to a dropped state
+	if op.MO.OfferId == 0 {
+		// new offers can be dropped
+		return nil, nil
+	} else if op.MO.Amount != 0 {
+		// modify offers should be converted to delete offers
+		opCopy := *op
+		opCopy.MO.Amount = 0
+		return &opCopy, nil
+	}
+	return nil, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/7, sellPrice)
 }
 
 func isSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
