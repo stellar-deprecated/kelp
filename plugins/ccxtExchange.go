@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/interstellar/kelp/support/logger"
 
@@ -34,13 +33,13 @@ func makeCcxtExchange(
 	orderConstraints map[model.TradingPair]model.OrderConstraints,
 	apiKeys []api.ExchangeAPIKey,
 	simMode bool,
+	l logger.Logger,
 ) (api.Exchange, error) {
-	l := logger.MakeBasicLogger()
 	if len(apiKeys) == 0 {
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
 	}
 
-	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName, apiKeys[0])
+	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName, apiKeys[0], l)
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
 	}
@@ -339,7 +338,7 @@ func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error)
 		side = "buy"
 	}
 
-	log.Printf("ccxt is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
+	c.l.Infof("ccxt is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
 		pairString, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString())
 	ccxtOpenOrder, e := c.api.CreateLimitOrder(pairString, side, order.Volume.AsFloat(), order.Price.AsFloat())
 	if e != nil {
@@ -351,7 +350,7 @@ func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error)
 
 // CancelOrder impl
 func (c ccxtExchange) CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error) {
-	log.Printf("ccxt is canceling order: ID=%s, tradingPair: %s\n", txID.String(), pair.String())
+	c.l.Infof("ccxt is canceling order: ID=%s, tradingPair: %s\n", txID.String(), pair.String())
 
 	resp, e := c.api.CancelOrder(txID.String(), pair.String())
 	if e != nil {

@@ -3,6 +3,7 @@ package monitoring
 import (
 	"testing"
 
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,9 @@ func TestTriggerPagerDuty(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			pagerDutyAlert, e := MakeAlert("PagerDuty", tc.serviceKey)
+			//making a logger here for testing purposes
+			l := logger.MakeBasicLogger()
+			pagerDutyAlert, e := MakeAlert("PagerDuty", tc.serviceKey, l)
 			if !assert.Nil(t, e) {
 				return
 			}

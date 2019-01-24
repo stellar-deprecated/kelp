@@ -7,6 +7,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,6 +22,9 @@ var testOrderConstraints = map[model.TradingPair]model.OrderConstraints{
 	*model.MakeTradingPair(model.XLM, model.BTC):  *model.MakeOrderConstraints(8, 4, 1.0),
 }
 
+// making a logger here for testing purposes
+var testL logger.Logger
+
 func TestGetTickerPrice_Ccxt(t *testing.T) {
 	if testing.Short() {
 		return
@@ -28,7 +32,7 @@ func TestGetTickerPrice_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, false, testL)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -55,7 +59,7 @@ func TestGetOrderBook_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, false, testL)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -88,7 +92,7 @@ func TestGetTrades_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, false, testL)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -113,7 +117,7 @@ func TestGetTradeHistory_Ccxt(t *testing.T) {
 
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false, testL)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -171,7 +175,7 @@ func TestGetAccountBalances_Ccxt(t *testing.T) {
 
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false)
+			testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false, testL)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -216,7 +220,7 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		for _, pair := range tradingPairs {
 			t.Run(exchangeName, func(t *testing.T) {
-				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false)
+				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false, testL)
 				if !assert.NoError(t, e) {
 					return
 				}
@@ -322,7 +326,7 @@ func TestAddOrder_Ccxt(t *testing.T) {
 			},
 		} {
 			t.Run(exchangeName, func(t *testing.T) {
-				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false)
+				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false, testL)
 				if !assert.NoError(t, e) {
 					return
 				}
@@ -372,7 +376,7 @@ func TestCancelOrder_Ccxt(t *testing.T) {
 			},
 		} {
 			t.Run(exchangeName, func(t *testing.T) {
-				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false)
+				testCcxtExchange, e := makeCcxtExchange("http://localhost:3000", exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false, testL)
 				if !assert.NoError(t, e) {
 					return
 				}

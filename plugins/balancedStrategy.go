@@ -3,6 +3,7 @@ package plugins
 import (
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -36,6 +37,7 @@ func makeBalancedStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *balancedConfig,
+	l logger.Logger,
 ) api.Strategy {
 	orderConstraints := sdex.GetOrderConstraints(pair)
 	sellSideStrategy := makeSellSideStrategy(
@@ -56,10 +58,12 @@ func makeBalancedStrategy(
 			config.CarryoverInclusionProbability,
 			config.VirtualBalanceBase,
 			config.VirtualBalanceQuote,
-			orderConstraints),
+			orderConstraints,
+			l),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		false,
+		l,
 	)
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
@@ -80,10 +84,12 @@ func makeBalancedStrategy(
 			config.CarryoverInclusionProbability,
 			config.VirtualBalanceQuote,
 			config.VirtualBalanceBase,
-			orderConstraints),
+			orderConstraints,
+			l),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		true,
+		l,
 	)
 
 	return makeComposeStrategy(

@@ -130,7 +130,7 @@ func init() {
 			HTTP: http.DefaultClient,
 		}
 
-		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
+		alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey, l)
 		if e != nil {
 			l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 		}
@@ -161,10 +161,11 @@ func init() {
 			*simMode,
 			tradingPair,
 			sdexAssetMap,
+			l,
 		)
 
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
+		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode, l)
 		if e != nil {
 			l.Info("")
 			l.Errorf("%s", e)
@@ -189,6 +190,7 @@ func init() {
 			fixedIterations,
 			dataKey,
 			alert,
+			l,
 		)
 		// --- end initialization of objects ---
 
@@ -215,20 +217,9 @@ func init() {
 		strategyFillHandlers, e := strat.GetFillHandlers()
 		if e != nil {
 			l.Info("")
-<<<<<<< HEAD
-<<<<<<< HEAD
 			l.Info("problem encountered while instantiating the fill tracker:")
 			l.Errorf("%s", e)
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
-=======
-			l.Infof("problem encountered while instantiating the fill tracker: %s\n", e)
-			deleteAllOffersAndExit(botConfig, client, sdex)
->>>>>>> major rework
-=======
-			l.Info("problem encountered while instantiating the fill tracker:")
-			l.Errorf("%s", e)
-			deleteAllOffersAndExit(l, botConfig, client, sdex)
->>>>>>> remove gloval var, format edits
 		}
 		if botConfig.FillTrackerSleepMillis != 0 {
 			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
@@ -245,40 +236,15 @@ func init() {
 				e := fillTracker.TrackFills()
 				if e != nil {
 					l.Info("")
-<<<<<<< HEAD
-<<<<<<< HEAD
 					l.Info("problem encountered while running the fill tracker:")
 					l.Errorf("%s", e)
-=======
-					l.Infof("problem encountered while running the fill tracker: %s\n", e)
->>>>>>> major rework
-=======
-					l.Info("problem encountered while running the fill tracker:")
-<<<<<<< HEAD
-					logger.Fatal(l, e)
->>>>>>> remove gloval var, format edits
-=======
-					l.Errorf("%s", e)
->>>>>>> remove bad Fatals
 					// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 					deleteAllOffersAndExit(l, botConfig, client, sdex)
 				}
 			}()
 		} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
 			l.Info("")
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 			l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
-=======
-			l.Infof("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)\n")
->>>>>>> major rework
-=======
-			l.Info("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
->>>>>>> remove gloval var, format edits
-=======
-			l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
->>>>>>> remove bad Fatals
 			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
@@ -305,7 +271,7 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 		return fmt.Errorf("unable to make metrics recorder for the health endpoint: %s", e)
 	}
 
-	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/health", healthMetrics, networking.NoAuth)
+	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/health", healthMetrics, networking.NoAuth, l)
 	if e != nil {
 		return fmt.Errorf("unable to make /health endpoint: %s", e)
 	}
@@ -314,7 +280,7 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 		return fmt.Errorf("unable to make metrics recorder for the /metrics endpoint: %s", e)
 	}
 
-	metricsEndpoint, e := monitoring.MakeMetricsEndpoint("/metrics", kelpMetrics, networking.GoogleAuth)
+	metricsEndpoint, e := monitoring.MakeMetricsEndpoint("/metrics", kelpMetrics, networking.GoogleAuth, l)
 	if e != nil {
 		return fmt.Errorf("unable to make /metrics endpoint: %s", e)
 	}

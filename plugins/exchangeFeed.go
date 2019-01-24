@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -44,6 +43,6 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 	}
 
 	centerPrice := (p.BidPrice.AsFloat() + p.AskPrice.AsFloat()) / 2
-	log.Printf("price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, centerPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), centerPrice)
+	f.l.Infof("price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, centerPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), centerPrice)
 	return centerPrice, nil
 }

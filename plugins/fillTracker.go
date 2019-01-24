@@ -57,7 +57,7 @@ func (f *FillTracker) TrackFills() error {
 	if e != nil {
 		return fmt.Errorf("error while getting last trade: %s", e)
 	}
-	log.Printf("got latest trade cursor from where to start tracking fills: %v\n", lastCursor)
+	f.l.Infof("got latest trade cursor from where to start tracking fills: %v\n", lastCursor)
 
 	ech := make(chan error, len(f.handlers))
 	for {

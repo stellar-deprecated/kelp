@@ -8,8 +8,12 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/stretchr/testify/assert"
 )
+
+// making a logger here for testing purposes (no labeled l because this is a global var to not have to make a logger in every test function)
+var testL logger.Logger
 
 func TestHashString(t *testing.T) {
 	testCases := []struct {
@@ -42,7 +46,7 @@ func TestMakeValid(t *testing.T) {
 		return
 	}
 
-	_, e := MakeInitializedCcxtExchange("http://localhost:3000", "kraken", api.ExchangeAPIKey{})
+	_, e := MakeInitializedCcxtExchange("http://localhost:3000", "kraken", api.ExchangeAPIKey{}, testL)
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("unexpected error: %s", e))
 		return
@@ -55,7 +59,7 @@ func TestMakeInvalid(t *testing.T) {
 		return
 	}
 
-	_, e := MakeInitializedCcxtExchange("http://localhost:3000", "missing-exchange", api.ExchangeAPIKey{})
+	_, e := MakeInitializedCcxtExchange("http://localhost:3000", "missing-exchange", api.ExchangeAPIKey{}, testL)
 	if e == nil {
 		assert.Fail(t, "expected an error when trying to make and initialize an exchange that is missing: 'missing-exchange'")
 		return
@@ -73,7 +77,7 @@ func TestFetchTickers(t *testing.T) {
 		return
 	}
 
-	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance", api.ExchangeAPIKey{})
+	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance", api.ExchangeAPIKey{}, testL)
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 		return
@@ -94,7 +98,7 @@ func TestFetchTickersWithMissingSymbol(t *testing.T) {
 		return
 	}
 
-	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance", api.ExchangeAPIKey{})
+	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance", api.ExchangeAPIKey{}, testL)
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 		return
@@ -181,7 +185,7 @@ func runTestFetchOrderBook(k orderbookTest, t *testing.T) {
 		return
 	}
 
-	c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{})
+	c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{}, testL)
 	if e != nil {
 		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 		return
@@ -252,7 +256,7 @@ func TestFetchTrades(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{})
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{}, testL)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 				return
@@ -302,7 +306,7 @@ func TestFetchMyTrades(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey, testL)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 				return
@@ -374,7 +378,7 @@ func TestFetchBalance(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey, testL)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 				return
@@ -422,7 +426,7 @@ func TestOpenOrders(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey, testL)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 				return
@@ -505,7 +509,7 @@ func TestCreateLimitOrder(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey, testL)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 				return
@@ -590,7 +594,7 @@ func TestCancelOrder(t *testing.T) {
 		},
 	} {
 		t.Run(k.exchangeName, func(t *testing.T) {
-			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
+			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey, testL)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
 				return

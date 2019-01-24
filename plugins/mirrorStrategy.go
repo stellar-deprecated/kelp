@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/interstellar/kelp/api"
@@ -92,8 +91,7 @@ var _ api.Strategy = &mirrorStrategy{}
 var _ api.FillHandler = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
-	l := logger.MakeBasicLogger()
+func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool, l logger.Logger) (api.Strategy, error) {
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
@@ -103,7 +101,7 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 			return nil, e
 		}
 	} else {
-		exchange, e = MakeExchange(config.Exchange, simMode)
+		exchange, e = MakeExchange(config.Exchange, simMode, l)
 		if e != nil {
 			return nil, e
 		}
@@ -208,7 +206,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if e != nil {
 		return nil, e
 	}
-	log.Printf("num. buyOps in this update: %d\n", len(buyOps))
+	s.l.Infof("num. buyOps in this update: %d\n", len(buyOps))
 
 	buyBalanceCoordinator := balanceCoordinator{
 		placedUnits:      model.NumberConstants.Zero,
@@ -228,7 +226,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if e != nil {
 		return nil, e
 	}
-	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
+	s.l.Infof("num. sellOps in this update: %d\n", len(sellOps))
 
 	ops := []build.TransactionMutator{}
 	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
@@ -277,7 +275,7 @@ func (s *mirrorStrategy) updateLevels(
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
 
 			if vol.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
-				log.Printf("skip level creation, baseVolume (%s) < minBaseVolume (%s) of backing exchange\n", vol.AsString(), s.backingConstraints.MinBaseVolume.AsString())
+				s.l.Infof("skip level creation, baseVolume (%s) < minBaseVolume (%s) of backing exchange\n", vol.AsString(), s.backingConstraints.MinBaseVolume.AsString())
 				continue
 			}
 
@@ -325,7 +323,7 @@ func (s *mirrorStrategy) updateLevels(
 
 	// prepend deleteOps because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
 	allOps := append(deleteOps, ops...)
-	log.Printf("prepended %d deleteOps\n", len(deleteOps))
+	s.l.Infof("prepended %d deleteOps\n", len(deleteOps))
 
 	return allOps, nil
 }
@@ -364,7 +362,7 @@ func (s *mirrorStrategy) doModifyOffer(
 	offerPrice := model.NumberByCappingPrecision(price, s.primaryConstraints.PricePrecision)
 	offerAmount := model.NumberByCappingPrecision(vol, s.primaryConstraints.VolumePrecision)
 	if offerAmount.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
-		log.Printf("deleting level, baseVolume (%f) on backing exchange dropped below minBaseVolume of backing exchange (%f)\n",
+		s.l.Infof("deleting level, baseVolume (%f) on backing exchange dropped below minBaseVolume of backing exchange (%f)\n",
 			offerAmount.AsFloat(), s.backingConstraints.MinBaseVolume.AsFloat())
 		deleteOp := s.sdex.DeleteOffer(oldOffer)
 		return nil, deleteOp, nil
@@ -410,7 +408,7 @@ func (s *mirrorStrategy) baseVolumeToOffset(trade model.Trade, newOrderAction mo
 	uncommittedBase := s.baseSurplus[newOrderAction].total.Subtract(*s.baseSurplus[newOrderAction].committed)
 
 	if uncommittedBase.AsFloat() < s.backingConstraints.MinBaseVolume.Scale(0.5).AsFloat() {
-		log.Printf("offset-skip | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | minBaseVolume=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f\n",
+		s.l.Infof("offset-skip | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | minBaseVolume=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f\n",
 			trade.TransactionID.String(),
 			trade.Volume.AsFloat(),
 			trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -456,7 +454,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		Volume:      newVolume,
 		Timestamp:   nil,
 	}
-	log.Printf("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
+	s.l.Infof("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
 		trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -479,7 +477,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
 	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
 
-	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
+	s.l.Infof("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
 		trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -500,6 +498,7 @@ type balanceCoordinator struct {
 	backingBalance   *model.Number
 	backingAssetType string
 	isBackingBuy     bool
+	l                logger.Logger
 }
 
 func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) bool {
@@ -510,7 +509,7 @@ func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number
 
 	newPlacedUnits := b.placedUnits.Add(*additionalUnits)
 	if newPlacedUnits.AsFloat() > b.backingBalance.AsFloat() {
-		log.Printf("skip level creation, not enough balance of %s asset on backing exchange: %s (needs at least %s)\n", b.backingAssetType, b.backingBalance.AsString(), newPlacedUnits.AsString())
+		b.l.Infof("skip level creation, not enough balance of %s asset on backing exchange: %s (needs at least %s)\n", b.backingAssetType, b.backingBalance.AsString(), newPlacedUnits.AsString())
 		return false
 	}
 

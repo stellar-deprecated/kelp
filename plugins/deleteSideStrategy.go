@@ -1,8 +1,6 @@
 package plugins
 
 import (
-	"log"
-
 	"github.com/interstellar/kelp/support/logger"
 
 	"github.com/interstellar/kelp/api"
@@ -27,8 +25,8 @@ func makeDeleteSideStrategy(
 	sdex *SDEX,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
+	l logger.Logger,
 ) api.SideStrategy {
-	l := logger.MakeBasicLogger()
 	return &deleteSideStrategy{
 		sdex:       sdex,
 		assetBase:  assetBase,
@@ -39,7 +37,7 @@ func makeDeleteSideStrategy(
 
 // PruneExistingOffers impl
 func (s *deleteSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
-	log.Printf("deleteSideStrategy: deleting %d offers\n", len(offers))
+	s.l.Infof("deleteSideStrategy: deleting %d offers\n", len(offers))
 	pruneOps := []build.TransactionMutator{}
 	for i := 0; i < len(offers); i++ {
 		pOp := s.sdex.DeleteOffer(offers[i])

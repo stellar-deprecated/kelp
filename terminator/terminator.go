@@ -35,8 +35,8 @@ func MakeTerminator(
 	tradingAccount string,
 	tickIntervalSeconds int32,
 	allowInactiveMinutes int32,
+	l logger.Logger,
 ) *Terminator {
-	l := logger.MakeBasicLogger()
 	return &Terminator{
 		api:                  api,
 		sdex:                 sdex,

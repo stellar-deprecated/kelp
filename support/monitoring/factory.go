@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/logger"
 )
 
 type noopAlert struct{}
@@ -15,10 +16,10 @@ func (p *noopAlert) Trigger(description string, details interface{}) error {
 }
 
 // MakeAlert creates an Alert based on the type of the service (eg Pager Duty) and its corresponding API key.
-func MakeAlert(alertType string, apiKey string) (api.Alert, error) {
+func MakeAlert(alertType string, apiKey string, l logger.Logger) (api.Alert, error) {
 	switch alertType {
 	case "PagerDuty":
-		return makePagerDuty(apiKey)
+		return makePagerDuty(apiKey, l)
 	default:
 		return &noopAlert{}, nil
 	}

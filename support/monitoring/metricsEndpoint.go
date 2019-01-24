@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -23,11 +22,10 @@ type metricsEndpoint struct {
 
 // MakeMetricsEndpoint creates an Endpoint for the monitoring server with the desired auth level.
 // The endpoint's response is always a JSON dump of the provided metrics.
-func MakeMetricsEndpoint(path string, metrics Metrics, authLevel networking.AuthLevel) (networking.Endpoint, error) {
+func MakeMetricsEndpoint(path string, metrics Metrics, authLevel networking.AuthLevel, l logger.Logger) (networking.Endpoint, error) {
 	if !strings.HasPrefix(path, "/") {
 		return nil, fmt.Errorf("endpoint path must begin with /")
 	}
-	l := logger.MakeBasicLogger()
 	s := &metricsEndpoint{
 		path:      path,
 		metrics:   metrics,
@@ -51,7 +49,7 @@ func (m *metricsEndpoint) GetHandlerFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		json, e := m.metrics.MarshalJSON()
 		if e != nil {
-			log.Printf("error marshalling metrics json: %s\n", e)
+			m.l.Infof("error marshalling metrics json: %s\n", e)
 			http.Error(w, e.Error(), 500)
 			return
 		}
@@ -59,7 +57,7 @@ func (m *metricsEndpoint) GetHandlerFunc() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		_, e = w.Write(json)
 		if e != nil {
-			log.Printf("error writing to the response writer: %s\n", e)
+			m.l.Infof("error writing to the response writer: %s\n", e)
 		}
 	}
 }

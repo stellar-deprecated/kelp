@@ -1,8 +1,6 @@
 package api
 
 import (
-	"log"
-
 	"github.com/interstellar/kelp/support/logger"
 )
 
@@ -32,6 +30,6 @@ func (p *FeedPair) GetCenterPrice() (float64, error) {
 	}
 
 	centerPrice := pA / pB
-	log.Printf("feedPair prices: feedA=%.7f, feedB=%.7f; centerPrice=%.7f\n", pA, pB, centerPrice)
+	p.l.Infof("feedPair prices: feedA=%.7f, feedB=%.7f; centerPrice=%.7f\n", pA, pB, centerPrice)
 	return centerPrice, nil
 }

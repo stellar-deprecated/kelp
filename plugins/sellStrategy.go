@@ -6,6 +6,7 @@ import (
 	"github.com/interstellar/kelp/model"
 
 	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -37,12 +38,14 @@ func makeSellStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *sellConfig,
+	l logger.Logger,
 ) (api.Strategy, error) {
 	pf, e := MakeFeedPair(
 		config.DataTypeA,
 		config.DataFeedAURL,
 		config.DataTypeB,
 		config.DataFeedBURL,
+		l,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the sell strategy because we could not make the feed pair: %s", e)
@@ -59,13 +62,14 @@ func makeSellStrategy(
 		orderConstraints,
 		assetBase,
 		assetQuote,
-		makeStaticSpreadLevelProvider(config.Levels, config.AmountOfABase, offset, pf, orderConstraints),
+		makeStaticSpreadLevelProvider(config.Levels, config.AmountOfABase, offset, pf, orderConstraints, l),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		false,
+		l,
 	)
 	// switch sides of base/quote here for the delete side
-	deleteSideStrategy := makeDeleteSideStrategy(sdex, assetQuote, assetBase)
+	deleteSideStrategy := makeDeleteSideStrategy(sdex, assetQuote, assetBase, l)
 
 	return makeComposeStrategy(
 		assetBase,

@@ -2,7 +2,6 @@ package trader
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"time"
@@ -62,8 +61,8 @@ func MakeBot(
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
+	l logger.Logger,
 ) *Trader {
-	l := logger.MakeBasicLogger()
 	return &Trader{
 		api:                   api,
 		assetBase:             assetBase,
@@ -85,7 +84,7 @@ func MakeBot(
 
 // Start starts the bot with the injected strategy
 func (t *Trader) Start() {
-	log.Println("----------------------------------------------------------------------------------------------------")
+	t.l.Info("----------------------------------------------------------------------------------------------------")
 	var lastUpdateTime time.Time
 
 	for {
@@ -95,21 +94,21 @@ func (t *Trader) Start() {
 			if t.fixedIterations != nil {
 				*t.fixedIterations = *t.fixedIterations - 1
 				if *t.fixedIterations <= 0 {
-					log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
+					t.l.Infof("finished requested number of iterations, waiting for all threads to finish...\n")
 					t.threadTracker.Wait()
-					log.Printf("...all threads finished, stopping bot update loop\n")
+					t.l.Infof("...all threads finished, stopping bot update loop\n")
 					return
 				}
 			}
 
 			// wait for any goroutines from the current update to finish so we don't have inconsistent state reads
 			t.threadTracker.Wait()
-			log.Println("----------------------------------------------------------------------------------------------------")
+			t.l.Info("----------------------------------------------------------------------------------------------------")
 			lastUpdateTime = currentUpdateTime
 		}
 
 		sleepTime := t.timeController.SleepTime(lastUpdateTime, currentUpdateTime)
-		log.Printf("sleeping for %s...\n", sleepTime)
+		t.l.Infof("sleeping for %s...\n", sleepTime)
 		time.Sleep(sleepTime)
 	}
 }
@@ -117,28 +116,28 @@ func (t *Trader) Start() {
 // deletes all offers for the bot (not all offers on the account)
 func (t *Trader) deleteAllOffers() {
 	if t.deleteCyclesThreshold < 0 {
-		log.Printf("not deleting any offers because deleteCyclesThreshold is negative\n")
+		t.l.Infof("not deleting any offers because deleteCyclesThreshold is negative\n")
 		return
 	}
 
 	t.deleteCycles++
 	if t.deleteCycles <= t.deleteCyclesThreshold {
-		log.Printf("not deleting any offers, deleteCycles (=%d) needs to exceed deleteCyclesThreshold (=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
+		t.l.Infof("not deleting any offers, deleteCycles (=%d) needs to exceed deleteCyclesThreshold (=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
 		return
 	}
 
-	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d\n", t.deleteCycles)
+	t.l.Infof("deleting all offers, num. continuous update cycles with errors (including this one): %d\n", t.deleteCycles)
 	dOps := []build.TransactionMutator{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
 	t.sellingAOffers = []horizon.Offer{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
 	t.buyingAOffers = []horizon.Offer{}
 
-	log.Printf("created %d operations to delete offers\n", len(dOps))
+	t.l.Infof("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
 		e := t.sdex.SubmitOps(dOps, nil)
 		if e != nil {
-			log.Println(e)
+			t.l.Errorf("%s\n", e)
 			return
 		}
 	}
@@ -155,10 +154,10 @@ func (t *Trader) update() {
 	t.sdex.ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
 	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
-	log.Printf("liabilities after resetting\n")
+	t.l.Infof("liabilities after resetting\n")
 	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
-		log.Println(e)
+		t.l.Errorf("%s\n", e)
 		t.deleteAllOffers()
 		return
 	}
@@ -166,7 +165,7 @@ func (t *Trader) update() {
 	// strategy has a chance to set any state it needs
 	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
-		log.Println(e)
+		t.l.Errorf("%s\n", e)
 		t.deleteAllOffers()
 		return
 	}
@@ -174,11 +173,11 @@ func (t *Trader) update() {
 	// delete excess offers
 	var pruneOps []build.TransactionMutator
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
-	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
+	t.l.Infof("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
 		e = t.sdex.SubmitOps(pruneOps, nil)
 		if e != nil {
-			log.Println(e)
+			t.l.Errorf("%s\n", e)
 			t.deleteAllOffers()
 			return
 		}
@@ -189,30 +188,30 @@ func (t *Trader) update() {
 	t.sdex.ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
 	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
-	log.Printf("liabilities after resetting\n")
+	t.l.Infof("liabilities after resetting\n")
 	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
-		log.Println(e)
+		t.l.Errorf("%s\n", e)
 		t.deleteAllOffers()
 		return
 	}
 
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
-	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
+	t.l.Infof("liabilities at the end of a call to UpdateWithOps\n")
 	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
-		log.Println(e)
-		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
+		t.l.Errorf("%s\n", e)
+		t.l.Infof("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
 		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
 	}
 
-	log.Printf("created %d operations to update existing offers\n", len(ops))
+	t.l.Infof("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
 		e = t.sdex.SubmitOps(ops, nil)
 		if e != nil {
-			log.Println(e)
+			t.l.Errorf("%s\n", e)
 			t.deleteAllOffers()
 			return
 		}
@@ -220,7 +219,7 @@ func (t *Trader) update() {
 
 	e = t.strat.PostUpdate()
 	if e != nil {
-		log.Println(e)
+		t.l.Errorf("%s\n", e)
 		t.deleteAllOffers()
 		return
 	}
@@ -233,7 +232,7 @@ func (t *Trader) load() {
 	// load the maximum amounts we can offer for each asset
 	account, e := t.api.LoadAccount(t.tradingAccount)
 	if e != nil {
-		log.Println(e)
+		t.l.Errorf("%s\n", e)
 		return
 	}
 
@@ -266,14 +265,14 @@ func (t *Trader) load() {
 	t.trustAssetA = trustA
 	t.trustAssetB = trustB
 
-	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), maxA, trustAString)
-	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), maxB, trustBString)
+	t.l.Infof(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), maxA, trustAString)
+	t.l.Infof("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), maxB, trustBString)
 }
 
 func (t *Trader) loadExistingOffers() {
 	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
 	if e != nil {
-		log.Println(e)
+		t.l.Errorf("%s\n", e)
 		return
 	}
 	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)

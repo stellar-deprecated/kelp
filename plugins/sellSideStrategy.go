@@ -48,8 +48,8 @@ func makeSellSideStrategy(
 	priceTolerance float64,
 	amountTolerance float64,
 	divideAmountByPrice bool,
+	l logger.Logger,
 ) api.SideStrategy {
-	l := logger.MakeBasicLogger()
 	action := actionSell
 	if divideAmountByPrice {
 		action = actionBuy

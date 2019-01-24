@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"reflect"
 	"strconv"
@@ -86,8 +85,8 @@ func MakeSDEX(
 	simMode bool,
 	pair *model.TradingPair,
 	assetMap map[model.Asset]horizon.Asset,
+	l logger.Logger,
 ) *SDEX {
-	l := logger.MakeBasicLogger()
 	sdex := &SDEX{
 		API:                           api,
 		SourceSeed:                    sourceSeed,
@@ -104,12 +103,12 @@ func MakeSDEX(
 		l:                             l,
 	}
 
-	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
+	l.Infof("Using network passphrase: %s\n", sdex.Network.Passphrase)
 
 	if sdex.SourceAccount == "" {
 		sdex.SourceAccount = sdex.TradingAccount
 		sdex.SourceSeed = sdex.TradingSeed
-		log.Println("No Source Account Set")
+		l.Info("No Source Account Set")
 	}
 	sdex.reloadSeqNum = true
 
@@ -118,10 +117,10 @@ func MakeSDEX(
 
 func (sdex *SDEX) incrementSeqNum() {
 	if sdex.reloadSeqNum {
-		log.Println("reloading sequence number")
+		sdex.l.Info("reloading sequence number")
 		seqNum, err := sdex.API.SequenceForAccount(sdex.SourceAccount)
 		if err != nil {
-			log.Printf("error getting seq num: %s\n", err)
+			sdex.l.Infof("error getting seq num: %s\n", err)
 			return
 		}
 		sdex.seqNum = uint64(seqNum)
@@ -178,7 +177,7 @@ func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, pri
 func (sdex *SDEX) ParseOfferAmount(amt string) (float64, error) {
 	offerAmt, err := strconv.ParseFloat(amt, 64)
 	if err != nil {
-		log.Printf("error parsing offer amount: %s\n", err)
+		sdex.l.Infof("error parsing offer amount: %s\n", err)
 		return -1, err
 	}
 	return offerAmt, nil
@@ -344,7 +343,7 @@ func (sdex *SDEX) willOversellNative(incrementalNativeAmount float64) (bool, err
 
 	willOversellNative := incrementalNativeAmount > (nativeBal - minAccountBal - nativeLiabilities.Selling)
 	if willOversellNative {
-		log.Printf("we will oversell the native asset after considering fee and min reserves, incrementalNativeAmount = %.7f, nativeBal = %.7f, minAccountBal = %.7f, nativeLiabilities.Selling = %.7f\n",
+		sdex.l.Infof("we will oversell the native asset after considering fee and min reserves, incrementalNativeAmount = %.7f, nativeBal = %.7f, minAccountBal = %.7f, nativeLiabilities.Selling = %.7f\n",
 			incrementalNativeAmount, nativeBal, minAccountBal, nativeLiabilities.Selling)
 	}
 	return willOversellNative, nil
@@ -363,7 +362,7 @@ func (sdex *SDEX) willOversell(asset horizon.Asset, amountSelling float64) (bool
 
 	willOversell := amountSelling > (bal - minAccountBal - liabilities.Selling)
 	if willOversell {
-		log.Printf("we will oversell the asset '%s', amountSelling = %.7f, bal = %.7f, minAccountBal = %.7f, liabilities.Selling = %.7f\n",
+		sdex.l.Infof("we will oversell the asset '%s', amountSelling = %.7f, bal = %.7f, minAccountBal = %.7f, liabilities.Selling = %.7f\n",
 			utils.Asset2String(asset), amountSelling, bal, minAccountBal, liabilities.Selling)
 	}
 	return willOversell, nil
@@ -408,16 +407,16 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 	if e != nil {
 		return e
 	}
-	log.Printf("tx XDR: %s\n", txeB64)
+	sdex.l.Infof("tx XDR: %s\n", txeB64)
 
 	// submit
 	if !sdex.simMode {
-		log.Println("submitting tx XDR to network (async)")
+		sdex.l.Info("submitting tx XDR to network (async)")
 		sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 			sdex.submit(txeB64, asyncCallback)
 		}, nil)
 	} else {
-		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
+		sdex.l.Info("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
 		sdex.invokeAsyncCallback(asyncCallback, "", nil)
 	}
 	return nil
@@ -451,23 +450,23 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 			var rcs *horizon.TransactionResultCodes
 			rcs, err = herr.ResultCodes()
 			if err != nil {
-				log.Printf("(async) error: no result codes from horizon: %s\n", err)
+				sdex.l.Infof("(async) error: no result codes from horizon: %s\n", err)
 				sdex.invokeAsyncCallback(asyncCallback, "", err)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
-				log.Println("(async) error: tx_bad_seq, setting flag to reload seq number")
+				sdex.l.Info("(async) error: tx_bad_seq, setting flag to reload seq number")
 				sdex.reloadSeqNum = true
 			}
-			log.Println("(async) error: result code details: tx code =", rcs.TransactionCode, ", opcodes =", rcs.OperationCodes)
+			sdex.l.Infof("(async) error: result code details: tx code =", rcs.TransactionCode, ", opcodes =", rcs.OperationCodes)
 		} else {
-			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
+			sdex.l.Infof("(async) error: tx failed for unknown reason, error message: %s\n", err)
 		}
 		sdex.invokeAsyncCallback(asyncCallback, "", err)
 		return
 	}
 
-	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
+	sdex.l.Infof("(async) tx confirmation hash: %s\n", resp.Hash)
 	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil)
 }
 
@@ -484,13 +483,13 @@ func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, e error), 
 func (sdex *SDEX) logLiabilities(asset horizon.Asset, assetStr string) {
 	l, e := sdex.assetLiabilities(asset)
 	if e != nil {
-		log.Printf("could not fetch liability for asset '%s', error = %s\n", assetStr, e)
+		sdex.l.Infof("could not fetch liability for asset '%s', error = %s\n", assetStr, e)
 		return
 	}
 
 	bal, trust, minAccountBal, e := sdex.assetBalance(asset)
 	if e != nil {
-		log.Printf("cannot fetch balance for asset '%s', error = %s\n", assetStr, e)
+		sdex.l.Infof("cannot fetch balance for asset '%s', error = %s\n", assetStr, e)
 		return
 	}
 
@@ -498,7 +497,7 @@ func (sdex *SDEX) logLiabilities(asset horizon.Asset, assetStr string) {
 	if trust != maxLumenTrust {
 		trustString = fmt.Sprintf("%.7f", trust)
 	}
-	log.Printf("asset=%s, balance=%.7f, trust=%s, minAccountBal=%.7f, buyingLiabilities=%.7f, sellingLiabilities=%.7f\n",
+	sdex.l.Infof("asset=%s, balance=%.7f, trust=%s, minAccountBal=%.7f, buyingLiabilities=%.7f, sellingLiabilities=%.7f\n",
 		assetStr, bal, trustString, minAccountBal, l.Buying, l.Selling)
 }
 
@@ -591,7 +590,7 @@ func (sdex *SDEX) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*
 	offers, err := utils.LoadAllOffers(sdex.TradingAccount, sdex.API)
 	if err != nil {
 		assetString := utils.Asset2String(asset)
-		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
+		sdex.l.Infof("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
 		return nil, nil, err
 	}
 

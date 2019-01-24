@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/interstellar/kelp/support/logger"
 
@@ -18,8 +17,7 @@ type pagerDuty struct {
 // ensure pagerDuty implements the api.Alert interface
 var _ api.Alert = &pagerDuty{}
 
-func makePagerDuty(serviceKey string) (api.Alert, error) {
-	l := logger.MakeBasicLogger()
+func makePagerDuty(serviceKey string, l logger.Logger) (api.Alert, error) {
 	return &pagerDuty{
 		serviceKey: serviceKey,
 		l:          l,
@@ -39,6 +37,6 @@ func (p *pagerDuty) Trigger(description string, details interface{}) error {
 	if e != nil {
 		return fmt.Errorf("encountered an error while sending a PagerDuty alert: %s", e)
 	}
-	log.Printf("Triggered PagerDuty alert. Incident key for reference: %s\n", response.IncidentKey)
+	p.l.Infof("Triggered PagerDuty alert. Incident key for reference: %s\n", response.IncidentKey)
 	return nil
 }

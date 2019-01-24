@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/networking"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,9 @@ func TestMetricsEndpoint_NoAuthEndpoint(t *testing.T) {
 	if !assert.Nil(t, e) {
 		return
 	}
-	testEndpoint, e := MakeMetricsEndpoint("/test", testMetrics, networking.NoAuth)
+	// making a logger here for testing purposes
+	l := logger.MakeBasicLogger()
+	testEndpoint, e := MakeMetricsEndpoint("/test", testMetrics, networking.NoAuth, l)
 	if !assert.Nil(t, e) {
 		return
 	}

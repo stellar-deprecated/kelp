@@ -5,6 +5,7 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -36,6 +37,7 @@ func makeBuySellStrategy(
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *buySellConfig,
+	l logger.Logger,
 ) (api.Strategy, error) {
 	offsetSell := rateOffset{
 		percent:      config.RateOffsetPercent,
@@ -47,6 +49,7 @@ func makeBuySellStrategy(
 		config.DataFeedAURL,
 		config.DataTypeB,
 		config.DataFeedBURL,
+		l,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the sell side feed pair: %s", e)
@@ -63,10 +66,12 @@ func makeBuySellStrategy(
 			offsetSell,
 			sellSideFeedPair,
 			orderConstraints,
+			l,
 		),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		false,
+		l,
 	)
 
 	offsetBuy := rateOffset{
@@ -80,6 +85,7 @@ func makeBuySellStrategy(
 		config.DataFeedBURL,
 		config.DataTypeA,
 		config.DataFeedAURL,
+		l,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the buysell strategy because we could not make the buy side feed pair: %s", e)
@@ -96,10 +102,12 @@ func makeBuySellStrategy(
 			offsetBuy,
 			buySideFeedPair,
 			orderConstraints,
+			l,
 		),
 		config.PriceTolerance,
 		config.AmountTolerance,
 		true,
+		l,
 	)
 
 	return makeComposeStrategy(

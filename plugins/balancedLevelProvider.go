@@ -61,8 +61,8 @@ func makeBalancedLevelProvider(
 	virtualBalanceBase float64,
 	virtualBalanceQuote float64,
 	orderConstraints *model.OrderConstraints,
+	l logger.Logger,
 ) api.LevelProvider {
-	l := logger.MakeBasicLogger()
 	if minAmountSpread <= 0 {
 		log.Fatalf("minAmountSpread (%.7f) needs to be > 0 for the algorithm to work sustainably\n", minAmountSpread)
 	}
@@ -112,7 +112,7 @@ func validateSpread(spread float64) {
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	if !p.shouldRefresh {
-		log.Println("no offers were taken, leave levels as they are")
+		p.l.Info("no offers were taken, leave levels as they are")
 		return p.lastLevels, nil
 	}
 
@@ -212,7 +212,7 @@ func (p *balancedLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
 
 // HandleFill impl
 func (p *balancedLevelProvider) HandleFill(trade model.Trade) error {
-	log.Println("an offer was taken, levels will be recomputed")
+	p.l.Info("an offer was taken, levels will be recomputed")
 	p.shouldRefresh = true
 	return nil
 }

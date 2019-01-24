@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
@@ -11,19 +10,17 @@ import (
 )
 
 // CheckConfigError checks configs for errors, crashes app if there's an error
-func CheckConfigError(l logger.Logger, cfg fmt.Stringer, e error, filename string) {
+func CheckConfigError(cfg fmt.Stringer, e error, filename string) {
 	if e != nil {
-		log.Println(e)
-		log.Println()
-		log.Fatalf("error: could not parse the config file '%s'. Check that the correct type of file was passed in.\n", filename)
+		logger.Fatal(utilsLogger, fmt.Errorf("error: could not parse the config file '%s'. Check that the correct type of file was passed in", filename))
 	}
 }
 
 // LogConfig logs out the config file
-func LogConfig(l logger.Logger, cfg fmt.Stringer) {
-	log.Println("configs:")
+func LogConfig(cfg fmt.Stringer) {
+	utilsLogger.Info("configs:")
 	for _, line := range strings.Split(strings.TrimSuffix(cfg.String(), "\n"), "\n") {
-		log.Printf("     %s", line)
+		utilsLogger.Infof("     %s", line)
 	}
 }
 
@@ -55,19 +52,19 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 }
 
 // SecretKey2PublicKey converts a secret key to a public key
-func SecretKey2PublicKey(l logger.Logger, i interface{}) interface{} {
+func SecretKey2PublicKey(i interface{}) interface{} {
 	if i == "" {
 		return ""
 	}
 
 	secret, ok := i.(string)
 	if !ok {
-		log.Fatal("field was not a string")
+		logger.Fatal(utilsLogger, fmt.Errorf("field was not a string"))
 	}
 
 	pk, e := ParseSecret(secret)
 	if e != nil {
-		log.Fatal(e)
+		logger.Fatal(utilsLogger, e)
 	}
 	return fmt.Sprintf("[secret key to account %s]", *pk)
 }

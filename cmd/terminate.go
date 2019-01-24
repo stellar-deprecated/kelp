@@ -6,6 +6,7 @@ import (
 
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/interstellar/kelp/terminator"
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -24,6 +25,7 @@ func init() {
 	configPath := terminateCmd.Flags().StringP("conf", "c", "./terminator.cfg", "service's basic config file path")
 
 	terminateCmd.Run = func(ccmd *cobra.Command, args []string) {
+		l := logger.MakeBasicLogger()
 		log.Println("Starting Terminator: " + version + " [" + gitHash + "]")
 
 		var configFile terminator.Config
@@ -54,8 +56,9 @@ func init() {
 			false,
 			nil, // not needed here
 			map[model.Asset]horizon.Asset{},
+			l,
 		)
-		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes)
+		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes, l)
 		// --- end initialization of objects ----
 
 		for {

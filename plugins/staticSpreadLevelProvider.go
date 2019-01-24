@@ -1,8 +1,6 @@
 package plugins
 
 import (
-	"log"
-
 	"github.com/interstellar/kelp/support/logger"
 
 	"github.com/interstellar/kelp/api"
@@ -48,8 +46,7 @@ type staticSpreadLevelProvider struct {
 var _ api.LevelProvider = &staticSpreadLevelProvider{}
 
 // makeStaticSpreadLevelProvider is a factory method
-func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair, orderConstraints *model.OrderConstraints) api.LevelProvider {
-	l := logger.MakeBasicLogger()
+func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair, orderConstraints *model.OrderConstraints, l logger.Logger) api.LevelProvider {
 	return &staticSpreadLevelProvider{
 		staticLevels:     staticLevels,
 		amountOfBase:     amountOfBase,
@@ -64,7 +61,7 @@ func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase floa
 func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	centerPrice, e := p.pf.GetCenterPrice()
 	if e != nil {
-		log.Printf("error: center price couldn't be loaded! | %s\n", e)
+		p.l.Infof("error: center price couldn't be loaded! | %s\n", e)
 		return nil, e
 	}
 	if p.offset.percent != 0.0 || p.offset.absolute != 0 {
@@ -81,7 +78,7 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 		if p.offset.invert {
 			centerPrice = 1 / centerPrice
 		}
-		log.Printf("center price (adjusted): %.7f\n", centerPrice)
+		p.l.Infof("center price (adjusted): %.7f\n", centerPrice)
 	}
 
 	levels := []api.Level{}

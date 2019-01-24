@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -27,16 +26,14 @@ type Ccxt struct {
 const pathExchanges = "/exchanges"
 
 // MakeInitializedCcxtExchange constructs an instance of Ccxt that is bound to a specific exchange instance on the CCXT REST server
-func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey api.ExchangeAPIKey) (*Ccxt, error) {
+func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey api.ExchangeAPIKey, l logger.Logger) (*Ccxt, error) {
 	if strings.HasSuffix(ccxtBaseURL, "/") {
 		return nil, fmt.Errorf("invalid format for ccxtBaseURL: %s", ccxtBaseURL)
 	}
-
 	instanceName, e := makeInstanceName(exchangeName, apiKey)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make instance name: %s", e)
 	}
-	l := logger.MakeBasicLogger()
 	c := &Ccxt{
 		httpClient:   http.DefaultClient,
 		ccxtBaseURL:  ccxtBaseURL,
@@ -86,9 +83,9 @@ func (c *Ccxt) init(apiKey api.ExchangeAPIKey) error {
 		if e != nil {
 			return fmt.Errorf("error creating new instance '%s' for exchange '%s': %s", c.instanceName, c.exchangeName, e)
 		}
-		log.Printf("created new instance '%s' for exchange '%s'\n", c.instanceName, c.exchangeName)
+		c.l.Infof("created new instance '%s' for exchange '%s'\n", c.instanceName, c.exchangeName)
 	} else {
-		log.Printf("instance '%s' for exchange '%s' already exists\n", c.instanceName, c.exchangeName)
+		c.l.Infof("instance '%s' for exchange '%s' already exists\n", c.instanceName, c.exchangeName)
 	}
 
 	// load markets to populate fields related to markets
@@ -305,6 +302,7 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	return output, nil
 }
 
+// FetchMyTrades calls the /fetchMyTrades endpoint on CCXT
 func (c *Ccxt) FetchMyTrades(tradingPair string) ([]CcxtTrade, error) {
 	e := c.symbolExists(tradingPair)
 	if e != nil {

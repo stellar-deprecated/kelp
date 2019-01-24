@@ -2,10 +2,10 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
@@ -19,6 +19,7 @@ type strategyFactoryData struct {
 	assetQuote      *horizon.Asset
 	stratConfigPath string
 	simMode         bool
+	l               logger.Logger
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -42,7 +43,8 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeBuySellStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
+			l := strategyFactoryData.l
+			s, e := makeBuySellStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, l)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -59,7 +61,8 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.simMode)
+			l := strategyFactoryData.l
+			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.simMode, l)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -76,7 +79,8 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeSellStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
+			l := strategyFactoryData.l
+			s, e := makeSellStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, l)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -93,7 +97,8 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			return makeBalancedStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg), nil
+			l := strategyFactoryData.l
+			return makeBalancedStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, l), nil
 		},
 	},
 	"delete": StrategyContainer{
@@ -102,7 +107,8 @@ var strategies = map[string]StrategyContainer{
 		NeedsConfig: false,
 		Complexity:  "Beginner",
 		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
-			return makeDeleteStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote), nil
+			l := strategyFactoryData.l
+			return makeDeleteStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, l), nil
 		},
 	},
 }
@@ -116,8 +122,9 @@ func MakeStrategy(
 	strategy string,
 	stratConfigPath string,
 	simMode bool,
+	l logger.Logger,
 ) (api.Strategy, error) {
-	log.Printf("Making strategy: %s\n", strategy)
+	l.Infof("Making strategy: %s\n", strategy)
 	if strat, ok := strategies[strategy]; ok {
 		if strat.NeedsConfig && stratConfigPath == "" {
 			return nil, fmt.Errorf("the '%s' strategy needs a config file", strategy)
@@ -129,6 +136,7 @@ func MakeStrategy(
 			assetQuote:      assetQuote,
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
+			l:               l,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)
@@ -148,6 +156,7 @@ func Strategies() map[string]StrategyContainer {
 type exchangeFactoryData struct {
 	simMode bool
 	apiKeys []api.ExchangeAPIKey
+	l       logger.Logger
 }
 
 // ExchangeContainer contains the exchange factory method along with some metadata
@@ -186,6 +195,7 @@ var exchanges = map[string]ExchangeContainer{
 				binanceOrderConstraints,
 				exchangeFactoryData.apiKeys,
 				exchangeFactoryData.simMode,
+				exchangeFactoryData.l,
 			)
 		},
 	},
@@ -200,6 +210,7 @@ var exchanges = map[string]ExchangeContainer{
 				map[model.TradingPair]model.OrderConstraints{}, // TODO when enabling trading
 				exchangeFactoryData.apiKeys,
 				exchangeFactoryData.simMode,
+				exchangeFactoryData.l,
 			)
 		},
 	},
@@ -214,18 +225,20 @@ var exchanges = map[string]ExchangeContainer{
 				map[model.TradingPair]model.OrderConstraints{}, // TODO when enabling trading
 				exchangeFactoryData.apiKeys,
 				exchangeFactoryData.simMode,
+				exchangeFactoryData.l,
 			)
 		},
 	},
 }
 
 // MakeExchange is a factory method to make an exchange based on a given type
-func MakeExchange(exchangeType string, simMode bool) (api.Exchange, error) {
+func MakeExchange(exchangeType string, simMode bool, l logger.Logger) (api.Exchange, error) {
 	if exchange, ok := exchanges[exchangeType]; ok {
 		exchangeAPIKey := api.ExchangeAPIKey{Key: "", Secret: ""}
 		x, e := exchange.makeFn(exchangeFactoryData{
 			simMode: simMode,
 			apiKeys: []api.ExchangeAPIKey{exchangeAPIKey},
+			l:       l,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("error when making the '%s' exchange: %s", exchangeType, e)
