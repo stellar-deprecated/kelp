@@ -87,6 +87,7 @@ func MakeSDEX(
 	assetMap map[model.Asset]horizon.Asset,
 	l logger.Logger,
 ) *SDEX {
+	l := logger.MakeBasicLogger()
 	sdex := &SDEX{
 		API:                           api,
 		SourceSeed:                    sourceSeed,

@@ -63,6 +63,7 @@ func makeBalancedLevelProvider(
 	orderConstraints *model.OrderConstraints,
 	l logger.Logger,
 ) api.LevelProvider {
+	l := logger.MakeBasicLogger()
 	if minAmountSpread <= 0 {
 		log.Fatalf("minAmountSpread (%.7f) needs to be > 0 for the algorithm to work sustainably\n", minAmountSpread)
 	}

@@ -3,6 +3,8 @@ package plugins
 import (
 	"github.com/interstellar/kelp/support/logger"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 )

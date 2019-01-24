@@ -26,6 +26,7 @@ func MakeMetricsEndpoint(path string, metrics Metrics, authLevel networking.Auth
 	if !strings.HasPrefix(path, "/") {
 		return nil, fmt.Errorf("endpoint path must begin with /")
 	}
+	l := logger.MakeBasicLogger()
 	s := &metricsEndpoint{
 		path:      path,
 		metrics:   metrics,

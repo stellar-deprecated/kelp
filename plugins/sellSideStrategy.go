@@ -5,6 +5,8 @@ import (
 
 	"github.com/interstellar/kelp/support/logger"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/utils"
@@ -49,6 +51,7 @@ func makeSellSideStrategy(
 	divideAmountByPrice bool,
 	l logger.Logger,
 ) api.SideStrategy {
+	l := logger.MakeBasicLogger()
 	action := actionSell
 	if divideAmountByPrice {
 		action = actionBuy

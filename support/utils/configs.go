@@ -10,7 +10,7 @@ import (
 )
 
 // CheckConfigError checks configs for errors, crashes app if there's an error
-func CheckConfigError(cfg fmt.Stringer, e error, filename string) {
+func CheckConfigError(l logger.Logger, cfg fmt.Stringer, e error, filename string) {
 	if e != nil {
 		logger.Fatal(utilsLogger, fmt.Errorf("error: could not parse the config file '%s'. Check that the correct type of file was passed in", filename))
 	}
@@ -52,7 +52,7 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 }
 
 // SecretKey2PublicKey converts a secret key to a public key
-func SecretKey2PublicKey(i interface{}) interface{} {
+func SecretKey2PublicKey(l logger.Logger, i interface{}) interface{} {
 	if i == "" {
 		return ""
 	}

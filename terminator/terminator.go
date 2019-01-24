@@ -37,6 +37,7 @@ func MakeTerminator(
 	allowInactiveMinutes int32,
 	l logger.Logger,
 ) *Terminator {
+	l := logger.MakeBasicLogger()
 	return &Terminator{
 		api:                  api,
 		sdex:                 sdex,

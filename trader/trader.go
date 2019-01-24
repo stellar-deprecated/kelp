@@ -63,6 +63,7 @@ func MakeBot(
 	alert api.Alert,
 	l logger.Logger,
 ) *Trader {
+	l := logger.MakeBasicLogger()
 	return &Trader{
 		api:                   api,
 		assetBase:             assetBase,

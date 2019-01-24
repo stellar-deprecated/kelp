@@ -3,6 +3,8 @@ package plugins
 import (
 	"github.com/interstellar/kelp/support/logger"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/stellar/go/build"
@@ -27,6 +29,7 @@ func makeDeleteSideStrategy(
 	assetQuote *horizon.Asset,
 	l logger.Logger,
 ) api.SideStrategy {
+	l := logger.MakeBasicLogger()
 	return &deleteSideStrategy{
 		sdex:       sdex,
 		assetBase:  assetBase,

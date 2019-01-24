@@ -5,6 +5,8 @@ import (
 
 	"github.com/interstellar/kelp/support/logger"
 
+	"github.com/interstellar/kelp/support/logger"
+
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/sdk"
@@ -35,6 +37,7 @@ func makeCcxtExchange(
 	simMode bool,
 	l logger.Logger,
 ) (api.Exchange, error) {
+	l := logger.MakeBasicLogger()
 	if len(apiKeys) == 0 {
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
 	}
