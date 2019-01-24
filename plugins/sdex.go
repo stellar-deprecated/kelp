@@ -832,7 +832,7 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (*model.OrderBook, error
 	var transformedBids []model.Order
 	var transformedAsks []model.Order
 
-	timeStamp := model.MakeTimestampFromTime(time.Now())
+	timeStamp := model.MakeTimestamp(time.Now().UnixNano() / int64(time.Millisecond))
 
 	for i := 0; i < len(sdexBids); i++ {
 		price, e := model.NumberFromString(sdexBids[i].Price, sdexOrderConstraints.PricePrecision)
@@ -845,8 +845,8 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (*model.OrderBook, error
 		}
 		bid := model.Order{
 			Pair:        pair,
-			OrderAction: false,
-			OrderType:   1,
+			OrderAction: model.OrderActionBuy,
+			OrderType:   model.OrderTypeLimit,
 			Price:       price,
 			Volume:      volume,
 			Timestamp:   timeStamp,
@@ -856,18 +856,18 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair) (*model.OrderBook, error
 	}
 
 	for i := 0; i < len(sdexAsks); i++ {
-		price, e := model.NumberFromString(sdexAsks[i].Price, sdexOrderConstraints.PricePrecision)
+		price, e := model.NumberFromString(sdexAsks[i].Price, utils.SdexPrecision)
 		if e != nil {
 			return nil, fmt.Errorf("Error while transforming orderbook: %s", e)
 		}
-		volume, e := model.NumberFromString(sdexAsks[i].Amount, sdexOrderConstraints.VolumePrecision)
+		volume, e := model.NumberFromString(sdexAsks[i].Amount, utils.SdexPrecision)
 		if e != nil {
 			return nil, fmt.Errorf("Error while transforming orderbook: %s", e)
 		}
 		ask := model.Order{
 			Pair:        pair,
-			OrderAction: true,
-			OrderType:   1,
+			OrderAction: model.OrderActionSell,
+			OrderType:   model.OrderTypeLimit,
 			Price:       price,
 			Volume:      volume,
 			Timestamp:   timeStamp,
