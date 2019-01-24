@@ -10,7 +10,7 @@ import (
 
 	"github.com/interstellar/kelp/support/logger"
 
-	krakenapi "github.com/Beldur/kraken-go-api-client"
+	"github.com/Beldur/kraken-go-api-client"
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/support/networking"
