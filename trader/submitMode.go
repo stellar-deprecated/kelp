@@ -144,10 +144,14 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if !isSell && topAsk != nil {
 		// invert price when buying
 		keep = 1/sellPrice < topAsk.Price.AsFloat()
+		log.Printf("       ----> buying, (op price) %.7f < %.7f (topAsk): keep = %v", 1/sellPrice, topAsk.Price.AsFloat(), keep)
 	} else if isSell && topBid != nil {
 		keep = sellPrice > topBid.Price.AsFloat()
+		log.Printf("       ----> selling, (op price) %.7f > %.7f (topAsk): keep = %v", sellPrice, topBid.Price.AsFloat(), keep)
 	} else {
 		keep = true
+		// TODO always hitting this case even when there is a top bid and a top ask! :(
+		log.Printf("       ----> no market isSell=%v, op price = %.7f: keep = %v", isSell, sellPrice, keep)
 	}
 
 	if keep {
