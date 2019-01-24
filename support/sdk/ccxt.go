@@ -34,7 +34,6 @@ func MakeInitializedCcxtExchange(ccxtBaseURL string, exchangeName string, apiKey
 	if e != nil {
 		return nil, fmt.Errorf("cannot make instance name: %s", e)
 	}
-	l := logger.MakeBasicLogger()
 	c := &Ccxt{
 		httpClient:   http.DefaultClient,
 		ccxtBaseURL:  ccxtBaseURL,
