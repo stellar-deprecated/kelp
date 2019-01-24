@@ -1,8 +1,6 @@
 package plugins
 
 import (
-	"log"
-
 	"github.com/interstellar/kelp/support/logger"
 
 	"github.com/interstellar/kelp/api"
@@ -26,6 +24,6 @@ func MakeFillLogger() api.FillHandler {
 
 // HandleFill impl.
 func (f *FillLogger) HandleFill(trade model.Trade) error {
-	log.Printf("received fill: %s\n", trade)
+	f.l.Infof("received fill: %s\n", trade)
 	return nil
 }

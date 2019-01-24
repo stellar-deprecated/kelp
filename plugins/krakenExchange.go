@@ -3,7 +3,6 @@ package plugins
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"reflect"
 	"strconv"
@@ -78,7 +77,7 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exc
 
 // nextAPI rotates the API key being used so we can overcome rate limit issues
 func (k *krakenExchange) nextAPI() *krakenapi.KrakenApi {
-	log.Printf("returning kraken API key at index %d", k.apiNextIndex)
+	k.l.Infof("returning kraken API key at index %d", k.apiNextIndex)
 	api := k.apis[k.apiNextIndex]
 	// rotate key for the next call
 	k.apiNextIndex = (k.apiNextIndex + 1) % uint8(len(k.apis))
@@ -93,7 +92,7 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 	}
 
 	if k.isSimulated {
-		log.Printf("not adding order to Kraken in simulation mode, order=%s\n", *order)
+		k.l.Infof("not adding order to Kraken in simulation mode, order=%s\n", *order)
 		return model.MakeTransactionID("simulated"), nil
 	}
 
@@ -144,7 +143,7 @@ func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.Tradi
 	}
 
 	if resp.Count > 1 {
-		log.Printf("warning: count from a cancelled order is greater than 1: %d\n", resp.Count)
+		k.l.Infof("warning: count from a cancelled order is greater than 1: %d\n", resp.Count)
 	}
 
 	// TODO 2 - need to figure out whether count = 0 could also mean that it is pending cancellation

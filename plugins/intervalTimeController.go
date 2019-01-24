@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"log"
 	"math/rand"
 	"time"
 
@@ -36,7 +35,7 @@ var _ api.TimeController = &IntervalTimeController{}
 func (t *IntervalTimeController) ShouldUpdate(lastUpdateTime time.Time, currentUpdateTime time.Time) bool {
 	elapsedSinceUpdate := currentUpdateTime.Sub(lastUpdateTime)
 	shouldUpdate := elapsedSinceUpdate >= t.tickInterval
-	log.Printf("intervalTimeController tickInterval=%s, shouldUpdate=%v, elapsedSinceUpdate=%s\n", t.tickInterval, shouldUpdate, elapsedSinceUpdate)
+	t.l.Infof("intervalTimeController tickInterval=%s, shouldUpdate=%v, elapsedSinceUpdate=%s\n", t.tickInterval, shouldUpdate, elapsedSinceUpdate)
 	return shouldUpdate
 }
 

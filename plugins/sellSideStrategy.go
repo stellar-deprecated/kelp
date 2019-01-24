@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/interstellar/kelp/support/logger"
 
@@ -91,7 +90,7 @@ func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.
 			curPrice = 1 / curPrice
 		}
 		// base and quote here refers to the bot's base and quote, not the base and quote of the sellSideStrategy
-		log.Printf("offer | %s | level=%d | curPriceQuote=%.7f | curAmtBase=%.7f | pruning=%v\n", s.action, i+1, curPrice, curAmount, isPruning)
+		s.l.Infof("offer | %s | level=%d | curPriceQuote=%.7f | curAmtBase=%.7f | pruning=%v\n", s.action, i+1, curPrice, curAmount, isPruning)
 	}
 	return pruneOps, updatedOffers
 }
@@ -142,7 +141,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	lineFull := maxAssetQuote == trustQuote
 	if nothingToSell || lineFull {
 		s.currentLevels = []api.Level{}
-		log.Printf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
+		s.l.Infof("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
 		return nil
 	}
 
@@ -150,7 +149,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	var e error
 	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
 	if e != nil {
-		log.Printf("levels couldn't be loaded: %s\n", e)
+		s.l.Infof("levels couldn't be loaded: %s\n", e)
 		return e
 	}
 	return nil
@@ -276,7 +275,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 		if hitCapacityLimit {
 			if isModify {
 				delOp := s.sdex.DeleteOffer(offers[i])
-				log.Printf("deleting offer because we previously hit the capacity limit, offerId=%d\n", offers[i].ID)
+				s.l.Infof("deleting offer because we previously hit the capacity limit, offerId=%d\n", offers[i].ID)
 				deleteOps = append(deleteOps, delOp)
 				continue
 			} else {
@@ -346,7 +345,7 @@ func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64,
 	}
 
 	if availableSellingCapacity.Selling <= 0 || availableBuyingCapacity.Buying <= 0 {
-		log.Printf("computed remainder amount, no capacity available: availableSellingCapacity=%.7f, availableBuyingCapacity=%.7f\n", availableSellingCapacity.Selling, availableBuyingCapacity.Buying)
+		s.l.Infof("computed remainder amount, no capacity available: availableSellingCapacity=%.7f, availableBuyingCapacity=%.7f\n", availableSellingCapacity.Selling, availableBuyingCapacity.Buying)
 		return 0, 0, nil
 	}
 
@@ -354,12 +353,12 @@ func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64,
 	if availableSellingCapacity.Selling*price < availableBuyingCapacity.Buying {
 		sellingAmount := availableSellingCapacity.Selling
 		buyingAmount := availableSellingCapacity.Selling * price
-		log.Printf("computed remainder amount, constrained by selling capacity, returning sellingAmount=%.7f, buyingAmount=%.7f\n", sellingAmount, buyingAmount)
+		s.l.Infof("computed remainder amount, constrained by selling capacity, returning sellingAmount=%.7f, buyingAmount=%.7f\n", sellingAmount, buyingAmount)
 		return sellingAmount, buyingAmount, nil
 	} else if availableBuyingCapacity.Buying/price < availableBuyingCapacity.Selling {
 		sellingAmount := availableBuyingCapacity.Buying / price
 		buyingAmount := availableBuyingCapacity.Buying
-		log.Printf("computed remainder amount, constrained by buying capacity, returning sellingAmount=%.7f, buyingAmount=%.7f\n", sellingAmount, buyingAmount)
+		s.l.Infof("computed remainder amount, constrained by buying capacity, returning sellingAmount=%.7f, buyingAmount=%.7f\n", sellingAmount, buyingAmount)
 		return sellingAmount, buyingAmount, nil
 	}
 	return 0, 0, fmt.Errorf("error: (programmer?) unable to constrain by either buying capacity or selling capacity, sellingCapacity=%.7f, buyingCapacity=%.7f, price=%.7f",
@@ -383,7 +382,7 @@ func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, 
 				priceLogged = 1 / price
 				amountLogged = amount * price
 			}
-			log.Printf("%s | create | level=%d | priceQuote=%.7f | amtBase=%.7f\n", s.action, index+1, priceLogged, amountLogged)
+			s.l.Infof("%s | create | level=%d | priceQuote=%.7f | amtBase=%.7f\n", s.action, index+1, priceLogged, amountLogged)
 			return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, price, amount, incrementalNativeAmountRaw)
 		},
 		*s.assetBase,
@@ -440,7 +439,7 @@ func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, ta
 				lowestPriceLogged = 1 / highestPrice
 				highestPriceLogged = 1 / lowestPrice
 			}
-			log.Printf("%s | modify | level=%d | targetPriceQuote=%.7f | targetAmtBase=%.7f | curPriceQuote=%.7f | lowPriceQuote=%.7f | highPriceQuote=%.7f | curAmtBase=%.7f | minAmtBase=%.7f | maxAmtBase=%.7f\n",
+			s.l.Infof("%s | modify | level=%d | targetPriceQuote=%.7f | targetAmtBase=%.7f | curPriceQuote=%.7f | lowPriceQuote=%.7f | highPriceQuote=%.7f | curAmtBase=%.7f | minAmtBase=%.7f | maxAmtBase=%.7f\n",
 				s.action, index+1, priceLogged, amountLogged, curPriceLogged, lowestPriceLogged, highestPriceLogged, curAmountLogged, minAmountLogged, maxAmountLogged)
 			return s.sdex.ModifySellOffer(offers[index], price, amount, incrementalNativeAmountRaw)
 		},
