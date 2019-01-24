@@ -181,7 +181,13 @@ func init() {
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 
-		submitMode := trader.ParseSubmitMode(botConfig.SubmitMode)
+		submitMode, e := trader.ParseSubmitMode(botConfig.SubmitMode)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(botConfig, client, sdex)
+		}
 		timeController := plugins.MakeIntervalTimeController(
 			time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 			botConfig.MaxTickDelayMillis,

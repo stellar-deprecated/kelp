@@ -22,12 +22,14 @@ const (
 )
 
 // ParseSubmitMode converts a string to the SubmitMode constant
-func ParseSubmitMode(submitMode string) SubmitMode {
+func ParseSubmitMode(submitMode string) (SubmitMode, error) {
 	if submitMode == "maker_only" {
-		return SubmitModeMakerOnly
+		return SubmitModeMakerOnly, nil
+	} else if submitMode == "both" {
+		return SubmitModeBoth, nil
 	}
 
-	return SubmitModeBoth
+	return SubmitModeBoth, fmt.Errorf("unable to parse submit mode: %s", submitMode)
 }
 
 func (s *SubmitMode) String() string {
@@ -89,29 +91,34 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
 		var newOp build.TransactionMutator
+		var keep bool
 		switch o := op.(type) {
 		case *build.ManageOfferBuilder:
-			newOp, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
+			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
 			if e != nil {
 				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
 			}
 		case build.ManageOfferBuilder:
-			newOp, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
+			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
 			if e != nil {
 				return nil, fmt.Errorf("could not check transform offer (non-pointer case): %s", e)
 			}
 		default:
 			newOp = o
+			keep = true
 		}
 
-		if newOp != nil {
+		if keep {
+			if newOp == nil {
+				return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
+			}
 			filteredOps = append(filteredOps, newOp)
 		} else {
 			numDropped++
 		}
 	}
 	log.Printf("dropped %d operations in sdexMakerFilter\n", numDropped)
-	return nil, nil
+	return filteredOps, nil
 }
 
 func (f *sdexMakerFilter) transformOfferMakerMode(
@@ -120,15 +127,15 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	topBid *model.Order,
 	topAsk *model.Order,
 	op *build.ManageOfferBuilder,
-) (*build.ManageOfferBuilder, error) {
+) (*build.ManageOfferBuilder, bool, error) {
 	// delete operations should never be dropped
 	if op.MO.Amount == 0 {
-		return op, nil
+		return op, true, nil
 	}
 
 	isSell, e := isSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
 	if e != nil {
-		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	// TODO test pricing mechanism here manually
@@ -144,20 +151,20 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	}
 
 	if keep {
-		return op, nil
+		return op, keep, nil
 	}
 
 	// figure out how to convert the offer to a dropped state
 	if op.MO.OfferId == 0 {
 		// new offers can be dropped
-		return nil, nil
+		return nil, keep, nil
 	} else if op.MO.Amount != 0 {
 		// modify offers should be converted to delete offers
 		opCopy := *op
 		opCopy.MO.Amount = 0
-		return &opCopy, nil
+		return &opCopy, keep, nil
 	}
-	return nil, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/7, sellPrice)
+	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/7, sellPrice)
 }
 
 func isSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
