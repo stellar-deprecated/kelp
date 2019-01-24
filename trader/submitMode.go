@@ -18,7 +18,6 @@ type SubmitMode uint8
 // constants for the SubmitMode
 const (
 	SubmitModeMakerOnly SubmitMode = iota
-	SubmitModeTakerOnly
 	SubmitModeBoth
 )
 
@@ -26,10 +25,6 @@ const (
 func ParseSubmitMode(submitMode string) SubmitMode {
 	if submitMode == "maker_only" {
 		return SubmitModeMakerOnly
-	}
-
-	if submitMode == "taker_only" {
-		return SubmitModeTakerOnly
 	}
 
 	return SubmitModeBoth
@@ -40,10 +35,6 @@ func (s *SubmitMode) String() string {
 		return "maker_only"
 	}
 
-	if *s == SubmitModeTakerOnly {
-		return "taker_only"
-	}
-
 	return "both"
 }
 
@@ -52,36 +43,25 @@ type submitFilter interface {
 	apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error)
 }
 
-type sdexFilter struct {
-	tradingPair    *model.TradingPair
-	sdex           *plugins.SDEX
-	submitMode     SubmitMode
-	transformOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, ob *model.OrderBook, op *build.ManageOfferBuilder) (*build.ManageOfferBuilder, error)
+type sdexMakerFilter struct {
+	tradingPair *model.TradingPair
+	sdex        *plugins.SDEX
 }
 
-var _ submitFilter = &sdexFilter{}
+var _ submitFilter = &sdexMakerFilter{}
 
-// makeSdexFilter makes a submit filter based on the passed in submitMode
-func makeSdexFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair) submitFilter {
+// makeSubmitFilter makes a submit filter based on the passed in submitMode
+func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair) submitFilter {
 	if submitMode == SubmitModeMakerOnly {
-		return &sdexFilter{
-			tradingPair:    tradingPair,
-			sdex:           sdex,
-			submitMode:     submitMode,
-			transformOffer: transformOfferMakerMode,
-		}
-	} else if submitMode == SubmitModeTakerOnly {
-		return &sdexFilter{
-			tradingPair:    tradingPair,
-			sdex:           sdex,
-			submitMode:     submitMode,
-			transformOffer: transformOfferTakerMode,
+		return &sdexMakerFilter{
+			tradingPair: tradingPair,
+			sdex:        sdex,
 		}
 	}
 	return nil
 }
 
-func (f *sdexFilter) apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error) {
+func (f *sdexMakerFilter) apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error) {
 	ob := &model.OrderBook{}
 	// we only want the top bid and ask values so use a maxCount of 1
 	// ob, e := f.sdex.GetOrderBook(f.tradingPair, 1)
@@ -90,69 +70,64 @@ func (f *sdexFilter) apply(ops []build.TransactionMutator) ([]build.TransactionM
 	// }
 
 	var e error
-	ops, e = f.filter(ops, ob)
+	ops, e = f.filterOps(ops, ob)
 	if e != nil {
-		return nil, fmt.Errorf("could not apply filter (submitMode=%s): %s", f.submitMode.String(), e)
+		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}
 	return ops, nil
 }
 
-func (f *sdexFilter) filter(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
+func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
 	baseAsset, quoteAsset, e := f.sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
+	topBid := ob.TopBid()
+	topAsk := ob.TopAsk()
 
 	numDropped := 0
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
+		var keep bool
 		switch o := op.(type) {
 		case *build.ManageOfferBuilder:
-			newOp, e := f.transformOffer(baseAsset, quoteAsset, ob, o)
+			keep, e = f.keepOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
 			if e != nil {
 				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
 			}
-
-			if newOp != nil {
-				filteredOps = append(filteredOps, newOp)
-			} else {
-				numDropped++
-			}
 		case build.ManageOfferBuilder:
-			newOp, e := f.transformOffer(baseAsset, quoteAsset, ob, &o)
+			keep, e = f.keepOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
 			if e != nil {
 				return nil, fmt.Errorf("could not check transform offer (non-pointer case): %s", e)
 			}
-
-			if newOp != nil {
-				filteredOps = append(filteredOps, newOp)
-			} else {
-				numDropped++
-			}
 		default:
-			filteredOps = append(filteredOps, o)
+			keep = true
+		}
+
+		if keep {
+			filteredOps = append(filteredOps, op)
+		} else {
+			numDropped++
 		}
 	}
-	log.Printf("dropped %d operations in the maker filter", numDropped)
+	log.Printf("dropped %d operations in sdexMakerFilter\n", numDropped)
 	return nil, nil
 }
 
-func transformOfferMakerMode(
+func (f *sdexMakerFilter) keepOfferMakerMode(
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
-	ob *model.OrderBook,
+	topBid *model.Order,
+	topAsk *model.Order,
 	op *build.ManageOfferBuilder,
-) (*build.ManageOfferBuilder, error) {
+) (bool, error) {
 	isSell, e := isSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
 	if e != nil {
-		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
+		return false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	// TODO test pricing mechanism here manually
 	sellPrice := float64(op.MO.Price.N) / float64(op.MO.Price.D)
-	topBid := ob.TopBid()
-	topAsk := ob.TopAsk()
-
 	var keep bool
 	if !isSell && topAsk != nil {
 		// invert price when buying
@@ -162,21 +137,7 @@ func transformOfferMakerMode(
 	} else {
 		keep = true
 	}
-
-	if keep {
-		return op, nil
-	}
-	return nil, nil
-}
-
-func transformOfferTakerMode(
-	baseAsset horizon.Asset,
-	quoteAsset horizon.Asset,
-	ob *model.OrderBook,
-	op *build.ManageOfferBuilder,
-) (*build.ManageOfferBuilder, error) {
-	// TODO
-	return nil, nil
+	return keep, nil
 }
 
 func isSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
