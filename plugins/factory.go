@@ -174,7 +174,7 @@ var exchanges = map[string]ExchangeContainer{
 		Description:  "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
 		TradeEnabled: true,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
+			return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode, exchangeFactoryData.l)
 		},
 	},
 	"ccxt-binance": ExchangeContainer{
