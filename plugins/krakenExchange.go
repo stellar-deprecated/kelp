@@ -51,8 +51,7 @@ func (m asset2Address2Key) getKey(asset model.Asset, address string) (string, er
 
 // makeKrakenExchange is a factory method to make the kraken exchange
 // TODO 2, should take in config file for withdrawalKeys mapping
-func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exchange, error) {
-	l := logger.MakeBasicLogger()
+func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool, l logger.Logger) (api.Exchange, error) {
 	if len(apiKeys) == 0 || len(apiKeys) > math.MaxUint8 {
 		return nil, fmt.Errorf("invalid number of apiKeys: %d", len(apiKeys))
 	}

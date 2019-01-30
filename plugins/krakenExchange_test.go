@@ -9,17 +9,19 @@ import (
 
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 var testKrakenExchange api.Exchange = &krakenExchange{
 	assetConverter:           model.KrakenAssetConverter,
 	assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-	apis:         []*krakenapi.KrakenApi{krakenapi.New("", "")},
-	apiNextIndex: 0,
-	delimiter:    "",
-	withdrawKeys: asset2Address2Key{},
-	isSimulated:  true,
+	apis:                     []*krakenapi.KrakenApi{krakenapi.New("", "")},
+	apiNextIndex:             0,
+	delimiter:                "",
+	withdrawKeys:             asset2Address2Key{},
+	isSimulated:              true,
+	l:                        logger.MakeBasicLogger(),
 }
 
 func TestGetTickerPrice(t *testing.T) {
