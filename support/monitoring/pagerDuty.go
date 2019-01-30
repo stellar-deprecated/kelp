@@ -5,7 +5,7 @@ import (
 
 	"github.com/interstellar/kelp/support/logger"
 
-	pagerduty "github.com/PagerDuty/go-pagerduty"
+	"github.com/PagerDuty/go-pagerduty"
 	"github.com/interstellar/kelp/api"
 )
 
