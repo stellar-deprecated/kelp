@@ -90,6 +90,7 @@ func init() {
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
 		l := logger.MakeBasicLogger()
+		utils.SetLogger(l)
 		var botConfig trader.BotConfig
 		e := config.Read(*botConfigPath, &botConfig)
 		utils.CheckConfigError(botConfig, e, *botConfigPath)
