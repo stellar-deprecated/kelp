@@ -83,7 +83,28 @@ func (f *sdexMakerFilter) apply(ops []build.TransactionMutator, sellingOffers []
 	return ops, nil
 }
 
-func (f *sdexMakerFilter) topOrderExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer) *model.Order {
+func (f *sdexMakerFilter) topOrderExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) *model.Order {
+	log.Printf(" -------------------> ob side:\n")
+	for _, o := range obSide {
+		log.Printf("    %v\n", o)
+	}
+	l := []string{}
+	oc := f.sdex.GetOrderConstraints(f.tradingPair)
+	for _, o := range traderOffers {
+		price := float64(o.PriceR.N) / float64(o.PriceR.D)
+		amount := utils.AmountStringAsFloat(o.Amount)
+		if !isSell {
+			price = 1 / price
+			amount = amount / price
+		}
+		l = append(l, fmt.Sprintf("(price=%s, vol=%s)",
+			*model.NumberFromFloat(price, oc.PricePrecision),
+			*model.NumberFromFloat(amount, oc.VolumePrecision),
+		))
+	}
+	log.Printf(" -------------------> trader offers: %v\n", l)
+	log.Printf("\n")
+
 	// TODO
 	return nil
 }
@@ -99,8 +120,8 @@ func (f *sdexMakerFilter) filterOps(
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
 	log.Printf("ob: \nasks=%v, \nbids=%v\n", ob.Asks(), ob.Bids())
-	topBid := f.topOrderExcludingTrader(ob.Bids(), buyingOffers)
-	topAsk := f.topOrderExcludingTrader(ob.Asks(), sellingOffers)
+	topBid := f.topOrderExcludingTrader(ob.Bids(), buyingOffers, false)
+	topAsk := f.topOrderExcludingTrader(ob.Asks(), sellingOffers, true)
 
 	numKeep := 0
 	numDropped := 0
