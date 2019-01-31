@@ -63,7 +63,7 @@ func MakeBot(
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
-	sdexSubmitFilter := makeSubmitFilter(submitMode, sdex, tradingPair)
+	sdexSubmitFilter := makeSubmitFilter(submitMode, sdex, tradingPair, tradingAccount)
 	submitFilters := []submitFilter{}
 	if sdexSubmitFilter != nil {
 		submitFilters = append(submitFilters, sdexSubmitFilter)
@@ -214,7 +214,7 @@ func (t *Trader) update() {
 	}
 
 	for i, filter := range t.submitFilters {
-		ops, e = filter.apply(ops)
+		ops, e = filter.apply(ops, t.sellingAOffers, t.buyingAOffers)
 		if e != nil {
 			log.Printf("error in filter index %d: %s\n", i, e)
 			t.deleteAllOffers()

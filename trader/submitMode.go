@@ -3,6 +3,7 @@ package trader
 import (
 	"fmt"
 	"log"
+	"math"
 
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
@@ -42,49 +43,64 @@ func (s *SubmitMode) String() string {
 
 // submitFilter allows you to filter out operations before submitting to the network
 type submitFilter interface {
-	apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error)
+	apply(
+		ops []build.TransactionMutator,
+		sellingOffers []horizon.Offer, // quoted quote/base
+		buyingOffers []horizon.Offer, // quoted base/quote
+	) ([]build.TransactionMutator, error)
 }
 
 type sdexMakerFilter struct {
-	tradingPair *model.TradingPair
-	sdex        *plugins.SDEX
+	tradingPair    *model.TradingPair
+	sdex           *plugins.SDEX
+	tradingAccount string
 }
 
 var _ submitFilter = &sdexMakerFilter{}
 
 // makeSubmitFilter makes a submit filter based on the passed in submitMode
-func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair) submitFilter {
+func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair, tradingAccount string) submitFilter {
 	if submitMode == SubmitModeMakerOnly {
 		return &sdexMakerFilter{
-			tradingPair: tradingPair,
-			sdex:        sdex,
+			tradingPair:    tradingPair,
+			sdex:           sdex,
+			tradingAccount: tradingAccount,
 		}
 	}
 	return nil
 }
 
-func (f *sdexMakerFilter) apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error) {
-	// we only want the top bid and ask values so use a maxCount of 1
-	ob, e := f.sdex.GetOrderBook(f.tradingPair, 1)
+func (f *sdexMakerFilter) apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
+	ob, e := f.sdex.GetOrderBook(f.tradingPair, math.MaxInt32)
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
 	}
 
-	ops, e = f.filterOps(ops, ob)
+	ops, e = f.filterOps(ops, ob, sellingOffers, buyingOffers)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}
 	return ops, nil
 }
 
-func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.OrderBook) ([]build.TransactionMutator, error) {
+func (f *sdexMakerFilter) topOrderExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer) *model.Order {
+	// TODO
+	return nil
+}
+
+func (f *sdexMakerFilter) filterOps(
+	ops []build.TransactionMutator,
+	ob *model.OrderBook,
+	sellingOffers []horizon.Offer,
+	buyingOffers []horizon.Offer,
+) ([]build.TransactionMutator, error) {
 	baseAsset, quoteAsset, e := f.sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
 	log.Printf("ob: \nasks=%v, \nbids=%v\n", ob.Asks(), ob.Bids())
-	topBid := ob.TopBid()
-	topAsk := ob.TopAsk()
+	topBid := f.topOrderExcludingTrader(ob.Bids(), buyingOffers)
+	topAsk := f.topOrderExcludingTrader(ob.Asks(), sellingOffers)
 
 	numKeep := 0
 	numDropped := 0
@@ -145,6 +161,10 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
+	// TODO remove these log lines
+	// TODO need to get top bid and ask that is NOT the user's order
+	// TODO split submitMode into two files
+	// TODO consolidate code into single commit
 	log.Printf("       ----> isSell: %v\n", isSell)
 
 	// TODO test pricing mechanism here manually
