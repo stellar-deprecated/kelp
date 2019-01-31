@@ -24,39 +24,30 @@ var _ api.PriceFeed = &sdexFeed{}
 func makeSDEXFeed(url string) (*sdexFeed, error) {
 	urlParts := strings.Split(url, "/")
 
-	baseParts := strings.Split(urlParts[0], ":")
-	baseCode := baseParts[0]
-	baseIssuer := baseParts[1]
-	baseConvert, e := utils.ParseAsset(baseCode, baseIssuer)
+	baseAsset, e := parseHorizonAsset(urlParts[0])
 	if e != nil {
 		return nil, fmt.Errorf("unable to convert base asset url to sdex asset: %s", e)
 	}
-
-	quoteParts := strings.Split(urlParts[1], ":")
-	quoteCode := quoteParts[0]
-	quoteIssuer := quoteParts[1]
-	quoteConvert, e := utils.ParseAsset(quoteCode, quoteIssuer)
+	quoteAsset, e := parseHorizonAsset(urlParts[1])
 	if e != nil {
 		return nil, fmt.Errorf("unable to convert quote asset url to sdex asset: %s", e)
 	}
 
 	tradingPair := &model.TradingPair{
-		Base:  model.Asset(utils.Asset2CodeString(*baseConvert)),
-		Quote: model.Asset(utils.Asset2CodeString(*quoteConvert)),
+		Base:  model.Asset(utils.Asset2CodeString(*baseAsset)),
+		Quote: model.Asset(utils.Asset2CodeString(*quoteAsset)),
 	}
-
 	sdexAssetMap := map[model.Asset]horizon.Asset{
-		tradingPair.Base:  *baseConvert,
-		tradingPair.Quote: *quoteConvert,
+		tradingPair.Base:  *baseAsset,
+		tradingPair.Quote: *quoteAsset,
 	}
-
-	feedSDEX := MakeSDEX(
-		PrivateSdexHack.API,
+	sdex := MakeSDEX(
+		privateSdexHackVar.API,
 		"",
 		"",
 		"",
 		"",
-		PrivateSdexHack.Network,
+		privateSdexHackVar.Network,
 		nil,
 		0,
 		0,
@@ -66,25 +57,35 @@ func makeSDEXFeed(url string) (*sdexFeed, error) {
 	)
 
 	return &sdexFeed{
-		sdex:       feedSDEX,
-		assetBase:  baseConvert,
-		assetQuote: quoteConvert,
+		sdex:       sdex,
+		assetBase:  baseAsset,
+		assetQuote: quoteAsset,
 	}, nil
+}
+
+func parseHorizonAsset(assetString string) (*horizon.Asset, error) {
+	parts := strings.Split(assetString, ":")
+	code := parts[0]
+	issuer := parts[1]
+
+	asset, e := utils.ParseAsset(code, issuer)
+	if e != nil {
+		return nil, fmt.Errorf("could not read horizon asset from string (%s): %s", assetString, e)
+	}
+
+	return asset, e
 }
 
 // GetPrice returns the SDEX mid price for the trading pair
 func (s *sdexFeed) GetPrice() (float64, error) {
-	orderBook, e := s.sdex.GetOrderBook(s.sdex.pair)
+	orderBook, e := s.sdex.GetOrderBook(s.sdex.pair, 1)
 	if e != nil {
 		return 0, fmt.Errorf("unable to get sdex price: %s", e)
 	}
 
-	bids := orderBook.Bids()
-	topBidPrice := bids[0].Price
+	topBidPrice := orderBook.Bids()[0].Price
+	topAskPrice := orderBook.Asks()[0].Price
 
-	asks := orderBook.Asks()
-	lowAskPrice := asks[0].Price
-
-	centerPrice := (topBidPrice.AsFloat() + lowAskPrice.AsFloat()) / 2
+	centerPrice := topBidPrice.Add(*topAskPrice).Scale(0.5).AsFloat()
 	return centerPrice, nil
 }

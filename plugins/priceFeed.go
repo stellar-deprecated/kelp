@@ -10,10 +10,26 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
-// PrivateSdexHack is a temporary hack variable for SDEX price feeds pending refactor
-var PrivateSdexHack struct {
+// privateSdexHack is a temporary hack struct for SDEX price feeds pending refactor
+type privateSdexHack struct {
 	API     *horizon.Client
 	Network build.Network
+}
+
+// privateSdexHackVar is a temporary hack variable for SDEX price feeds pending refactor
+var privateSdexHackVar *privateSdexHack
+
+// SetPrivateSdexHack sets the privateSdexHack variable which is temporary until the pending SDEX price feed refactor
+func SetPrivateSdexHack(api *horizon.Client, network build.Network) error {
+	if privateSdexHackVar != nil {
+		return fmt.Errorf("privateSdexHack is already set: %+v", privateSdexHackVar)
+	}
+
+	privateSdexHackVar = &privateSdexHack{
+		API:     api,
+		Network: network,
+	}
+	return nil
 }
 
 // MakePriceFeed makes a PriceFeed
