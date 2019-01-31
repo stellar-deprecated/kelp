@@ -84,6 +84,7 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	if e != nil {
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
+	log.Printf("ob: \nasks=%v, \nbids=%v\n", ob.Asks(), ob.Bids())
 	topBid := ob.TopBid()
 	topAsk := ob.TopAsk()
 
@@ -137,6 +138,7 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
+	log.Printf("       ----> isSell: %v\n", isSell)
 
 	// TODO test pricing mechanism here manually
 	sellPrice := float64(op.MO.Price.N) / float64(op.MO.Price.D)
@@ -149,9 +151,13 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 		keep = sellPrice > topBid.Price.AsFloat()
 		log.Printf("       ----> selling, (op price) %.7f > %.7f (topAsk): keep = %v", sellPrice, topBid.Price.AsFloat(), keep)
 	} else {
-		keep = true
 		// TODO always hitting this case even when there is a top bid and a top ask! :(
-		log.Printf("       ----> no market isSell=%v, op price = %.7f: keep = %v", isSell, sellPrice, keep)
+		price := sellPrice
+		if !isSell {
+			price = 1 / price
+		}
+		keep = true
+		log.Printf("       ----> no market isSell=%v, op price = %.7f: keep = %v", isSell, price, keep)
 	}
 
 	if keep {
