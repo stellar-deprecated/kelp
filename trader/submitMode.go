@@ -64,14 +64,12 @@ func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *mo
 }
 
 func (f *sdexMakerFilter) apply(ops []build.TransactionMutator) ([]build.TransactionMutator, error) {
-	ob := &model.OrderBook{}
 	// we only want the top bid and ask values so use a maxCount of 1
-	// ob, e := f.sdex.GetOrderBook(f.tradingPair, 1)
-	// if e != nil {
-	// 	return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
-	// }
+	ob, e := f.sdex.GetOrderBook(f.tradingPair, 1)
+	if e != nil {
+		return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
+	}
 
-	var e error
 	ops, e = f.filterOps(ops, ob)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
