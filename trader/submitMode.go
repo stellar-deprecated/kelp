@@ -25,7 +25,7 @@ const (
 func ParseSubmitMode(submitMode string) (SubmitMode, error) {
 	if submitMode == "maker_only" {
 		return SubmitModeMakerOnly, nil
-	} else if submitMode == "both" {
+	} else if submitMode == "both" || submitMode == "" {
 		return SubmitModeBoth, nil
 	}
 
