@@ -865,12 +865,15 @@ func (sdex *SDEX) transformHorizonOrders(
 		floatPrice := float64(o.PriceR.N) / float64(o.PriceR.D)
 		price := model.NumberFromFloat(floatPrice, sdexOrderConstraints.PricePrecision)
 
-		volumeInt, e := model.NumberFromString(o.Amount, sdexOrderConstraints.VolumePrecision)
+		volume, e := model.NumberFromString(o.Amount, sdexOrderConstraints.VolumePrecision)
 		if e != nil {
 			return nil, fmt.Errorf("could not parse amount for horizon order: %s", e)
 		}
-		// horizon amounts are stroops as integers so we want to convert it to float appropriately
-		volume := volumeInt.Scale(1.0 / math.Pow(10, 7))
+		// special handling of amount for bids
+		if orderAction.IsBuy() {
+			// use floatPrice here for more accuracy since floatPrice is what will be used in stellar-core
+			volume = volume.Scale(1.0 / floatPrice)
+		}
 
 		transformed = append(transformed, model.Order{
 			Pair:        pair,
