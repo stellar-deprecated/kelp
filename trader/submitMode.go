@@ -87,6 +87,7 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	topAsk := ob.TopAsk()
 
 	numDropped := 0
+	numTransformed := 0
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
 		var newOp build.TransactionMutator
@@ -113,10 +114,16 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 			}
 			filteredOps = append(filteredOps, newOp)
 		} else {
-			numDropped++
+			if newOp != nil {
+				// newOp can be a transformed op to change the op to an effectively "dropped" state
+				filteredOps = append(filteredOps, newOp)
+				numTransformed++
+			} else {
+				numDropped++
+			}
 		}
 	}
-	log.Printf("dropped %d operations in sdexMakerFilter\n", numDropped)
+	log.Printf("dropped %d operations and transformed %d operations in sdexMakerFilter from original %d ops\n", numDropped, numTransformed, len(ops))
 	return filteredOps, nil
 }
 
