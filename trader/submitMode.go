@@ -86,6 +86,7 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	topBid := ob.TopBid()
 	topAsk := ob.TopAsk()
 
+	numKeep := 0
 	numDropped := 0
 	numTransformed := 0
 	filteredOps := []build.TransactionMutator{}
@@ -113,6 +114,7 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 				return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
 			}
 			filteredOps = append(filteredOps, newOp)
+			numKeep++
 		} else {
 			if newOp != nil {
 				// newOp can be a transformed op to change the op to an effectively "dropped" state
@@ -123,7 +125,7 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 			}
 		}
 	}
-	log.Printf("dropped %d operations and transformed %d operations in sdexMakerFilter from original %d ops\n", numDropped, numTransformed, len(ops))
+	log.Printf("dropped %d, transformed %d, kept %d ops in sdexMakerFilter from original %d ops\n", numDropped, numTransformed, numKeep, len(ops))
 	return filteredOps, nil
 }
 
