@@ -86,7 +86,6 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 	topBid := ob.TopBid()
 	topAsk := ob.TopAsk()
 
-	numDropped := 0
 	filteredOps := []build.TransactionMutator{}
 	for _, op := range ops {
 		var newOp build.TransactionMutator
@@ -112,11 +111,10 @@ func (f *sdexMakerFilter) filterOps(ops []build.TransactionMutator, ob *model.Or
 				return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
 			}
 			filteredOps = append(filteredOps, newOp)
-		} else {
-			numDropped++
 		}
 	}
-	log.Printf("dropped %d operations in sdexMakerFilter\n", numDropped)
+
+	log.Printf("dropped %d operations in sdexMakerFilter\n", len(ops)-len(filteredOps))
 	return filteredOps, nil
 }
 
