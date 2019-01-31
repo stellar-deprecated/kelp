@@ -235,3 +235,22 @@ func CheckedString(v interface{}) string {
 	}
 	return fmt.Sprintf("%v", v)
 }
+
+// ParseAsset returns a horizon asset a string
+func ParseAsset(code string, issuer string) (*horizon.Asset, error) {
+	if code != "XLM" && issuer == "" {
+		return nil, fmt.Errorf("error: issuer can only be empty if asset is XLM")
+	}
+
+	if code == "XLM" && issuer != "" {
+		return nil, fmt.Errorf("error: issuer needs to be empty if asset is XLM")
+	}
+
+	if code == "XLM" {
+		asset := Asset2Asset2(build.NativeAsset())
+		return &asset, nil
+	}
+
+	asset := Asset2Asset2(build.CreditAsset(code, issuer))
+	return &asset, nil
+}

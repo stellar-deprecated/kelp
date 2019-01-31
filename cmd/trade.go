@@ -163,6 +163,15 @@ func init() {
 			sdexAssetMap,
 		)
 
+		// setting the temp hack variables for the sdex price feeds
+		e = plugins.SetPrivateSdexHack(client, utils.ParseNetwork(botConfig.HorizonURL))
+		if e != nil {
+			l.Info("")
+			l.Errorf("%s", e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
+		}
+
 		dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 		strat, e := plugins.MakeStrategy(sdex, tradingPair, &assetBase, &assetQuote, *strategy, *stratConfigPath, *simMode)
 		if e != nil {

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
@@ -812,4 +813,76 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 	}
 
 	return records[0].PT, nil
+}
+
+// GetOrderBook gets the SDEX orderbook
+func (sdex *SDEX) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
+	if pair != sdex.pair {
+		return nil, fmt.Errorf("unregistered trading pair (%s) cannot be converted to horizon.Assets, instance's pair: %s", pair.String(), sdex.pair.String())
+	}
+
+	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	if e != nil {
+		return nil, fmt.Errorf("cannot get SDEX orderbook: %s", e)
+	}
+
+	ob, e := sdex.API.LoadOrderBook(baseAsset, quoteAsset)
+	if e != nil {
+		return nil, fmt.Errorf("cannot get SDEX orderbook: %s", e)
+	}
+
+	ts := model.MakeTimestamp(time.Now().UnixNano() / int64(time.Millisecond))
+	transformedBids, e := sdex.transformHorizonOrders(pair, ob.Bids, model.OrderActionBuy, ts, maxCount)
+	if e != nil {
+		return nil, fmt.Errorf("could not transform bid side of SDEX orderbook: %s", e)
+	}
+
+	transformedAsks, e := sdex.transformHorizonOrders(pair, ob.Asks, model.OrderActionSell, ts, maxCount)
+	if e != nil {
+		return nil, fmt.Errorf("could not transform ask side of SDEX orderbook: %s", e)
+	}
+
+	return model.MakeOrderBook(
+		pair,
+		transformedAsks,
+		transformedBids,
+	), nil
+}
+
+func (sdex *SDEX) transformHorizonOrders(
+	pair *model.TradingPair,
+	side []horizon.PriceLevel,
+	orderAction model.OrderAction,
+	ts *model.Timestamp,
+	maxCount int32,
+) ([]model.Order, error) {
+	transformed := []model.Order{}
+	for i, o := range side {
+		if i >= int(maxCount) {
+			break
+		}
+
+		floatPrice := float64(o.PriceR.N) / float64(o.PriceR.D)
+		price := model.NumberFromFloat(floatPrice, sdexOrderConstraints.PricePrecision)
+
+		volume, e := model.NumberFromString(o.Amount, sdexOrderConstraints.VolumePrecision)
+		if e != nil {
+			return nil, fmt.Errorf("could not parse amount for horizon order: %s", e)
+		}
+		// special handling of amount for bids
+		if orderAction.IsBuy() {
+			// use floatPrice here for more accuracy since floatPrice is what will be used in stellar-core
+			volume = volume.Scale(1.0 / floatPrice)
+		}
+
+		transformed = append(transformed, model.Order{
+			Pair:        pair,
+			OrderAction: orderAction,
+			OrderType:   model.OrderTypeLimit,
+			Price:       price,
+			Volume:      volume,
+			Timestamp:   ts,
+		})
+	}
+	return transformed, nil
 }

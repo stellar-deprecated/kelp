@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/interstellar/kelp/support/utils"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )
 
@@ -76,15 +75,15 @@ func (b *BotConfig) Init() error {
 		return fmt.Errorf("error: both assets cannot be the same '%s:%s'", b.AssetCodeA, b.IssuerA)
 	}
 
-	asset, e := parseAsset(b.AssetCodeA, b.IssuerA, "A")
+	asset, e := utils.ParseAsset(b.AssetCodeA, b.IssuerA)
 	if e != nil {
-		return e
+		return fmt.Errorf("Error while parsing Asset A: %s", e)
 	}
 	b.assetBase = *asset
 
-	asset, e = parseAsset(b.AssetCodeB, b.IssuerB, "B")
+	asset, e = utils.ParseAsset(b.AssetCodeB, b.IssuerB)
 	if e != nil {
-		return e
+		return fmt.Errorf("Error while parsing Asset B: %s", e)
 	}
 	b.assetQuote = *asset
 
@@ -98,22 +97,4 @@ func (b *BotConfig) Init() error {
 
 	b.sourceAccount, e = utils.ParseSecret(b.SourceSecretSeed)
 	return e
-}
-
-func parseAsset(code string, issuer string, letter string) (*horizon.Asset, error) {
-	if code != XLM && issuer == "" {
-		return nil, fmt.Errorf("error: ISSUER_%s can only be empty if ASSET_CODE_%s is '%s'", letter, letter, XLM)
-	}
-
-	if code == XLM && issuer != "" {
-		return nil, fmt.Errorf("error: ISSUER_%s needs to be empty if ASSET_CODE_%s is '%s'", letter, letter, XLM)
-	}
-
-	if code == XLM {
-		asset := utils.Asset2Asset2(build.NativeAsset())
-		return &asset, nil
-	}
-
-	asset := utils.Asset2Asset2(build.CreditAsset(code, issuer))
-	return &asset, nil
 }
