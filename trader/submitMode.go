@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
 	"github.com/interstellar/kelp/support/utils"
@@ -81,30 +82,73 @@ func (f *sdexMakerFilter) apply(ops []build.TransactionMutator, sellingOffers []
 	return ops, nil
 }
 
-func (f *sdexMakerFilter) topOrderExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) *model.Order {
-	log.Printf(" -------------------> ob side:\n")
-	for _, o := range obSide {
-		log.Printf("    %v\n", o)
+func isNewLevel(lastPrice *model.Number, priceNumber *model.Number, isSell bool) bool {
+	if lastPrice == nil {
+		return true
+	} else if isSell && priceNumber.AsFloat() > lastPrice.AsFloat() {
+		return true
+	} else if !isSell && priceNumber.AsFloat() < lastPrice.AsFloat() {
+		return true
 	}
-	l := []string{}
+	return false
+}
+
+func (f *sdexMakerFilter) collateOffers(traderOffers []horizon.Offer, isSell bool) ([]api.Level, error) {
 	oc := f.sdex.GetOrderConstraints(f.tradingPair)
-	for _, o := range traderOffers {
-		price := float64(o.PriceR.N) / float64(o.PriceR.D)
-		amount := utils.AmountStringAsFloat(o.Amount)
+
+	levels := []api.Level{}
+	var lastPrice *model.Number
+	for _, tOffer := range traderOffers {
+		price := float64(tOffer.PriceR.N) / float64(tOffer.PriceR.D)
+		amount := utils.AmountStringAsFloat(tOffer.Amount)
 		if !isSell {
 			price = 1 / price
 			amount = amount / price
 		}
-		l = append(l, fmt.Sprintf("(price=%s, vol=%s)",
-			*model.NumberFromFloat(price, oc.PricePrecision),
-			*model.NumberFromFloat(amount, oc.VolumePrecision),
-		))
+		priceNumber := model.NumberFromFloat(price, oc.PricePrecision)
+		amountNumber := model.NumberFromFloat(amount, oc.VolumePrecision)
+
+		if isNewLevel(lastPrice, priceNumber, isSell) {
+			lastPrice = priceNumber
+			levels = append(levels, api.Level{
+				Price:  *priceNumber,
+				Amount: *amountNumber,
+			})
+		} else if priceNumber.AsFloat() == lastPrice.AsFloat() {
+			levels[len(levels)-1].Amount = *levels[len(levels)-1].Amount.Add(*amountNumber)
+		} else {
+			return nil, fmt.Errorf("invalid ordering of prices (isSell=%v), lastPrice=%s, priceNumber=%s", isSell, lastPrice.AsString(), priceNumber.AsString())
+		}
 	}
-	log.Printf(" -------------------> trader offers: %v\n", l)
+	return levels, nil
+}
+
+func (f *sdexMakerFilter) topOrderPriceExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) (*model.Number, error) {
+	log.Printf(" -------------------> ob side:\n")
+	for _, o := range obSide {
+		log.Printf("    %v\n", o)
+	}
+
+	traderLevels, e := f.collateOffers(traderOffers, isSell)
+	if e != nil {
+		return nil, fmt.Errorf("unable to collate offers: %s", e)
+	}
+	log.Printf(" -------------------> trader offers: %v\n", traderLevels)
 	log.Printf("\n")
 
-	// TODO
-	return nil
+	for i, obOrder := range obSide {
+		traderLevel := traderLevels[i]
+		if i >= len(traderLevels) {
+			return obOrder.Price, nil
+		} else if isNewLevel(obOrder.Price, &traderLevel.Price, isSell) {
+			return obOrder.Price, nil
+		} else if traderLevel.Amount.AsFloat() < obOrder.Volume.AsFloat() {
+			return obOrder.Price, nil
+		}
+	}
+
+	// orderbook only had trader's orders
+	return nil, nil
 }
 
 func (f *sdexMakerFilter) filterOps(
@@ -118,8 +162,14 @@ func (f *sdexMakerFilter) filterOps(
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
 	log.Printf("ob: \nasks=%v, \nbids=%v\n", ob.Asks(), ob.Bids())
-	topBid := f.topOrderExcludingTrader(ob.Bids(), buyingOffers, false)
-	topAsk := f.topOrderExcludingTrader(ob.Asks(), sellingOffers, true)
+	topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
+	if e != nil {
+		return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
+	}
+	topAskPrice, e := f.topOrderPriceExcludingTrader(ob.Asks(), sellingOffers, true)
+	if e != nil {
+		return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for asks: %s", e)
+	}
 
 	numKeep := 0
 	numDropped := 0
@@ -130,12 +180,12 @@ func (f *sdexMakerFilter) filterOps(
 		var keep bool
 		switch o := op.(type) {
 		case *build.ManageOfferBuilder:
-			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, o)
+			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, o)
 			if e != nil {
 				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
 			}
 		case build.ManageOfferBuilder:
-			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBid, topAsk, &o)
+			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, &o)
 			if e != nil {
 				return nil, fmt.Errorf("could not check transform offer (non-pointer case): %s", e)
 			}
@@ -167,8 +217,8 @@ func (f *sdexMakerFilter) filterOps(
 func (f *sdexMakerFilter) transformOfferMakerMode(
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
-	topBid *model.Order,
-	topAsk *model.Order,
+	topBidPrice *model.Number,
+	topAskPrice *model.Number,
 	op *build.ManageOfferBuilder,
 ) (*build.ManageOfferBuilder, bool, error) {
 	// delete operations should never be dropped
@@ -184,20 +234,17 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	// TODO need to get top bid and ask that is NOT the user's order
 	// TODO split submitMode into two files
 	// TODO consolidate code into single commit
-	log.Printf("       ----> isSell: %v\n", isSell)
 
-	// TODO test pricing mechanism here manually
 	sellPrice := float64(op.MO.Price.N) / float64(op.MO.Price.D)
 	var keep bool
-	if !isSell && topAsk != nil {
+	if !isSell && topAskPrice != nil {
 		// invert price when buying
-		keep = 1/sellPrice < topAsk.Price.AsFloat()
-		log.Printf("       ----> buying, (op price) %.7f < %.7f (topAsk): keep = %v", 1/sellPrice, topAsk.Price.AsFloat(), keep)
-	} else if isSell && topBid != nil {
-		keep = sellPrice > topBid.Price.AsFloat()
-		log.Printf("       ----> selling, (op price) %.7f > %.7f (topAsk): keep = %v", sellPrice, topBid.Price.AsFloat(), keep)
+		keep = 1/sellPrice < topAskPrice.AsFloat()
+		log.Printf("       ----> buying, (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
+	} else if isSell && topBidPrice != nil {
+		keep = sellPrice > topBidPrice.AsFloat()
+		log.Printf("       ----> selling, (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
 	} else {
-		// TODO always hitting this case even when there is a top bid and a top ask! :(
 		price := sellPrice
 		if !isSell {
 			price = 1 / price
