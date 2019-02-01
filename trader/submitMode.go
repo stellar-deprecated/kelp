@@ -51,20 +51,18 @@ type submitFilter interface {
 }
 
 type sdexMakerFilter struct {
-	tradingPair    *model.TradingPair
-	sdex           *plugins.SDEX
-	tradingAccount string
+	tradingPair *model.TradingPair
+	sdex        *plugins.SDEX
 }
 
 var _ submitFilter = &sdexMakerFilter{}
 
 // makeSubmitFilter makes a submit filter based on the passed in submitMode
-func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair, tradingAccount string) submitFilter {
+func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair) submitFilter {
 	if submitMode == SubmitModeMakerOnly {
 		return &sdexMakerFilter{
-			tradingPair:    tradingPair,
-			sdex:           sdex,
-			tradingAccount: tradingAccount,
+			tradingPair: tradingPair,
+			sdex:        sdex,
 		}
 	}
 	return nil

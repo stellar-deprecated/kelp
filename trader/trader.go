@@ -63,7 +63,7 @@ func MakeBot(
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
-	sdexSubmitFilter := makeSubmitFilter(submitMode, sdex, tradingPair, tradingAccount)
+	sdexSubmitFilter := makeSubmitFilter(submitMode, sdex, tradingPair)
 	submitFilters := []submitFilter{}
 	if sdexSubmitFilter != nil {
 		submitFilters = append(submitFilters, sdexSubmitFilter)
