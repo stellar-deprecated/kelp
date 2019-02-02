@@ -1,4 +1,4 @@
-package trader
+package plugins
 
 import (
 	"fmt"
@@ -7,40 +7,11 @@ import (
 
 	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
-	"github.com/interstellar/kelp/plugins"
 	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/xdr"
 )
-
-// SubmitMode is the type of mode to be used when submitting orders to the trader bot
-type SubmitMode uint8
-
-// constants for the SubmitMode
-const (
-	SubmitModeMakerOnly SubmitMode = iota
-	SubmitModeBoth
-)
-
-// ParseSubmitMode converts a string to the SubmitMode constant
-func ParseSubmitMode(submitMode string) (SubmitMode, error) {
-	if submitMode == "maker_only" {
-		return SubmitModeMakerOnly, nil
-	} else if submitMode == "both" || submitMode == "" {
-		return SubmitModeBoth, nil
-	}
-
-	return SubmitModeBoth, fmt.Errorf("unable to parse submit mode: %s", submitMode)
-}
-
-func (s *SubmitMode) String() string {
-	if *s == SubmitModeMakerOnly {
-		return "maker_only"
-	}
-
-	return "both"
-}
 
 // submitFilter allows you to filter out operations before submitting to the network
 type submitFilter interface {
@@ -51,16 +22,9 @@ type submitFilter interface {
 	) ([]build.TransactionMutator, error)
 }
 
-type sdexMakerFilter struct {
-	tradingPair *model.TradingPair
-	sdex        *plugins.SDEX
-}
-
-var _ submitFilter = &sdexMakerFilter{}
-
 // makeSubmitFilter makes a submit filter based on the passed in submitMode
-func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *model.TradingPair) submitFilter {
-	if submitMode == SubmitModeMakerOnly {
+func makeSubmitFilter(submitMode api.SubmitMode, sdex *SDEX, tradingPair *model.TradingPair) submitFilter {
+	if submitMode == api.SubmitModeMakerOnly {
 		return &sdexMakerFilter{
 			tradingPair: tradingPair,
 			sdex:        sdex,
@@ -68,6 +32,13 @@ func makeSubmitFilter(submitMode SubmitMode, sdex *plugins.SDEX, tradingPair *mo
 	}
 	return nil
 }
+
+type sdexMakerFilter struct {
+	tradingPair *model.TradingPair
+	sdex        *SDEX
+}
+
+var _ submitFilter = &sdexMakerFilter{}
 
 func (f *sdexMakerFilter) apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
 	ob, e := f.sdex.GetOrderBook(f.tradingPair, math.MaxInt32)

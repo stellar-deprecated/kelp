@@ -57,7 +57,7 @@ func MakeBot(
 	strat api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
-	submitMode SubmitMode,
+	submitMode api.SubmitMode,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
