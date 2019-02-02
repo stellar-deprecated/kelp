@@ -240,10 +240,10 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if !isSell && topAskPrice != nil {
 		// invert price when buying
 		keep = 1/sellPrice < topAskPrice.AsFloat()
-		log.Printf("       ----> buying, (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
+		log.Printf("       ----> buying, keep = (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
 	} else if isSell && topBidPrice != nil {
 		keep = sellPrice > topBidPrice.AsFloat()
-		log.Printf("       ----> selling, (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
+		log.Printf("       ----> selling, keep = (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
 	} else {
 		price := sellPrice
 		if !isSell {
