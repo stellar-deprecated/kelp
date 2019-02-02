@@ -34,8 +34,8 @@ func MakeFillTracker(
 	threadTracker *multithreading.ThreadTracker,
 	fillTrackable api.FillTrackable,
 	fillTrackerSleepMillis uint32,
+	l logger.Logger,
 ) api.FillTracker {
-	l := logger.MakeBasicLogger()
 	return &FillTracker{
 		pair:                   pair,
 		threadTracker:          threadTracker,

@@ -19,8 +19,7 @@ type exchangeFeed struct {
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &exchangeFeed{}
 
-func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair) *exchangeFeed {
-	l := logger.MakeBasicLogger()
+func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair, l logger.Logger) *exchangeFeed {
 	return &exchangeFeed{
 		name:      name,
 		tickerAPI: tickerAPI,

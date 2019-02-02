@@ -34,11 +34,11 @@ type fiatFeed struct {
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &fiatFeed{}
 
-func newFiatFeed(url string) *fiatFeed {
+func newFiatFeed(url string, l logger.Logger) *fiatFeed {
 	m := new(fiatFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
-	m.l = logger.MakeBasicLogger()
+	m.l = l
 	return m
 }
 

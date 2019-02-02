@@ -18,8 +18,7 @@ type IntervalTimeController struct {
 }
 
 // MakeIntervalTimeController is a factory method
-func MakeIntervalTimeController(tickInterval time.Duration, maxTickDelayMillis int64) api.TimeController {
-	l := logger.MakeBasicLogger()
+func MakeIntervalTimeController(tickInterval time.Duration, maxTickDelayMillis int64, l logger.Logger) api.TimeController {
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &IntervalTimeController{
 		tickInterval:       tickInterval,

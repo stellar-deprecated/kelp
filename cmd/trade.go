@@ -176,7 +176,7 @@ func init() {
 
 		timeController := plugins.MakeIntervalTimeController(
 			time.Duration(botConfig.TickIntervalSeconds)*time.Second,
-			botConfig.MaxTickDelayMillis,
+			botConfig.MaxTickDelayMillis, l,
 		)
 		bot := trader.MakeBot(
 			client,
@@ -223,8 +223,8 @@ func init() {
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 		if botConfig.FillTrackerSleepMillis != 0 {
-			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
-			fillLogger := plugins.MakeFillLogger()
+			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis, l)
+			fillLogger := plugins.MakeFillLogger(l)
 			fillTracker.RegisterHandler(fillLogger)
 			if strategyFillHandlers != nil {
 				for _, h := range strategyFillHandlers {

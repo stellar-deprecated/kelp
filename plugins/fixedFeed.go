@@ -16,9 +16,9 @@ type fixedFeed struct {
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &fixedFeed{}
 
-func newFixedFeed(url string) *fixedFeed {
+func newFixedFeed(url string, l logger.Logger) *fixedFeed {
 	m := new(fixedFeed)
-	m.l = logger.MakeBasicLogger()
+	m.l = l
 	pA, err := strconv.ParseFloat(url, 64)
 	if err != nil {
 		return nil

@@ -14,8 +14,7 @@ type FillLogger struct {
 var _ api.FillHandler = &FillLogger{}
 
 // MakeFillLogger is a factory method
-func MakeFillLogger() api.FillHandler {
-	l := logger.MakeBasicLogger()
+func MakeFillLogger(l logger.Logger) api.FillHandler {
 	return &FillLogger{
 		l,
 	}

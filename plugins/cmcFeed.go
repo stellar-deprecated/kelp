@@ -49,11 +49,11 @@ type cmcFeed struct {
 var _ api.PriceFeed = &cmcFeed{}
 
 // newCMCFeed creates a new CMC Feed from a URL
-func newCMCFeed(url string) *cmcFeed {
+func newCMCFeed(url string, l logger.Logger) *cmcFeed {
 	m := new(cmcFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
-	m.l = logger.MakeBasicLogger()
+	m.l = l
 	return m
 }
 

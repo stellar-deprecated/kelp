@@ -13,11 +13,11 @@ import (
 func MakePriceFeed(feedType string, url string, l logger.Logger) (api.PriceFeed, error) {
 	switch feedType {
 	case "crypto":
-		return newCMCFeed(url), nil
+		return newCMCFeed(url, l), nil
 	case "fiat":
-		return newFiatFeed(url), nil
+		return newFiatFeed(url, l), nil
 	case "fixed":
-		return newFixedFeed(url), nil
+		return newFixedFeed(url, l), nil
 	case "exchange":
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
@@ -38,7 +38,7 @@ func MakePriceFeed(feedType string, url string, l logger.Logger) (api.PriceFeed,
 			Quote: quoteAsset,
 		}
 		tickerAPI := api.TickerAPI(exchange)
-		return newExchangeFeed(url, &tickerAPI, &tradingPair), nil
+		return newExchangeFeed(url, &tickerAPI, &tradingPair, l), nil
 	}
 	return nil, nil
 }
