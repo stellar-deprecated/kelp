@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
 	"github.com/interstellar/kelp/support/logger"
@@ -181,7 +182,7 @@ func init() {
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 
-		submitMode, e := trader.ParseSubmitMode(botConfig.SubmitMode)
+		submitMode, e := api.ParseSubmitMode(botConfig.SubmitMode)
 		if e != nil {
 			log.Println()
 			log.Println(e)

@@ -13,17 +13,17 @@ import (
 	"github.com/stellar/go/xdr"
 )
 
-// submitFilter allows you to filter out operations before submitting to the network
-type submitFilter interface {
-	apply(
+// SubmitFilter allows you to filter out operations before submitting to the network
+type SubmitFilter interface {
+	Apply(
 		ops []build.TransactionMutator,
 		sellingOffers []horizon.Offer, // quoted quote/base
 		buyingOffers []horizon.Offer, // quoted base/quote
 	) ([]build.TransactionMutator, error)
 }
 
-// makeSubmitFilter makes a submit filter based on the passed in submitMode
-func makeSubmitFilter(submitMode api.SubmitMode, sdex *SDEX, tradingPair *model.TradingPair) submitFilter {
+// MakeSubmitFilter makes a submit filter based on the passed in submitMode
+func MakeSubmitFilter(submitMode api.SubmitMode, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
 	if submitMode == api.SubmitModeMakerOnly {
 		return &sdexMakerFilter{
 			tradingPair: tradingPair,
@@ -38,9 +38,9 @@ type sdexMakerFilter struct {
 	sdex        *SDEX
 }
 
-var _ submitFilter = &sdexMakerFilter{}
+var _ SubmitFilter = &sdexMakerFilter{}
 
-func (f *sdexMakerFilter) apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
+func (f *sdexMakerFilter) Apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
 	ob, e := f.sdex.GetOrderBook(f.tradingPair, math.MaxInt32)
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
