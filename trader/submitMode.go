@@ -124,23 +124,18 @@ func (f *sdexMakerFilter) collateOffers(traderOffers []horizon.Offer, isSell boo
 }
 
 func (f *sdexMakerFilter) topOrderPriceExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) (*model.Number, error) {
-	log.Printf(" -------------------> ob side:\n")
-	for _, o := range obSide {
-		log.Printf("    %v\n", o)
-	}
-
 	traderLevels, e := f.collateOffers(traderOffers, isSell)
 	if e != nil {
 		return nil, fmt.Errorf("unable to collate offers: %s", e)
 	}
-	log.Printf(" -------------------> trader offers: %v\n", traderLevels)
-	log.Printf("\n")
 
 	for i, obOrder := range obSide {
-		traderLevel := traderLevels[i]
 		if i >= len(traderLevels) {
 			return obOrder.Price, nil
-		} else if isNewLevel(obOrder.Price, &traderLevel.Price, isSell) {
+		}
+
+		traderLevel := traderLevels[i]
+		if isNewLevel(obOrder.Price, &traderLevel.Price, isSell) {
 			return obOrder.Price, nil
 		} else if traderLevel.Amount.AsFloat() < obOrder.Volume.AsFloat() {
 			return obOrder.Price, nil
@@ -161,7 +156,7 @@ func (f *sdexMakerFilter) filterOps(
 	if e != nil {
 		return nil, fmt.Errorf("could not get sdex assets: %s", e)
 	}
-	log.Printf("ob: \nasks=%v, \nbids=%v\n", ob.Asks(), ob.Bids())
+
 	topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
 	if e != nil {
 		return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
@@ -194,14 +189,15 @@ func (f *sdexMakerFilter) filterOps(
 			keep = true
 		}
 
+		isNewOpNil := newOp == nil || fmt.Sprintf("%v", newOp) == "<nil>"
 		if keep {
-			if newOp == nil {
+			if isNewOpNil {
 				return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
 			}
 			filteredOps = append(filteredOps, newOp)
 			numKeep++
 		} else {
-			if newOp != nil {
+			if !isNewOpNil {
 				// newOp can be a transformed op to change the op to an effectively "dropped" state
 				filteredOps = append(filteredOps, newOp)
 				numTransformed++
@@ -230,8 +226,6 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
-	// TODO remove these log lines
-	// TODO need to get top bid and ask that is NOT the user's order
 	// TODO split submitMode into two files
 	// TODO consolidate code into single commit
 
@@ -240,32 +234,32 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if !isSell && topAskPrice != nil {
 		// invert price when buying
 		keep = 1/sellPrice < topAskPrice.AsFloat()
-		log.Printf("       ----> buying, keep = (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
+		log.Printf("sdexMakerFilter: buying, keep = (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
 	} else if isSell && topBidPrice != nil {
 		keep = sellPrice > topBidPrice.AsFloat()
-		log.Printf("       ----> selling, keep = (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
+		log.Printf("sdexMakerFilter: selling, keep = (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
 	} else {
 		price := sellPrice
 		if !isSell {
 			price = 1 / price
 		}
 		keep = true
-		log.Printf("       ----> no market isSell=%v, op price = %.7f: keep = %v", isSell, price, keep)
+		log.Printf("sdexMakerFilter: no market isSell=%v, op price = %.7f: keep = %v", isSell, price, keep)
 	}
 
 	if keep {
-		return op, keep, nil
+		return op, true, nil
 	}
 
 	// figure out how to convert the offer to a dropped state
 	if op.MO.OfferId == 0 {
 		// new offers can be dropped
-		return nil, keep, nil
+		return nil, false, nil
 	} else if op.MO.Amount != 0 {
 		// modify offers should be converted to delete offers
 		opCopy := *op
 		opCopy.MO.Amount = 0
-		return &opCopy, keep, nil
+		return &opCopy, false, nil
 	}
 	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/7, sellPrice)
 }
