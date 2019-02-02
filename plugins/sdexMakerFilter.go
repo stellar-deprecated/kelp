@@ -197,8 +197,6 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
-	// TODO split submitMode into two files
-	// TODO consolidate code into single commit
 
 	sellPrice := float64(op.MO.Price.N) / float64(op.MO.Price.D)
 	var keep bool
