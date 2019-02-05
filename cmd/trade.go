@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/interstellar/kelp/api"
 	"github.com/interstellar/kelp/model"
 	"github.com/interstellar/kelp/plugins"
 	"github.com/interstellar/kelp/support/logger"
@@ -181,6 +182,13 @@ func init() {
 			deleteAllOffersAndExit(l, botConfig, client, sdex)
 		}
 
+		submitMode, e := api.ParseSubmitMode(botConfig.SubmitMode)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex)
+		}
 		timeController := plugins.MakeIntervalTimeController(
 			time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 			botConfig.MaxTickDelayMillis,
@@ -189,11 +197,13 @@ func init() {
 			client,
 			botConfig.AssetBase(),
 			botConfig.AssetQuote(),
+			tradingPair,
 			botConfig.TradingAccount(),
 			sdex,
 			strat,
 			timeController,
 			botConfig.DeleteCyclesThreshold,
+			submitMode,
 			threadTracker,
 			fixedIterations,
 			dataKey,

@@ -21,6 +21,7 @@ type BotConfig struct {
 	TickIntervalSeconds    int32  `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
 	MaxTickDelayMillis     int64  `valid:"-" toml:"MAX_TICK_DELAY_MILLIS"`
 	DeleteCyclesThreshold  int64  `valid:"-" toml:"DELETE_CYCLES_THRESHOLD"`
+	SubmitMode             string `valid:"-" toml:"SUBMIT_MODE"`
 	FillTrackerSleepMillis uint32 `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS"`
 	HorizonURL             string `valid:"-" toml:"HORIZON_URL"`
 	AlertType              string `valid:"-" toml:"ALERT_TYPE"`

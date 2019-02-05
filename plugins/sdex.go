@@ -628,7 +628,8 @@ func (sdex *SDEX) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*
 	return &liabilities, &pairLiabilities, nil
 }
 
-func (sdex *SDEX) pair2Assets() (baseAsset horizon.Asset, quoteAsset horizon.Asset, e error) {
+// Assets returns the base and quote asset used by sdex
+func (sdex *SDEX) Assets() (baseAsset horizon.Asset, quoteAsset horizon.Asset, e error) {
 	var ok bool
 	baseAsset, ok = sdex.assetMap[sdex.pair.Base]
 	if !ok {
@@ -652,7 +653,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		return nil, fmt.Errorf("passed in pair (%s) did not match sdex.pair (%s)", pair.String(), sdex.pair.String())
 	}
 
-	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	baseAsset, quoteAsset, e := sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("error while converting pair to base and quote asset: %s", e)
 	}
@@ -796,7 +797,7 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset horizon.Asset, quoteAs
 
 // GetLatestTradeCursor impl.
 func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
-	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	baseAsset, quoteAsset, e := sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("error while convertig pair to base and quote asset: %s", e)
 	}
@@ -821,7 +822,7 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.
 		return nil, fmt.Errorf("unregistered trading pair (%s) cannot be converted to horizon.Assets, instance's pair: %s", pair.String(), sdex.pair.String())
 	}
 
-	baseAsset, quoteAsset, e := sdex.pair2Assets()
+	baseAsset, quoteAsset, e := sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("cannot get SDEX orderbook: %s", e)
 	}
