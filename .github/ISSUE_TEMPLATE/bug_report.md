@@ -4,6 +4,7 @@ about: Use this template to report anything that needs to be "fixed"
 title: ''
 labels: bug
 assignees: ''
+projects: Kelp Sprint
 
 ---
 
