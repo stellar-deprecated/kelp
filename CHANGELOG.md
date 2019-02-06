@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- Support to run Kelp in maker-only mode using the trader.cfg file ([081aa210e684678b94c0ec2d772ad808eec9f0d6](https://github.com/interstellar/kelp/commit/081aa210e684678b94c0ec2d772ad808eec9f0d6))
+- Support for an SDEX priceFeed so you can follow ticker prices from other SDEX markets ([8afec86c831c45aef2e4cc8e0c85c1de6d192325](https://github.com/interstellar/kelp/commit/8afec86c831c45aef2e4cc8e0c85c1de6d192325))
 
 ### Changed
 
