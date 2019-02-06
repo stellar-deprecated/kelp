@@ -2,6 +2,9 @@
 name: Feature request
 about: Use this template to request a feature or a new plugin (strategy, priceFeed,
   exchange)
+title: ''
+labels: new feature request
+assignees: ''
 
 ---
 
