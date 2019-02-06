@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
-- Support to run Kelp in maker-only mode using the trader.cfg file ([081aa210e684678b94c0ec2d772ad808eec9f0d6](https://github.com/interstellar/kelp/commit/081aa210e684678b94c0ec2d772ad808eec9f0d6))
-- Support for an SDEX priceFeed so you can follow ticker prices from other SDEX markets ([8afec86c831c45aef2e4cc8e0c85c1de6d192325](https://github.com/interstellar/kelp/commit/8afec86c831c45aef2e4cc8e0c85c1de6d192325))
 
 ### Changed
 
@@ -19,6 +17,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 ### Security
+
+## [v1.4.0] - 2019-02-06
+
+### Added
+- Support to run Kelp in maker-only mode using the trader.cfg file ([081aa210e684678b94c0ec2d772ad808eec9f0d6](https://github.com/interstellar/kelp/commit/081aa210e684678b94c0ec2d772ad808eec9f0d6))
+- Support for an SDEX priceFeed so you can follow ticker prices from other SDEX markets ([8afec86c831c45aef2e4cc8e0c85c1de6d192325](https://github.com/interstellar/kelp/commit/8afec86c831c45aef2e4cc8e0c85c1de6d192325))
 
 ## [v1.3.0] - 2019-01-10
 
@@ -106,7 +110,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/interstellar/kelp/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/interstellar/kelp/compare/v1.4.0...HEAD
+[v1.4.0]: https://github.com/interstellar/kelp/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/interstellar/kelp/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/interstellar/kelp/compare/v1.1.2...v1.2.0
 [v1.1.2]: https://github.com/interstellar/kelp/compare/v1.1.1...v1.1.2
