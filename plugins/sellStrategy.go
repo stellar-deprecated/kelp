@@ -5,9 +5,9 @@ import (
 
 	"github.com/stellar/kelp/model"
 
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/utils"
-	"github.com/stellar/go/clients/horizon"
 )
 
 // sellConfig contains the configuration params for this Strategy

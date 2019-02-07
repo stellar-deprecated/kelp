@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
-	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/config"
 )
 
 // strategyFactoryData is a data container that has all the information needed to make a strategy

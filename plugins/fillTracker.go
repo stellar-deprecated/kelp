@@ -6,9 +6,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
-	"github.com/nikhilsaraf/go-tools/multithreading"
 )
 
 // FillTracker tracks fills

@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nikhilsaraf/go-tools/multithreading"
+	"github.com/spf13/cobra"
+	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -18,10 +22,6 @@ import (
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
-	"github.com/nikhilsaraf/go-tools/multithreading"
-	"github.com/spf13/cobra"
-	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/support/config"
 )
 
 const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg

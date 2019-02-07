@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/networking"
-	"github.com/mitchellh/mapstructure"
 )
 
 // Ccxt Rest SDK (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)

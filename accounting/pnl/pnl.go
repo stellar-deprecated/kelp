@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/plugins"
-	"github.com/stellar/go/clients/horizon"
 )
 
 const native = "native"
