@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/interstellar/kelp/model"
+	"github.com/stellar/kelp/model"
 )
 
 const numberPrecision = 10

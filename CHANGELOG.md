@@ -21,39 +21,39 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v1.4.0] - 2019-02-06
 
 ### Added
-- Support to run Kelp in maker-only mode using the trader.cfg file ([081aa210e684678b94c0ec2d772ad808eec9f0d6](https://github.com/interstellar/kelp/commit/081aa210e684678b94c0ec2d772ad808eec9f0d6))
-- Support for an SDEX priceFeed so you can follow ticker prices from other SDEX markets ([8afec86c831c45aef2e4cc8e0c85c1de6d192325](https://github.com/interstellar/kelp/commit/8afec86c831c45aef2e4cc8e0c85c1de6d192325))
+- Support to run Kelp in maker-only mode using the trader.cfg file ([081aa210e684678b94c0ec2d772ad808eec9f0d6](https://github.com/stellar/kelp/commit/081aa210e684678b94c0ec2d772ad808eec9f0d6))
+- Support for an SDEX priceFeed so you can follow ticker prices from other SDEX markets ([8afec86c831c45aef2e4cc8e0c85c1de6d192325](https://github.com/stellar/kelp/commit/8afec86c831c45aef2e4cc8e0c85c1de6d192325))
 
 ## [v1.3.0] - 2019-01-10
 
 ### Added
-- mirror strategy offsets trades onto the backing exchange, run `glide up` to udpate dependencies ([3a703a359db541b636cab38c3dd8a7fbe6df7193](https://github.com/interstellar/kelp/commit/3a703a359db541b636cab38c3dd8a7fbe6df7193))
-- ccxt integration now supports trading APIs for all exchanges ([5cf0aedc67eff89a8f82082326f878844ac7b5d5](https://github.com/interstellar/kelp/commit/5cf0aedc67eff89a8f82082326f878844ac7b5d5))
-- randomized delay via the MAX_TICK_DELAY_MILLIS ([4b74affb9933bf08a093ee66cea46c1b3fb87753](https://github.com/interstellar/kelp/commit/4b74affb9933bf08a093ee66cea46c1b3fb87753))
+- mirror strategy offsets trades onto the backing exchange, run `glide up` to udpate dependencies ([3a703a359db541b636cab38c3dd8a7fbe6df7193](https://github.com/stellar/kelp/commit/3a703a359db541b636cab38c3dd8a7fbe6df7193))
+- ccxt integration now supports trading APIs for all exchanges ([5cf0aedc67eff89a8f82082326f878844ac7b5d5](https://github.com/stellar/kelp/commit/5cf0aedc67eff89a8f82082326f878844ac7b5d5))
+- randomized delay via the MAX_TICK_DELAY_MILLIS ([4b74affb9933bf08a093ee66cea46c1b3fb87753](https://github.com/stellar/kelp/commit/4b74affb9933bf08a093ee66cea46c1b3fb87753))
 
 ### Changed
-- balanced strategy avoids unncessary re-randomization on every update cycle ([0be414c77c2f12c9b4b624922aea5841e84c704c](https://github.com/interstellar/kelp/commit/0be414c77c2f12c9b4b624922aea5841e84c704c))
+- balanced strategy avoids unncessary re-randomization on every update cycle ([0be414c77c2f12c9b4b624922aea5841e84c704c](https://github.com/stellar/kelp/commit/0be414c77c2f12c9b4b624922aea5841e84c704c))
 
 ### Fixed
-- fix op_underfunded issue when hitting capacity limits ([d339e421f82de9e2996e45e71d745d81dff2f3f0](https://github.com/interstellar/kelp/commit/d339e421f82de9e2996e45e71d745d81dff2f3f0))
+- fix op_underfunded issue when hitting capacity limits ([d339e421f82de9e2996e45e71d745d81dff2f3f0](https://github.com/stellar/kelp/commit/d339e421f82de9e2996e45e71d745d81dff2f3f0))
 
 ## [v1.2.0] - 2018-11-26
 
 ### Added
-- support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/interstellar/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
+- support for alerting with PagerDuty as the first implementation, run `glide up` to update the dependency ([5e46ae0d94751d85dbb2e8f73094f5d96af0df5e](https://github.com/stellar/kelp/commit/5e46ae0d94751d85dbb2e8f73094f5d96af0df5e))
 - support for logging to a file with the `--log` or `-l` command-line option followed by the prefix of the log filename
-- support for basic monitoring with a health check service, run `glide up` to update the dependency ([c6374c35cff9dfa46da342aa5342f312dcd337c4](https://github.com/interstellar/kelp/commit/c6374c35cff9dfa46da342aa5342f312dcd337c4))
+- support for basic monitoring with a health check service, run `glide up` to update the dependency ([c6374c35cff9dfa46da342aa5342f312dcd337c4](https://github.com/stellar/kelp/commit/c6374c35cff9dfa46da342aa5342f312dcd337c4))
 - `iter` command line param to run for only a fixed number of iterations, run `glide up` to update the dependencies
-- new DELETE_CYCLES_THRESHOLD config value in trader config file to allow some tolerance of errors before deleting all offers ([f2537cafee8d620e1c4aabdd3d072d90628801b8](https://github.com/interstellar/kelp/commit/f2537cafee8d620e1c4aabdd3d072d90628801b8))
+- new DELETE_CYCLES_THRESHOLD config value in trader config file to allow some tolerance of errors before deleting all offers ([f2537cafee8d620e1c4aabdd3d072d90628801b8](https://github.com/stellar/kelp/commit/f2537cafee8d620e1c4aabdd3d072d90628801b8))
 
 ### Changed
 - reduced the number of available assets that are recognized by the GetOpenOrders() API for Kraken
 - levels are now logged with prices in the quote asset and amounts in the base asset for the sell, buysell, and balanced strategies
-- clock tick is now synchronized at the start of each cycle ([cd33d91b2d468bfbce6d38a6186d12c86777b7d5](https://github.com/interstellar/kelp/commit/cd33d91b2d468bfbce6d38a6186d12c86777b7d5))
+- clock tick is now synchronized at the start of each cycle ([cd33d91b2d468bfbce6d38a6186d12c86777b7d5](https://github.com/stellar/kelp/commit/cd33d91b2d468bfbce6d38a6186d12c86777b7d5))
 
 ### Fixed
 - conversion of asset symbols in the GetOpenOrders() API for Kraken, reducing the number of tested asset symbols with this API
-- fix op_underfunded errors when we hit capacity limits for non-XLM assets ([e6bebee9aeadf6e00a829a28c125f5dffad8c05c](https://github.com/interstellar/kelp/commit/e6bebee9aeadf6e00a829a28c125f5dffad8c05c))
+- fix op_underfunded errors when we hit capacity limits for non-XLM assets ([e6bebee9aeadf6e00a829a28c125f5dffad8c05c](https://github.com/stellar/kelp/commit/e6bebee9aeadf6e00a829a28c125f5dffad8c05c))
 
 ## [v1.1.2] - 2018-10-30
 
@@ -69,12 +69,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v1.1.1] - 2018-10-22
 
 ### Fixed
-- fixed bot panicing when it cannot cast ticker bid/ask values to a float64 from CCXT's FetchTicker endpoint (0ccbc495e18b1e3b207dad5d3421c7556c63c004) ([issue #31](https://github.com/interstellar/kelp/issues/31))
+- fixed bot panicing when it cannot cast ticker bid/ask values to a float64 from CCXT's FetchTicker endpoint (0ccbc495e18b1e3b207dad5d3421c7556c63c004) ([issue #31](https://github.com/stellar/kelp/issues/31))
 
 ## [v1.1.0] - 2018-10-19
 
 ### Added
-- support for [CCXT](https://github.com/ccxt/ccxt) via [CCXT-REST API](https://github.com/franz-see/ccxt-rest), increasing exchange integrations for priceFeeds and mirroring [diff](https://github.com/interstellar/kelp/compare/0db8f2d42580aa87867470e428d5f0f63eed5ec6^...33bc7b98418129011b151d0f56c9c0770a3d897e)
+- support for [CCXT](https://github.com/ccxt/ccxt) via [CCXT-REST API](https://github.com/franz-see/ccxt-rest), increasing exchange integrations for priceFeeds and mirroring [diff](https://github.com/stellar/kelp/compare/0db8f2d42580aa87867470e428d5f0f63eed5ec6^...33bc7b98418129011b151d0f56c9c0770a3d897e)
 
 ## [v1.0.0] - 2018-10-15
 
@@ -99,7 +99,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - If `SOURCE_SECRET_SEED` is missing or empty then the bot will not crash now.
-- support for [CAP-0003](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0003.md) introduced in stellar-core protocol v10 ([issue #2](https://github.com/interstellar/kelp/issues/2))
+- support for [CAP-0003](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0003.md) introduced in stellar-core protocol v10 ([issue #2](https://github.com/stellar/kelp/issues/2))
 
 ## v1.0.0-rc1 - 2018-08-13
 
@@ -110,13 +110,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/interstellar/kelp/compare/v1.4.0...HEAD
-[v1.4.0]: https://github.com/interstellar/kelp/compare/v1.3.0...v1.4.0
-[v1.3.0]: https://github.com/interstellar/kelp/compare/v1.2.0...v1.3.0
-[v1.2.0]: https://github.com/interstellar/kelp/compare/v1.1.2...v1.2.0
-[v1.1.2]: https://github.com/interstellar/kelp/compare/v1.1.1...v1.1.2
-[v1.1.1]: https://github.com/interstellar/kelp/compare/v1.1.0...v1.1.1
-[v1.1.0]: https://github.com/interstellar/kelp/compare/v1.0.0...v1.1.0
-[v1.0.0]: https://github.com/interstellar/kelp/compare/v1.0.0-rc3...v1.0.0
-[v1.0.0-rc3]: https://github.com/interstellar/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
-[v1.0.0-rc2]: https://github.com/interstellar/kelp/compare/v1.0.0-rc1...v1.0.0-rc2
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.4.0...HEAD
+[v1.4.0]: https://github.com/stellar/kelp/compare/v1.3.0...v1.4.0
+[v1.3.0]: https://github.com/stellar/kelp/compare/v1.2.0...v1.3.0
+[v1.2.0]: https://github.com/stellar/kelp/compare/v1.1.2...v1.2.0
+[v1.1.2]: https://github.com/stellar/kelp/compare/v1.1.1...v1.1.2
+[v1.1.1]: https://github.com/stellar/kelp/compare/v1.1.0...v1.1.1
+[v1.1.0]: https://github.com/stellar/kelp/compare/v1.0.0...v1.1.0
+[v1.0.0]: https://github.com/stellar/kelp/compare/v1.0.0-rc3...v1.0.0
+[v1.0.0-rc3]: https://github.com/stellar/kelp/compare/v1.0.0-rc2...v1.0.0-rc3
+[v1.0.0-rc2]: https://github.com/stellar/kelp/compare/v1.0.0-rc1...v1.0.0-rc2

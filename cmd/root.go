@@ -18,7 +18,7 @@ const rootShort = "Kelp is a free and open-source trading bot for the Stellar un
 const rootLong = `Kelp is a free and open-source trading bot for the Stellar universal marketplace (https://stellar.org).
 
 Learn more about Stellar : https://www.stellar.org
-Learn more about Kelp    : https://github.com/interstellar/kelp`
+Learn more about Kelp    : https://github.com/stellar/kelp`
 const kelpExamples = tradeExamples + "\n  kelp trade --help"
 
 // RootCmd is the main command for this repo

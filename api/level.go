@@ -1,6 +1,6 @@
 package api
 
-import "github.com/interstellar/kelp/model"
+import "github.com/stellar/kelp/model"
 
 // Level represents a layer in the orderbook
 type Level struct {

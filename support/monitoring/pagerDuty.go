@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/PagerDuty/go-pagerduty"
-	"github.com/interstellar/kelp/api"
+	"github.com/stellar/kelp/api"
 )
 
 type pagerDuty struct {

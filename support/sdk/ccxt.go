@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/support/networking"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/mitchellh/mapstructure"
 )
 

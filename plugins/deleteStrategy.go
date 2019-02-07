@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"github.com/interstellar/kelp/api"
+	"github.com/stellar/kelp/api"
 	"github.com/stellar/go/clients/horizon"
 )
 
