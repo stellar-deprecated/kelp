@@ -25,7 +25,7 @@ For low-impact changes (ex: comments, documentation), it is not always necessary
 
 ### Finding things to work on
 
-The first place to start is always looking over the [open GitHub issues](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+repo%3Ainterstellar%2Fkelp&type=Issues) for the project you are interested in contributing to. Issues marked with [help wanted](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22+repo%3Ainterstellar%2Fkelp&type=Issues) are usually pretty self-contained and a good place to get started.
+The first place to start is always looking over the [open GitHub issues](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+repo%3Astellar%2Fkelp&type=Issues) for the project you are interested in contributing to. Issues marked with [help wanted](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22+repo%3Astellar%2Fkelp&type=Issues) are usually pretty self-contained and a good place to get started.
 
 Stellar Development Foundation (SDF) also uses these same GitHub issues to keep track of what we are working on. If you see any issues that are assigned to a particular person or have the `in progress` label, that means someone is currently working on that issue.
 
