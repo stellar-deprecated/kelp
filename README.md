@@ -4,7 +4,7 @@
 [![Github All Releases](https://img.shields.io/github/downloads/stellar/kelp/total.svg?style=for-the-badge)][github-releases]
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
 
-[![Build Status](https://travis-ci.org/stellar/kelp.svg?branch=master)](https://travis-ci.com/stellar/kelp)
+[![Build Status](https://travis-ci.org/stellar/kelp.svg?branch=master)](https://travis-ci.org/stellar/kelp)
 [![GitHub issues](https://img.shields.io/github/issues/stellar/kelp.svg?style=flat-square&longCache=true)][github-issues]
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/stellar/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/stellar/kelp.svg?style=flat-square&longCache=true)][github-pulls]
