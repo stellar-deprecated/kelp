@@ -1,6 +1,6 @@
 language: go
 
-go_import_path: github.com/interstellar/kelp
+go_import_path: github.com/stellar/kelp
 
 go:
 - "1.10.x"

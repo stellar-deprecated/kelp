@@ -3,7 +3,7 @@ package terminator
 import (
 	"fmt"
 
-	"github.com/interstellar/kelp/support/utils"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // Config represents the configuration params for the bot

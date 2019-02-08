@@ -7,13 +7,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/model"
-	"github.com/interstellar/kelp/plugins"
-	"github.com/interstellar/kelp/support/utils"
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/utils"
 )
 
 const maxLumenTrust float64 = math.MaxFloat64
@@ -28,6 +28,7 @@ type Trader struct {
 	strat                 api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
+	submitFilters         []plugins.SubmitFilter
 	threadTracker         *multithreading.ThreadTracker
 	fixedIterations       *uint64
 	dataKey               *model.BotKey
@@ -50,16 +51,24 @@ func MakeBot(
 	api *horizon.Client,
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
+	tradingPair *model.TradingPair,
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	strat api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
+	submitMode api.SubmitMode,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
+	sdexSubmitFilter := plugins.MakeSubmitFilter(submitMode, sdex, tradingPair)
+	submitFilters := []plugins.SubmitFilter{}
+	if sdexSubmitFilter != nil {
+		submitFilters = append(submitFilters, sdexSubmitFilter)
+	}
+
 	return &Trader{
 		api:                   api,
 		assetBase:             assetBase,
@@ -69,6 +78,7 @@ func MakeBot(
 		strat:                 strat,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
+		submitFilters:         submitFilters,
 		threadTracker:         threadTracker,
 		fixedIterations:       fixedIterations,
 		dataKey:               dataKey,
@@ -201,6 +211,15 @@ func (t *Trader) update() {
 		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
+	}
+
+	for i, filter := range t.submitFilters {
+		ops, e = filter.Apply(ops, t.sellingAOffers, t.buyingAOffers)
+		if e != nil {
+			log.Printf("error in filter index %d: %s\n", i, e)
+			t.deleteAllOffers()
+			return
+		}
 	}
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))

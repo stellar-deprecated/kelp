@@ -13,7 +13,7 @@ We want to make it as easy as possible to contribute changes that help the proje
 ### Getting Started
 
 * Make sure you have a [GitHub account](https://github.com/signup/free).
-* [Create a GitHub issue](https://github.com/interstellar/kelp/issues) for your contribution, assuming one does not already exist.
+* [Create a GitHub issue](https://github.com/stellar/kelp/issues) for your contribution, assuming one does not already exist.
   * Clearly describe the issue including steps to reproduce it (if it is a bug).
 * Fork the repository on GitHub and start working on your change.
 * When your change is ready then [submit a Pull Request].
@@ -25,9 +25,9 @@ For low-impact changes (ex: comments, documentation), it is not always necessary
 
 ### Finding things to work on
 
-The first place to start is always looking over the [open GitHub issues](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+repo%3Ainterstellar%2Fkelp&type=Issues) for the project you are interested in contributing to. Issues marked with [help wanted](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22+repo%3Ainterstellar%2Fkelp&type=Issues) are usually pretty self-contained and a good place to get started.
+The first place to start is always looking over the [open GitHub issues](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+repo%3Astellar%2Fkelp&type=Issues) for the project you are interested in contributing to. Issues marked with [help wanted](https://github.com/search?l=&q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22+repo%3Astellar%2Fkelp&type=Issues) are usually pretty self-contained and a good place to get started.
 
-Lightyear also uses these same GitHub issues to keep track of what we are working on. If you see any issues that are assigned to a particular person or have the `in progress` label, that means someone is currently working on that issue. The `orbit` label means we will likely be working on this issue in the next week or two. The `ready` label means that the issue is one we have prioritized and will be working on in our next orbit (the Lightyear term for a sprint) or two.
+Stellar Development Foundation (SDF) also uses these same GitHub issues to keep track of what we are working on. If you see any issues that are assigned to a particular person or have the `in progress` label, that means someone is currently working on that issue.
 
 Of course, feel free to create a new issue if you think something needs to be added or fixed.
 

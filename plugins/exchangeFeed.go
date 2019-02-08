@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/model"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 )
 
 // encapsulates a priceFeed from a tickerAPI

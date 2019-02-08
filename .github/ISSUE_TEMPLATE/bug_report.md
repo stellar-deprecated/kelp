@@ -1,10 +1,13 @@
 ---
 name: Bug report
 about: Use this template to report anything that needs to be "fixed"
+title: ''
+labels: bug
+assignees: ''
 
 ---
 
-// see a sample bug report here: https://github.com/interstellar/kelp/issues/1
+// see a sample bug report here: https://github.com/stellar/kelp/issues/1
 
 ## Describe the bug
 // A succinct description of the buggy behavior.

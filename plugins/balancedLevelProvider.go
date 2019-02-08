@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/model"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 )
 
 // balancedLevelProvider provides levels based on an exponential curve wrt. the number of assets held in the account.

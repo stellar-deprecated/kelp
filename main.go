@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/interstellar/kelp/cmd"
+	"github.com/stellar/kelp/cmd"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/interstellar/kelp/support/utils"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // OrderAction is the action of buy / sell
@@ -139,6 +139,22 @@ func (o OrderBook) Asks() []Order {
 // Bids returns the bids in an orderbook
 func (o OrderBook) Bids() []Order {
 	return o.bids
+}
+
+// TopAsk returns the best ask in an orderbook
+func (o OrderBook) TopAsk() *Order {
+	if len(o.Asks()) > 0 {
+		return &o.Asks()[0]
+	}
+	return nil
+}
+
+// TopBid returns the best bid in an orderbook
+func (o OrderBook) TopBid() *Order {
+	if len(o.Bids()) > 0 {
+		return &o.Bids()[0]
+	}
+	return nil
 }
 
 // MakeOrderBook creates a new OrderBook from the asks and the bids

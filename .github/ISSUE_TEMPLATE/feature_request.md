@@ -2,10 +2,13 @@
 name: Feature request
 about: Use this template to request a feature or a new plugin (strategy, priceFeed,
   exchange)
+title: ''
+labels: new feature request
+assignees: ''
 
 ---
 
-// see sample feature request here: https://github.com/interstellar/kelp/issues/2
+// see sample feature request here: https://github.com/stellar/kelp/issues/2
 
 ## Desired Behavior
 // A succinct description of **what you are trying to achieve** that is not currently supported.
