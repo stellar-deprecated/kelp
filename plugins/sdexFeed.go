@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/model"
-	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // sdexFeed represents a pricefeed from the SDEX

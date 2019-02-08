@@ -1,8 +1,8 @@
 package plugins
 
 import (
-	"github.com/interstellar/kelp/api"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/kelp/api"
 )
 
 // makeDeleteStrategy is a factory method

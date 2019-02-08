@@ -3,8 +3,8 @@ package trader
 import (
 	"fmt"
 
-	"github.com/interstellar/kelp/support/utils"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // XLM is a constant for XLM

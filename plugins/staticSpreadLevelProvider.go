@@ -3,8 +3,8 @@ package plugins
 import (
 	"log"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/model"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 )
 
 // staticLevel represents a layer in the orderbook defined statically

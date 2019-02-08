@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/interstellar/kelp/api"
+	"github.com/stellar/kelp/api"
 
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/interstellar/kelp/model"
+	"github.com/stellar/kelp/model"
 	"github.com/stretchr/testify/assert"
 )
 

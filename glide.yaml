@@ -1,4 +1,4 @@
-package: github.com/interstellar/kelp
+package: github.com/stellar/kelp
 import:
 - package: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c

@@ -4,14 +4,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/interstellar/kelp/model"
-	"github.com/interstellar/kelp/plugins"
-	"github.com/interstellar/kelp/support/utils"
-	"github.com/interstellar/kelp/terminator"
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
+	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/utils"
+	"github.com/stellar/kelp/terminator"
 )
 
 var terminateCmd = &cobra.Command{

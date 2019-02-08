@@ -10,7 +10,7 @@ First, go through the [Account Setup guide](account_setup.md) to set up your Ste
 
 ## Install Bots
 
-Download the pre-compiled binaries for **kelp** for your platform from the [Github Releases Page](https://github.com/interstellar/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
+Download the pre-compiled binaries for **kelp** for your platform from the [Github Releases Page](https://github.com/stellar/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
 
 ## BuySell Strategy Configuration
 

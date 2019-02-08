@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 
-	"github.com/interstellar/kelp/model"
+	"github.com/stellar/kelp/model"
 )
 
 // ExchangeAPIKey specifies API credentials for an exchange

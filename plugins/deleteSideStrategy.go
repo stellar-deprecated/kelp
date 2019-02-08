@@ -3,10 +3,10 @@ package plugins
 import (
 	"log"
 
-	"github.com/interstellar/kelp/api"
-	"github.com/interstellar/kelp/model"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 )
 
 // deleteSideStrategy is a sideStrategy to delete the orders for a given currency pair on one side of the orderbook
