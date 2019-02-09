@@ -661,11 +661,10 @@ func TestFetchOHLCV(t *testing.T) {
 
 	m, e := c.FetchOHLCV("BTC/USDT", "1h")
 	if e != nil {
-		assert.Fail(t, fmt.Sprintf("error when fetching tickers: %s", e))
+		assert.Fail(t, fmt.Sprintf("error fetching candlestick data: %s", e))
 		return
 	}
 
-	assert.IsType(t, []CcxtCandle{}, m)
 	for i := range m {
 		assert.True(t, m[i].TimeStamp > 0)
 		assert.True(t, m[i].Open > 0.0)

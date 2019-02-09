@@ -550,19 +550,19 @@ func (c *Ccxt) FetchOHLCV(tradingPair string, timeframe string) ([]CcxtCandle, e
 		return nil, fmt.Errorf("error fetching candlestick data: %s", e)
 	}
 
-	outputList := output.([]interface{})
 	var candleList []CcxtCandle
-
-	for _, c := range outputList {
-		rawOCHLCV := c.([]interface{})
-		var candle CcxtCandle
-		candle = CcxtCandle{
-			TimeStamp: int64(rawOCHLCV[0].(float64)),
-			Open:      rawOCHLCV[1].(float64),
-			High:      rawOCHLCV[2].(float64),
-			Low:       rawOCHLCV[3].(float64),
-			Close:     rawOCHLCV[4].(float64),
-			Volume:    rawOCHLCV[5].(float64),
+	for _, c := range output.([]interface{}) {
+		rawOHLCV := c.([]interface{})
+		if len(rawOHLCV) != 6 {
+			return nil, fmt.Errorf("error fetching candlestick data: %s", e)
+		}
+		candle := CcxtCandle{
+			TimeStamp: int64(rawOHLCV[0].(float64)),
+			Open:      rawOHLCV[1].(float64),
+			High:      rawOHLCV[2].(float64),
+			Low:       rawOHLCV[3].(float64),
+			Close:     rawOHLCV[4].(float64),
+			Volume:    rawOHLCV[5].(float64),
 		}
 		candleList = append(candleList, candle)
 	}

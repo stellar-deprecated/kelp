@@ -380,3 +380,11 @@ func (c ccxtExchange) WithdrawFunds(
 	// TODO implement
 	return nil, nil
 }
+
+func (c ccxtExchange) GetCandles(pair model.TradingPair, timeframe string) ([]sdk.CcxtCandle, error) {
+	candles, e := c.api.FetchOHLCV(pair.String(), timeframe)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching candlestick data: %s", e)
+	}
+	return candles, nil
+}
