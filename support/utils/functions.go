@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/interstellar/kelp/support/logger"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/protocols/horizon/base"
+	"github.com/stellar/kelp/support/logger"
 )
 
 // Common Utilities needed by various bots

@@ -3,7 +3,7 @@ package monitoring
 import (
 	"testing"
 
-	"github.com/interstellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/logger"
 	"github.com/stretchr/testify/assert"
 )
 

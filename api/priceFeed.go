@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/interstellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/logger"
 )
 
 // PriceFeed allows you to fetch the price of a feed

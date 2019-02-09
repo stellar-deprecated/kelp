@@ -3,10 +3,10 @@ package monitoring
 import (
 	"fmt"
 
-	"github.com/interstellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/logger"
 
 	"github.com/PagerDuty/go-pagerduty"
-	"github.com/interstellar/kelp/api"
+	"github.com/stellar/kelp/api"
 )
 
 type pagerDuty struct {
