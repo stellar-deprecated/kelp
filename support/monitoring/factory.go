@@ -1,8 +1,8 @@
 package monitoring
 
 import (
-	"github.com/stellar/kelp/api"
-	"github.com/stellar/kelp/support/logger"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/logger"
 )
 
 type noopAlert struct{}

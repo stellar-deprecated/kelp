@@ -3,11 +3,11 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/stellar/kelp/api"
-	"github.com/stellar/kelp/model"
-	"github.com/stellar/kelp/support/logger"
-	"github.com/stellar/kelp/support/sdk"
-	"github.com/stellar/kelp/support/utils"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/model"
+	"github.com/interstellar/kelp/support/logger"
+	"github.com/interstellar/kelp/support/sdk"
+	"github.com/interstellar/kelp/support/utils"
 )
 
 const ccxtBalancePrecision = 10

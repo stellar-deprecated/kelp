@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stellar/kelp/support/logger"
+	"github.com/interstellar/kelp/support/logger"
 
-	"github.com/stellar/kelp/support/networking"
+	"github.com/interstellar/kelp/support/networking"
 )
 
 // metricsEndpoint represents a monitoring API endpoint that always responds with a JSON

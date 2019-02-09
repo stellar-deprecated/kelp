@@ -3,8 +3,8 @@ package plugins
 import (
 	"strconv"
 
-	"github.com/stellar/kelp/api"
-	"github.com/stellar/kelp/support/logger"
+	"github.com/interstellar/kelp/api"
+	"github.com/interstellar/kelp/support/logger"
 )
 
 // fixedFeed represents a fixed feed
