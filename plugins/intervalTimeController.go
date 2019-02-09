@@ -4,9 +4,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/interstellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/logger"
 
-	"github.com/interstellar/kelp/api"
+	"github.com/stellar/kelp/api"
 )
 
 // IntervalTimeController provides a standard time interval

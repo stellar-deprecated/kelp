@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/interstellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/logger"
 )
 
 // CheckConfigError checks configs for errors, crashes app if there's an error

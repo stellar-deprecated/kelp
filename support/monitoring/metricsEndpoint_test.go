@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/interstellar/kelp/support/logger"
-	"github.com/interstellar/kelp/support/networking"
+	"github.com/stellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/stretchr/testify/assert"
 )
 
