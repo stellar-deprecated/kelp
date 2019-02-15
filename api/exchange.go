@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"github.com/stellar/go/build"
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/model"
 )
 
@@ -190,4 +192,18 @@ type Exchange interface {
 	TradeAPI
 	DepositAPI
 	WithdrawAPI
+}
+
+// Balance repesents various aspects of an asset's balance
+type Balance struct {
+	Balance float64
+	Trust   float64
+	Reserve float64
+}
+
+// SubmittableExchange is the interface we use as a generic API for all crypto exchanges
+type SubmittableExchange interface {
+	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
+	GetBalanceHack(asset horizon.Asset) (*Balance, error)
+	LoadOffersHack() ([]horizon.Offer, error)
 }
