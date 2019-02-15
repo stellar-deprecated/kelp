@@ -117,14 +117,21 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 }
 
 // GetAccountBalances impl
-func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
+func (c ccxtExchange) GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error) {
 	balanceResponse, e := c.api.FetchBalance()
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[model.Asset]model.Number{}
-	for _, asset := range assetList {
+	m := map[interface{}]model.Number{}
+	for _, elem := range assetList {
+		var asset model.Asset
+		if v, ok := elem.(model.Asset); ok {
+			asset = v
+		} else {
+			return nil, fmt.Errorf("invalid type of asset passed in, only model.Asset accepted")
+		}
+
 		ccxtAssetString, e := c.GetAssetConverter().ToString(asset)
 		if e != nil {
 			return nil, e

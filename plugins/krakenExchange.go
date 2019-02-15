@@ -155,21 +155,28 @@ func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.Tradi
 }
 
 // GetAccountBalances impl.
-func (k *krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
+func (k *krakenExchange) GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error) {
 	balanceResponse, e := k.nextAPI().Balance()
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[model.Asset]model.Number{}
-	for _, a := range assetList {
-		krakenAssetString, e := k.assetConverter.ToString(a)
+	m := map[interface{}]model.Number{}
+	for _, elem := range assetList {
+		var asset model.Asset
+		if v, ok := elem.(model.Asset); ok {
+			asset = v
+		} else {
+			return nil, fmt.Errorf("invalid type of asset passed in, only model.Asset accepted")
+		}
+
+		krakenAssetString, e := k.assetConverter.ToString(asset)
 		if e != nil {
 			// discard partially built map for now
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *model.NumberFromFloat(bal, precisionBalances)
+		m[asset] = *model.NumberFromFloat(bal, precisionBalances)
 	}
 	return m, nil
 }

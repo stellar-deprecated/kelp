@@ -145,7 +145,7 @@ func (s *mirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA 
 }
 
 func (s *mirrorStrategy) recordBalances() error {
-	balanceMap, e := s.exchange.GetAccountBalances([]model.Asset{s.backingPair.Base, s.backingPair.Quote})
+	balanceMap, e := s.exchange.GetAccountBalances([]interface{}{s.backingPair.Base, s.backingPair.Quote})
 	if e != nil {
 		return fmt.Errorf("unable to fetch balances for assets: %s", e)
 	}

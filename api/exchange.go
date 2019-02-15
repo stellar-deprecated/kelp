@@ -14,7 +14,7 @@ type ExchangeAPIKey struct {
 
 // Account allows you to access key account functions
 type Account interface {
-	GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error)
+	GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error)
 }
 
 // Ticker encapsulates all the data for a given Trading Pair

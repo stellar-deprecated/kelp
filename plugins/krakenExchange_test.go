@@ -48,7 +48,7 @@ func TestGetAccountBalances(t *testing.T) {
 		return
 	}
 
-	assetList := []model.Asset{
+	assetList := []interface{}{
 		model.USD,
 		model.XLM,
 		model.BTC,
