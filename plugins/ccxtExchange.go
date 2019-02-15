@@ -309,7 +309,7 @@ func (c ccxtExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tradi
 	for asset, ccxtOrderList := range openOrdersMap {
 		pair, ok := string2Pair[asset]
 		if !ok {
-			return nil, fmt.Errorf("traing symbol %s returned from FetchOpenOrders was not in the original list of trading pairs: %v", asset, pairStrings)
+			return nil, fmt.Errorf("symbol %s returned from FetchOpenOrders was not in the original list of trading pairs: %v", asset, pairStrings)
 		}
 
 		openOrderList := []model.OpenOrder{}
