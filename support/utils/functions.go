@@ -25,7 +25,7 @@ const Native = "native"
 var NativeAsset = horizon.Asset{Type: Native}
 
 // SdexPrecision defines the number of decimals used in SDEX
-const SdexPrecision int8 = 7
+const SdexPrecision int8 = 6 // use 6 here for kraken
 
 // ByPrice implements sort.Interface for []horizon.Offer based on the price
 type ByPrice []horizon.Offer
@@ -57,6 +57,16 @@ func AmountStringAsFloat(amount string) float64 {
 		return 0
 	}
 	return p
+}
+
+// ParseOfferAmount is a convenience method to parse an offer amount
+func ParseOfferAmount(amt string) (float64, error) {
+	offerAmt, e := strconv.ParseFloat(amt, 64)
+	if e != nil {
+		log.Printf("error parsing offer amount: %s\n", e)
+		return -1, e
+	}
+	return offerAmt, nil
 }
 
 // GetPrice gets the price from an offer

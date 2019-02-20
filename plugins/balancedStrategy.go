@@ -33,6 +33,7 @@ func (c balancedConfig) String() string {
 func makeBalancedStrategy(
 	sdex *SDEX,
 	pair *model.TradingPair,
+	ieif *IEIF,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *balancedConfig,
@@ -41,6 +42,7 @@ func makeBalancedStrategy(
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
 		orderConstraints,
+		ieif,
 		assetBase,
 		assetQuote,
 		makeBalancedLevelProvider(
@@ -65,6 +67,7 @@ func makeBalancedStrategy(
 	buySideStrategy := makeSellSideStrategy(
 		sdex,
 		orderConstraints,
+		ieif,
 		assetQuote,
 		assetBase,
 		makeBalancedLevelProvider(

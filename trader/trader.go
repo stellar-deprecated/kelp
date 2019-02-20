@@ -157,11 +157,11 @@ func (t *Trader) update() {
 
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
-	t.sdex.ResetCachedBalances()
+	t.sdex.IEIF().ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
-	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")
-	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
@@ -191,11 +191,11 @@ func (t *Trader) update() {
 
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
-	t.sdex.ResetCachedBalances()
+	t.sdex.IEIF().ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
-	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")
-	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
@@ -204,11 +204,11 @@ func (t *Trader) update() {
 
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
-	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
-		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
+		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
 	}

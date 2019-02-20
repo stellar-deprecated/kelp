@@ -18,6 +18,7 @@ const actionBuy = "buy "
 type sellSideStrategy struct {
 	sdex                *SDEX
 	orderConstraints    *model.OrderConstraints
+	ieif                *IEIF
 	assetBase           *horizon.Asset
 	assetQuote          *horizon.Asset
 	levelsProvider      api.LevelProvider
@@ -39,6 +40,7 @@ var _ api.SideStrategy = &sellSideStrategy{}
 func makeSellSideStrategy(
 	sdex *SDEX,
 	orderConstraints *model.OrderConstraints,
+	ieif *IEIF,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	levelsProvider api.LevelProvider,
@@ -53,6 +55,7 @@ func makeSellSideStrategy(
 	return &sellSideStrategy{
 		sdex:                sdex,
 		orderConstraints:    orderConstraints,
+		ieif:                ieif,
 		assetBase:           assetBase,
 		assetQuote:          assetQuote,
 		levelsProvider:      levelsProvider,
@@ -217,6 +220,7 @@ func (s *sellSideStrategy) createPrecedingOffers(
 	for i := 0; i < len(precedingLevels); i++ {
 		if hitCapacityLimit {
 			// we consider the ith level consumed because we don't want to create an offer for it anyway since we hit the capacity limit
+			log.Printf("hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", i+1)
 			return (i + 1), true, ops, newTopOffer, nil
 		}
 
@@ -326,11 +330,11 @@ func (s *sellSideStrategy) PostUpdate() error {
 
 // computeRemainderAmount returns sellingAmount, buyingAmount, error
 func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64, incrementalBuyAmount float64, price float64, incrementalNativeAmountRaw float64) (float64, float64, error) {
-	availableSellingCapacity, e := s.sdex.AvailableCapacity(*s.assetBase, incrementalNativeAmountRaw)
+	availableSellingCapacity, e := s.ieif.AvailableCapacity(*s.assetBase, incrementalNativeAmountRaw)
 	if e != nil {
 		return 0, 0, e
 	}
-	availableBuyingCapacity, e := s.sdex.AvailableCapacity(*s.assetQuote, incrementalNativeAmountRaw)
+	availableBuyingCapacity, e := s.ieif.AvailableCapacity(*s.assetQuote, incrementalNativeAmountRaw)
 	if e != nil {
 		return 0, 0, e
 	}
@@ -404,7 +408,7 @@ func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, ta
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
 	if !priceTrigger && !amountTrigger {
 		// always add back the current offer in the cached liabilities when we don't modify it
-		s.sdex.AddLiabilities(offers[index].Selling, offers[index].Buying, curAmount, curAmount*curPrice, incrementalNativeAmountRaw)
+		s.ieif.AddLiabilities(offers[index].Selling, offers[index].Buying, curAmount, curAmount*curPrice, incrementalNativeAmountRaw)
 		offerPrice := model.NumberFromFloat(curPrice, s.orderConstraints.PricePrecision)
 		return offerPrice, false, nil, nil
 	}
@@ -463,7 +467,7 @@ func (s *sellSideStrategy) placeOrderWithRetry(
 	// op is nil only when we hit capacity limits
 	if op != nil {
 		// update the cached liabilities if we create a valid operation to create an offer
-		s.sdex.AddLiabilities(assetBase, assetQuote, incrementalSellAmount, incrementalBuyAmount, incrementalNativeAmountRaw)
+		s.ieif.AddLiabilities(assetBase, assetQuote, incrementalSellAmount, incrementalBuyAmount, incrementalNativeAmountRaw)
 		return false, op, nil
 	}
 
@@ -483,7 +487,7 @@ func (s *sellSideStrategy) placeOrderWithRetry(
 
 	if op != nil {
 		// update the cached liabilities if we create a valid operation to create an offer
-		s.sdex.AddLiabilities(assetBase, assetQuote, newSellingAmount, newBuyingAmount, incrementalNativeAmountRaw)
+		s.ieif.AddLiabilities(assetBase, assetQuote, newSellingAmount, newBuyingAmount, incrementalNativeAmountRaw)
 		return true, op, nil
 	}
 	return true, nil, fmt.Errorf("error: (programmer?) unable to place offer with the new (reduced) selling and buying amounts, oldSellingAmount=%.7f, newSellingAmount=%.7f, oldBuyingAmount=%.7f, newBuyingAmount=%.7f",

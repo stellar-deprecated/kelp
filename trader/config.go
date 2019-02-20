@@ -40,7 +40,13 @@ type BotConfig struct {
 	GoogleClientID         string     `valid:"-" toml:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret     string     `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
 	AcceptableEmails       string     `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
+	TradingExchange        string     `valid:"-" toml:"TRADING_EXCHANGE"`
+	ExchangeAPIKeys        []struct {
+		Key    string `valid:"-" toml:"KEY"`
+		Secret string `valid:"-" toml:"SECRET"`
+	} `valid:"-" toml:"EXCHANGE_API_KEYS"`
 
+	// initialized later
 	tradingAccount *string
 	sourceAccount  *string // can be nil
 	assetBase      horizon.Asset
@@ -50,8 +56,13 @@ type BotConfig struct {
 // String impl.
 func (b BotConfig) String() string {
 	return utils.StructString(b, map[string]func(interface{}) interface{}{
-		"SOURCE_SECRET_SEED":  utils.SecretKey2PublicKey,
-		"TRADING_SECRET_SEED": utils.SecretKey2PublicKey,
+		"EXCHANGE_API_KEYS":        utils.Hide,
+		"SOURCE_SECRET_SEED":       utils.SecretKey2PublicKey,
+		"TRADING_SECRET_SEED":      utils.SecretKey2PublicKey,
+		"ALERT_API_KEY":            utils.Hide,
+		"GOOGLE_CLIENT_ID":         utils.Hide,
+		"GOOGLE_CLIENT_SECRET":     utils.Hide,
+		"ACCEPTABLE_GOOGLE_EMAILS": utils.Hide,
 	})
 }
 

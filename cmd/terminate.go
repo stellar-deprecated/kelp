@@ -43,6 +43,8 @@ func init() {
 		}
 		sdex := plugins.MakeSDEX(
 			client,
+			plugins.MakeIEIF(),
+			nil,
 			configFile.SourceSecretSeed,
 			configFile.TradingSecretSeed,
 			*configFile.SourceAccount,

@@ -103,6 +103,8 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 	args := map[string]string{
 		"price": order.Price.AsString(),
 	}
+	log.Printf("kraken is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
+		pairStr, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString())
 	resp, e := k.nextAPI().AddOrder(
 		pairStr,
 		order.OrderAction.String(),
@@ -131,6 +133,7 @@ func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.Tradi
 	if k.isSimulated {
 		return model.CancelResultCancelSuccessful, nil
 	}
+	log.Printf("kraken is canceling order: ID=%s, tradingPair=%s\n", txID.String(), pair.String())
 
 	// we don't actually use the pair for kraken
 	resp, e := k.nextAPI().CancelOrder(txID.String())
