@@ -26,6 +26,7 @@ const (
 	FEE  Asset = "FEE"
 	QTUM Asset = "QTUM"
 	USDT Asset = "USDT"
+	USDC Asset = "USDC"	
 	DAO  Asset = "DAO"
 	ETC  Asset = "ETC"
 	ICN  Asset = "ICN"
@@ -106,6 +107,7 @@ var Display = makeAssetConverter(map[Asset]string{
 	FEE:  string(FEE),
 	QTUM: string(QTUM),
 	USDT: string(USDT),
+	USDC: string(USDC),	
 	DAO:  string(DAO),
 	ETC:  string(ETC),
 	ICN:  string(ICN),
