@@ -158,11 +158,13 @@ func TestFetchOrderBook(t *testing.T) {
 			expectError:  false,
 		},
 	} {
-		name := fmt.Sprintf("%s-nil", k.exchangeName)
+		limitString := "nil"
 		if k.limit != nil {
-			name = fmt.Sprintf("%s-%v", k.exchangeName, *k.limit)
+			limitString = fmt.Sprintf("%d", *k.limit)
 		}
 
+		tradingPairString := strings.Replace(k.tradingPair, "/", "_", -1)
+		name := fmt.Sprintf("%s-%s-%v", k.exchangeName, tradingPairString, limitString)
 		t.Run(name, func(t *testing.T) {
 			runTestFetchOrderBook(k, t)
 		})
