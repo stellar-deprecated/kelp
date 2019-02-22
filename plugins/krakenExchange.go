@@ -184,6 +184,7 @@ func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float64 {
 func (k *krakenExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
 	constraints, ok := krakenPrecisionMatrix[*pair]
 	if !ok {
+		log.Printf("krakenExchange could not find orderConstraints for trading pair %v, returning nil\n", pair)
 		return nil
 	}
 	return &constraints
