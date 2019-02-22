@@ -97,13 +97,17 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 		return &oc
 	}
 
-	// load from CCXT
 	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
 	if e != nil {
 		// this should never really panic because we would have converted this trading pair to a string previously
 		panic(e)
 	}
+
+	// load from CCXT's cache
 	ccxtMarket := c.api.GetMarket(pairString)
+	if ccxtMarket == nil {
+		panic(fmt.Errorf("CCXT does not have precision and limit data for the passed in market: %s", pairString))
+	}
 	oc := *model.MakeOrderConstraints(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min)
 
 	// cache it before returning
