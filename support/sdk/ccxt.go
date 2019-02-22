@@ -20,6 +20,27 @@ type Ccxt struct {
 	ccxtBaseURL  string
 	exchangeName string
 	instanceName string
+	markets      map[string]CcxtMarket
+}
+
+// CcxtMarket represents the result of a LoadMarkets call
+type CcxtMarket struct {
+	// only contains currently needed data
+	Symbol string `json:"symbol"`
+	Base   string `json:"base"`
+	Quote  string `json:"quote"`
+	Limits struct {
+		Amount struct {
+			Min float64 `json:"min"`
+		} `json:"amount"`
+		Price struct {
+			Min float64 `json:"min"`
+		} `json:"price"`
+	} `json:"limits"`
+	Precision struct {
+		Amount int8 `json:"amount"`
+		Price  int8 `json:"price"`
+	} `json:"precision"`
 }
 
 const pathExchanges = "/exchanges"
@@ -88,11 +109,19 @@ func (c *Ccxt) init(apiKey api.ExchangeAPIKey) error {
 	}
 
 	// load markets to populate fields related to markets
+	var marketsResponse interface{}
 	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/loadMarkets"
-	e = networking.JSONRequest(c.httpClient, "POST", url, "", map[string]string{}, nil)
+	e = networking.JSONRequest(c.httpClient, "POST", url, "", map[string]string{}, &marketsResponse)
 	if e != nil {
 		return fmt.Errorf("error loading markets for exchange instance (exchange=%s, instanceName=%s): %s", c.exchangeName, c.instanceName, e)
 	}
+	// decode markets and sets it on the ccxt instance
+	var markets map[string]CcxtMarket
+	e = mapstructure.Decode(marketsResponse, &markets)
+	if e != nil {
+		return fmt.Errorf("error converting loadMarkets output to a map of Market for exchange instance (exchange=%s, instanceName=%s): %s", c.exchangeName, c.instanceName, e)
+	}
+	c.markets = markets
 
 	return nil
 }
@@ -178,6 +207,14 @@ func (c *Ccxt) symbolExists(tradingPair string) error {
 		}
 	}
 	return fmt.Errorf("trading pair '%s' does not exist in the list of %d symbols on exchange '%s'", tradingPair, len(symbolsList), c.exchangeName)
+}
+
+// GetMarket returns the CcxtMarket instance
+func (c *Ccxt) GetMarket(tradingPair string) *CcxtMarket {
+	if v, ok := c.markets[tradingPair]; ok {
+		return &v
+	}
+	return nil
 }
 
 // FetchTicker calls the /fetchTicker endpoint on CCXT, trading pair is the CCXT version of the trading pair

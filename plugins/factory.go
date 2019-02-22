@@ -173,17 +173,10 @@ var exchanges = map[string]ExchangeContainer{
 		Description:  "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		TradeEnabled: true,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			// https://www.binance.com/api/v1/exchangeInfo
-			// https://support.binance.com/hc/en-us/articles/115000594711-Trading-Rule
-			binanceOrderConstraints := map[model.TradingPair]model.OrderConstraints{
-				*model.MakeTradingPair(model.XLM, model.USDT): *model.MakeOrderConstraints(5, 2, 100.0), // converted USDT value to XLM for minBaseVolume with a lot of slack
-				*model.MakeTradingPair(model.XLM, model.BTC):  *model.MakeOrderConstraints(8, 0, 100.0), // converted BTC value to XLM for minBaseVolume with a lot of slack
-			}
-
 			return makeCcxtExchange(
 				"http://localhost:3000",
 				"binance",
-				binanceOrderConstraints,
+				nil,
 				exchangeFactoryData.apiKeys,
 				exchangeFactoryData.simMode,
 			)
@@ -197,7 +190,7 @@ var exchanges = map[string]ExchangeContainer{
 			return makeCcxtExchange(
 				"http://localhost:3000",
 				"poloniex",
-				map[model.TradingPair]model.OrderConstraints{}, // TODO when enabling trading
+				nil,
 				exchangeFactoryData.apiKeys,
 				exchangeFactoryData.simMode,
 			)
@@ -211,7 +204,7 @@ var exchanges = map[string]ExchangeContainer{
 			return makeCcxtExchange(
 				"http://localhost:3000",
 				"bittrex",
-				map[model.TradingPair]model.OrderConstraints{}, // TODO when enabling trading
+				nil,
 				exchangeFactoryData.apiKeys,
 				exchangeFactoryData.simMode,
 			)

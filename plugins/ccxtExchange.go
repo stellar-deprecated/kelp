@@ -28,7 +28,7 @@ type ccxtExchange struct {
 func makeCcxtExchange(
 	ccxtBaseURL string,
 	exchangeName string,
-	orderConstraints map[model.TradingPair]model.OrderConstraints,
+	orderConstraintOverrides map[model.TradingPair]model.OrderConstraints,
 	apiKeys []api.ExchangeAPIKey,
 	simMode bool,
 ) (api.Exchange, error) {
@@ -41,10 +41,14 @@ func makeCcxtExchange(
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
 	}
 
+	if orderConstraintOverrides == nil {
+		orderConstraintOverrides = map[model.TradingPair]model.OrderConstraints{}
+	}
+
 	return ccxtExchange{
 		assetConverter:   model.CcxtAssetConverter,
 		delimiter:        "/",
-		orderConstraints: orderConstraints,
+		orderConstraints: orderConstraintOverrides,
 		api:              c,
 		simMode:          simMode,
 	}, nil
@@ -74,8 +78,8 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 		}
 
 		priceResult[p] = api.Ticker{
-			AskPrice: model.NumberFromFloat(askPrice, c.orderConstraints[p].PricePrecision),
-			BidPrice: model.NumberFromFloat(bidPrice, c.orderConstraints[p].PricePrecision),
+			AskPrice: model.NumberFromFloat(askPrice, c.GetOrderConstraints(&p).PricePrecision),
+			BidPrice: model.NumberFromFloat(bidPrice, c.GetOrderConstraints(&p).PricePrecision),
 		}
 	}
 
@@ -89,7 +93,26 @@ func (c ccxtExchange) GetAssetConverter() *model.AssetConverter {
 
 // GetOrderConstraints impl
 func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	oc := c.orderConstraints[*pair]
+	if oc, ok := c.orderConstraints[*pair]; ok {
+		return &oc
+	}
+
+	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
+	if e != nil {
+		// this should never really panic because we would have converted this trading pair to a string previously
+		panic(e)
+	}
+
+	// load from CCXT's cache
+	ccxtMarket := c.api.GetMarket(pairString)
+	if ccxtMarket == nil {
+		panic(fmt.Errorf("CCXT does not have precision and limit data for the passed in market: %s", pairString))
+	}
+	oc := *model.MakeOrderConstraints(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min)
+
+	// cache it before returning
+	c.orderConstraints[*pair] = oc
+
 	return &oc
 }
 
@@ -142,8 +165,8 @@ func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*mo
 }
 
 func (c ccxtExchange) readOrders(orders []sdk.CcxtOrder, pair *model.TradingPair, orderAction model.OrderAction) []model.Order {
-	pricePrecision := c.orderConstraints[*pair].PricePrecision
-	volumePrecision := c.orderConstraints[*pair].VolumePrecision
+	pricePrecision := c.GetOrderConstraints(pair).PricePrecision
+	volumePrecision := c.GetOrderConstraints(pair).VolumePrecision
 
 	result := []model.Order{}
 	for _, o := range orders {
@@ -222,8 +245,8 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 		return nil, fmt.Errorf("expected '%s' for 'symbol' field, got: %s", pairString, rawTrade.Symbol)
 	}
 
-	pricePrecision := c.orderConstraints[*pair].PricePrecision
-	volumePrecision := c.orderConstraints[*pair].VolumePrecision
+	pricePrecision := c.GetOrderConstraints(pair).PricePrecision
+	volumePrecision := c.GetOrderConstraints(pair).VolumePrecision
 
 	trade := model.Trade{
 		Order: model.Order{
@@ -311,14 +334,14 @@ func (c ccxtExchange) convertOpenOrderFromCcxt(pair *model.TradingPair, o sdk.Cc
 			Pair:        pair,
 			OrderAction: orderAction,
 			OrderType:   model.OrderTypeLimit,
-			Price:       model.NumberFromFloat(o.Price, c.orderConstraints[*pair].PricePrecision),
-			Volume:      model.NumberFromFloat(o.Amount, c.orderConstraints[*pair].VolumePrecision),
+			Price:       model.NumberFromFloat(o.Price, c.GetOrderConstraints(pair).PricePrecision),
+			Volume:      model.NumberFromFloat(o.Amount, c.GetOrderConstraints(pair).VolumePrecision),
 			Timestamp:   ts,
 		},
 		ID:             o.ID,
 		StartTime:      ts,
 		ExpireTime:     nil,
-		VolumeExecuted: model.NumberFromFloat(o.Filled, c.orderConstraints[*pair].VolumePrecision),
+		VolumeExecuted: model.NumberFromFloat(o.Filled, c.GetOrderConstraints(pair).VolumePrecision),
 	}, nil
 }
 
