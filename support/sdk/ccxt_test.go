@@ -122,18 +122,18 @@ func TestFetchOrderBook(t *testing.T) {
 	limit2 := 2
 	for _, k := range []orderbookTest{
 		{
-			exchangeName: "poloniex",
-			tradingPair:  "BTC/USDT",
+			exchangeName: "kraken",
+			tradingPair:  "BTC/USD",
 			limit:        nil,
 			expectError:  false,
 		}, {
-			exchangeName: "poloniex",
-			tradingPair:  "BTC/USDT",
+			exchangeName: "kraken",
+			tradingPair:  "BTC/USD",
 			limit:        &limit5,
 			expectError:  false,
 		}, {
-			exchangeName: "poloniex",
-			tradingPair:  "BTC/USDT",
+			exchangeName: "kraken",
+			tradingPair:  "BTC/USD",
 			limit:        &limit2,
 			expectError:  false,
 		}, {
@@ -152,8 +152,8 @@ func TestFetchOrderBook(t *testing.T) {
 			limit:        &limit2,
 			expectError:  true,
 		}, {
-			exchangeName: "poloniex",
-			tradingPair:  "XLM/USDT",
+			exchangeName: "kraken",
+			tradingPair:  "XLM/USD",
 			limit:        &limit2,
 			expectError:  false,
 		},
@@ -253,7 +253,8 @@ func TestFetchTrades(t *testing.T) {
 			expectedFields: bittrexFields,
 		},
 	} {
-		t.Run(k.exchangeName, func(t *testing.T) {
+		tradingPairString := strings.Replace(k.tradingPair, "/", "_", -1)
+		t.Run(fmt.Sprintf("%s-%s", k.exchangeName, tradingPairString), func(t *testing.T) {
 			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, api.ExchangeAPIKey{})
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
@@ -303,7 +304,8 @@ func TestFetchMyTrades(t *testing.T) {
 			apiKey:         api.ExchangeAPIKey{},
 		},
 	} {
-		t.Run(k.exchangeName, func(t *testing.T) {
+		tradingPairString := strings.Replace(k.tradingPair, "/", "_", -1)
+		t.Run(fmt.Sprintf("%s-%s", k.exchangeName, tradingPairString), func(t *testing.T) {
 			c, e := MakeInitializedCcxtExchange("http://localhost:3000", k.exchangeName, k.apiKey)
 			if e != nil {
 				assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))

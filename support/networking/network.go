@@ -17,6 +17,7 @@ func JSONRequest(
 	data string,
 	headers map[string]string,
 	responseData interface{}, // the passed in responseData should be a pointer
+	errorKey string,
 ) error {
 	// create http request
 	req, e := http.NewRequest(method, reqURL, strings.NewReader(data))
@@ -52,9 +53,19 @@ func JSONRequest(
 		return fmt.Errorf("invalid 'Content-Type' header in http response ('%s'), expecting 'application/json', response body: %s", contentType, bodyString)
 	}
 
-	// TODO move this out of this low-level layer
-	if strings.Contains(bodyString, "error") {
-		return fmt.Errorf("error in response: %s", bodyString)
+	if errorKey != "" {
+		var errorResponse interface{}
+		e = json.Unmarshal(body, &errorResponse)
+		if e != nil {
+			return fmt.Errorf("could not unmarshall response body to check for an error response: %s | bodyString: %s", e, bodyString)
+		}
+
+		switch er := errorResponse.(type) {
+		case map[string]interface{}:
+			if _, ok := er[errorKey]; ok {
+				return fmt.Errorf("error in response, bodyString: %s", bodyString)
+			}
+		}
 	}
 
 	if responseData != nil {

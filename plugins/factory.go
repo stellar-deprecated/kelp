@@ -168,8 +168,22 @@ var exchanges = map[string]ExchangeContainer{
 			return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
 		},
 	},
-	"ccxt-binance": ExchangeContainer{
+	"ccxt-kraken": ExchangeContainer{
 		SortOrder:    1,
+		Description:  "Kraken is a popular centralized cryptocurrency exchange (via ccxt-rest)",
+		TradeEnabled: false,
+		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
+			return makeCcxtExchange(
+				"http://localhost:3000",
+				"kraken",
+				nil,
+				exchangeFactoryData.apiKeys,
+				exchangeFactoryData.simMode,
+			)
+		},
+	},
+	"ccxt-binance": ExchangeContainer{
+		SortOrder:    2,
 		Description:  "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		TradeEnabled: true,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
@@ -183,7 +197,7 @@ var exchanges = map[string]ExchangeContainer{
 		},
 	},
 	"ccxt-poloniex": ExchangeContainer{
-		SortOrder:    2,
+		SortOrder:    3,
 		Description:  "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		TradeEnabled: false,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
@@ -197,7 +211,7 @@ var exchanges = map[string]ExchangeContainer{
 		},
 	},
 	"ccxt-bittrex": ExchangeContainer{
-		SortOrder:    3,
+		SortOrder:    4,
 		Description:  "Bittrex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
 		TradeEnabled: false,
 		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
