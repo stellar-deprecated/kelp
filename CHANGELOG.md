@@ -8,7 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- include ccxt-kraken as a read-only exchange ([796ae5964a835ca441bb67f5964656dc2b5ecdb4](https://github.com/stellar/kelp/commit/796ae5964a835ca441bb67f5964656dc2b5ecdb4))
+- USDC as a recognized asset ([3894b9a38fef601e5fe27a901f3f66a2071478f2](https://github.com/stellar/kelp/commit/3894b9a38fef601e5fe27a901f3f66a2071478f2))
+
 ### Changed
+
+- load orderConstraints for ccxtExchange from CCXT API ([8d28c11b488e74f04d23f2ef62df6b603e731c68](https://github.com/stellar/kelp/commit/8d28c11b488e74f04d23f2ef62df6b603e731c68))
 
 ### Deprecated
 
