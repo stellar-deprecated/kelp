@@ -222,7 +222,8 @@ func TestFetchTrades(t *testing.T) {
 		return
 	}
 
-	poloniexFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
+	// "id" is not always part of a trade result on Kraken for the public trades API
+	krakenFields := []string{"amount", "cost", "datetime", "price", "side", "symbol", "timestamp"}
 	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
 	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 
@@ -232,13 +233,13 @@ func TestFetchTrades(t *testing.T) {
 		expectedFields []string
 	}{
 		{
-			exchangeName:   "poloniex",
-			tradingPair:    "BTC/USDT",
-			expectedFields: poloniexFields,
+			exchangeName:   "kraken",
+			tradingPair:    "BTC/USD",
+			expectedFields: krakenFields,
 		}, {
-			exchangeName:   "poloniex",
-			tradingPair:    "XLM/USDT",
-			expectedFields: poloniexFields,
+			exchangeName:   "kraken",
+			tradingPair:    "XLM/USD",
+			expectedFields: krakenFields,
 		}, {
 			exchangeName:   "binance",
 			tradingPair:    "BTC/USDT",
@@ -277,7 +278,7 @@ func TestFetchMyTrades(t *testing.T) {
 		return
 	}
 
-	poloniexFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
+	krakenFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
 	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
 	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 
@@ -288,9 +289,9 @@ func TestFetchMyTrades(t *testing.T) {
 		apiKey         api.ExchangeAPIKey
 	}{
 		{
-			exchangeName:   "poloniex",
-			tradingPair:    "BTC/USDT",
-			expectedFields: poloniexFields,
+			exchangeName:   "kraken",
+			tradingPair:    "BTC/USD",
+			expectedFields: krakenFields,
 			apiKey:         api.ExchangeAPIKey{},
 		}, {
 			exchangeName:   "binance",
@@ -345,7 +346,7 @@ func validateTrades(trades []CcxtTrade, expectedFields []string, tradingPair str
 		if supportsField("datetime") && !assert.True(t, len(trade.Datetime) > 0) {
 			return
 		}
-		if supportsField("id") && !assert.True(t, len(trade.ID) > 0) {
+		if supportsField("id") && !assert.True(t, len(trade.ID) > 0, fmt.Sprintf("ID='%s'", trade.ID)) {
 			return
 		}
 		if supportsField("price") && !assert.True(t, trade.Price > 0) {
