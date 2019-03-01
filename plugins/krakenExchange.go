@@ -815,4 +815,8 @@ var krakenPrecisionMatrix = map[model.TradingPair]model.OrderConstraints{
 	*model.MakeTradingPair(model.XLM, model.USD): *model.MakeOrderConstraints(6, 8, 30.0),
 	*model.MakeTradingPair(model.XLM, model.BTC): *model.MakeOrderConstraints(8, 8, 30.0),
 	*model.MakeTradingPair(model.BTC, model.USD): *model.MakeOrderConstraints(1, 8, 0.002),
+	*model.MakeTradingPair(model.ETH, model.USD): *model.MakeOrderConstraints(2, 8, 0.02),
+	*model.MakeTradingPair(model.ETH, model.BTC): *model.MakeOrderConstraints(5, 8, 0.02),
+	*model.MakeTradingPair(model.XRP, model.USD): *model.MakeOrderConstraints(5, 8, 30.0),
+	*model.MakeTradingPair(model.XRP, model.BTC): *model.MakeOrderConstraints(8, 8, 30.0),
 }
