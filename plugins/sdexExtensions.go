@@ -56,39 +56,53 @@ func SdexFeeFnFromStats(
 
 func getFeeFromStats(horizonBaseURL string, capacityTrigger float64, percentile uint8, maxOpFeeStroops uint64) (uint64, error) {
 	feeStatsURL := horizonBaseURL + "/fee_stats"
-	output := FeeStatsResponse{}
-	e := networking.JSONRequest(http.DefaultClient, "GET", feeStatsURL, "", map[string]string{}, &output, "")
+
+	feeStatsResponseMap := map[string]string{}
+	e := networking.JSONRequest(http.DefaultClient, "GET", feeStatsURL, "", map[string]string{}, &feeStatsResponseMap, "")
 	if e != nil {
 		return 0, fmt.Errorf("error fetching fee stats (URL=%s): %s", feeStatsURL, e)
 	}
 
-	lastFeeInt, e := strconv.Atoi(output.LastLedgerBaseFee)
+	// parse ledgerCapacityUsage
+	ledgerCapacityUsage, e := strconv.ParseFloat(feeStatsResponseMap["ledger_capacity_usage"], 64)
 	if e != nil {
-		return 0, fmt.Errorf("could not parse last_ledger_base_fee (%s) as int: %s", output.LastLedgerBaseFee, e)
+		return 0, fmt.Errorf("could not parse ledger_capacity_usage ('%s') as float64: %s", feeStatsResponseMap["ledger_capacity_usage"], e)
 	}
-	modeFeeInt, e := strconv.Atoi(output.ModeAcceptedFee)
-	if e != nil {
-		return 0, fmt.Errorf("could not parse mode_accepted_fee (%s) as int: %s", output.ModeAcceptedFee, e)
-	}
-	lastFee := uint64(lastFeeInt)
-	modeFee := uint64(modeFeeInt)
 
-	if lastFee >= modeFee && lastFee <= maxOpFeeStroops {
-		log.Printf("using last_ledger_base_fee of %d stroops (maxBaseFee = %d)\n", lastFee, maxOpFeeStroops)
-		return lastFee, nil
+	// case where we don't trigger the dynamic fees logic
+	if ledgerCapacityUsage < capacityTrigger {
+		var lastFeeInt int
+		lastFeeInt, e = strconv.Atoi(feeStatsResponseMap["last_ledger_base_fee"])
+		if e != nil {
+			return 0, fmt.Errorf("could not parse last_ledger_base_fee ('%s') as int: %s", feeStatsResponseMap["last_ledger_base_fee"], e)
+		}
+		lastFee := uint64(lastFeeInt)
+		if lastFee <= maxOpFeeStroops {
+			log.Printf("lastFee <= maxOpFeeStroops; using last_ledger_base_fee of %d stroops (maxOpFeeStroops = %d)\n", lastFee, maxOpFeeStroops)
+			return lastFee, nil
+		}
+		log.Printf("lastFee > maxOpFeeStroops; using maxOpFeeStroops of %d stroops (lastFee = %d)\n", maxOpFeeStroops, lastFee)
+		return maxOpFeeStroops, nil
 	}
-	if modeFee >= lastFee && modeFee <= maxOpFeeStroops {
-		log.Printf("using mode_accepted_fee of %d stroops (maxBaseFee = %d)\n", modeFee, maxOpFeeStroops)
-		return modeFee, nil
+
+	// parse percentile value
+	var pStroopsInt64 uint64
+	pKey := fmt.Sprintf("p%d_accepted_fee", percentile)
+	if pStroops, ok := feeStatsResponseMap[pKey]; ok {
+		var pStroopsInt int
+		pStroopsInt, e = strconv.Atoi(pStroops)
+		if e != nil {
+			return 0, fmt.Errorf("could not parse percentile value (%s='%s'): %s", pKey, pStroops, e)
+		}
+		pStroopsInt64 = uint64(pStroopsInt)
+	} else {
+		return 0, fmt.Errorf("could not fetch percentile value (%s) from feeStatsResponseMap: %s", pKey, e)
 	}
-	log.Printf("using maxBaseFee of %d stroops (last_ledger_base_fee = %d; mode_accepted_fee = %d)\n", maxOpFeeStroops, lastFee, modeFee)
+
+	if pStroopsInt64 <= maxOpFeeStroops {
+		log.Printf("pStroopsInt64 <= maxOpFeeStroops; using %s of %d stroops (maxOpFeeStroops = %d)\n", pKey, pStroopsInt64, maxOpFeeStroops)
+		return pStroopsInt64, nil
+	}
+	log.Printf("pStroopsInt64 > maxOpFeeStroops; using maxOpFeeStroops of %d stroops (%s = %d)\n", maxOpFeeStroops, pKey, pStroopsInt64)
 	return maxOpFeeStroops, nil
-}
-
-// FeeStatsResponse represents the response from /fee_stats
-type FeeStatsResponse struct {
-	LastLedger        string `json:"last_ledger"`          // uint64 as a string
-	LastLedgerBaseFee string `json:"last_ledger_base_fee"` // uint64 as a string
-	MinAcceptedFee    string `json:"min_accepted_fee"`     // uint64 as a string
-	ModeAcceptedFee   string `json:"mode_accepted_fee"`    // uint64 as a string
 }
