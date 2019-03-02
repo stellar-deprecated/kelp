@@ -89,6 +89,12 @@ func init() {
 		}
 	}
 
+	validateBotConfig := func(l logger.Logger, botConfig trader.BotConfig) {
+		if botConfig.Fee == nil {
+			logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file"))
+		}
+	}
+
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
 		l := logger.MakeBasicLogger()
 		var botConfig trader.BotConfig
@@ -124,6 +130,7 @@ func init() {
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
+		validateBotConfig(l, botConfig)
 		l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
