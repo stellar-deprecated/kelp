@@ -49,8 +49,8 @@ func JSONRequest(
 	if e != nil {
 		return fmt.Errorf("could not read 'Content-Type' header in http response: %s | response body: %s", e, bodyString)
 	}
-	if contentType != "application/json" {
-		return fmt.Errorf("invalid 'Content-Type' header in http response ('%s'), expecting 'application/json', response body: %s", contentType, bodyString)
+	if contentType != "application/json" && contentType != "application/hal+json" {
+		return fmt.Errorf("invalid 'Content-Type' header in http response ('%s'), expecting 'application/json' or 'application/hal+json', response body: %s", contentType, bodyString)
 	}
 
 	if errorKey != "" {

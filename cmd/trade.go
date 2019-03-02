@@ -149,6 +149,15 @@ func init() {
 			tradingPair.Base:  assetBase,
 			tradingPair.Quote: assetQuote,
 		}
+		feeFn, e := plugins.SdexFeeFnFromStats(
+			botConfig.HorizonURL,
+			botConfig.Fee.CapacityTrigger,
+			botConfig.Fee.Percentile,
+			botConfig.Fee.MaxOpFeeStroops,
+		)
+		if e != nil {
+			logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
+		}
 		sdex := plugins.MakeSDEX(
 			client,
 			botConfig.SourceSecretSeed,
@@ -162,6 +171,7 @@ func init() {
 			*simMode,
 			tradingPair,
 			sdexAssetMap,
+			feeFn,
 		)
 
 		// setting the temp hack variables for the sdex price feeds

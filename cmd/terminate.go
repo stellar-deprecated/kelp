@@ -54,6 +54,7 @@ func init() {
 			false,
 			nil, // not needed here
 			map[model.Asset]horizon.Asset{},
+			plugins.SdexFixedFeeFn(0),
 		)
 		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes)
 		// --- end initialization of objects ----
