@@ -8,13 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- support for dynamic fee calculations using the `/fee_stats` endpoint ([c0f7b5de726b7718f9335ba6b1e1aceca3d9a72d](https://github.com/stellar/kelp/commit/c0f7b5de726b7718f9335ba6b1e1aceca3d9a72d))
-- include ccxt-kraken as a read-only exchange ([796ae5964a835ca441bb67f5964656dc2b5ecdb4](https://github.com/stellar/kelp/commit/796ae5964a835ca441bb67f5964656dc2b5ecdb4))
-- USDC as a recognized asset ([3894b9a38fef601e5fe27a901f3f66a2071478f2](https://github.com/stellar/kelp/commit/3894b9a38fef601e5fe27a901f3f66a2071478f2))
-
 ### Changed
-
-- load orderConstraints for ccxtExchange from CCXT API ([8d28c11b488e74f04d23f2ef62df6b603e731c68](https://github.com/stellar/kelp/commit/8d28c11b488e74f04d23f2ef62df6b603e731c68))
 
 ### Deprecated
 
@@ -23,6 +17,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 ### Security
+
+## [v1.5.0] - 2019-03-04
+
+### Added
+
+- support for dynamic fee calculations using the `/fee_stats` endpoint ([c0f7b5de726b7718f9335ba6b1e1aceca3d9a72d](https://github.com/stellar/kelp/commit/c0f7b5de726b7718f9335ba6b1e1aceca3d9a72d))
+- include ccxt-kraken as a read-only exchange ([796ae5964a835ca441bb67f5964656dc2b5ecdb4](https://github.com/stellar/kelp/commit/796ae5964a835ca441bb67f5964656dc2b5ecdb4))
+- USDC as a recognized asset ([3894b9a38fef601e5fe27a901f3f66a2071478f2](https://github.com/stellar/kelp/commit/3894b9a38fef601e5fe27a901f3f66a2071478f2))
+
+### Changed
+
+- load orderConstraints for ccxtExchange from CCXT API ([8d28c11b488e74f04d23f2ef62df6b603e731c68](https://github.com/stellar/kelp/commit/8d28c11b488e74f04d23f2ef62df6b603e731c68))
 
 ## [v1.4.0] - 2019-02-06
 
@@ -116,7 +122,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.5.0...HEAD
+[v1.5.0]: https://github.com/stellar/kelp/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/stellar/kelp/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/stellar/kelp/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/stellar/kelp/compare/v1.1.2...v1.2.0
