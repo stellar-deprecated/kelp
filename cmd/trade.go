@@ -233,6 +233,12 @@ func init() {
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(l, botConfig, client, sdex, exchange)
 		}
+		if !isTradingSdex && submitMode != api.SubmitModeBoth {
+			log.Println()
+			log.Println("cannot run on a non-SDEX exchange with SUBMIT_MODE set to something other than \"both\"")
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchange)
+		}
 		timeController := plugins.MakeIntervalTimeController(
 			time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 			botConfig.MaxTickDelayMillis,
