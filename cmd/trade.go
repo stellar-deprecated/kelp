@@ -245,11 +245,13 @@ func init() {
 		)
 		bot := trader.MakeBot(
 			client,
+			ieif,
 			botConfig.AssetBase(),
 			botConfig.AssetQuote(),
 			tradingPair,
 			botConfig.TradingAccount(),
 			sdex,
+			exchange,
 			strat,
 			timeController,
 			botConfig.DeleteCyclesThreshold,

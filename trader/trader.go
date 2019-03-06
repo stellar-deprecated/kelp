@@ -21,10 +21,12 @@ const maxLumenTrust float64 = math.MaxFloat64
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
 	api                   *horizon.Client
+	ieif                  *plugins.IEIF
 	assetBase             horizon.Asset
 	assetQuote            horizon.Asset
 	tradingAccount        string
 	sdex                  *plugins.SDEX
+	submittableX          api.SubmittableExchange
 	strat                 api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
@@ -49,11 +51,13 @@ type Trader struct {
 // MakeBot is the factory method for the Trader struct
 func MakeBot(
 	api *horizon.Client,
+	ieif *plugins.IEIF,
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
 	tradingPair *model.TradingPair,
 	tradingAccount string,
 	sdex *plugins.SDEX,
+	submittableX api.SubmittableExchange,
 	strat api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
@@ -71,10 +75,12 @@ func MakeBot(
 
 	return &Trader{
 		api:                   api,
+		ieif:                  ieif,
 		assetBase:             assetBase,
 		assetQuote:            assetQuote,
 		tradingAccount:        tradingAccount,
 		sdex:                  sdex,
+		submittableX:          submittableX,
 		strat:                 strat,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
@@ -141,7 +147,7 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.sdex.SubmitOps(dOps, nil)
+		e := t.submittableX.SubmitOps(dOps, nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -181,7 +187,7 @@ func (t *Trader) update() {
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
-		e = t.sdex.SubmitOps(pruneOps, nil)
+		e = t.submittableX.SubmitOps(pruneOps, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -224,7 +230,7 @@ func (t *Trader) update() {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.sdex.SubmitOps(ops, nil)
+		e = t.submittableX.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
