@@ -245,47 +245,37 @@ func (t *Trader) update() {
 
 func (t *Trader) load() {
 	// load the maximum amounts we can offer for each asset
-	account, e := t.api.LoadAccount(t.tradingAccount)
+	baseBalance, e := t.submittableX.GetBalanceHack(t.assetBase)
+	if e != nil {
+		log.Println(e)
+		return
+	}
+	quoteBalance, e := t.submittableX.GetBalanceHack(t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		return
 	}
 
-	var maxA float64
-	var maxB float64
-	var trustA float64
-	var trustB float64
-	var trustAString string
-	var trustBString string
-	for _, balance := range account.Balances {
-		trust := maxLumenTrust
-		trustString := "math.MaxFloat64"
-		if balance.Asset.Type != utils.Native {
-			trust = utils.AmountStringAsFloat(balance.Limit)
-			trustString = fmt.Sprintf("%.7f", trust)
-		}
+	t.maxAssetA = baseBalance.Balance
+	t.maxAssetB = quoteBalance.Balance
+	t.trustAssetA = baseBalance.Trust
+	t.trustAssetB = quoteBalance.Trust
 
-		if utils.AssetsEqual(balance.Asset, t.assetBase) {
-			maxA = utils.AmountStringAsFloat(balance.Balance)
-			trustA = trust
-			trustAString = trustString
-		} else if utils.AssetsEqual(balance.Asset, t.assetQuote) {
-			maxB = utils.AmountStringAsFloat(balance.Balance)
-			trustB = trust
-			trustBString = trustString
-		}
+	trustAString := "math.MaxFloat64"
+	if t.assetBase.Type != utils.Native {
+		trustAString = fmt.Sprintf("%.7f", t.trustAssetA)
 	}
-	t.maxAssetA = maxA
-	t.maxAssetB = maxB
-	t.trustAssetA = trustA
-	t.trustAssetB = trustB
+	trustBString := "math.MaxFloat64"
+	if t.assetQuote.Type != utils.Native {
+		trustBString = fmt.Sprintf("%.7f", t.trustAssetB)
+	}
 
-	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), maxA, trustAString)
-	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), maxB, trustBString)
+	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), t.maxAssetA, trustAString)
+	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), t.maxAssetB, trustBString)
 }
 
 func (t *Trader) loadExistingOffers() {
-	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
+	offers, e := t.submittableX.LoadOffersHack()
 	if e != nil {
 		log.Println(e)
 		return
