@@ -105,9 +105,14 @@ func init() {
 			logger.Fatal(l, e)
 		}
 
+		isTradingSdex := botConfig.TradingExchange == "" || botConfig.TradingExchange == "sdex"
+
 		if *logPrefix != "" {
 			t := time.Now().Format("20060102T150405MST")
 			fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
+			if !isTradingSdex {
+				fileName = fmt.Sprintf("%s_%s_%s_%s.log", *logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
+			}
 			e = setLogFile(fileName)
 			if e != nil {
 				logger.Fatal(l, e)
@@ -144,8 +149,7 @@ func init() {
 		}
 		// --- start initialization of objects ----
 		threadTracker := multithreading.MakeThreadTracker()
-		isTradingSdex := botConfig.TradingExchange == "" || botConfig.TradingExchange == "sdex"
-		ieif := plugins.MakeIEIF()
+		ieif := plugins.MakeIEIF(isTradingSdex)
 
 		assetBase := botConfig.AssetBase()
 		assetQuote := botConfig.AssetQuote()

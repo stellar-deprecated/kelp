@@ -24,6 +24,8 @@ type IEIF struct {
 	// cache balances to avoid redundant requests
 	cachedBalances map[horizon.Asset]api.Balance
 
+	isTradingSdex bool
+
 	// TODO this is a hack because the logic to fetch balances is in the exchange, maybe take in an api.Account interface
 	// TODO this is a hack because the logic to fetch offers is in the exchange, maybe take in api.GetOpenOrders() as an interface
 	// TODO 1 this should not be horizon specific
@@ -36,10 +38,11 @@ func (ieif *IEIF) SetSubmittableExchange(submittableX api.SubmittableExchange) {
 }
 
 // MakeIEIF factory method
-func MakeIEIF() *IEIF {
+func MakeIEIF(isTradingSdex bool) *IEIF {
 	return &IEIF{
 		cachedLiabilities: map[horizon.Asset]Liabilities{},
 		cachedBalances:    map[horizon.Asset]api.Balance{},
+		isTradingSdex:     isTradingSdex,
 	}
 }
 
@@ -107,7 +110,7 @@ func (ieif *IEIF) willOversellNative(incrementalNativeAmount float64) (bool, err
 
 	willOversellNative := incrementalNativeAmount > (nativeBal - minAccountBal - nativeLiabilities.Selling)
 	if willOversellNative {
-		log.Printf("we will oversell the native asset after considering fee and min reserves, incrementalNativeAmount = %.7f, nativeBal = %.7f, minAccountBal = %.7f, nativeLiabilities.Selling = %.7f\n",
+		log.Printf("we will oversell the native asset after considering fee and min reserves, incrementalNativeAmount = %.8f, nativeBal = %.8f, minAccountBal = %.8f, nativeLiabilities.Selling = %.8f\n",
 			incrementalNativeAmount, nativeBal, minAccountBal, nativeLiabilities.Selling)
 	}
 	return willOversellNative, nil
@@ -128,7 +131,7 @@ func (ieif *IEIF) willOversell(asset horizon.Asset, amountSelling float64) (bool
 
 	willOversell := amountSelling > (bal - minAccountBal - liabilities.Selling)
 	if willOversell {
-		log.Printf("we will oversell the asset '%s', amountSelling = %.7f, bal = %.7f, minAccountBal = %.7f, liabilities.Selling = %.7f\n",
+		log.Printf("we will oversell the asset '%s', amountSelling = %.8f, bal = %.8f, minAccountBal = %.8f, liabilities.Selling = %.8f\n",
 			utils.Asset2String(asset), amountSelling, bal, minAccountBal, liabilities.Selling)
 	}
 	return willOversell, nil
@@ -159,7 +162,7 @@ func (ieif *IEIF) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.
 	ieif.logLiabilities(assetBase, "base  ")
 	ieif.logLiabilities(assetQuote, "quote ")
 
-	if assetBase != utils.NativeAsset && assetQuote != utils.NativeAsset {
+	if ieif.isTradingSdex && assetBase != utils.NativeAsset && assetQuote != utils.NativeAsset {
 		ieif.logLiabilities(utils.NativeAsset, "native")
 	}
 }
@@ -181,9 +184,9 @@ func (ieif *IEIF) logLiabilities(asset horizon.Asset, assetStr string) {
 
 	trustString := "math.MaxFloat64"
 	if trust != maxLumenTrust {
-		trustString = fmt.Sprintf("%.7f", trust)
+		trustString = fmt.Sprintf("%.8f", trust)
 	}
-	log.Printf("asset=%s, balance=%.7f, trust=%s, minAccountBal=%.7f, buyingLiabilities=%.7f, sellingLiabilities=%.7f\n",
+	log.Printf("asset=%s, balance=%.8f, trust=%s, minAccountBal=%.8f, buyingLiabilities=%.8f, sellingLiabilities=%.8f\n",
 		assetStr, bal, trustString, minAccountBal, l.Buying, l.Selling)
 }
 
