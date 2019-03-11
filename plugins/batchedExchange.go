@@ -202,7 +202,12 @@ func (b BatchedExchange) logResults(results []submitResult) {
 			opString = "cancel"
 			v = r.cancel
 		}
-		log.Printf("    submitResult[op=%s, value=%v]\n", opString, v)
+
+		errorSuffix := ""
+		if r.e != nil {
+			errorSuffix = fmt.Sprintf(", error=%s", r.e)
+		}
+		log.Printf("    submitResult[op=%s, value=%v%s]\n", opString, v, errorSuffix)
 	}
 }
 
@@ -274,7 +279,7 @@ func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset h
 			sellingAsset = quoteAsset
 			buyingAsset = baseAsset
 			// TODO need to test price and volume conversions correctly
-			amount = fmt.Sprintf("%.7f", order.Volume.AsFloat()*order.Price.AsFloat())
+			amount = fmt.Sprintf("%.8f", order.Volume.AsFloat()*order.Price.AsFloat())
 			invertedPrice := model.InvertNumber(order.Price)
 			// invert price ratio here instead of using convert2Price again since it has an overflow for XLM/BTC
 			price = horizon.Price{
