@@ -208,7 +208,7 @@ func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
 func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error) {
 	openOrdersResponse, e := k.nextAPI().OpenOrders(map[string]string{})
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot load open orders for Kraken: %s", e)
 	}
 
 	// convert to a map so we can easily search for the existence of a trading pair
