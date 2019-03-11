@@ -43,6 +43,7 @@ type SDEX struct {
 	pair                          *model.TradingPair
 	assetMap                      map[model.Asset]horizon.Asset // this is needed until we fully address putting SDEX behind the Exchange interface
 	opFeeStroopsFn                OpFeeStroops
+	tradingOnSdex                 bool
 
 	// uninitialized
 	seqNum       uint64
@@ -96,6 +97,7 @@ func MakeSDEX(
 		pair:           pair,
 		assetMap:       assetMap,
 		opFeeStroopsFn: opFeeStroopsFn,
+		tradingOnSdex:  submittableX == nil,
 	}
 
 	if submittableX == nil {
@@ -304,16 +306,18 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	}
 
 	// explicitly check that we will not oversell XLM because of fee and min reserves
-	incrementalNativeAmountTotal := incrementalNativeAmountRaw
-	if selling.Type == utils.Native {
-		incrementalNativeAmountTotal += incrementalSell
-	}
-	willOversellNative, e := sdex.ieif.willOversellNative(incrementalNativeAmountTotal)
-	if e != nil {
-		return nil, e
-	}
-	if willOversellNative {
-		return nil, nil
+	if sdex.tradingOnSdex {
+		incrementalNativeAmountTotal := incrementalNativeAmountRaw
+		if selling.Type == utils.Native {
+			incrementalNativeAmountTotal += incrementalSell
+		}
+		willOversellNative, e := sdex.ieif.willOversellNative(incrementalNativeAmountTotal)
+		if e != nil {
+			return nil, e
+		}
+		if willOversellNative {
+			return nil, nil
+		}
 	}
 
 	stringPrice := strconv.FormatFloat(price, 'f', int(sdexOrderConstraints.PricePrecision), 64)
