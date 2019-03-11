@@ -269,15 +269,15 @@ func (t *Trader) load() {
 
 	trustAString := "math.MaxFloat64"
 	if t.assetBase.Type != utils.Native {
-		trustAString = fmt.Sprintf("%.7f", t.trustAssetA)
+		trustAString = fmt.Sprintf("%.8f", t.trustAssetA)
 	}
 	trustBString := "math.MaxFloat64"
 	if t.assetQuote.Type != utils.Native {
-		trustBString = fmt.Sprintf("%.7f", t.trustAssetB)
+		trustBString = fmt.Sprintf("%.8f", t.trustAssetB)
 	}
 
-	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), t.maxAssetA, trustAString)
-	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), t.maxAssetB, trustBString)
+	log.Printf(" (base) assetA=%s, maxA=%.8f, trustA=%s\n", utils.Asset2String(t.assetBase), t.maxAssetA, trustAString)
+	log.Printf("(quote) assetB=%s, maxB=%.8f, trustB=%s\n", utils.Asset2String(t.assetQuote), t.maxAssetB, trustBString)
 }
 
 func (t *Trader) loadExistingOffers() {

@@ -279,10 +279,10 @@ func (sdex *SDEX) ComputeIncrementalNativeAmountRaw(isNewOffer bool) float64 {
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
 func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	if price <= 0 {
-		return nil, fmt.Errorf("error: cannot create or modify offer, invalid price: %.7f", price)
+		return nil, fmt.Errorf("error: cannot create or modify offer, invalid price: %.8f", price)
 	}
 	if amount <= 0 {
-		return nil, fmt.Errorf("error: cannot create or modify offer, invalid amount: %.7f", amount)
+		return nil, fmt.Errorf("error: cannot create or modify offer, invalid amount: %.8f", amount)
 	}
 
 	// check liability limits on the asset being sold
