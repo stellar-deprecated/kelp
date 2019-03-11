@@ -354,7 +354,7 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 		return fmt.Errorf("unable to make metrics recorder for the health endpoint: %s", e)
 	}
 
-	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/healthCheck", healthMetrics, networking.NoAuth)
+	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/health", healthMetrics, networking.NoAuth)
 	if e != nil {
 		return fmt.Errorf("unable to make /health endpoint: %s", e)
 	}
