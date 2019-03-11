@@ -213,7 +213,7 @@ func init() {
 		}
 
 		// setting the temp hack variables for the sdex price feeds
-		e = plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(), utils.ParseNetwork(botConfig.HorizonURL))
+		e = plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), utils.ParseNetwork(botConfig.HorizonURL))
 		if e != nil {
 			l.Info("")
 			l.Errorf("%s", e)
