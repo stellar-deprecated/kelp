@@ -338,6 +338,7 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	return output, nil
 }
 
+// FetchMyTrades calls the /fetchMyTrades endpoint on CCXT
 func (c *Ccxt) FetchMyTrades(tradingPair string) ([]CcxtTrade, error) {
 	e := c.symbolExists(tradingPair)
 	if e != nil {
@@ -550,4 +551,57 @@ func (c *Ccxt) CancelOrder(orderID string, tradingPair string) (*CcxtOpenOrder, 
 	}
 
 	return &openOrder, nil
+}
+
+// CcxtCandle represents an OHLCV candlestick
+type CcxtCandle struct {
+	TimeStamp int64
+	Open      float64
+	High      float64
+	Low       float64
+	Close     float64
+	Volume    float64
+}
+
+// FetchOHLCV calls the /fetchOHLCV endpoint on CCXT
+func (c *Ccxt) FetchOHLCV(tradingPair string, timeframe string) ([]CcxtCandle, error) {
+	e := c.symbolExists(tradingPair)
+	if e != nil {
+		return nil, fmt.Errorf("symbol does not exist: %s", e)
+	}
+
+	inputData := []interface{}{
+		tradingPair,
+		timeframe,
+	}
+	data, e := json.Marshal(&inputData)
+	if e != nil {
+		return nil, fmt.Errorf("error marshaling input (%v) for exchange '%s': %s", inputData, c.exchangeName, e)
+	}
+
+	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOHLCV"
+	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
+	var output interface{}
+	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), map[string]string{}, &output)
+	if e != nil {
+		return nil, fmt.Errorf("error fetching candlestick data: %s", e)
+	}
+
+	var candleList []CcxtCandle
+	for _, c := range output.([]interface{}) {
+		rawOHLCV := c.([]interface{})
+		if len(rawOHLCV) != 6 {
+			return nil, fmt.Errorf("error fetching candlestick data: %s", e)
+		}
+		candle := CcxtCandle{
+			TimeStamp: int64(rawOHLCV[0].(float64)),
+			Open:      rawOHLCV[1].(float64),
+			High:      rawOHLCV[2].(float64),
+			Low:       rawOHLCV[3].(float64),
+			Close:     rawOHLCV[4].(float64),
+			Volume:    rawOHLCV[5].(float64),
+		}
+		candleList = append(candleList, candle)
+	}
+	return candleList, nil
 }

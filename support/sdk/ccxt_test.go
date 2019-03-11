@@ -652,3 +652,30 @@ func TestCancelOrder(t *testing.T) {
 		})
 	}
 }
+
+func TestFetchOHLCV(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	c, e := MakeInitializedCcxtExchange("http://localhost:3000", "binance", api.ExchangeAPIKey{})
+	if e != nil {
+		assert.Fail(t, fmt.Sprintf("error when making ccxt exchange: %s", e))
+		return
+	}
+
+	m, e := c.FetchOHLCV("BTC/USDT", "1h")
+	if e != nil {
+		assert.Fail(t, fmt.Sprintf("error fetching candlestick data: %s", e))
+		return
+	}
+
+	for i := range m {
+		assert.True(t, m[i].TimeStamp > 0)
+		assert.True(t, m[i].Open > 0.0)
+		assert.True(t, m[i].High > 0.0)
+		assert.True(t, m[i].Low > 0.0)
+		assert.True(t, m[i].Close > 0.0)
+		assert.True(t, m[i].Volume > 0.0)
+	}
+}
