@@ -25,7 +25,7 @@ const Native = "native"
 var NativeAsset = horizon.Asset{Type: Native}
 
 // SdexPrecision defines the number of decimals used in SDEX
-const SdexPrecision int8 = 6 // use 6 here for kraken
+const SdexPrecision int8 = 7
 
 // ByPrice implements sort.Interface for []horizon.Offer based on the price
 type ByPrice []horizon.Offer
