@@ -196,8 +196,9 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 		return nil, fmt.Errorf("error converting pair to string: %s", e)
 	}
 
-	// TODO use cursor when fetching trade history
-	tradesRaw, e := c.api.FetchMyTrades(pairString)
+	// TODO fix limit logic to check result so we get full history instead of just 50 trades
+	const limit = 50
+	tradesRaw, e := c.api.FetchMyTrades(pairString, limit, maybeCursorStart)
 	if e != nil {
 		return nil, fmt.Errorf("error while fetching trade history for trading pair '%s': %s", pairString, e)
 	}
