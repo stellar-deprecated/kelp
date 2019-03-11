@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/Beldur/kraken-go-api-client"
@@ -329,28 +328,28 @@ func values(m map[model.TradingPair]string) []string {
 
 // GetTradeHistory impl.
 func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
-	var mcs *int64
+	var mcs *string
 	if maybeCursorStart != nil {
-		i := maybeCursorStart.(int64)
+		i := maybeCursorStart.(string)
 		mcs = &i
 	}
 
-	var mce *int64
+	var mce *string
 	if maybeCursorEnd != nil {
-		i := maybeCursorEnd.(int64)
+		i := maybeCursorEnd.(string)
 		mce = &i
 	}
 
 	return k.getTradeHistory(pair, mcs, mce)
 }
 
-func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *string, maybeCursorEnd *string) (*api.TradeHistoryResult, error) {
 	input := map[string]string{}
 	if maybeCursorStart != nil {
-		input["start"] = strconv.FormatInt(*maybeCursorStart, 10)
+		input["start"] = *maybeCursorStart
 	}
 	if maybeCursorEnd != nil {
-		input["end"] = strconv.FormatInt(*maybeCursorEnd, 10)
+		input["end"] = *maybeCursorEnd
 	}
 
 	resp, e := k.nextAPI().Query("TradesHistory", input)
@@ -361,9 +360,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	krakenTrades := krakenResp["trades"].(map[string]interface{})
 
 	res := api.TradeHistoryResult{Trades: []model.Trade{}}
-	for _, v := range krakenTrades {
+	for _txid, v := range krakenTrades {
 		m := v.(map[string]interface{})
-		_txid := m["ordertxid"].(string)
 		_time := m["time"].(float64)
 		ts := model.MakeTimestamp(int64(_time))
 		_type := m["type"].(string)
