@@ -263,3 +263,9 @@ func MakeOrderConstraints(pricePrecision int8, volumePrecision int8, minBaseVolu
 		MinBaseVolume:   *NumberFromFloat(minBaseVolume, volumePrecision),
 	}
 }
+
+// OrderConstraints describes constraints when placing orders on an excahnge
+func (o *OrderConstraints) String() string {
+	return fmt.Sprintf("OrderConstraints[PricePrecision: %d, VolumePrecision: %d, MinBaseVolume: %s]",
+		o.PricePrecision, o.VolumePrecision, o.MinBaseVolume.AsString())
+}

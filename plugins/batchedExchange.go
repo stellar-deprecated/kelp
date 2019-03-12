@@ -17,6 +17,9 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
+// largePrecision is a large precision value for in-memory calculations
+const largePrecision = 10
+
 // BatchedExchange accumulates instructions that can be read out and processed in a batch-style later
 type BatchedExchange struct {
 	commands        []Command
@@ -163,6 +166,12 @@ func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback
 		}
 		return nil
 	}
+
+	pair := &model.TradingPair{
+		Base:  model.FromHorizonAsset(b.baseAsset),
+		Quote: model.FromHorizonAsset(b.quoteAsset),
+	}
+	log.Printf("order constraints for trading pair %s: %s", pair, b.inner.GetOrderConstraints(pair))
 
 	results := []submitResult{}
 	numProcessed := 0
@@ -347,8 +356,8 @@ func assetsEqual(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
 // manageOffer2Order converts a manage offer operation to a model.Order
 func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset horizon.Asset, quoteAsset horizon.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
 	orderAction := model.OrderActionSell
-	price := model.NumberFromFloat(float64(mob.MO.Price.N)/float64(mob.MO.Price.D), orderConstraints.PricePrecision)
-	volume := model.NumberFromFloat(float64(mob.MO.Amount)/math.Pow(10, 7), orderConstraints.VolumePrecision)
+	price := model.NumberFromFloat(float64(mob.MO.Price.N)/float64(mob.MO.Price.D), largePrecision)
+	volume := model.NumberFromFloat(float64(mob.MO.Amount)/math.Pow(10, 7), largePrecision)
 	isBuy, e := assetsEqual(quoteAsset, mob.MO.Selling)
 	if e != nil {
 		return nil, fmt.Errorf("could not compare assets, error: %s", e)
@@ -360,6 +369,8 @@ func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset horizon.Asset, q
 		volume = model.NumberFromFloat(volume.AsFloat()*price.AsFloat(), orderConstraints.VolumePrecision)
 		price = model.InvertNumber(price)
 	}
+	volume = model.NumberByCappingPrecision(volume, orderConstraints.VolumePrecision)
+	price = model.NumberByCappingPrecision(price, orderConstraints.PricePrecision)
 
 	return &model.Order{
 		Pair: &model.TradingPair{
