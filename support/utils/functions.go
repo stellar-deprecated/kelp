@@ -266,8 +266,7 @@ func ParseAsset(code string, issuer string) (*horizon.Asset, error) {
 	return &asset, nil
 }
 
-// AssetEqualsXDR is a helper method to compare horizon assets with xdr assets
-func AssetEqualsXDR(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
+func assetEqualsXDR(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
 	if xAsset.Type == xdr.AssetTypeAssetTypeNative {
 		return hAsset.Type == Native, nil
 	} else if hAsset.Type == Native {
@@ -280,4 +279,33 @@ func AssetEqualsXDR(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
 		return false, fmt.Errorf("could not extract asset information from xdr.Asset: %s", e)
 	}
 	return xAssetCode == hAsset.Code && xAssetIssuer == hAsset.Issuer, nil
+}
+
+// IsSelling helper method
+func IsSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
+	sellingBase, e := assetEqualsXDR(sdexBase, selling)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexBase with selling asset")
+	}
+	buyingQuote, e := assetEqualsXDR(sdexQuote, buying)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexQuote with buying asset")
+	}
+	if sellingBase && buyingQuote {
+		return true, nil
+	}
+
+	sellingQuote, e := assetEqualsXDR(sdexQuote, selling)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexQuote with selling asset")
+	}
+	buyingBase, e := assetEqualsXDR(sdexBase, buying)
+	if e != nil {
+		return false, fmt.Errorf("error comparing sdexBase with buying asset")
+	}
+	if sellingQuote && buyingBase {
+		return false, nil
+	}
+
+	return false, fmt.Errorf("invalid assets, there are more than 2 distinct assets: sdexBase=%s, sdexQuote=%s, selling=%s, buying=%s", sdexBase, sdexQuote, selling, buying)
 }

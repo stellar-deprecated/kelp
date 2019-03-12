@@ -148,6 +148,11 @@ func (b BatchedExchange) LoadOffersHack() ([]horizon.Offer, error) {
 	return offers, nil
 }
 
+// GetOrderConstraints impl
+func (b BatchedExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
+	return b.inner.GetOrderConstraints(pair)
+}
+
 // SubmitOps performs any finalization or submission step needed by the exchange
 func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	var e error

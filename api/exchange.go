@@ -206,4 +206,5 @@ type ExchangeShim interface {
 	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
 	GetBalanceHack(asset horizon.Asset) (*Balance, error)
 	LoadOffersHack() ([]horizon.Offer, error)
+	Constrainable
 }
