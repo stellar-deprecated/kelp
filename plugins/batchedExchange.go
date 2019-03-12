@@ -11,6 +11,7 @@ import (
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -278,8 +279,8 @@ func (b BatchedExchange) genUniqueID() int64 {
 }
 
 // OpenOrders2Offers converts...
-func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset horizon.Asset, quoteAsset horizon.Asset, tradingAccount string) ([]horizon.Offer, error) {
-	offers := []horizon.Offer{}
+func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset horizon.Asset, quoteAsset horizon.Asset, tradingAccount string) ([]hProtocol.Offer, error) {
+	offers := []hProtocol.Offer{}
 	for _, order := range orders {
 		sellingAsset := baseAsset
 		buyingAsset := quoteAsset
@@ -317,7 +318,7 @@ func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset h
 		if order.Timestamp != nil {
 			lmt = time.Unix(int64(*order.Timestamp)/1000, 0)
 		}
-		offers = append(offers, horizon.Offer{
+		offers = append(offers, hProtocol.Offer{
 			ID:                 ID,
 			Seller:             tradingAccount,
 			Selling:            sellingAsset,
