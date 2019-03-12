@@ -36,6 +36,10 @@ func makeCcxtExchange(
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
 	}
 
+	if len(apiKeys) != 1 {
+		return nil, fmt.Errorf("need exactly 1 ExchangeAPIKey")
+	}
+
 	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName, apiKeys[0])
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
