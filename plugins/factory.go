@@ -125,7 +125,6 @@ func MakeStrategy(
 			return nil, fmt.Errorf("the '%s' strategy needs a config file", strategy)
 		}
 
-		log.Printf("MakeFn Call: %s\n", strategy)
 		s, e := strat.makeFn(strategyFactoryData{
 			sdex:            sdex,
 			ieif:            ieif,
@@ -135,7 +134,6 @@ func MakeStrategy(
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
 		})
-		log.Printf("MakeFn Complete: %s\n", strategy)
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)
 		}
