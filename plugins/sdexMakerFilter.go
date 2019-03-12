@@ -7,23 +7,13 @@ import (
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
 )
 
-// SubmitFilter allows you to filter out operations before submitting to the network
-type SubmitFilter interface {
-	Apply(
-		ops []build.TransactionMutator,
-		sellingOffers []horizon.Offer, // quoted quote/base
-		buyingOffers []horizon.Offer, // quoted base/quote
-	) ([]build.TransactionMutator, error)
-}
-
-// MakeSubmitFilter makes a submit filter based on the passed in submitMode
-func MakeSubmitFilter(submitMode api.SubmitMode, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
+// MakeSdexMakerModeFilter makes a submit filter based on the passed in submitMode
+func MakeSdexMakerModeFilter(submitMode api.SubmitMode, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
 	if submitMode == api.SubmitModeMakerOnly {
 		return &sdexMakerFilter{
 			tradingPair: tradingPair,
@@ -177,7 +167,7 @@ func (f *sdexMakerFilter) filterOps(
 			}
 		}
 	}
-	log.Printf("dropped %d, transformed %d, kept %d ops in sdexMakerFilter from original %d ops\n", numDropped, numTransformed, numKeep, len(ops))
+	log.Printf("dropped %d, transformed %d, kept %d ops in sdexMakerFilter from original %d ops, len(filteredOps) = %d\n", numDropped, numTransformed, numKeep, len(ops), len(filteredOps))
 	return filteredOps, nil
 }
 
@@ -193,7 +183,7 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 		return op, true, nil
 	}
 
-	isSell, e := isSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
+	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
@@ -232,33 +222,5 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 		opCopy.MO.Amount = 0
 		return &opCopy, false, nil
 	}
-	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/7, sellPrice)
-}
-
-func isSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
-	sellingBase, e := utils.AssetEqualsXDR(sdexBase, selling)
-	if e != nil {
-		return false, fmt.Errorf("error comparing sdexBase with selling asset")
-	}
-	buyingQuote, e := utils.AssetEqualsXDR(sdexQuote, buying)
-	if e != nil {
-		return false, fmt.Errorf("error comparing sdexQuote with buying asset")
-	}
-	if sellingBase && buyingQuote {
-		return true, nil
-	}
-
-	sellingQuote, e := utils.AssetEqualsXDR(sdexQuote, selling)
-	if e != nil {
-		return false, fmt.Errorf("error comparing sdexQuote with selling asset")
-	}
-	buyingBase, e := utils.AssetEqualsXDR(sdexBase, buying)
-	if e != nil {
-		return false, fmt.Errorf("error comparing sdexBase with buying asset")
-	}
-	if sellingQuote && buyingBase {
-		return false, nil
-	}
-
-	return false, fmt.Errorf("invalid assets, there are more than 2 distinct assets: sdexBase=%s, sdexQuote=%s, selling=%s, buying=%s", sdexBase, sdexQuote, selling, buying)
+	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/math.Pow(10, 7), sellPrice)
 }
