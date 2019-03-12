@@ -112,7 +112,7 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 	if ccxtMarket == nil {
 		panic(fmt.Errorf("CCXT does not have precision and limit data for the passed in market: %s", pairString))
 	}
-	oc := *model.MakeOrderConstraints(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min)
+	oc := *model.MakeOrderConstraintsWithCost(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min, ccxtMarket.Limits.Cost.Min)
 
 	// cache it before returning
 	c.orderConstraints[*pair] = oc

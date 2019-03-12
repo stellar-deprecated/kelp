@@ -37,6 +37,9 @@ type CcxtMarket struct {
 		Price struct {
 			Min float64 `json:"min"`
 		} `json:"price"`
+		Cost struct {
+			Min float64 `json:"min"`
+		} `json:"cost"`
 	} `json:"limits"`
 	Precision struct {
 		Amount int8 `json:"amount"`
