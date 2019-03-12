@@ -344,11 +344,11 @@ func assetsEqual(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
 	return xAssetCode == hAsset.Code, nil
 }
 
-// manageOffer2Order converts
-func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset horizon.Asset, quoteAsset horizon.Asset) (*model.Order, error) {
+// manageOffer2Order converts a manage offer operation to a model.Order
+func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset horizon.Asset, quoteAsset horizon.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
 	orderAction := model.OrderActionSell
-	price := model.NumberFromFloat(float64(mob.MO.Price.N)/float64(mob.MO.Price.D), utils.SdexPrecision)
-	volume := model.NumberFromFloat(float64(mob.MO.Amount)/math.Pow(10, 7), utils.SdexPrecision)
+	price := model.NumberFromFloat(float64(mob.MO.Price.N)/float64(mob.MO.Price.D), orderConstraints.PricePrecision)
+	volume := model.NumberFromFloat(float64(mob.MO.Amount)/math.Pow(10, 7), orderConstraints.VolumePrecision)
 	isBuy, e := assetsEqual(quoteAsset, mob.MO.Selling)
 	if e != nil {
 		return nil, fmt.Errorf("could not compare assets, error: %s", e)
@@ -357,7 +357,7 @@ func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset horizon.Asset, q
 		orderAction = model.OrderActionBuy
 		// TODO need to test price and volume conversions correctly
 		// volume calculation needs to happen first since it uses the non-inverted price when multiplying
-		volume = model.NumberFromFloat(volume.AsFloat()*price.AsFloat(), utils.SdexPrecision)
+		volume = model.NumberFromFloat(volume.AsFloat()*price.AsFloat(), orderConstraints.VolumePrecision)
 		price = model.InvertNumber(price)
 	}
 
@@ -387,7 +387,11 @@ func order2OpenOrder(order *model.Order, txID *model.TransactionID) *model.OpenO
 
 // Ops2Commands converts...
 func (b BatchedExchange) Ops2Commands(ops []build.TransactionMutator, baseAsset horizon.Asset, quoteAsset horizon.Asset) ([]Command, error) {
-	return Ops2CommandsHack(ops, baseAsset, quoteAsset, b.offerID2OrderID)
+	pair := &model.TradingPair{
+		Base:  model.FromHorizonAsset(baseAsset),
+		Quote: model.FromHorizonAsset(quoteAsset),
+	}
+	return Ops2CommandsHack(ops, baseAsset, quoteAsset, b.offerID2OrderID, b.inner.GetOrderConstraints(pair))
 }
 
 // Ops2CommandsHack converts...
@@ -396,18 +400,19 @@ func Ops2CommandsHack(
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
 	offerID2OrderID map[int64]string, // if map is nil then we ignore ID errors
+	orderConstraints *model.OrderConstraints,
 ) ([]Command, error) {
 	commands := []Command{}
 	for _, op := range ops {
 		switch manageOffer := op.(type) {
 		case *build.ManageOfferBuilder:
-			c, e := op2CommandsHack(manageOffer, baseAsset, quoteAsset, offerID2OrderID)
+			c, e := op2CommandsHack(manageOffer, baseAsset, quoteAsset, offerID2OrderID, orderConstraints)
 			if e != nil {
 				return nil, fmt.Errorf("unable to convert *build.ManageOfferBuilder to a Command: %s", e)
 			}
 			commands = append(commands, c...)
 		case build.ManageOfferBuilder:
-			c, e := op2CommandsHack(&manageOffer, baseAsset, quoteAsset, offerID2OrderID)
+			c, e := op2CommandsHack(&manageOffer, baseAsset, quoteAsset, offerID2OrderID, orderConstraints)
 			if e != nil {
 				return nil, fmt.Errorf("unable to convert build.ManageOfferBuilder to a Command: %s", e)
 			}
@@ -425,9 +430,10 @@ func op2CommandsHack(
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
 	offerID2OrderID map[int64]string, // if map is nil then we ignore ID errors
+	orderConstraints *model.OrderConstraints,
 ) ([]Command, error) {
 	commands := []Command{}
-	order, e := manageOffer2Order(manageOffer, baseAsset, quoteAsset)
+	order, e := manageOffer2Order(manageOffer, baseAsset, quoteAsset, orderConstraints)
 	if e != nil {
 		return nil, fmt.Errorf("error converting from manageOffer op to Order: %s", e)
 	}
@@ -471,10 +477,6 @@ func op2CommandsHack(
 		commands = append(commands, MakeCommandAdd(order))
 	} else {
 		// create
-		order, e := manageOffer2Order(manageOffer, baseAsset, quoteAsset)
-		if e != nil {
-			return nil, fmt.Errorf("error converting from manageOffer op to open order when trying to create: %s", e)
-		}
 		commands = append(commands, MakeCommandAdd(order))
 	}
 	return commands, nil
