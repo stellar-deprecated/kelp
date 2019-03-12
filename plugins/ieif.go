@@ -29,12 +29,12 @@ type IEIF struct {
 	// TODO this is a hack because the logic to fetch balances is in the exchange, maybe take in an api.Account interface
 	// TODO this is a hack because the logic to fetch offers is in the exchange, maybe take in api.GetOpenOrders() as an interface
 	// TODO 1 this should not be horizon specific
-	submittableX api.SubmittableExchange
+	exchangeShim api.ExchangeShim
 }
 
-// SetSubmittableExchange is a hack, TODO remove this hack
-func (ieif *IEIF) SetSubmittableExchange(submittableX api.SubmittableExchange) {
-	ieif.submittableX = submittableX
+// SetExchangeShim is a hack, TODO remove this hack
+func (ieif *IEIF) SetExchangeShim(exchangeShim api.ExchangeShim) {
+	ieif.exchangeShim = exchangeShim
 }
 
 // MakeIEIF factory method
@@ -235,7 +235,7 @@ func (ieif *IEIF) pairLiabilities(asset horizon.Asset, otherAsset horizon.Asset)
 // liabilities returns the asset liabilities and pairLiabilities (non-nil only if the other asset is specified)
 func (ieif *IEIF) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*Liabilities, *Liabilities, error) {
 	// uses all offers for this trading account to accommodate sharing by other bots
-	offers, err := ieif.submittableX.LoadOffersHack()
+	offers, err := ieif.exchangeShim.LoadOffersHack()
 	if err != nil {
 		assetString := utils.Asset2String(asset)
 		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
@@ -295,7 +295,7 @@ func (ieif *IEIF) assetBalance(asset horizon.Asset) (*api.Balance, error) {
 		return &v, nil
 	}
 
-	balance, e := ieif.submittableX.GetBalanceHack(asset)
+	balance, e := ieif.exchangeShim.GetBalanceHack(asset)
 	if e == nil {
 		ieif.cachedBalances[asset] = *balance
 	}

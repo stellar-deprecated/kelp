@@ -26,7 +26,7 @@ type Trader struct {
 	assetQuote            horizon.Asset
 	tradingAccount        string
 	sdex                  *plugins.SDEX
-	submittableX          api.SubmittableExchange
+	exchangeShim          api.ExchangeShim
 	strat                 api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
@@ -57,7 +57,7 @@ func MakeBot(
 	tradingPair *model.TradingPair,
 	tradingAccount string,
 	sdex *plugins.SDEX,
-	submittableX api.SubmittableExchange,
+	exchangeShim api.ExchangeShim,
 	strat api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
@@ -80,7 +80,7 @@ func MakeBot(
 		assetQuote:            assetQuote,
 		tradingAccount:        tradingAccount,
 		sdex:                  sdex,
-		submittableX:          submittableX,
+		exchangeShim:          exchangeShim,
 		strat:                 strat,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
@@ -147,7 +147,7 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.submittableX.SubmitOps(dOps, nil)
+		e := t.exchangeShim.SubmitOps(dOps, nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -187,7 +187,7 @@ func (t *Trader) update() {
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
-		e = t.submittableX.SubmitOps(pruneOps, nil)
+		e = t.exchangeShim.SubmitOps(pruneOps, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -230,7 +230,7 @@ func (t *Trader) update() {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.submittableX.SubmitOps(ops, nil)
+		e = t.exchangeShim.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -251,12 +251,12 @@ func (t *Trader) update() {
 
 func (t *Trader) load() {
 	// load the maximum amounts we can offer for each asset
-	baseBalance, e := t.submittableX.GetBalanceHack(t.assetBase)
+	baseBalance, e := t.exchangeShim.GetBalanceHack(t.assetBase)
 	if e != nil {
 		log.Println(e)
 		return
 	}
-	quoteBalance, e := t.submittableX.GetBalanceHack(t.assetQuote)
+	quoteBalance, e := t.exchangeShim.GetBalanceHack(t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		return
@@ -281,7 +281,7 @@ func (t *Trader) load() {
 }
 
 func (t *Trader) loadExistingOffers() {
-	offers, e := t.submittableX.LoadOffersHack()
+	offers, e := t.exchangeShim.LoadOffersHack()
 	if e != nil {
 		log.Println(e)
 		return

@@ -201,8 +201,8 @@ type Balance struct {
 	Reserve float64
 }
 
-// SubmittableExchange is the interface we use as a generic API for all crypto exchanges
-type SubmittableExchange interface {
+// ExchangeShim is the interface we use as a generic API for all crypto exchanges
+type ExchangeShim interface {
 	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
 	GetBalanceHack(asset horizon.Asset) (*Balance, error)
 	LoadOffersHack() ([]horizon.Offer, error)

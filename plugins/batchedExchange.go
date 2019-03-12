@@ -29,7 +29,7 @@ type BatchedExchange struct {
 	offerID2OrderID map[int64]string
 }
 
-var _ api.SubmittableExchange = BatchedExchange{}
+var _ api.ExchangeShim = BatchedExchange{}
 
 // MakeBatchedExchange factory
 func MakeBatchedExchange(

@@ -54,8 +54,8 @@ type SDEX struct {
 // enforce SDEX implements api.Constrainable
 var _ api.Constrainable = &SDEX{}
 
-// enforce SDEX implements api.SubmittableExchange
-var _ api.SubmittableExchange = &SDEX{}
+// enforce SDEX implements api.ExchangeShim
+var _ api.ExchangeShim = &SDEX{}
 
 // Balance repesents an asset's balance response from the assetBalance method below
 type Balance struct {
@@ -68,7 +68,7 @@ type Balance struct {
 func MakeSDEX(
 	api *horizon.Client,
 	ieif *IEIF,
-	submittableX api.SubmittableExchange,
+	exchangeShim api.ExchangeShim,
 	sourceSeed string,
 	tradingSeed string,
 	sourceAccount string,
@@ -97,14 +97,14 @@ func MakeSDEX(
 		pair:           pair,
 		assetMap:       assetMap,
 		opFeeStroopsFn: opFeeStroopsFn,
-		tradingOnSdex:  submittableX == nil,
+		tradingOnSdex:  exchangeShim == nil,
 	}
 
-	if submittableX == nil {
-		submittableX = sdex
+	if exchangeShim == nil {
+		exchangeShim = sdex
 	}
 	// TODO 2 remove this hack, we need to find a way of having ieif get a handle to compute balances or always compute and pass balances in?
-	ieif.SetSubmittableExchange(submittableX)
+	ieif.SetExchangeShim(exchangeShim)
 
 	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
 
