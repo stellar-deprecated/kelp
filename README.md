@@ -4,11 +4,9 @@
 [![Github All Releases](https://img.shields.io/github/downloads/stellar/kelp/total.svg?style=for-the-badge)][github-releases]
 [![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
 
+[![Godoc](https://godoc.org/github.com/stellar/kelp?status.svg)](https://godoc.org/github.com/stellar/kelp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stellar/kelp)](https://goreportcard.com/report/github.com/stellar/kelp)
 [![Build Status](https://travis-ci.org/stellar/kelp.svg?branch=master)](https://travis-ci.org/stellar/kelp)
-[![GitHub issues](https://img.shields.io/github/issues/stellar/kelp.svg?style=flat-square&longCache=true)][github-issues]
-[![GitHub closed issues](https://img.shields.io/github/issues-closed/stellar/kelp.svg?style=flat-square&longCache=true)][github-issues-closed]
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/stellar/kelp.svg?style=flat-square&longCache=true)][github-pulls]
-[![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/stellar/kelp.svg?style=flat-square&longCache=true)][github-pulls-closed]
 
 Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
 
