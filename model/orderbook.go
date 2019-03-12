@@ -15,6 +15,10 @@ const (
 	OrderActionSell OrderAction = true
 )
 
+// minQuoteVolumePrecision allows for having precise enough minQuoteVolume values
+const minQuoteVolumePrecision = 10
+const nilString = "<nil>"
+
 // IsBuy returns true for buy actions
 func (a OrderAction) IsBuy() bool {
 	return a == OrderActionBuy
@@ -104,7 +108,7 @@ type Order struct {
 
 // String is the stringer function
 func (o Order) String() string {
-	tsString := "<nil>"
+	tsString := nilString
 	if o.Timestamp != nil {
 		tsString = fmt.Sprintf("%d", o.Timestamp.AsInt64())
 	}
@@ -191,7 +195,7 @@ type OpenOrder struct {
 
 // String is the stringer function
 func (o OpenOrder) String() string {
-	expireTimeString := "<nil>"
+	expireTimeString := nilString
 	if o.ExpireTime != nil {
 		expireTimeString = fmt.Sprintf("%d", o.ExpireTime.AsInt64())
 	}
@@ -253,6 +257,7 @@ type OrderConstraints struct {
 	PricePrecision  int8
 	VolumePrecision int8
 	MinBaseVolume   Number
+	MinQuoteVolume  *Number
 }
 
 // MakeOrderConstraints is a factory method for OrderConstraints
@@ -261,5 +266,27 @@ func MakeOrderConstraints(pricePrecision int8, volumePrecision int8, minBaseVolu
 		PricePrecision:  pricePrecision,
 		VolumePrecision: volumePrecision,
 		MinBaseVolume:   *NumberFromFloat(minBaseVolume, volumePrecision),
+		MinQuoteVolume:  nil,
 	}
+}
+
+// MakeOrderConstraintsWithCost is a factory method for OrderConstraints
+func MakeOrderConstraintsWithCost(pricePrecision int8, volumePrecision int8, minBaseVolume float64, minQuoteVolume float64) *OrderConstraints {
+	return &OrderConstraints{
+		PricePrecision:  pricePrecision,
+		VolumePrecision: volumePrecision,
+		MinBaseVolume:   *NumberFromFloat(minBaseVolume, volumePrecision),
+		MinQuoteVolume:  NumberFromFloat(minQuoteVolume, minQuoteVolumePrecision),
+	}
+}
+
+// OrderConstraints describes constraints when placing orders on an excahnge
+func (o *OrderConstraints) String() string {
+	minQuoteVolumeStr := nilString
+	if o.MinQuoteVolume != nil {
+		minQuoteVolumeStr = o.MinQuoteVolume.AsString()
+	}
+
+	return fmt.Sprintf("OrderConstraints[PricePrecision: %d, VolumePrecision: %d, MinBaseVolume: %s, MinQuoteVolume: %s]",
+		o.PricePrecision, o.VolumePrecision, o.MinBaseVolume.AsString(), minQuoteVolumeStr)
 }

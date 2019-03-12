@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -36,6 +37,9 @@ type CcxtMarket struct {
 		Price struct {
 			Min float64 `json:"min"`
 		} `json:"price"`
+		Cost struct {
+			Min float64 `json:"min"`
+		} `json:"cost"`
 	} `json:"limits"`
 	Precision struct {
 		Amount int8 `json:"amount"`
@@ -338,17 +342,27 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	return output, nil
 }
 
-func (c *Ccxt) FetchMyTrades(tradingPair string) ([]CcxtTrade, error) {
+func (c *Ccxt) FetchMyTrades(tradingPair string, limit int, maybeCursorStart interface{}) ([]CcxtTrade, error) {
 	e := c.symbolExists(tradingPair)
 	if e != nil {
 		return nil, fmt.Errorf("symbol does not exist: %s", e)
 	}
 
 	// marshal input data
-	data, e := json.Marshal(&[]string{tradingPair})
-	if e != nil {
-		return nil, fmt.Errorf("error marshaling input (tradingPair=%s) as an array for exchange '%s': %s", tradingPair, c.exchangeName, e)
+	var data []byte
+	if maybeCursorStart == nil {
+		data, e = json.Marshal(&[]string{tradingPair, strconv.Itoa(limit)})
+		if e != nil {
+			return nil, fmt.Errorf("error marshaling input (tradingPair=%s) as an array for exchange '%s': %s", tradingPair, c.exchangeName, e)
+		}
+	} else {
+		cursorString := fmt.Sprintf("%v", maybeCursorStart)
+		data, e = json.Marshal(&[]string{tradingPair, cursorString, strconv.Itoa(limit)})
+		if e != nil {
+			return nil, fmt.Errorf("error marshaling input (tradingPair=%s, maybeCursorStart=%v) as an array for exchange '%s': %s", tradingPair, maybeCursorStart, c.exchangeName, e)
+		}
 	}
+
 	// fetch trades for symbol
 	url := c.ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchMyTrades"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")

@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/Beldur/kraken-go-api-client"
@@ -103,6 +102,8 @@ func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, err
 	args := map[string]string{
 		"price": order.Price.AsString(),
 	}
+	log.Printf("kraken is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
+		pairStr, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString())
 	resp, e := k.nextAPI().AddOrder(
 		pairStr,
 		order.OrderAction.String(),
@@ -131,6 +132,7 @@ func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.Tradi
 	if k.isSimulated {
 		return model.CancelResultCancelSuccessful, nil
 	}
+	log.Printf("kraken is canceling order: ID=%s, tradingPair=%s\n", txID.String(), pair.String())
 
 	// we don't actually use the pair for kraken
 	resp, e := k.nextAPI().CancelOrder(txID.String())
@@ -155,21 +157,28 @@ func (k *krakenExchange) CancelOrder(txID *model.TransactionID, pair model.Tradi
 }
 
 // GetAccountBalances impl.
-func (k *krakenExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
+func (k *krakenExchange) GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error) {
 	balanceResponse, e := k.nextAPI().Balance()
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[model.Asset]model.Number{}
-	for _, a := range assetList {
-		krakenAssetString, e := k.assetConverter.ToString(a)
+	m := map[interface{}]model.Number{}
+	for _, elem := range assetList {
+		var asset model.Asset
+		if v, ok := elem.(model.Asset); ok {
+			asset = v
+		} else {
+			return nil, fmt.Errorf("invalid type of asset passed in, only model.Asset accepted")
+		}
+
+		krakenAssetString, e := k.assetConverter.ToString(asset)
 		if e != nil {
 			// discard partially built map for now
 			return nil, e
 		}
 		bal := getFieldValue(*balanceResponse, krakenAssetString)
-		m[a] = *model.NumberFromFloat(bal, precisionBalances)
+		m[asset] = *model.NumberFromFloat(bal, precisionBalances)
 	}
 	return m, nil
 }
@@ -199,7 +208,7 @@ func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
 func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error) {
 	openOrdersResponse, e := k.nextAPI().OpenOrders(map[string]string{})
 	if e != nil {
-		return nil, e
+		return nil, fmt.Errorf("cannot load open orders for Kraken: %s", e)
 	}
 
 	// convert to a map so we can easily search for the existence of a trading pair
@@ -319,28 +328,28 @@ func values(m map[model.TradingPair]string) []string {
 
 // GetTradeHistory impl.
 func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
-	var mcs *int64
+	var mcs *string
 	if maybeCursorStart != nil {
-		i := maybeCursorStart.(int64)
+		i := maybeCursorStart.(string)
 		mcs = &i
 	}
 
-	var mce *int64
+	var mce *string
 	if maybeCursorEnd != nil {
-		i := maybeCursorEnd.(int64)
+		i := maybeCursorEnd.(string)
 		mce = &i
 	}
 
 	return k.getTradeHistory(pair, mcs, mce)
 }
 
-func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *int64, maybeCursorEnd *int64) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *string, maybeCursorEnd *string) (*api.TradeHistoryResult, error) {
 	input := map[string]string{}
 	if maybeCursorStart != nil {
-		input["start"] = strconv.FormatInt(*maybeCursorStart, 10)
+		input["start"] = *maybeCursorStart
 	}
 	if maybeCursorEnd != nil {
-		input["end"] = strconv.FormatInt(*maybeCursorEnd, 10)
+		input["end"] = *maybeCursorEnd
 	}
 
 	resp, e := k.nextAPI().Query("TradesHistory", input)
@@ -351,9 +360,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	krakenTrades := krakenResp["trades"].(map[string]interface{})
 
 	res := api.TradeHistoryResult{Trades: []model.Trade{}}
-	for _, v := range krakenTrades {
+	for _txid, v := range krakenTrades {
 		m := v.(map[string]interface{})
-		_txid := m["ordertxid"].(string)
 		_time := m["time"].(float64)
 		ts := model.MakeTimestamp(int64(_time))
 		_type := m["type"].(string)

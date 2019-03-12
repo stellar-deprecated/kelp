@@ -59,6 +59,16 @@ func AmountStringAsFloat(amount string) float64 {
 	return p
 }
 
+// ParseOfferAmount is a convenience method to parse an offer amount
+func ParseOfferAmount(amt string) (float64, error) {
+	offerAmt, e := strconv.ParseFloat(amt, 64)
+	if e != nil {
+		log.Printf("error parsing offer amount: %s\n", e)
+		return -1, e
+	}
+	return offerAmt, nil
+}
+
 // GetPrice gets the price from an offer
 func GetPrice(offer horizon.Offer) float64 {
 	if int64(offer.PriceR.D) == 0 {

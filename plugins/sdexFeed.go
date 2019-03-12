@@ -43,6 +43,8 @@ func makeSDEXFeed(url string) (*sdexFeed, error) {
 	}
 	sdex := MakeSDEX(
 		privateSdexHackVar.API,
+		privateSdexHackVar.Ieif,
+		nil,
 		"",
 		"",
 		"",

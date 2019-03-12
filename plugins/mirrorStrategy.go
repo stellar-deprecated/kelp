@@ -65,6 +65,7 @@ func makeAssetSurplus() *assetSurplus {
 // mirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type mirrorStrategy struct {
 	sdex               *SDEX
+	ieif               *IEIF
 	baseAsset          *horizon.Asset
 	quoteAsset         *horizon.Asset
 	primaryConstraints *model.OrderConstraints
@@ -90,7 +91,7 @@ var _ api.Strategy = &mirrorStrategy{}
 var _ api.FillHandler = &mirrorStrategy{}
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
@@ -116,6 +117,7 @@ func makeMirrorStrategy(sdex *SDEX, pair *model.TradingPair, baseAsset *horizon.
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	return &mirrorStrategy{
 		sdex:               sdex,
+		ieif:               ieif,
 		baseAsset:          baseAsset,
 		quoteAsset:         quoteAsset,
 		primaryConstraints: primaryConstraints,
@@ -145,7 +147,7 @@ func (s *mirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA 
 }
 
 func (s *mirrorStrategy) recordBalances() error {
-	balanceMap, e := s.exchange.GetAccountBalances([]model.Asset{s.backingPair.Base, s.backingPair.Quote})
+	balanceMap, e := s.exchange.GetAccountBalances([]interface{}{s.backingPair.Base, s.backingPair.Quote})
 	if e != nil {
 		return fmt.Errorf("unable to fetch balances for assets: %s", e)
 	}
@@ -289,9 +291,9 @@ func (s *mirrorStrategy) updateLevels(
 				ops = append(ops, *mo)
 				// update the cached liabilities if we create a valid operation to create an offer
 				if hackPriceInvertForBuyOrderChangeCheck {
-					s.sdex.AddLiabilities(*s.quoteAsset, *s.baseAsset, vol.Multiply(*price).AsFloat(), vol.AsFloat(), incrementalNativeAmountRaw)
+					s.ieif.AddLiabilities(*s.quoteAsset, *s.baseAsset, vol.Multiply(*price).AsFloat(), vol.AsFloat(), incrementalNativeAmountRaw)
 				} else {
-					s.sdex.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol.AsFloat(), vol.Multiply(*price).AsFloat(), incrementalNativeAmountRaw)
+					s.ieif.AddLiabilities(*s.baseAsset, *s.quoteAsset, vol.AsFloat(), vol.Multiply(*price).AsFloat(), incrementalNativeAmountRaw)
 				}
 			}
 		}
@@ -349,9 +351,9 @@ func (s *mirrorStrategy) doModifyOffer(
 	if sameOrderParams {
 		// update the cached liabilities if we keep the existing offer
 		if hackPriceInvertForBuyOrderChangeCheck {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.Multiply(*oldPrice).AsFloat(), oldVol.AsFloat(), incrementalNativeAmountRaw)
+			s.ieif.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.Multiply(*oldPrice).AsFloat(), oldVol.AsFloat(), incrementalNativeAmountRaw)
 		} else {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat(), oldVol.Multiply(*oldPrice).AsFloat(), incrementalNativeAmountRaw)
+			s.ieif.AddLiabilities(oldOffer.Selling, oldOffer.Buying, oldVol.AsFloat(), oldVol.Multiply(*oldPrice).AsFloat(), incrementalNativeAmountRaw)
 		}
 		return nil, nil, nil
 	}
@@ -377,9 +379,9 @@ func (s *mirrorStrategy) doModifyOffer(
 	if mo != nil {
 		// update the cached liabilities if we create a valid operation to modify the offer
 		if hackPriceInvertForBuyOrderChangeCheck {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount.Multiply(*offerPrice).AsFloat(), offerAmount.AsFloat(), incrementalNativeAmountRaw)
+			s.ieif.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount.Multiply(*offerPrice).AsFloat(), offerAmount.AsFloat(), incrementalNativeAmountRaw)
 		} else {
-			s.sdex.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount.AsFloat(), offerAmount.Multiply(*offerPrice).AsFloat(), incrementalNativeAmountRaw)
+			s.ieif.AddLiabilities(oldOffer.Selling, oldOffer.Buying, offerAmount.AsFloat(), offerAmount.Multiply(*offerPrice).AsFloat(), incrementalNativeAmountRaw)
 		}
 		return *mo, nil, nil
 	}

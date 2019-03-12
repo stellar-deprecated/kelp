@@ -21,10 +21,12 @@ const maxLumenTrust float64 = math.MaxFloat64
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
 	api                   *horizon.Client
+	ieif                  *plugins.IEIF
 	assetBase             horizon.Asset
 	assetQuote            horizon.Asset
 	tradingAccount        string
 	sdex                  *plugins.SDEX
+	exchangeShim          api.ExchangeShim
 	strat                 api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
@@ -49,11 +51,13 @@ type Trader struct {
 // MakeBot is the factory method for the Trader struct
 func MakeBot(
 	api *horizon.Client,
+	ieif *plugins.IEIF,
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
 	tradingPair *model.TradingPair,
 	tradingAccount string,
 	sdex *plugins.SDEX,
+	exchangeShim api.ExchangeShim,
 	strat api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
@@ -71,10 +75,12 @@ func MakeBot(
 
 	return &Trader{
 		api:                   api,
+		ieif:                  ieif,
 		assetBase:             assetBase,
 		assetQuote:            assetQuote,
 		tradingAccount:        tradingAccount,
 		sdex:                  sdex,
+		exchangeShim:          exchangeShim,
 		strat:                 strat,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
@@ -141,7 +147,7 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.sdex.SubmitOps(dOps, nil)
+		e := t.exchangeShim.SubmitOps(dOps, nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -157,11 +163,11 @@ func (t *Trader) update() {
 
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
-	t.sdex.ResetCachedBalances()
+	t.sdex.IEIF().ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
-	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")
-	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
@@ -181,7 +187,7 @@ func (t *Trader) update() {
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
-		e = t.sdex.SubmitOps(pruneOps, nil)
+		e = t.exchangeShim.SubmitOps(pruneOps, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -191,11 +197,11 @@ func (t *Trader) update() {
 
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
-	t.sdex.ResetCachedBalances()
+	t.sdex.IEIF().ResetCachedBalances()
 	// reset and recompute cached liabilities for this update cycle
-	e = t.sdex.ResetCachedLiabilities(t.assetBase, t.assetQuote)
+	e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")
-	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
@@ -204,11 +210,11 @@ func (t *Trader) update() {
 
 	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
-	t.sdex.LogAllLiabilities(t.assetBase, t.assetQuote)
+	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
-		t.sdex.RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
+		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
 		return
 	}
@@ -224,7 +230,7 @@ func (t *Trader) update() {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.sdex.SubmitOps(ops, nil)
+		e = t.exchangeShim.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -245,47 +251,37 @@ func (t *Trader) update() {
 
 func (t *Trader) load() {
 	// load the maximum amounts we can offer for each asset
-	account, e := t.api.LoadAccount(t.tradingAccount)
+	baseBalance, e := t.exchangeShim.GetBalanceHack(t.assetBase)
+	if e != nil {
+		log.Println(e)
+		return
+	}
+	quoteBalance, e := t.exchangeShim.GetBalanceHack(t.assetQuote)
 	if e != nil {
 		log.Println(e)
 		return
 	}
 
-	var maxA float64
-	var maxB float64
-	var trustA float64
-	var trustB float64
-	var trustAString string
-	var trustBString string
-	for _, balance := range account.Balances {
-		trust := maxLumenTrust
-		trustString := "math.MaxFloat64"
-		if balance.Asset.Type != utils.Native {
-			trust = utils.AmountStringAsFloat(balance.Limit)
-			trustString = fmt.Sprintf("%.7f", trust)
-		}
+	t.maxAssetA = baseBalance.Balance
+	t.maxAssetB = quoteBalance.Balance
+	t.trustAssetA = baseBalance.Trust
+	t.trustAssetB = quoteBalance.Trust
 
-		if utils.AssetsEqual(balance.Asset, t.assetBase) {
-			maxA = utils.AmountStringAsFloat(balance.Balance)
-			trustA = trust
-			trustAString = trustString
-		} else if utils.AssetsEqual(balance.Asset, t.assetQuote) {
-			maxB = utils.AmountStringAsFloat(balance.Balance)
-			trustB = trust
-			trustBString = trustString
-		}
+	trustAString := "math.MaxFloat64"
+	if t.assetBase.Type != utils.Native {
+		trustAString = fmt.Sprintf("%.8f", t.trustAssetA)
 	}
-	t.maxAssetA = maxA
-	t.maxAssetB = maxB
-	t.trustAssetA = trustA
-	t.trustAssetB = trustB
+	trustBString := "math.MaxFloat64"
+	if t.assetQuote.Type != utils.Native {
+		trustBString = fmt.Sprintf("%.8f", t.trustAssetB)
+	}
 
-	log.Printf(" (base) assetA=%s, maxA=%.7f, trustA=%s\n", utils.Asset2String(t.assetBase), maxA, trustAString)
-	log.Printf("(quote) assetB=%s, maxB=%.7f, trustB=%s\n", utils.Asset2String(t.assetQuote), maxB, trustBString)
+	log.Printf(" (base) assetA=%s, maxA=%.8f, trustA=%s\n", utils.Asset2String(t.assetBase), t.maxAssetA, trustAString)
+	log.Printf("(quote) assetB=%s, maxB=%.8f, trustB=%s\n", utils.Asset2String(t.assetQuote), t.maxAssetB, trustBString)
 }
 
 func (t *Trader) loadExistingOffers() {
-	offers, e := utils.LoadAllOffers(t.tradingAccount, t.api)
+	offers, e := t.exchangeShim.LoadOffersHack()
 	if e != nil {
 		log.Println(e)
 		return

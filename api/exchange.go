@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"github.com/stellar/go/build"
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/model"
 )
 
@@ -14,7 +16,7 @@ type ExchangeAPIKey struct {
 
 // Account allows you to access key account functions
 type Account interface {
-	GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error)
+	GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error)
 }
 
 // Ticker encapsulates all the data for a given Trading Pair
@@ -190,4 +192,18 @@ type Exchange interface {
 	TradeAPI
 	DepositAPI
 	WithdrawAPI
+}
+
+// Balance repesents various aspects of an asset's balance
+type Balance struct {
+	Balance float64
+	Trust   float64
+	Reserve float64
+}
+
+// ExchangeShim is the interface we use as a generic API for all crypto exchanges
+type ExchangeShim interface {
+	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
+	GetBalanceHack(asset horizon.Asset) (*Balance, error)
+	LoadOffersHack() ([]horizon.Offer, error)
 }

@@ -13,6 +13,7 @@ import (
 // privateSdexHack is a temporary hack struct for SDEX price feeds pending refactor
 type privateSdexHack struct {
 	API     *horizon.Client
+	Ieif    *IEIF
 	Network build.Network
 }
 
@@ -20,13 +21,14 @@ type privateSdexHack struct {
 var privateSdexHackVar *privateSdexHack
 
 // SetPrivateSdexHack sets the privateSdexHack variable which is temporary until the pending SDEX price feed refactor
-func SetPrivateSdexHack(api *horizon.Client, network build.Network) error {
+func SetPrivateSdexHack(api *horizon.Client, ieif *IEIF, network build.Network) error {
 	if privateSdexHackVar != nil {
 		return fmt.Errorf("privateSdexHack is already set: %+v", privateSdexHackVar)
 	}
 
 	privateSdexHackVar = &privateSdexHack{
 		API:     api,
+		Ieif:    ieif,
 		Network: network,
 	}
 	return nil

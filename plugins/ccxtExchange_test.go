@@ -176,7 +176,7 @@ func TestGetAccountBalances_Ccxt(t *testing.T) {
 				return
 			}
 
-			balances, e := testCcxtExchange.GetAccountBalances([]model.Asset{
+			balances, e := testCcxtExchange.GetAccountBalances([]interface{}{
 				model.XLM,
 				model.BTC,
 				model.USD,

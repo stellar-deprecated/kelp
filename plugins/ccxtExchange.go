@@ -36,6 +36,10 @@ func makeCcxtExchange(
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
 	}
 
+	if len(apiKeys) != 1 {
+		return nil, fmt.Errorf("need exactly 1 ExchangeAPIKey")
+	}
+
 	c, e := sdk.MakeInitializedCcxtExchange(ccxtBaseURL, exchangeName, apiKeys[0])
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
@@ -108,7 +112,7 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 	if ccxtMarket == nil {
 		panic(fmt.Errorf("CCXT does not have precision and limit data for the passed in market: %s", pairString))
 	}
-	oc := *model.MakeOrderConstraints(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min)
+	oc := *model.MakeOrderConstraintsWithCost(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min, ccxtMarket.Limits.Cost.Min)
 
 	// cache it before returning
 	c.orderConstraints[*pair] = oc
@@ -117,14 +121,21 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 }
 
 // GetAccountBalances impl
-func (c ccxtExchange) GetAccountBalances(assetList []model.Asset) (map[model.Asset]model.Number, error) {
+func (c ccxtExchange) GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error) {
 	balanceResponse, e := c.api.FetchBalance()
 	if e != nil {
 		return nil, e
 	}
 
-	m := map[model.Asset]model.Number{}
-	for _, asset := range assetList {
+	m := map[interface{}]model.Number{}
+	for _, elem := range assetList {
+		var asset model.Asset
+		if v, ok := elem.(model.Asset); ok {
+			asset = v
+		} else {
+			return nil, fmt.Errorf("invalid type of asset passed in, only model.Asset accepted")
+		}
+
 		ccxtAssetString, e := c.GetAssetConverter().ToString(asset)
 		if e != nil {
 			return nil, e
@@ -189,8 +200,9 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 		return nil, fmt.Errorf("error converting pair to string: %s", e)
 	}
 
-	// TODO use cursor when fetching trade history
-	tradesRaw, e := c.api.FetchMyTrades(pairString)
+	// TODO fix limit logic to check result so we get full history instead of just 50 trades
+	const limit = 50
+	tradesRaw, e := c.api.FetchMyTrades(pairString, limit, maybeCursorStart)
 	if e != nil {
 		return nil, fmt.Errorf("error while fetching trade history for trading pair '%s': %s", pairString, e)
 	}
@@ -302,7 +314,7 @@ func (c ccxtExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tradi
 	for asset, ccxtOrderList := range openOrdersMap {
 		pair, ok := string2Pair[asset]
 		if !ok {
-			return nil, fmt.Errorf("traing symbol %s returned from FetchOpenOrders was not in the original list of trading pairs: %v", asset, pairStrings)
+			return nil, fmt.Errorf("symbol %s returned from FetchOpenOrders was not in the original list of trading pairs: %v", asset, pairStrings)
 		}
 
 		openOrderList := []model.OpenOrder{}

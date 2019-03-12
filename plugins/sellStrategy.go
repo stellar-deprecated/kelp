@@ -34,6 +34,7 @@ func (c sellConfig) String() string {
 func makeSellStrategy(
 	sdex *SDEX,
 	pair *model.TradingPair,
+	ieif *IEIF,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
 	config *sellConfig,
@@ -57,6 +58,7 @@ func makeSellStrategy(
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
 		orderConstraints,
+		ieif,
 		assetBase,
 		assetQuote,
 		makeStaticSpreadLevelProvider(config.Levels, config.AmountOfABase, offset, pf, orderConstraints),
