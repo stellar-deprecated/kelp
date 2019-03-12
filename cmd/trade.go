@@ -89,9 +89,9 @@ func init() {
 		}
 	}
 
-	validateBotConfig := func(l logger.Logger, botConfig trader.BotConfig) {
-		if botConfig.Fee == nil {
-			logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file"))
+	validateBotConfig := func(l logger.Logger, botConfig trader.BotConfig, isTradingSdex bool) {
+		if isTradingSdex && botConfig.Fee == nil {
+			logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file when trading on SDEX"))
 		}
 	}
 
@@ -135,7 +135,7 @@ func init() {
 
 		// only log botConfig file here so it can be included in the log file
 		utils.LogConfig(botConfig)
-		validateBotConfig(l, botConfig)
+		validateBotConfig(l, botConfig, isTradingSdex)
 		l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 		client := &horizon.Client{
@@ -161,14 +161,19 @@ func init() {
 			tradingPair.Base:  assetBase,
 			tradingPair.Quote: assetQuote,
 		}
-		feeFn, e := plugins.SdexFeeFnFromStats(
-			botConfig.HorizonURL,
-			botConfig.Fee.CapacityTrigger,
-			botConfig.Fee.Percentile,
-			botConfig.Fee.MaxOpFeeStroops,
-		)
-		if e != nil {
-			logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
+		var feeFn plugins.OpFeeStroops
+		if isTradingSdex {
+			feeFn, e = plugins.SdexFeeFnFromStats(
+				botConfig.HorizonURL,
+				botConfig.Fee.CapacityTrigger,
+				botConfig.Fee.Percentile,
+				botConfig.Fee.MaxOpFeeStroops,
+			)
+			if e != nil {
+				logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
+			}
+		} else {
+			feeFn = plugins.SdexFixedFeeFn(0)
 		}
 
 		var exchangeShim api.ExchangeShim
