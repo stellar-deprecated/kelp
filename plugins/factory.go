@@ -190,6 +190,8 @@ func init() {
 	for i, exchangeName := range sdk.ExchangeList {
 		key := fmt.Sprintf("ccxt-%s", exchangeName)
 		_, tested := testedCcxtExchanges[exchangeName]
+		boundExchangeName := exchangeName
+
 		exchanges[key] = ExchangeContainer{
 			SortOrder:    uint16(i + sortOrderOffset),
 			Description:  exchangeName + " is automatically added via ccxt-rest",
@@ -197,7 +199,7 @@ func init() {
 			Tested:       tested,
 			makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 				return makeCcxtExchange(
-					exchangeName,
+					boundExchangeName,
 					nil,
 					exchangeFactoryData.apiKeys,
 					exchangeFactoryData.simMode,
