@@ -2,12 +2,16 @@ language: go
 
 go_import_path: github.com/stellar/kelp
 
+services:
+- docker
+
 go:
 - "1.10.x"
 - "1.11"
 
 before_install:
 - curl https://glide.sh/get | sh
+- docker run -p 3000:3000 -d franzsee/ccxt-rest
 
 install:
 - glide install
