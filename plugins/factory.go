@@ -8,6 +8,7 @@ import (
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -156,78 +157,56 @@ type exchangeFactoryData struct {
 
 // ExchangeContainer contains the exchange factory method along with some metadata
 type ExchangeContainer struct {
-	SortOrder    uint8
+	SortOrder    uint16
 	Description  string
 	TradeEnabled bool
+	Tested       bool
 	makeFn       func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error)
 }
 
 // exchanges is a map of all the exchange integrations available
-var exchanges = map[string]ExchangeContainer{
-	"kraken": ExchangeContainer{
-		SortOrder:    0,
-		Description:  "Kraken is a popular centralized cryptocurrency exchange (https://www.kraken.com/)",
-		TradeEnabled: true,
-		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
+var exchanges map[string]ExchangeContainer
+
+func init() {
+	// marked as tested if key exists in this map (regardless of bool value)
+	testedCcxtExchanges := map[string]bool{
+		"binance": true,
+	}
+
+	exchanges = map[string]ExchangeContainer{
+		"kraken": ExchangeContainer{
+			SortOrder:    0,
+			Description:  "Kraken is a popular centralized cryptocurrency exchange",
+			TradeEnabled: true,
+			Tested:       true,
+			makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
+				return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
+			},
 		},
-	},
-	"ccxt-kraken": ExchangeContainer{
-		SortOrder:    1,
-		Description:  "Kraken is a popular centralized cryptocurrency exchange (via ccxt-rest)",
-		TradeEnabled: false,
-		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange(
-				"http://localhost:3000",
-				"kraken",
-				nil,
-				exchangeFactoryData.apiKeys,
-				exchangeFactoryData.simMode,
-			)
-		},
-	},
-	"ccxt-binance": ExchangeContainer{
-		SortOrder:    2,
-		Description:  "Binance is a popular centralized cryptocurrency exchange (via ccxt-rest)",
-		TradeEnabled: true,
-		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange(
-				"http://localhost:3000",
-				"binance",
-				nil,
-				exchangeFactoryData.apiKeys,
-				exchangeFactoryData.simMode,
-			)
-		},
-	},
-	"ccxt-poloniex": ExchangeContainer{
-		SortOrder:    3,
-		Description:  "Poloniex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
-		TradeEnabled: false,
-		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange(
-				"http://localhost:3000",
-				"poloniex",
-				nil,
-				exchangeFactoryData.apiKeys,
-				exchangeFactoryData.simMode,
-			)
-		},
-	},
-	"ccxt-bittrex": ExchangeContainer{
-		SortOrder:    4,
-		Description:  "Bittrex is a popular centralized cryptocurrency exchange (via ccxt-rest)",
-		TradeEnabled: false,
-		makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-			return makeCcxtExchange(
-				"http://localhost:3000",
-				"bittrex",
-				nil,
-				exchangeFactoryData.apiKeys,
-				exchangeFactoryData.simMode,
-			)
-		},
-	},
+	}
+
+	// add all CCXT exchanges
+	sortOrderOffset := len(exchanges)
+	for i, exchangeName := range sdk.ExchangeList {
+		key := fmt.Sprintf("ccxt-%s", exchangeName)
+		_, tested := testedCcxtExchanges[exchangeName]
+		boundExchangeName := exchangeName
+
+		exchanges[key] = ExchangeContainer{
+			SortOrder:    uint16(i + sortOrderOffset),
+			Description:  exchangeName + " is automatically added via ccxt-rest",
+			TradeEnabled: true,
+			Tested:       tested,
+			makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
+				return makeCcxtExchange(
+					boundExchangeName,
+					nil,
+					exchangeFactoryData.apiKeys,
+					exchangeFactoryData.simMode,
+				)
+			},
+		}
+	}
 }
 
 // MakeExchange is a factory method to make an exchange based on a given type
