@@ -213,4 +213,5 @@ type ExchangeShim interface {
 	LoadOffersHack() ([]horizon.Offer, error)
 	Constrainable
 	OrderbookFetcher
+	FillTrackable
 }
