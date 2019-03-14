@@ -154,6 +154,11 @@ func (b BatchedExchange) GetOrderConstraints(pair *model.TradingPair) *model.Ord
 	return b.inner.GetOrderConstraints(pair)
 }
 
+// GetOrderBook impl
+func (b BatchedExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
+	return b.inner.GetOrderBook(pair, maxCount)
+}
+
 // SubmitOps performs any finalization or submission step needed by the exchange
 func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	var e error

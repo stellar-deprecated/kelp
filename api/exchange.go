@@ -75,13 +75,18 @@ type Constrainable interface {
 	GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints
 }
 
+// OrderbookFetcher extracts out the method that should go into ExchangeShim for now
+type OrderbookFetcher interface {
+	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)
+}
+
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange
 type TradeAPI interface {
 	GetAssetConverter() *model.AssetConverter
 
 	Constrainable
 
-	GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error)
+	OrderbookFetcher
 
 	GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
@@ -207,4 +212,5 @@ type ExchangeShim interface {
 	GetBalanceHack(asset horizon.Asset) (*Balance, error)
 	LoadOffersHack() ([]horizon.Offer, error)
 	Constrainable
+	OrderbookFetcher
 }

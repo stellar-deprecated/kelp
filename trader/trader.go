@@ -73,7 +73,7 @@ func MakeBot(
 	orderConstraintsFilter := plugins.MakeOrderConstraintsFilter(oc, assetBase, assetQuote)
 	submitFilters = append(submitFilters, orderConstraintsFilter)
 
-	sdexSubmitFilter := plugins.MakeSdexMakerModeFilter(submitMode, sdex, tradingPair)
+	sdexSubmitFilter := plugins.MakeSdexMakerModeFilter(submitMode, exchangeShim, sdex, tradingPair)
 	if sdexSubmitFilter != nil {
 		submitFilters = append(submitFilters, sdexSubmitFilter)
 	}

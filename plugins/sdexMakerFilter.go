@@ -13,25 +13,26 @@ import (
 )
 
 // MakeSdexMakerModeFilter makes a submit filter based on the passed in submitMode
-func MakeSdexMakerModeFilter(submitMode api.SubmitMode, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
+func MakeSdexMakerModeFilter(submitMode api.SubmitMode, exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
 	if submitMode == api.SubmitModeMakerOnly {
 		return &sdexMakerFilter{
-			tradingPair: tradingPair,
-			sdex:        sdex,
+			tradingPair:  tradingPair,
+			exchangeShim: exchangeShim,
 		}
 	}
 	return nil
 }
 
 type sdexMakerFilter struct {
-	tradingPair *model.TradingPair
-	sdex        *SDEX
+	tradingPair  *model.TradingPair
+	exchangeShim api.ExchangeShim
+	sdex         *SDEX
 }
 
 var _ SubmitFilter = &sdexMakerFilter{}
 
 func (f *sdexMakerFilter) Apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
-	ob, e := f.sdex.GetOrderBook(f.tradingPair, math.MaxInt32)
+	ob, e := f.exchangeShim.GetOrderBook(f.tradingPair, math.MaxInt32)
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
 	}
@@ -55,7 +56,7 @@ func isNewLevel(lastPrice *model.Number, priceNumber *model.Number, isSell bool)
 }
 
 func (f *sdexMakerFilter) collateOffers(traderOffers []horizon.Offer, isSell bool) ([]api.Level, error) {
-	oc := f.sdex.GetOrderConstraints(f.tradingPair)
+	oc := f.exchangeShim.GetOrderConstraints(f.tradingPair)
 
 	levels := []api.Level{}
 	var lastPrice *model.Number
