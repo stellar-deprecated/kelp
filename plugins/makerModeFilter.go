@@ -169,7 +169,7 @@ func (f *makerModeFilter) filterOps(
 			}
 		}
 	}
-	log.Printf("dropped %d, transformed %d, kept %d ops in makerModeFilter from original %d ops, len(filteredOps) = %d\n", numDropped, numTransformed, numKeep, len(ops), len(filteredOps))
+	log.Printf("makerModeFilter: dropped %d, transformed %d, kept %d ops from original %d ops, len(filteredOps) = %d\n", numDropped, numTransformed, numKeep, len(ops), len(filteredOps))
 	return filteredOps, nil
 }
 

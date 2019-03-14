@@ -83,7 +83,7 @@ func (f *orderConstraintsFilter) Apply(
 		}
 	}
 
-	log.Printf("dropped %d, kept %d ops in orderConstraintsFilter from original %d ops, len(filteredOps) = %d\n", numDropped, numKeep, len(ops), len(filteredOps))
+	log.Printf("orderConstraintsFilter: dropped %d, kept %d ops from original %d ops, len(filteredOps) = %d\n", numDropped, numKeep, len(ops), len(filteredOps))
 	return filteredOps, nil
 }
 
