@@ -33,7 +33,7 @@ type sdexMakerFilter struct {
 var _ SubmitFilter = &sdexMakerFilter{}
 
 func (f *sdexMakerFilter) Apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
-	ob, e := f.exchangeShim.GetOrderBook(f.tradingPair, math.MaxInt32)
+	ob, e := f.exchangeShim.GetOrderBook(f.tradingPair, 50)
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
 	}
