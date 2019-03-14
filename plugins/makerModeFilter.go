@@ -12,10 +12,16 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-// MakeSdexMakerModeFilter makes a submit filter based on the passed in submitMode
-func MakeSdexMakerModeFilter(submitMode api.SubmitMode, exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
+type makerModeFilter struct {
+	tradingPair  *model.TradingPair
+	exchangeShim api.ExchangeShim
+	sdex         *SDEX
+}
+
+// MakeFilterMakerMode makes a submit filter based on the passed in submitMode
+func MakeFilterMakerMode(submitMode api.SubmitMode, exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
 	if submitMode == api.SubmitModeMakerOnly {
-		return &sdexMakerFilter{
+		return &makerModeFilter{
 			tradingPair:  tradingPair,
 			exchangeShim: exchangeShim,
 			sdex:         sdex,
@@ -24,18 +30,12 @@ func MakeSdexMakerModeFilter(submitMode api.SubmitMode, exchangeShim api.Exchang
 	return nil
 }
 
-type sdexMakerFilter struct {
-	tradingPair  *model.TradingPair
-	exchangeShim api.ExchangeShim
-	sdex         *SDEX
-}
+var _ SubmitFilter = &makerModeFilter{}
 
-var _ SubmitFilter = &sdexMakerFilter{}
-
-func (f *sdexMakerFilter) Apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
+func (f *makerModeFilter) Apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
 	ob, e := f.exchangeShim.GetOrderBook(f.tradingPair, 50)
 	if e != nil {
-		return nil, fmt.Errorf("could not fetch SDEX orderbook: %s", e)
+		return nil, fmt.Errorf("could not fetch orderbook: %s", e)
 	}
 
 	ops, e = f.filterOps(ops, ob, sellingOffers, buyingOffers)
@@ -56,7 +56,7 @@ func isNewLevel(lastPrice *model.Number, priceNumber *model.Number, isSell bool)
 	return false
 }
 
-func (f *sdexMakerFilter) collateOffers(traderOffers []horizon.Offer, isSell bool) ([]api.Level, error) {
+func (f *makerModeFilter) collateOffers(traderOffers []horizon.Offer, isSell bool) ([]api.Level, error) {
 	oc := f.exchangeShim.GetOrderConstraints(f.tradingPair)
 
 	levels := []api.Level{}
@@ -86,7 +86,7 @@ func (f *sdexMakerFilter) collateOffers(traderOffers []horizon.Offer, isSell boo
 	return levels, nil
 }
 
-func (f *sdexMakerFilter) topOrderPriceExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) (*model.Number, error) {
+func (f *makerModeFilter) topOrderPriceExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) (*model.Number, error) {
 	traderLevels, e := f.collateOffers(traderOffers, isSell)
 	if e != nil {
 		return nil, fmt.Errorf("unable to collate offers: %s", e)
@@ -109,7 +109,7 @@ func (f *sdexMakerFilter) topOrderPriceExcludingTrader(obSide []model.Order, tra
 	return nil, nil
 }
 
-func (f *sdexMakerFilter) filterOps(
+func (f *makerModeFilter) filterOps(
 	ops []build.TransactionMutator,
 	ob *model.OrderBook,
 	sellingOffers []horizon.Offer,
@@ -117,7 +117,7 @@ func (f *sdexMakerFilter) filterOps(
 ) ([]build.TransactionMutator, error) {
 	baseAsset, quoteAsset, e := f.sdex.Assets()
 	if e != nil {
-		return nil, fmt.Errorf("could not get sdex assets: %s", e)
+		return nil, fmt.Errorf("could not get assets: %s", e)
 	}
 
 	topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
@@ -169,11 +169,11 @@ func (f *sdexMakerFilter) filterOps(
 			}
 		}
 	}
-	log.Printf("dropped %d, transformed %d, kept %d ops in sdexMakerFilter from original %d ops, len(filteredOps) = %d\n", numDropped, numTransformed, numKeep, len(ops), len(filteredOps))
+	log.Printf("dropped %d, transformed %d, kept %d ops in makerModeFilter from original %d ops, len(filteredOps) = %d\n", numDropped, numTransformed, numKeep, len(ops), len(filteredOps))
 	return filteredOps, nil
 }
 
-func (f *sdexMakerFilter) transformOfferMakerMode(
+func (f *makerModeFilter) transformOfferMakerMode(
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
 	topBidPrice *model.Number,
@@ -195,10 +195,10 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 	if !isSell && topAskPrice != nil {
 		// invert price when buying
 		keep = 1/sellPrice < topAskPrice.AsFloat()
-		log.Printf("sdexMakerFilter:  buying, keep = (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
+		log.Printf("makerModeFilter:  buying, keep = (op price) %.7f < %.7f (topAskPrice): keep = %v", 1/sellPrice, topAskPrice.AsFloat(), keep)
 	} else if isSell && topBidPrice != nil {
 		keep = sellPrice > topBidPrice.AsFloat()
-		log.Printf("sdexMakerFilter: selling, keep = (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
+		log.Printf("makerModeFilter: selling, keep = (op price) %.7f > %.7f (topBidPrice): keep = %v", sellPrice, topBidPrice.AsFloat(), keep)
 	} else {
 		price := sellPrice
 		action := "selling"
@@ -207,7 +207,7 @@ func (f *sdexMakerFilter) transformOfferMakerMode(
 			action = " buying"
 		}
 		keep = true
-		log.Printf("sdexMakerFilter: %s, no market (op price = %.7f): keep = %v", action, price, keep)
+		log.Printf("makerModeFilter: %s, no market (op price = %.7f): keep = %v", action, price, keep)
 	}
 
 	if keep {

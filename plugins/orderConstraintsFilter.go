@@ -19,8 +19,8 @@ type orderConstraintsFilter struct {
 
 var _ SubmitFilter = &orderConstraintsFilter{}
 
-// MakeOrderConstraintsFilter makes a submit filter based on the passed in orderConstraints
-func MakeOrderConstraintsFilter(
+// MakeFilterOrderConstraints makes a submit filter based on the passed in orderConstraints
+func MakeFilterOrderConstraints(
 	oc *model.OrderConstraints,
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
