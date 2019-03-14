@@ -18,6 +18,7 @@ func MakeSdexMakerModeFilter(submitMode api.SubmitMode, exchangeShim api.Exchang
 		return &sdexMakerFilter{
 			tradingPair:  tradingPair,
 			exchangeShim: exchangeShim,
+			sdex:         sdex,
 		}
 	}
 	return nil
