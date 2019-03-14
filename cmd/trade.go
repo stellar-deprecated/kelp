@@ -242,12 +242,6 @@ func init() {
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
 		}
-		if !isTradingSdex && submitMode != api.SubmitModeBoth {
-			log.Println()
-			log.Println("cannot run on a non-SDEX exchange with SUBMIT_MODE set to something other than \"both\"")
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-		}
 		if !isTradingSdex && botConfig.FillTrackerSleepMillis != 0 {
 			log.Println()
 			log.Println("cannot run on a non-SDEX exchange with FILL_TRACKER_SLEEP_MILLIS set to something other than 0")

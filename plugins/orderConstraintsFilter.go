@@ -19,8 +19,8 @@ type orderConstraintsFilter struct {
 
 var _ SubmitFilter = &orderConstraintsFilter{}
 
-// MakeOrderConstraintsFilter makes a submit filter based on the passed in orderConstraints
-func MakeOrderConstraintsFilter(
+// MakeFilterOrderConstraints makes a submit filter based on the passed in orderConstraints
+func MakeFilterOrderConstraints(
 	oc *model.OrderConstraints,
 	baseAsset horizon.Asset,
 	quoteAsset horizon.Asset,
@@ -83,7 +83,7 @@ func (f *orderConstraintsFilter) Apply(
 		}
 	}
 
-	log.Printf("dropped %d, kept %d ops in orderConstraintsFilter from original %d ops, len(filteredOps) = %d\n", numDropped, numKeep, len(ops), len(filteredOps))
+	log.Printf("orderConstraintsFilter: dropped %d, kept %d ops from original %d ops, len(filteredOps) = %d\n", numDropped, numKeep, len(ops), len(filteredOps))
 	return filteredOps, nil
 }
 
