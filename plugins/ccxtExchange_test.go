@@ -124,7 +124,11 @@ func TestGetTradeHistory_Ccxt(t *testing.T) {
 			if !assert.NoError(t, e) {
 				return
 			}
-			assert.Equal(t, nil, tradeHistoryResult.Cursor)
+			if len(tradeHistoryResult.Trades) > 0 {
+				assert.NotNil(t, tradeHistoryResult.Cursor)
+			} else {
+				assert.Nil(t, tradeHistoryResult.Cursor)
+			}
 
 			validateTrades(t, pair, tradeHistoryResult.Trades)
 		})

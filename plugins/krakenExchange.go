@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/Beldur/kraken-go-api-client"
@@ -397,8 +398,14 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 				Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
 			})
 		}
-		res.Cursor = _time
 	}
+
+	// sort to be in ascending order
+	sort.Sort(model.TradesByTsID(res.Trades))
+	if len(res.Trades) > 0 {
+		res.Cursor = res.Trades[len(res.Trades)-1].Order.Timestamp.AsInt64()
+	}
+
 	return &res, nil
 }
 
@@ -456,6 +463,11 @@ func (k *krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) 
 			// Fee unavailable
 		})
 	}
+
+	// sort to be in ascending order
+	sort.Sort(model.TradesByTsID(tradesResult.Trades))
+	// cursor is already set using the result from the kraken go sdk, so no need to set again here
+
 	return tradesResult, nil
 }
 
