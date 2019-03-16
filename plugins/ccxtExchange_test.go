@@ -155,7 +155,7 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 		if !assert.NotNil(t, trade.TransactionID) {
 			return
 		}
-		if !assert.Nil(t, trade.Fee) {
+		if !assert.NotNil(t, trade.Fee) {
 			return
 		}
 		if trade.OrderAction != model.OrderActionBuy && trade.OrderAction != model.OrderActionSell {

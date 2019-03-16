@@ -269,6 +269,11 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 
 	pricePrecision := c.GetOrderConstraints(pair).PricePrecision
 	volumePrecision := c.GetOrderConstraints(pair).VolumePrecision
+	// use bigger precision for fee and cost since they are logically derived from amount and price
+	feecCostPrecision := pricePrecision
+	if volumePrecision > pricePrecision {
+		feecCostPrecision = volumePrecision
+	}
 
 	trade := model.Trade{
 		Order: model.Order{
@@ -279,7 +284,7 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 			Timestamp: model.MakeTimestamp(rawTrade.Timestamp),
 		},
 		TransactionID: model.MakeTransactionID(rawTrade.ID),
-		Fee:           nil,
+		Fee:           model.NumberFromFloat(rawTrade.Fee.Cost, feecCostPrecision),
 	}
 
 	if rawTrade.Side == "sell" {
@@ -291,12 +296,7 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 	}
 
 	if rawTrade.Cost != 0.0 {
-		// use bigger precision for cost since it's logically derived from amount and price
-		costPrecision := pricePrecision
-		if volumePrecision > pricePrecision {
-			costPrecision = volumePrecision
-		}
-		trade.Cost = model.NumberFromFloat(rawTrade.Cost, costPrecision)
+		trade.Cost = model.NumberFromFloat(rawTrade.Cost, feecCostPrecision)
 	}
 
 	return &trade, nil

@@ -319,6 +319,10 @@ type CcxtTrade struct {
 	Side      string  `json:"side"`
 	Symbol    string  `json:"symbol"`
 	Timestamp int64   `json:"timestamp"`
+	Fee       struct {
+		Cost     float64 `json:"cost"`
+		Currency string  `json:"currency"`
+	} `json:"fee"`
 }
 
 // FetchTrades calls the /fetchTrades endpoint on CCXT, trading pair is the CCXT version of the trading pair
