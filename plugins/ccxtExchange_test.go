@@ -3,7 +3,9 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -124,7 +126,11 @@ func TestGetTradeHistory_Ccxt(t *testing.T) {
 			if !assert.NoError(t, e) {
 				return
 			}
-			assert.Equal(t, nil, tradeHistoryResult.Cursor)
+			if len(tradeHistoryResult.Trades) > 0 {
+				assert.NotNil(t, tradeHistoryResult.Cursor)
+			} else {
+				assert.Nil(t, tradeHistoryResult.Cursor)
+			}
 
 			validateTrades(t, pair, tradeHistoryResult.Trades)
 		})
@@ -151,7 +157,7 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 		if !assert.NotNil(t, trade.TransactionID) {
 			return
 		}
-		if !assert.Nil(t, trade.Fee) {
+		if !assert.NotNil(t, trade.Fee) {
 			return
 		}
 		if trade.OrderAction != model.OrderActionBuy && trade.OrderAction != model.OrderActionSell {
@@ -161,6 +167,41 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 		if trade.Cost != nil && !assert.True(t, trade.Cost.AsFloat() > 0, fmt.Sprintf("%s x %s = %s", trade.Price.AsString(), trade.Volume.AsString(), trade.Cost.AsString())) {
 			return
 		}
+	}
+}
+
+func TestGetLatestTradeCursor_Ccxt(t *testing.T) {
+	for exchangeName, apiKey := range supportedTradingExchanges {
+		t.Run(exchangeName, func(t *testing.T) {
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, false)
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			startIntervalMillis := time.Now().UnixNano() / int64(time.Millisecond)
+			cursor, e := testCcxtExchange.GetLatestTradeCursor()
+			if !assert.NoError(t, e) {
+				return
+			}
+			endIntervalMillis := time.Now().UnixNano() / int64(time.Millisecond)
+
+			if !assert.IsType(t, "string", cursor) {
+				return
+			}
+
+			cursorString := cursor.(string)
+			cursorInt, e := strconv.ParseInt(cursorString, 10, 64)
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			if !assert.True(t, startIntervalMillis <= cursorInt, fmt.Sprintf("returned cursor (%d) should gte the start time of the function call in milliseconds (%d)", cursorInt, startIntervalMillis)) {
+				return
+			}
+			if !assert.True(t, endIntervalMillis >= cursorInt, fmt.Sprintf("returned cursor (%d) should lte the end time of the function call in milliseconds (%d)", cursorInt, endIntervalMillis)) {
+				return
+			}
+		})
 	}
 }
 

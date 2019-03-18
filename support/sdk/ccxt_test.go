@@ -278,9 +278,9 @@ func TestFetchMyTrades(t *testing.T) {
 		return
 	}
 
-	krakenFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
-	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
-	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
+	krakenFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "fee"}
+	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "fee"}
+	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type", "fee"}
 
 	for _, k := range []struct {
 		exchangeName     string
@@ -363,6 +363,9 @@ func validateTrades(trades []CcxtTrade, expectedFields []string, tradingPair str
 			return
 		}
 		if supportsField("timestamp") && !assert.True(t, trade.Timestamp > 0) {
+			return
+		}
+		if supportsField("fee") && !assert.NotNil(t, trade.Fee) && !assert.True(t, trade.Fee.Cost > 0) {
 			return
 		}
 	}

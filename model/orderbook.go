@@ -238,6 +238,31 @@ type Trade struct {
 	Fee           *Number
 }
 
+// TradesByTsID implements sort.Interface for []Trade based on Timestamp and TransactionID
+type TradesByTsID []Trade
+
+func (t TradesByTsID) Len() int {
+	return len(t)
+}
+func (t TradesByTsID) Swap(i int, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+func (t TradesByTsID) Less(i int, j int) bool {
+	if t[i].Order.Timestamp.AsInt64() < t[j].Order.Timestamp.AsInt64() {
+		return true
+	} else if t[i].Order.Timestamp.AsInt64() > t[j].Order.Timestamp.AsInt64() {
+		return false
+	}
+
+	if t[i].TransactionID != nil && t[j].TransactionID != nil {
+		return t[i].TransactionID.String() < t[j].TransactionID.String()
+	}
+	if t[i].TransactionID != nil {
+		return false
+	}
+	return true
+}
+
 func (t Trade) String() string {
 	return fmt.Sprintf("Trade[txid: %s, ts: %s, pair: %s, action: %s, type: %s, counterPrice: %s, baseVolume: %s, counterCost: %s, fee: %s]",
 		utils.CheckedString(t.TransactionID),

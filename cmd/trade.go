@@ -242,12 +242,6 @@ func init() {
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
 		}
-		if !isTradingSdex && botConfig.FillTrackerSleepMillis != 0 {
-			log.Println()
-			log.Println("cannot run on a non-SDEX exchange with FILL_TRACKER_SLEEP_MILLIS set to something other than 0")
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-		}
 		timeController := plugins.MakeIntervalTimeController(
 			time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 			botConfig.MaxTickDelayMillis,
@@ -304,7 +298,7 @@ func init() {
 			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
 		}
 		if botConfig.FillTrackerSleepMillis != 0 {
-			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, sdex, botConfig.FillTrackerSleepMillis)
+			fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis)
 			fillLogger := plugins.MakeFillLogger()
 			fillTracker.RegisterHandler(fillLogger)
 			if strategyFillHandlers != nil {

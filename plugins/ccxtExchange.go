@@ -3,6 +3,9 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"sort"
+	"strconv"
+	"time"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -208,18 +211,33 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 
 	trades := []model.Trade{}
 	for _, raw := range tradesRaw {
-		t, e := c.readTrade(&pair, pairString, raw)
+		var t *model.Trade
+		t, e = c.readTrade(&pair, pairString, raw)
 		if e != nil {
 			return nil, fmt.Errorf("error while reading trade: %s", e)
 		}
 		trades = append(trades, *t)
 	}
 
-	// TODO implement cursor logic
+	sort.Sort(model.TradesByTsID(trades))
+	cursor := maybeCursorStart
+	if len(trades) > 0 {
+		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		cursor = strconv.FormatInt(lastCursor+1, 10)
+	}
+
 	return &api.TradeHistoryResult{
-		Cursor: nil,
+		Cursor: cursor,
 		Trades: trades,
 	}, nil
+}
+
+// GetLatestTradeCursor impl.
+func (c ccxtExchange) GetLatestTradeCursor() (interface{}, error) {
+	timeNowMillis := time.Now().UnixNano() / int64(time.Millisecond)
+	latestTradeCursor := fmt.Sprintf("%d", timeNowMillis)
+	return latestTradeCursor, nil
 }
 
 // GetTrades impl
@@ -237,16 +255,24 @@ func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}
 
 	trades := []model.Trade{}
 	for _, raw := range tradesRaw {
-		t, e := c.readTrade(pair, pairString, raw)
+		var t *model.Trade
+		t, e = c.readTrade(pair, pairString, raw)
 		if e != nil {
 			return nil, fmt.Errorf("error while reading trade: %s", e)
 		}
 		trades = append(trades, *t)
 	}
 
-	// TODO implement cursor logic
+	sort.Sort(model.TradesByTsID(trades))
+	cursor := maybeCursor
+	if len(trades) > 0 {
+		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		cursor = strconv.FormatInt(lastCursor+1, 10)
+	}
+
 	return &api.TradesResult{
-		Cursor: nil,
+		Cursor: cursor,
 		Trades: trades,
 	}, nil
 }
@@ -258,6 +284,11 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 
 	pricePrecision := c.GetOrderConstraints(pair).PricePrecision
 	volumePrecision := c.GetOrderConstraints(pair).VolumePrecision
+	// use bigger precision for fee and cost since they are logically derived from amount and price
+	feecCostPrecision := pricePrecision
+	if volumePrecision > pricePrecision {
+		feecCostPrecision = volumePrecision
+	}
 
 	trade := model.Trade{
 		Order: model.Order{
@@ -268,7 +299,7 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 			Timestamp: model.MakeTimestamp(rawTrade.Timestamp),
 		},
 		TransactionID: model.MakeTransactionID(rawTrade.ID),
-		Fee:           nil,
+		Fee:           model.NumberFromFloat(rawTrade.Fee.Cost, feecCostPrecision),
 	}
 
 	if rawTrade.Side == "sell" {
@@ -280,12 +311,7 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 	}
 
 	if rawTrade.Cost != 0.0 {
-		// use bigger precision for cost since it's logically derived from amount and price
-		costPrecision := pricePrecision
-		if volumePrecision > pricePrecision {
-			costPrecision = volumePrecision
-		}
-		trade.Cost = model.NumberFromFloat(rawTrade.Cost, costPrecision)
+		trade.Cost = model.NumberFromFloat(rawTrade.Cost, feecCostPrecision)
 	}
 
 	return &trade, nil

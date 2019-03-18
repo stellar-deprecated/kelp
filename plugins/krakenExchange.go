@@ -6,7 +6,10 @@ import (
 	"log"
 	"math"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/stellar/kelp/api"
@@ -371,7 +374,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 		_cost := m["cost"].(string)
 		_fee := m["fee"].(string)
 		_pair := m["pair"].(string)
-		pair, e := model.TradingPairFromString(4, k.assetConverter, _pair)
+		var pair *model.TradingPair
+		pair, e = model.TradingPairFromString(4, k.assetConverter, _pair)
 		if e != nil {
 			return nil, e
 		}
@@ -397,9 +401,30 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 				Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
 			})
 		}
-		res.Cursor = _time
 	}
+
+	// sort to be in ascending order
+	sort.Sort(model.TradesByTsID(res.Trades))
+
+	// set correct value for cursor
+	if len(res.Trades) > 0 {
+		lastCursor := res.Trades[len(res.Trades)-1].Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		res.Cursor = strconv.FormatInt(lastCursor+1, 10)
+	} else if maybeCursorStart != nil {
+		res.Cursor = *maybeCursorStart
+	} else {
+		res.Cursor = nil
+	}
+
 	return &res, nil
+}
+
+// GetLatestTradeCursor impl.
+func (k *krakenExchange) GetLatestTradeCursor() (interface{}, error) {
+	timeNowSecs := time.Now().Unix()
+	latestTradeCursor := fmt.Sprintf("%d", timeNowSecs)
+	return latestTradeCursor, nil
 }
 
 // GetTrades impl.
@@ -456,6 +481,11 @@ func (k *krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) 
 			// Fee unavailable
 		})
 	}
+
+	// sort to be in ascending order
+	sort.Sort(model.TradesByTsID(tradesResult.Trades))
+	// cursor is already set using the result from the kraken go sdk, so no need to set again here
+
 	return tradesResult, nil
 }
 

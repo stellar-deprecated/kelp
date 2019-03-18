@@ -159,6 +159,16 @@ func (b BatchedExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (
 	return b.inner.GetOrderBook(pair, maxCount)
 }
 
+// GetTradeHistory impl
+func (b BatchedExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+	return b.inner.GetTradeHistory(pair, maybeCursorStart, maybeCursorEnd)
+}
+
+// GetLatestTradeCursor impl
+func (b BatchedExchange) GetLatestTradeCursor() (interface{}, error) {
+	return b.inner.GetLatestTradeCursor()
+}
+
 // SubmitOps performs any finalization or submission step needed by the exchange
 func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	var e error
