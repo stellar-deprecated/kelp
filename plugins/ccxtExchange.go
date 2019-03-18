@@ -270,7 +270,8 @@ func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}
 
 	trades := []model.Trade{}
 	for _, raw := range tradesRaw {
-		t, e := c.readTrade(pair, pairString, raw)
+		var t *model.Trade
+		t, e = c.readTrade(pair, pairString, raw)
 		if e != nil {
 			return nil, fmt.Errorf("error while reading trade: %s", e)
 		}
@@ -280,7 +281,13 @@ func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}
 	sort.Sort(model.TradesByTsID(trades))
 	var cursor interface{}
 	if len(trades) > 0 {
-		cursor = trades[len(trades)-1].Order.Timestamp.AsInt64()
+		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		cursor = strconv.FormatInt(lastCursor+1, 10)
+	} else if maybeCursor != nil {
+		cursor = maybeCursor
+	} else {
+		cursor = nil
 	}
 
 	return &api.TradesResult{
