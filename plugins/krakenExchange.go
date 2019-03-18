@@ -405,6 +405,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	sort.Sort(model.TradesByTsID(res.Trades))
 	if len(res.Trades) > 0 {
 		res.Cursor = res.Trades[len(res.Trades)-1].Order.Timestamp.AsInt64()
+	} else {
+		res.Cursor = maybeCursorStart
 	}
 
 	return &res, nil

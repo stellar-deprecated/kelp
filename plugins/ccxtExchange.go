@@ -218,7 +218,7 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 	}
 
 	sort.Sort(model.TradesByTsID(trades))
-	var cursor interface{}
+	cursor := maybeCursorStart
 	if len(trades) > 0 {
 		cursor = trades[len(trades)-1].Order.Timestamp.AsInt64()
 	}

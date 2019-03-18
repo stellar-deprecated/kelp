@@ -161,7 +161,7 @@ func (b BatchedExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (
 
 // GetTradeHistory impl
 func (b BatchedExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
-	return b.inner.GetTradeHistory(pair, maybeCursorEnd, maybeCursorEnd)
+	return b.inner.GetTradeHistory(pair, maybeCursorStart, maybeCursorEnd)
 }
 
 // GetLatestTradeCursor impl
