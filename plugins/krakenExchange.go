@@ -7,6 +7,7 @@ import (
 	"math"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -403,10 +404,21 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 
 	// sort to be in ascending order
 	sort.Sort(model.TradesByTsID(res.Trades))
+
+	// set correct value for cursor
 	if len(res.Trades) > 0 {
-		res.Cursor = res.Trades[len(res.Trades)-1].Order.Timestamp.AsInt64()
+		lastCursor := res.Trades[len(res.Trades)-1].Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		res.Cursor = strconv.FormatInt(lastCursor+1, 10)
+	} else if maybeCursorStart != nil {
+		var lastCursor int64
+		lastCursor, e = strconv.ParseInt(*maybeCursorStart, 10, 64)
+		if e != nil {
+			return nil, fmt.Errorf("maybeCursorStart that was passed in could not be parsed as an int: %s", *maybeCursorStart)
+		}
+		res.Cursor = strconv.FormatInt(lastCursor, 10)
 	} else {
-		res.Cursor = maybeCursorStart
+		res.Cursor = nil
 	}
 
 	return &res, nil

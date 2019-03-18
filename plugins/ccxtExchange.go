@@ -3,7 +3,9 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/stellar/kelp/api"
@@ -210,7 +212,8 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 
 	trades := []model.Trade{}
 	for _, raw := range tradesRaw {
-		t, e := c.readTrade(&pair, pairString, raw)
+		var t *model.Trade
+		t, e = c.readTrade(&pair, pairString, raw)
 		if e != nil {
 			return nil, fmt.Errorf("error while reading trade: %s", e)
 		}
@@ -218,9 +221,25 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 	}
 
 	sort.Sort(model.TradesByTsID(trades))
-	cursor := maybeCursorStart
+	var cursor interface{}
 	if len(trades) > 0 {
-		cursor = trades[len(trades)-1].Order.Timestamp.AsInt64()
+		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		cursor = strconv.FormatInt(lastCursor+1, 10)
+	} else if maybeCursorStart != nil {
+		cursorString, ok := maybeCursorStart.(string)
+		if !ok {
+			return nil, fmt.Errorf("maybeCursorStart that was passed in was not a string: %s", reflect.TypeOf(maybeCursorStart).String())
+		}
+
+		var lastCursor int64
+		lastCursor, e = strconv.ParseInt(cursorString, 10, 64)
+		if e != nil {
+			return nil, fmt.Errorf("maybeCursorStart that was passed in could not be parsed as an int: %s", maybeCursorStart)
+		}
+		cursor = strconv.FormatInt(lastCursor, 10)
+	} else {
+		cursor = nil
 	}
 
 	return &api.TradeHistoryResult{
