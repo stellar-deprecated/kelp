@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"sort"
 	"strconv"
 	"time"
@@ -221,25 +220,11 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 	}
 
 	sort.Sort(model.TradesByTsID(trades))
-	var cursor interface{}
+	cursor := maybeCursorStart
 	if len(trades) > 0 {
 		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
 		// add 1 to lastCursor so we don't repeat the same cursor on the next run
 		cursor = strconv.FormatInt(lastCursor+1, 10)
-	} else if maybeCursorStart != nil {
-		cursorString, ok := maybeCursorStart.(string)
-		if !ok {
-			return nil, fmt.Errorf("maybeCursorStart that was passed in was not a string: %s", reflect.TypeOf(maybeCursorStart).String())
-		}
-
-		var lastCursor int64
-		lastCursor, e = strconv.ParseInt(cursorString, 10, 64)
-		if e != nil {
-			return nil, fmt.Errorf("maybeCursorStart that was passed in could not be parsed as an int: %s", maybeCursorStart)
-		}
-		cursor = strconv.FormatInt(lastCursor, 10)
-	} else {
-		cursor = nil
 	}
 
 	return &api.TradeHistoryResult{
@@ -279,15 +264,11 @@ func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}
 	}
 
 	sort.Sort(model.TradesByTsID(trades))
-	var cursor interface{}
+	cursor := maybeCursor
 	if len(trades) > 0 {
 		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
 		// add 1 to lastCursor so we don't repeat the same cursor on the next run
 		cursor = strconv.FormatInt(lastCursor+1, 10)
-	} else if maybeCursor != nil {
-		cursor = maybeCursor
-	} else {
-		cursor = nil
 	}
 
 	return &api.TradesResult{

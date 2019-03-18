@@ -374,7 +374,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 		_cost := m["cost"].(string)
 		_fee := m["fee"].(string)
 		_pair := m["pair"].(string)
-		pair, e := model.TradingPairFromString(4, k.assetConverter, _pair)
+		var pair *model.TradingPair
+		pair, e = model.TradingPairFromString(4, k.assetConverter, _pair)
 		if e != nil {
 			return nil, e
 		}
@@ -411,12 +412,7 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 		// add 1 to lastCursor so we don't repeat the same cursor on the next run
 		res.Cursor = strconv.FormatInt(lastCursor+1, 10)
 	} else if maybeCursorStart != nil {
-		var lastCursor int64
-		lastCursor, e = strconv.ParseInt(*maybeCursorStart, 10, 64)
-		if e != nil {
-			return nil, fmt.Errorf("maybeCursorStart that was passed in could not be parsed as an int: %s", *maybeCursorStart)
-		}
-		res.Cursor = strconv.FormatInt(lastCursor, 10)
+		res.Cursor = *maybeCursorStart
 	} else {
 		res.Cursor = nil
 	}
