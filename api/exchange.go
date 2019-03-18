@@ -90,7 +90,7 @@ type TradeAPI interface {
 
 	GetTrades(pair *model.TradingPair, maybeCursor interface{}) (*TradesResult, error)
 
-	TradeFetcher
+	FillTrackable
 
 	GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error)
 

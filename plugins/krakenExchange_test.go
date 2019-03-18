@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stellar/kelp/api"
 
@@ -153,6 +154,32 @@ func TestGetTradeHistory(t *testing.T) {
 	}
 
 	assert.Fail(t, "force fail")
+}
+
+func TestGetLatestTradeCursor(t *testing.T) {
+	startIntervalSecs := time.Now().Unix()
+	cursor, e := testKrakenExchange.GetLatestTradeCursor()
+	if !assert.NoError(t, e) {
+		return
+	}
+	endIntervalSecs := time.Now().Unix()
+
+	if !assert.IsType(t, "string", cursor) {
+		return
+	}
+
+	cursorString := cursor.(string)
+	cursorInt, e := strconv.ParseInt(cursorString, 10, 64)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	if !assert.True(t, startIntervalSecs <= cursorInt, fmt.Sprintf("returned cursor (%d) should gte the start time of the function call in seconds (%d)", cursorInt, startIntervalSecs)) {
+		return
+	}
+	if !assert.True(t, endIntervalSecs >= cursorInt, fmt.Sprintf("returned cursor (%d) should lte the end time of the function call in seconds (%d)", cursorInt, endIntervalSecs)) {
+		return
+	}
 }
 
 func TestGetOpenOrders(t *testing.T) {

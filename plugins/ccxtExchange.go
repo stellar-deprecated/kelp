@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"time"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -226,6 +227,13 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 		Cursor: cursor,
 		Trades: trades,
 	}, nil
+}
+
+// GetLatestTradeCursor impl.
+func (c ccxtExchange) GetLatestTradeCursor() (interface{}, error) {
+	timeNowMillis := time.Now().UnixNano() / int64(time.Millisecond)
+	latestTradeCursor := fmt.Sprintf("%d", timeNowMillis)
+	return latestTradeCursor, nil
 }
 
 // GetTrades impl

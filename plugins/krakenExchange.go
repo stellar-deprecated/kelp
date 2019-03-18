@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Beldur/kraken-go-api-client"
 	"github.com/stellar/kelp/api"
@@ -407,6 +408,13 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	}
 
 	return &res, nil
+}
+
+// GetLatestTradeCursor impl.
+func (k *krakenExchange) GetLatestTradeCursor() (interface{}, error) {
+	timeNowSecs := time.Now().Unix()
+	latestTradeCursor := fmt.Sprintf("%d", timeNowSecs)
+	return latestTradeCursor, nil
 }
 
 // GetTrades impl.
