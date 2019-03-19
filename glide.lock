@@ -129,7 +129,7 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 1f5e250e1174502017917628cc48b52fdc25b531
+  version: 6c81ef8f67ca3f42fc9cd71dfbd5f35b0c4b5771
   subpackages:
   - unix
 - name: google.golang.org/appengine
