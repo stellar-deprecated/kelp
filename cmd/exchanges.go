@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/sdk"
 
 	"github.com/spf13/cobra"
 )
@@ -15,6 +16,8 @@ var exchanagesCmd = &cobra.Command{
 
 func init() {
 	exchanagesCmd.Run = func(ccmd *cobra.Command, args []string) {
+		// call sdk.GetExchangeList() here so we pre-load exchanges before displaying the table
+		sdk.GetExchangeList()
 		fmt.Printf("  Exchange\t\t\tTested\t\tTrading\t\tDescription\n")
 		fmt.Printf("  --------------------------------------------------------------------------------\n")
 		exchanges := plugins.Exchanges()
