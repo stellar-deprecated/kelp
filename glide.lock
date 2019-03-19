@@ -63,10 +63,6 @@ imports:
   version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
   subpackages:
   - hooks/test
-- name: github.com/Sirupsen/logrus
-  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
-  repo: git@github.com:/sirupsen/logrus
-  vcs: git
 - name: github.com/spf13/cast
   version: 4d07383ffe94b5e5a6fa3af9211374a4507a0184
 - name: github.com/spf13/cobra
