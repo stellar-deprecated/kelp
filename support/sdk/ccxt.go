@@ -75,27 +75,45 @@ func MakeInitializedCcxtExchange(exchangeName string, apiKey api.ExchangeAPIKey)
 	return c, nil
 }
 
-// ExchangeList contains a list of supported exchanges
-var ExchangeList []string
+// exchangeList contains a list of supported exchanges
+var exchangeList *[]string
 
-func init() {
-	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtBaseURL+pathExchanges, "", map[string]string{}, &ExchangeList, "error")
-	if e != nil {
-		panic(fmt.Errorf("error getting list of supported exchanges by CCXT: %s", e))
+// GetExchangeList gets a list of all supported exchanges
+func GetExchangeList() []string {
+	if exchangeList == nil {
+		loadExchangeList()
 	}
+	return *exchangeList
+}
+
+func loadExchangeList() {
+	var output []string
+	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtBaseURL+pathExchanges, "", map[string]string{}, &output, "error")
+	if e != nil {
+		eMsg1 := strings.Contains(e.Error(), "could not execute http request")
+		eMsg2 := strings.Contains(e.Error(), "http://localhost:3000/exchanges: dial tcp")
+		eMsg3 := strings.Contains(e.Error(), "connection refused")
+		if eMsg1 && eMsg2 && eMsg3 {
+			log.Printf("ccxt-rest is not running on port 3000 so we cannot include those exchanges")
+		} else {
+			panic(fmt.Errorf("error getting list of supported exchanges by CCXT: %s", e))
+		}
+	}
+	exchangeList = &output
 }
 
 func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey) error {
 	// validate that exchange name is in the exchange list
 	exchangeListed := false
-	for _, name := range ExchangeList {
+	el := GetExchangeList()
+	for _, name := range el {
 		if name == c.exchangeName {
 			exchangeListed = true
 			break
 		}
 	}
 	if !exchangeListed {
-		return fmt.Errorf("exchange name '%s' is not in the list of %d exchanges available: %v", c.exchangeName, len(ExchangeList), ExchangeList)
+		return fmt.Errorf("exchange name '%s' is not in the list of %d exchanges available: %v", c.exchangeName, len(el), el)
 	}
 
 	// list all the instances of the exchange

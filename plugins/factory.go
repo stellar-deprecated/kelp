@@ -165,15 +165,23 @@ type ExchangeContainer struct {
 }
 
 // exchanges is a map of all the exchange integrations available
-var exchanges map[string]ExchangeContainer
+var exchanges *map[string]ExchangeContainer
 
-func init() {
+// getExchanges returns a map of all the exchange integrations available
+func getExchanges() map[string]ExchangeContainer {
+	if exchanges == nil {
+		loadExchanges()
+	}
+	return *exchanges
+}
+
+func loadExchanges() {
 	// marked as tested if key exists in this map (regardless of bool value)
 	testedCcxtExchanges := map[string]bool{
 		"binance": true,
 	}
 
-	exchanges = map[string]ExchangeContainer{
+	exchanges = &map[string]ExchangeContainer{
 		"kraken": ExchangeContainer{
 			SortOrder:    0,
 			Description:  "Kraken is a popular centralized cryptocurrency exchange",
@@ -186,13 +194,13 @@ func init() {
 	}
 
 	// add all CCXT exchanges
-	sortOrderOffset := len(exchanges)
-	for i, exchangeName := range sdk.ExchangeList {
+	sortOrderOffset := len(*exchanges)
+	for i, exchangeName := range sdk.GetExchangeList() {
 		key := fmt.Sprintf("ccxt-%s", exchangeName)
 		_, tested := testedCcxtExchanges[exchangeName]
 		boundExchangeName := exchangeName
 
-		exchanges[key] = ExchangeContainer{
+		(*exchanges)[key] = ExchangeContainer{
 			SortOrder:    uint16(i + sortOrderOffset),
 			Description:  exchangeName + " is automatically added via ccxt-rest",
 			TradeEnabled: true,
@@ -211,7 +219,7 @@ func init() {
 
 // MakeExchange is a factory method to make an exchange based on a given type
 func MakeExchange(exchangeType string, simMode bool) (api.Exchange, error) {
-	if exchange, ok := exchanges[exchangeType]; ok {
+	if exchange, ok := getExchanges()[exchangeType]; ok {
 		exchangeAPIKey := api.ExchangeAPIKey{Key: "", Secret: ""}
 		x, e := exchange.makeFn(exchangeFactoryData{
 			simMode: simMode,
@@ -228,7 +236,7 @@ func MakeExchange(exchangeType string, simMode bool) (api.Exchange, error) {
 
 // MakeTradingExchange is a factory method to make an exchange based on a given type
 func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, simMode bool) (api.Exchange, error) {
-	if exchange, ok := exchanges[exchangeType]; ok {
+	if exchange, ok := getExchanges()[exchangeType]; ok {
 		if !exchange.TradeEnabled {
 			return nil, fmt.Errorf("trading is not enabled on this exchange: %s", exchangeType)
 		}
@@ -252,5 +260,5 @@ func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, simM
 
 // Exchanges returns the list of exchanges
 func Exchanges() map[string]ExchangeContainer {
-	return exchanges
+	return getExchanges()
 }
