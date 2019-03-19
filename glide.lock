@@ -1,5 +1,5 @@
-hash: 862e3611db2da44a2230ecfaa5b3e135d3f01e5ff844a271168dc4bcea1b9ea8
-updated: 2019-03-19T16:46:59.471440768-07:00
+hash: 989c53919a552979951892e3c469587356702be328516986a7d042992b914f99
+updated: 2019-03-19T16:56:43.279015068-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -65,8 +65,7 @@ imports:
   - hooks/test
 - name: github.com/Sirupsen/logrus
   version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
-  repo: git@github.com:sirupsen/logrus
-  vcs: git
+  repo: git@github.com:sirupsen/logrus.git
 - name: github.com/spf13/cast
   version: 4d07383ffe94b5e5a6fa3af9211374a4507a0184
 - name: github.com/spf13/cobra
