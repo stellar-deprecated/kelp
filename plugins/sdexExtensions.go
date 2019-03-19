@@ -50,7 +50,8 @@ func SdexFeeFnFromStats(
 	}
 
 	client := &horizonclient.Client{
-		HorizonURL: horizonBaseURL,
+		// TODO horizonclient.Client has a bug in it where it does not use "/" to separate the horizonURL from the fee_stats endpoint
+		HorizonURL: horizonBaseURL + "/",
 		HTTP:       http.DefaultClient,
 	}
 
