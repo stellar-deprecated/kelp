@@ -143,7 +143,10 @@ func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sell
 
 // PreUpdate changes the strategy's state in prepration for the update
 func (s *mirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error {
-	return s.recordBalances()
+	if s.offsetTrades {
+		return s.recordBalances()
+	}
+	return nil
 }
 
 func (s *mirrorStrategy) recordBalances() error {
