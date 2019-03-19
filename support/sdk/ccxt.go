@@ -87,18 +87,19 @@ func GetExchangeList() []string {
 }
 
 func loadExchangeList() {
-	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtBaseURL+pathExchanges, "", map[string]string{}, exchangeList, "error")
+	var output []string
+	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtBaseURL+pathExchanges, "", map[string]string{}, &output, "error")
 	if e != nil {
 		eMsg1 := strings.Contains(e.Error(), "could not execute http request")
 		eMsg2 := strings.Contains(e.Error(), "http://localhost:3000/exchanges: dial tcp")
 		eMsg3 := strings.Contains(e.Error(), "connection refused")
 		if eMsg1 && eMsg2 && eMsg3 {
 			log.Printf("ccxt-rest is not running on port 3000 so we cannot include those exchanges")
-			exchangeList = &[]string{}
 		} else {
 			panic(fmt.Errorf("error getting list of supported exchanges by CCXT: %s", e))
 		}
 	}
+	exchangeList = &output
 }
 
 func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey) error {
