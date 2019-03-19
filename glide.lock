@@ -74,7 +74,7 @@ imports:
 - name: github.com/spf13/viper
   version: db7ff930a189b98d602179d9001d33345f42b8c7
 - name: github.com/stellar/go
-  version: 1d3d46259bacf567dd75feece3ecd994e9d93e49
+  version: 61ed9984b1f88fda0d4e5e375021b404d9900959
   subpackages:
   - amount
   - build
