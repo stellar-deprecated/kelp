@@ -173,8 +173,6 @@ func makeExchangeShimSdex(
 	network build.Network,
 	threadTracker *multithreading.ThreadTracker,
 	tradingPair *model.TradingPair,
-	sdexAssetMap map[model.Asset]horizon.Asset,
-	feeFn plugins.OpFeeStroops,
 ) (api.ExchangeShim, *plugins.SDEX) {
 	var e error
 	var exchangeShim api.ExchangeShim
@@ -197,6 +195,11 @@ func makeExchangeShimSdex(
 		exchangeShim = plugins.MakeBatchedExchange(exchangeAPI, *options.simMode, botConfig.AssetBase(), botConfig.AssetQuote(), botConfig.TradingAccount())
 	}
 
+	sdexAssetMap := map[model.Asset]horizon.Asset{
+		tradingPair.Base:  botConfig.AssetBase(),
+		tradingPair.Quote: botConfig.AssetQuote(),
+	}
+	feeFn := makeFeeFn(l, isTradingSdex, botConfig)
 	sdex := plugins.MakeSDEX(
 		client,
 		ieif,
@@ -214,11 +217,92 @@ func makeExchangeShimSdex(
 		sdexAssetMap,
 		feeFn,
 	)
+
 	if isTradingSdex {
 		exchangeShim = sdex
 	}
-
 	return exchangeShim, sdex
+}
+
+func makeStrategy(
+	l logger.Logger,
+	network build.Network,
+	botConfig trader.BotConfig,
+	client *horizon.Client,
+	sdex *plugins.SDEX,
+	exchangeShim api.ExchangeShim,
+	assetBase horizon.Asset,
+	assetQuote horizon.Asset,
+	ieif *plugins.IEIF,
+	tradingPair *model.TradingPair,
+	options inputs,
+) api.Strategy {
+	// setting the temp hack variables for the sdex price feeds
+	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
+	if e != nil {
+		l.Info("")
+		l.Errorf("%s", e)
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
+	}
+
+	strat, e := plugins.MakeStrategy(sdex, ieif, tradingPair, &assetBase, &assetQuote, *options.strategy, *options.stratConfigPath, *options.simMode)
+	if e != nil {
+		l.Info("")
+		l.Errorf("%s", e)
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
+	}
+	return strat
+}
+
+func makeBot(
+	l logger.Logger,
+	botConfig trader.BotConfig,
+	client *horizon.Client,
+	sdex *plugins.SDEX,
+	exchangeShim api.ExchangeShim,
+	ieif *plugins.IEIF,
+	tradingPair *model.TradingPair,
+	strat api.Strategy,
+	threadTracker *multithreading.ThreadTracker,
+	options inputs,
+) *trader.Trader {
+	timeController := plugins.MakeIntervalTimeController(
+		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
+		botConfig.MaxTickDelayMillis,
+	)
+	submitMode, e := api.ParseSubmitMode(botConfig.SubmitMode)
+	if e != nil {
+		log.Println()
+		log.Println(e)
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
+	}
+	dataKey := model.MakeSortedBotKey(botConfig.AssetBase(), botConfig.AssetQuote())
+	alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
+	if e != nil {
+		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
+	}
+	bot := trader.MakeBot(
+		client,
+		ieif,
+		botConfig.AssetBase(),
+		botConfig.AssetQuote(),
+		tradingPair,
+		botConfig.TradingAccount(),
+		sdex,
+		exchangeShim,
+		strat,
+		timeController,
+		botConfig.DeleteCyclesThreshold,
+		submitMode,
+		threadTracker,
+		options.fixedIterations,
+		dataKey,
+		alert,
+	)
+	return bot
 }
 
 func runTradeCmd(options inputs) {
@@ -242,11 +326,6 @@ func runTradeCmd(options inputs) {
 	}
 	ieif := plugins.MakeIEIF(isTradingSdex)
 	network := utils.ParseNetwork(botConfig.HorizonURL)
-	sdexAssetMap := map[model.Asset]horizon.Asset{
-		tradingPair.Base:  assetBase,
-		tradingPair.Quote: assetQuote,
-	}
-	feeFn := makeFeeFn(l, isTradingSdex, botConfig)
 	exchangeShim, sdex := makeExchangeShimSdex(
 		l,
 		isTradingSdex,
@@ -257,60 +336,31 @@ func runTradeCmd(options inputs) {
 		network,
 		threadTracker,
 		tradingPair,
-		sdexAssetMap,
-		feeFn,
 	)
-
-	// setting the temp hack variables for the sdex price feeds
-	e = plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
-	if e != nil {
-		l.Info("")
-		l.Errorf("%s", e)
-		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-	}
-
-	dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
-	strat, e := plugins.MakeStrategy(sdex, ieif, tradingPair, &assetBase, &assetQuote, *options.strategy, *options.stratConfigPath, *options.simMode)
-	if e != nil {
-		l.Info("")
-		l.Errorf("%s", e)
-		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-	}
-
-	submitMode, e := api.ParseSubmitMode(botConfig.SubmitMode)
-	if e != nil {
-		log.Println()
-		log.Println(e)
-		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-	}
-	timeController := plugins.MakeIntervalTimeController(
-		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
-		botConfig.MaxTickDelayMillis,
-	)
-	alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
-	if e != nil {
-		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
-	}
-	bot := trader.MakeBot(
+	strat := makeStrategy(
+		l,
+		network,
+		botConfig,
 		client,
-		ieif,
-		botConfig.AssetBase(),
-		botConfig.AssetQuote(),
-		tradingPair,
-		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
+		assetBase,
+		assetQuote,
+		ieif,
+		tradingPair,
+		options,
+	)
+	bot := makeBot(
+		l,
+		botConfig,
+		client,
+		sdex,
+		exchangeShim,
+		ieif,
+		tradingPair,
 		strat,
-		timeController,
-		botConfig.DeleteCyclesThreshold,
-		submitMode,
 		threadTracker,
-		options.fixedIterations,
-		dataKey,
-		alert,
+		options,
 	)
 	// --- end initialization of objects ---
 
