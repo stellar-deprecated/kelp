@@ -12,6 +12,7 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
+	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
@@ -137,9 +138,7 @@ func makeFeeFn(l logger.Logger, isTradingSdex bool, botConfig trader.BotConfig) 
 	return feeFn
 }
 
-func runTradeCmd(options inputs) {
-	l := logger.MakeBasicLogger()
-	var botConfig trader.BotConfig
+func readBotConfig(l logger.Logger, options inputs) (botConfig trader.BotConfig, isTradingSdex bool) {
 	e := config.Read(*options.botConfigPath, &botConfig)
 	utils.CheckConfigError(botConfig, e, *options.botConfigPath)
 	e = botConfig.Init()
@@ -147,7 +146,7 @@ func runTradeCmd(options inputs) {
 		logger.Fatal(l, e)
 	}
 
-	isTradingSdex := botConfig.TradingExchange == "" || botConfig.TradingExchange == "sdex"
+	isTradingSdex = botConfig.TradingExchange == "" || botConfig.TradingExchange == "sdex"
 
 	if *options.logPrefix != "" {
 		setLogFile(l, options, botConfig, isTradingSdex)
@@ -160,33 +159,24 @@ func runTradeCmd(options inputs) {
 	// only log botConfig file here so it can be included in the log file
 	utils.LogConfig(botConfig)
 	validateBotConfig(l, botConfig, isTradingSdex)
-	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	client := &horizon.Client{
-		URL:  botConfig.HorizonURL,
-		HTTP: http.DefaultClient,
-	}
+	return botConfig, isTradingSdex
+}
 
-	alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
-	if e != nil {
-		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
-	}
-	// --- start initialization of objects ----
-	threadTracker := multithreading.MakeThreadTracker()
-	ieif := plugins.MakeIEIF(isTradingSdex)
-
-	assetBase := botConfig.AssetBase()
-	assetQuote := botConfig.AssetQuote()
-	tradingPair := &model.TradingPair{
-		Base:  model.Asset(utils.Asset2CodeString(assetBase)),
-		Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
-	}
-	sdexAssetMap := map[model.Asset]horizon.Asset{
-		tradingPair.Base:  assetBase,
-		tradingPair.Quote: assetQuote,
-	}
-	feeFn := makeFeeFn(l, isTradingSdex, botConfig)
-
+func makeExchangeShimSdex(
+	l logger.Logger,
+	isTradingSdex bool,
+	botConfig trader.BotConfig,
+	options inputs,
+	client *horizon.Client,
+	ieif *plugins.IEIF,
+	network build.Network,
+	threadTracker *multithreading.ThreadTracker,
+	tradingPair *model.TradingPair,
+	sdexAssetMap map[model.Asset]horizon.Asset,
+	feeFn plugins.OpFeeStroops,
+) (api.ExchangeShim, *plugins.SDEX) {
+	var e error
 	var exchangeShim api.ExchangeShim
 	if !isTradingSdex {
 		exchangeAPIKeys := []api.ExchangeAPIKey{}
@@ -201,7 +191,7 @@ func runTradeCmd(options inputs) {
 		exchangeAPI, e = plugins.MakeTradingExchange(botConfig.TradingExchange, exchangeAPIKeys, *options.simMode)
 		if e != nil {
 			logger.Fatal(l, fmt.Errorf("unable to make trading exchange: %s", e))
-			return
+			return nil, nil
 		}
 
 		exchangeShim = plugins.MakeBatchedExchange(exchangeAPI, *options.simMode, botConfig.AssetBase(), botConfig.AssetQuote(), botConfig.TradingAccount())
@@ -215,7 +205,7 @@ func runTradeCmd(options inputs) {
 		botConfig.TradingSecretSeed,
 		botConfig.SourceAccount(),
 		botConfig.TradingAccount(),
-		utils.ParseNetwork(botConfig.HorizonURL),
+		network,
 		threadTracker,
 		*options.operationalBuffer,
 		*options.operationalBufferNonNativePct,
@@ -228,8 +218,51 @@ func runTradeCmd(options inputs) {
 		exchangeShim = sdex
 	}
 
+	return exchangeShim, sdex
+}
+
+func runTradeCmd(options inputs) {
+	var e error
+	l := logger.MakeBasicLogger()
+	botConfig, isTradingSdex := readBotConfig(l, options)
+	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
+
+	// --- start initialization of objects ----
+	threadTracker := multithreading.MakeThreadTracker()
+	assetBase := botConfig.AssetBase()
+	assetQuote := botConfig.AssetQuote()
+	tradingPair := &model.TradingPair{
+		Base:  model.Asset(utils.Asset2CodeString(assetBase)),
+		Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
+	}
+
+	client := &horizon.Client{
+		URL:  botConfig.HorizonURL,
+		HTTP: http.DefaultClient,
+	}
+	ieif := plugins.MakeIEIF(isTradingSdex)
+	network := utils.ParseNetwork(botConfig.HorizonURL)
+	sdexAssetMap := map[model.Asset]horizon.Asset{
+		tradingPair.Base:  assetBase,
+		tradingPair.Quote: assetQuote,
+	}
+	feeFn := makeFeeFn(l, isTradingSdex, botConfig)
+	exchangeShim, sdex := makeExchangeShimSdex(
+		l,
+		isTradingSdex,
+		botConfig,
+		options,
+		client,
+		ieif,
+		network,
+		threadTracker,
+		tradingPair,
+		sdexAssetMap,
+		feeFn,
+	)
+
 	// setting the temp hack variables for the sdex price feeds
-	e = plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), utils.ParseNetwork(botConfig.HorizonURL))
+	e = plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
 	if e != nil {
 		l.Info("")
 		l.Errorf("%s", e)
@@ -257,6 +290,10 @@ func runTradeCmd(options inputs) {
 		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 		botConfig.MaxTickDelayMillis,
 	)
+	alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
+	if e != nil {
+		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
+	}
 	bot := trader.MakeBot(
 		client,
 		ieif,
