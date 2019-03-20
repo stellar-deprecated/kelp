@@ -306,7 +306,6 @@ func makeBot(
 }
 
 func runTradeCmd(options inputs) {
-	var e error
 	l := logger.MakeBasicLogger()
 	botConfig, isTradingSdex := readBotConfig(l, options)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
@@ -363,16 +362,8 @@ func runTradeCmd(options inputs) {
 		options,
 	)
 	// --- end initialization of objects ---
-
-	if isTradingSdex {
-		log.Printf("validating trustlines...\n")
-		validateTrustlines(l, client, &botConfig)
-		l.Info("trustlines valid")
-	} else {
-		l.Info("no need to validate trustlines because we're not using SDEX as the trading exchange")
-	}
-
 	// --- start initialization of services ---
+	validateTrustlines(l, client, &botConfig, isTradingSdex)
 	if botConfig.MonitoringPort != 0 {
 		go func() {
 			e := startMonitoringServer(l, botConfig)
@@ -387,41 +378,16 @@ func runTradeCmd(options inputs) {
 			}
 		}()
 	}
-
-	strategyFillHandlers, e := strat.GetFillHandlers()
-	if e != nil {
-		l.Info("")
-		l.Info("problem encountered while instantiating the fill tracker:")
-		l.Errorf("%s", e)
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-	}
-	if botConfig.FillTrackerSleepMillis != 0 {
-		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis)
-		fillLogger := plugins.MakeFillLogger()
-		fillTracker.RegisterHandler(fillLogger)
-		if strategyFillHandlers != nil {
-			for _, h := range strategyFillHandlers {
-				fillTracker.RegisterHandler(h)
-			}
-		}
-
-		l.Infof("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
-		go func() {
-			e := fillTracker.TrackFills()
-			if e != nil {
-				l.Info("")
-				l.Info("problem encountered while running the fill tracker:")
-				l.Errorf("%s", e)
-				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-			}
-		}()
-	} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
-		l.Info("")
-		l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
-		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
-	}
+	startFillTracking(
+		l,
+		strat,
+		botConfig,
+		client,
+		sdex,
+		exchangeShim,
+		tradingPair,
+		threadTracker,
+	)
 	// --- end initialization of services ---
 
 	l.Info("Starting the trader bot...")
@@ -466,7 +432,60 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTLSCert, botConfig.MonitoringTLSKey)
 }
 
-func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {
+func startFillTracking(
+	l logger.Logger,
+	strat api.Strategy,
+	botConfig trader.BotConfig,
+	client *horizon.Client,
+	sdex *plugins.SDEX,
+	exchangeShim api.ExchangeShim,
+	tradingPair *model.TradingPair,
+	threadTracker *multithreading.ThreadTracker,
+) {
+	strategyFillHandlers, e := strat.GetFillHandlers()
+	if e != nil {
+		l.Info("")
+		l.Info("problem encountered while instantiating the fill tracker:")
+		l.Errorf("%s", e)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
+	}
+
+	if botConfig.FillTrackerSleepMillis != 0 {
+		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis)
+		fillLogger := plugins.MakeFillLogger()
+		fillTracker.RegisterHandler(fillLogger)
+		if strategyFillHandlers != nil {
+			for _, h := range strategyFillHandlers {
+				fillTracker.RegisterHandler(h)
+			}
+		}
+
+		l.Infof("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
+		go func() {
+			e := fillTracker.TrackFills()
+			if e != nil {
+				l.Info("")
+				l.Info("problem encountered while running the fill tracker:")
+				l.Errorf("%s", e)
+				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
+			}
+		}()
+	} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
+		l.Info("")
+		l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
+		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
+	}
+}
+
+func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig, isTradingSdex bool) {
+	if !isTradingSdex {
+		l.Info("no need to validate trustlines because we're not using SDEX as the trading exchange")
+		return
+	}
+
+	log.Printf("validating trustlines...\n")
 	account, e := client.LoadAccount(botConfig.TradingAccount())
 	if e != nil {
 		logger.Fatal(l, e)
@@ -490,6 +509,7 @@ func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trad
 	if len(missingTrustlines) > 0 {
 		logger.Fatal(l, fmt.Errorf("error: your trading account does not have the required trustlines: %v", missingTrustlines))
 	}
+	l.Info("trustlines valid")
 }
 
 func deleteAllOffersAndExit(l logger.Logger, botConfig trader.BotConfig, client *horizon.Client, sdex *plugins.SDEX, exchangeShim api.ExchangeShim) {
