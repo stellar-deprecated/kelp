@@ -1,14 +1,10 @@
-hash: 846bc46b777e613b79332fe3dd038931e16d76b8b9da1c096bb2082fc232b82e
-updated: 2018-12-06T12:00:37.303778558-08:00
+hash: 81ad219d2939a6ac4e4bbd94d3cebf8f1ea07291ae882f7f93ad781c8cf27ce6
+updated: 2019-03-19T16:40:20.118158839-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
   subpackages:
   - compute/metadata
-- name: github.com/agl/ed25519
-  version: 278e1ec8e8a6e017cd07577924d6766039146ced
-  subpackages:
-  - edwards25519
 - name: github.com/asaskevich/govalidator
   version: f9ffefc3facfbe0caee3fea233cbb6e8208f4541
 - name: github.com/Beldur/kraken-go-api-client
@@ -31,14 +27,20 @@ imports:
   - query
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/kr/pretty
+  version: e6ac2fc51e89a3249e82157fa0bb7a18ef9dd5bb
 - name: github.com/kr/session
   version: 6f756089c21ec9a4ceb14473bf90d5e3a3e9e303
+- name: github.com/kr/text
+  version: e373e137fafd8abd480af49182dea0513914adb4
 - name: github.com/lechengfan/googleauth
   version: 7595ba02fbce171759c10d69d96e4cd898d1fa93
 - name: github.com/lib/pq
   version: 50761b0867bd1d9d069276790bcd4a3bccf2324a
   subpackages:
   - oid
+- name: github.com/magiconair/properties
+  version: 359442d561ca28acd0fe503aa9f075f505bc9ed0
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/mitchellh/mapstructure
@@ -47,10 +49,6 @@ imports:
   version: 19004f22be08c82a22e679726ca22853c65919ae
   subpackages:
   - multithreading
-- name: github.com/nullstyle/go-xdr
-  version: a875e7c9fa2388ce03279f6b5ba1c2ccd1f9e917
-  subpackages:
-  - xdr3
 - name: github.com/PagerDuty/go-pagerduty
   version: 635c5ce271490fba94880e62cde4eea3c1c184b9
 - name: github.com/pkg/errors
@@ -62,35 +60,49 @@ imports:
 - name: github.com/segmentio/go-loggly
   version: eb91657e62b25699dd4e84d5562735440d4beace
 - name: github.com/sirupsen/logrus
-  version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
+  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
   subpackages:
   - hooks/test
+- name: github.com/spf13/cast
+  version: 4d07383ffe94b5e5a6fa3af9211374a4507a0184
 - name: github.com/spf13/cobra
   version: 7b2c5ac9fc04fc5efafb60700713d4fa609b777b
+- name: github.com/spf13/jwalterweatherman
+  version: 3d60171a64319ef63c78bd45bd60e6eab1e75f8b
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+- name: github.com/spf13/viper
+  version: db7ff930a189b98d602179d9001d33345f42b8c7
 - name: github.com/stellar/go
-  version: 5bbd27814a3ffca9aeffcbd75a09a6164959776a
+  version: 61ed9984b1f88fda0d4e5e375021b404d9900959
   subpackages:
   - amount
   - build
   - clients/horizon
   - crc16
+  - exp/clients/horizon
   - hash
   - keypair
   - network
   - price
   - protocols/horizon
   - protocols/horizon/base
+  - protocols/horizon/effects
   - strkey
+  - support/app
   - support/config
   - support/errors
   - support/http/mutil
   - support/log
   - support/render/hal
   - support/render/problem
+  - support/strutils
   - support/url
   - xdr
+- name: github.com/stellar/go-xdr
+  version: 0bc96f33a18ef2f963e75431dbed042129eb421b
+  subpackages:
+  - xdr3
 - name: github.com/stretchr/objx
   version: cbeaeb16a013161a98496fad62933b1d21786672
 - name: github.com/stretchr/testify
@@ -99,12 +111,14 @@ imports:
   - assert
   - mock
 - name: golang.org/x/crypto
-  version: e84da0312774c21d64ee2317962ef669b27ffb41
+  version: 2509b142fb2b797aa7587dad548f113b2c0f20ce
   subpackages:
-  - internal/subtle
+  - ed25519
+  - ed25519/internal/edwards25519
   - nacl/secretbox
   - poly1305
   - salsa20/salsa
+  - ssh/terminal
 - name: golang.org/x/net
   version: 9b4f9f5ad5197c79fd623a3638e70d8b26cef344
   subpackages:
@@ -118,9 +132,10 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 1f5e250e1174502017917628cc48b52fdc25b531
+  version: 6c81ef8f67ca3f42fc9cd71dfbd5f35b0c4b5771
   subpackages:
   - unix
+  - windows
 - name: google.golang.org/appengine
   version: ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06
   subpackages:
@@ -133,4 +148,6 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
+- name: gopkg.in/yaml.v2
+  version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
 testImports: []

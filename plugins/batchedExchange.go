@@ -329,9 +329,10 @@ func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset h
 			b.offerID2OrderID[ID] = order.ID
 		}
 
-		var lmt time.Time
+		var lmt *time.Time
 		if order.Timestamp != nil {
-			lmt = time.Unix(int64(*order.Timestamp)/1000, 0)
+			lastModTime := time.Unix(int64(*order.Timestamp)/1000, 0)
+			lmt = &lastModTime
 		}
 		offers = append(offers, hProtocol.Offer{
 			ID:                 ID,
