@@ -120,6 +120,23 @@ func makeStartupMessage(options inputs) string {
 	return startupMessage
 }
 
+func makeFeeFn(l logger.Logger, isTradingSdex bool, botConfig trader.BotConfig) plugins.OpFeeStroops {
+	if !isTradingSdex {
+		return plugins.SdexFixedFeeFn(0)
+	}
+
+	feeFn, e := plugins.SdexFeeFnFromStats(
+		botConfig.HorizonURL,
+		botConfig.Fee.CapacityTrigger,
+		botConfig.Fee.Percentile,
+		botConfig.Fee.MaxOpFeeStroops,
+	)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
+	}
+	return feeFn
+}
+
 func runTradeCmd(options inputs) {
 	l := logger.MakeBasicLogger()
 	var botConfig trader.BotConfig
@@ -168,20 +185,7 @@ func runTradeCmd(options inputs) {
 		tradingPair.Base:  assetBase,
 		tradingPair.Quote: assetQuote,
 	}
-	var feeFn plugins.OpFeeStroops
-	if isTradingSdex {
-		feeFn, e = plugins.SdexFeeFnFromStats(
-			botConfig.HorizonURL,
-			botConfig.Fee.CapacityTrigger,
-			botConfig.Fee.Percentile,
-			botConfig.Fee.MaxOpFeeStroops,
-		)
-		if e != nil {
-			logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
-		}
-	} else {
-		feeFn = plugins.SdexFixedFeeFn(0)
-	}
+	feeFn := makeFeeFn(l, isTradingSdex, botConfig)
 
 	var exchangeShim api.ExchangeShim
 	if !isTradingSdex {
