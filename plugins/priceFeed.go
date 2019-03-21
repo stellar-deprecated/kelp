@@ -67,7 +67,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 	case "sdex":
 		sdex, e := makeSDEXFeed(url)
 		if e != nil {
-			return nil, fmt.Errorf("error occured while making the SDEX price feed: %s", e)
+			return nil, fmt.Errorf("error occurred while making the SDEX price feed: %s", e)
 		}
 		return sdex, nil
 	}

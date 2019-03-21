@@ -121,12 +121,12 @@ func MakeStrategy(
 	simMode bool,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
-	if strat, ok := strategies[strategy]; ok {
-		if strat.NeedsConfig && stratConfigPath == "" {
+	if s, ok := strategies[strategy]; ok {
+		if s.NeedsConfig && stratConfigPath == "" {
 			return nil, fmt.Errorf("the '%s' strategy needs a config file", strategy)
 		}
 
-		s, e := strat.makeFn(strategyFactoryData{
+		s, e := s.makeFn(strategyFactoryData{
 			sdex:            sdex,
 			ieif:            ieif,
 			tradingPair:     tradingPair,

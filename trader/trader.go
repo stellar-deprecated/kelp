@@ -27,7 +27,7 @@ type Trader struct {
 	tradingAccount        string
 	sdex                  *plugins.SDEX
 	exchangeShim          api.ExchangeShim
-	strat                 api.Strategy // the instance of this bot is bound to this strategy
+	strategy              api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
 	submitFilters         []plugins.SubmitFilter
@@ -58,7 +58,7 @@ func MakeBot(
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
-	strat api.Strategy,
+	strategy api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
 	submitMode api.SubmitMode,
@@ -86,7 +86,7 @@ func MakeBot(
 		tradingAccount:        tradingAccount,
 		sdex:                  sdex,
 		exchangeShim:          exchangeShim,
-		strat:                 strat,
+		strategy:              strategy,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
 		submitFilters:         submitFilters,
@@ -180,7 +180,7 @@ func (t *Trader) update() {
 	}
 
 	// strategy has a chance to set any state it needs
-	e = t.strat.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
+	e = t.strategy.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
@@ -189,7 +189,7 @@ func (t *Trader) update() {
 
 	// delete excess offers
 	var pruneOps []build.TransactionMutator
-	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strat.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
+	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strategy.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
 		e = t.exchangeShim.SubmitOps(pruneOps, nil)
@@ -213,7 +213,7 @@ func (t *Trader) update() {
 		return
 	}
 
-	ops, e := t.strat.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
+	ops, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
 	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
@@ -243,7 +243,7 @@ func (t *Trader) update() {
 		}
 	}
 
-	e = t.strat.PostUpdate()
+	e = t.strategy.PostUpdate()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
