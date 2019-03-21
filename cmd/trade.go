@@ -246,14 +246,14 @@ func makeStrategy(
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
 	}
 
-	strat, e := plugins.MakeStrategy(sdex, ieif, tradingPair, &assetBase, &assetQuote, *options.strategy, *options.stratConfigPath, *options.simMode)
+	strategy, e := plugins.MakeStrategy(sdex, ieif, tradingPair, &assetBase, &assetQuote, *options.strategy, *options.stratConfigPath, *options.simMode)
 	if e != nil {
 		l.Info("")
 		l.Errorf("%s", e)
 		// we want to delete all the offers and exit here since there is something wrong with our setup
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
 	}
-	return strat
+	return strategy
 }
 
 func makeBot(
@@ -264,7 +264,7 @@ func makeBot(
 	exchangeShim api.ExchangeShim,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
-	strat api.Strategy,
+	strategy api.Strategy,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 ) *trader.Trader {
@@ -293,7 +293,7 @@ func makeBot(
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
-		strat,
+		strategy,
 		timeController,
 		botConfig.DeleteCyclesThreshold,
 		submitMode,
@@ -336,7 +336,7 @@ func runTradeCmd(options inputs) {
 		threadTracker,
 		tradingPair,
 	)
-	strat := makeStrategy(
+	strategy := makeStrategy(
 		l,
 		network,
 		botConfig,
@@ -357,7 +357,7 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		ieif,
 		tradingPair,
-		strat,
+		strategy,
 		threadTracker,
 		options,
 	)
@@ -380,7 +380,7 @@ func runTradeCmd(options inputs) {
 	}
 	startFillTracking(
 		l,
-		strat,
+		strategy,
 		botConfig,
 		client,
 		sdex,
@@ -434,7 +434,7 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 
 func startFillTracking(
 	l logger.Logger,
-	strat api.Strategy,
+	strategy api.Strategy,
 	botConfig trader.BotConfig,
 	client *horizon.Client,
 	sdex *plugins.SDEX,
@@ -442,7 +442,7 @@ func startFillTracking(
 	tradingPair *model.TradingPair,
 	threadTracker *multithreading.ThreadTracker,
 ) {
-	strategyFillHandlers, e := strat.GetFillHandlers()
+	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
 		l.Info("")
 		l.Info("problem encountered while instantiating the fill tracker:")
