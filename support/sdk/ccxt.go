@@ -368,6 +368,7 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	return output, nil
 }
 
+// FetchMyTrades calls the /fetchMyTrades endpoint on CCXT, trading pair is the CCXT version of the trading pair
 func (c *Ccxt) FetchMyTrades(tradingPair string, limit int, maybeCursorStart interface{}) ([]CcxtTrade, error) {
 	e := c.symbolExists(tradingPair)
 	if e != nil {
