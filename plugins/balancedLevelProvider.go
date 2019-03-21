@@ -80,7 +80,7 @@ func makeBalancedLevelProvider(
 	shouldRefresh := true
 
 	return &balancedLevelProvider{
-		spread:                        spread,
+		spread: spread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
 		maxAmountSpread:               maxAmountSpread,

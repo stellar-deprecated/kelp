@@ -265,7 +265,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 	// pad the offers so it lines up correctly with numLevelsConsumed.
 	// alternatively we could chop off the beginning of s.currentLevels but then that affects the logging of levels downstream
 	for i := 0; i < numLevelsConsumed; i++ {
-		offers = append([]horizon.Offer{horizon.Offer{}}, offers...)
+		offers = append([]horizon.Offer{{}}, offers...)
 	}
 
 	// next we want to adjust our remaining offers to be in line with what is desired, creating new offers that may not exist at the end of our existing offers

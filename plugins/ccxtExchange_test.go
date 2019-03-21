@@ -15,7 +15,7 @@ import (
 var supportedExchanges = []string{"binance"}
 var emptyAPIKey = api.ExchangeAPIKey{}
 var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
-	"binance": api.ExchangeAPIKey{},
+	"binance": {},
 }
 
 var testOrderConstraints = map[model.TradingPair]model.OrderConstraints{
@@ -250,8 +250,8 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 	}
 
 	tradingPairs := []model.TradingPair{
-		model.TradingPair{Base: model.XLM, Quote: model.BTC},
-		model.TradingPair{Base: model.XLM, Quote: model.USDT},
+		{Base: model.XLM, Quote: model.BTC},
+		{Base: model.XLM, Quote: model.USDT},
 	}
 
 	for exchangeName, apiKey := range supportedTradingExchanges {

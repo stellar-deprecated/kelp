@@ -34,7 +34,7 @@ type StrategyContainer struct {
 
 // strategies is a map of all the strategies available
 var strategies = map[string]StrategyContainer{
-	"buysell": StrategyContainer{
+	"buysell": {
 		SortOrder:   1,
 		Description: "Creates buy and sell offers based on a reference price with a pre-specified liquidity depth",
 		NeedsConfig: true,
@@ -51,7 +51,7 @@ var strategies = map[string]StrategyContainer{
 			return s, nil
 		},
 	},
-	"mirror": StrategyContainer{
+	"mirror": {
 		SortOrder:   4,
 		Description: "Mirrors an orderbook from another exchange by placing the same orders on Stellar",
 		NeedsConfig: true,
@@ -68,7 +68,7 @@ var strategies = map[string]StrategyContainer{
 			return s, nil
 		},
 	},
-	"sell": StrategyContainer{
+	"sell": {
 		SortOrder:   0,
 		Description: "Creates sell offers based on a reference price with a pre-specified liquidity depth",
 		NeedsConfig: true,
@@ -85,7 +85,7 @@ var strategies = map[string]StrategyContainer{
 			return s, nil
 		},
 	},
-	"balanced": StrategyContainer{
+	"balanced": {
 		SortOrder:   3,
 		Description: "Dynamically prices two tokens based on their relative demand",
 		NeedsConfig: true,
@@ -98,7 +98,7 @@ var strategies = map[string]StrategyContainer{
 			return makeBalancedStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.ieif, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg), nil
 		},
 	},
-	"delete": StrategyContainer{
+	"delete": {
 		SortOrder:   2,
 		Description: "Deletes all orders for the configured orderbook",
 		NeedsConfig: false,
@@ -182,7 +182,7 @@ func loadExchanges() {
 	}
 
 	exchanges = &map[string]ExchangeContainer{
-		"kraken": ExchangeContainer{
+		"kraken": {
 			SortOrder:    0,
 			Description:  "Kraken is a popular centralized cryptocurrency exchange",
 			TradeEnabled: true,
