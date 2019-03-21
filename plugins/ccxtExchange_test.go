@@ -279,47 +279,8 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 				for _, o := range openOrders {
 					log.Printf("open order: %+v\n", o)
 
-					if !assert.Equal(t, &pair, o.Order.Pair) {
-						return
-					}
-
-					// OrderAction has it's underlying type as a boolean so will always be valid
-
-					if !assert.Equal(t, model.OrderTypeLimit, o.Order.OrderType) {
-						return
-					}
-
-					if !assert.True(t, o.Order.Price.AsFloat() > 0, o.Order.Price.AsString()) {
-						return
-					}
-
-					if !assert.True(t, o.Order.Volume.AsFloat() > 0, o.Order.Volume.AsString()) {
-						return
-					}
-
-					if !assert.NotNil(t, o.Order.Timestamp) {
-						return
-					}
-
-					if !assert.True(t, len(o.ID) > 0, o.ID) {
-						return
-					}
-
-					if !assert.NotNil(t, o.StartTime) {
-						return
-					}
-
-					// ExpireTime is always nil for now
-					if !assert.Nil(t, o.ExpireTime) {
-						return
-					}
-
-					if !assert.NotNil(t, o.VolumeExecuted) {
-						return
-					}
-
-					// additional check to see if the two timestamps match
-					if !assert.Equal(t, o.Order.Timestamp, o.StartTime) {
+					isValid := validateOpenOrder(t, &pair, o)
+					if !isValid {
 						return
 					}
 				}
@@ -327,6 +288,54 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 			})
 		}
 	}
+}
+
+func validateOpenOrder(t *testing.T, pair *model.TradingPair, o model.OpenOrder) bool {
+	if !assert.Equal(t, pair, o.Order.Pair) {
+		return false
+	}
+
+	// OrderAction has it's underlying type as a boolean so will always be valid
+
+	if !assert.Equal(t, model.OrderTypeLimit, o.Order.OrderType) {
+		return false
+	}
+
+	if !assert.True(t, o.Order.Price.AsFloat() > 0, o.Order.Price.AsString()) {
+		return false
+	}
+
+	if !assert.True(t, o.Order.Volume.AsFloat() > 0, o.Order.Volume.AsString()) {
+		return false
+	}
+
+	if !assert.NotNil(t, o.Order.Timestamp) {
+		return false
+	}
+
+	if !assert.True(t, len(o.ID) > 0, o.ID) {
+		return false
+	}
+
+	if !assert.NotNil(t, o.StartTime) {
+		return false
+	}
+
+	// ExpireTime is always nil for now
+	if !assert.Nil(t, o.ExpireTime) {
+		return false
+	}
+
+	if !assert.NotNil(t, o.VolumeExecuted) {
+		return false
+	}
+
+	// additional check to see if the two timestamps match
+	if !assert.Equal(t, o.Order.Timestamp, o.StartTime) {
+		return false
+	}
+
+	return true
 }
 
 func TestAddOrder_Ccxt(t *testing.T) {
