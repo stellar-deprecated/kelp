@@ -339,7 +339,9 @@ func validateTrades(trades []CcxtTrade, expectedFields []string, tradingPair str
 		return ok
 	}
 
-	assert.True(t, len(trades) > 0)
+	if !assert.True(t, len(trades) > 0) {
+		return
+	}
 	for _, trade := range trades {
 		if supportsField("amount") && !assert.True(t, trade.Amount > 0) {
 			return
@@ -613,43 +615,8 @@ func TestCancelOrder(t *testing.T) {
 				return
 			}
 
-			if !assert.NotNil(t, openOrder) {
-				return
-			}
-
-			if !assert.Equal(t, k.tradingPair.String(), openOrder.Symbol) {
-				return
-			}
-
-			if !assert.NotEqual(t, "", openOrder.ID) {
-				return
-			}
-
-			if !assert.True(t, openOrder.Amount > 0, fmt.Sprintf("%f", openOrder.Amount)) {
-				return
-			}
-
-			if !assert.True(t, openOrder.Price > 0, fmt.Sprintf("%f", openOrder.Price)) {
-				return
-			}
-
-			if !assert.Equal(t, "limit", openOrder.Type) {
-				return
-			}
-
-			if !assert.True(t, openOrder.Side == "buy" || openOrder.Side == "sell", openOrder.Side) {
-				return
-			}
-
-			if !assert.Equal(t, 0.0, openOrder.Cost) {
-				return
-			}
-
-			if !assert.Equal(t, 0.0, openOrder.Filled) {
-				return
-			}
-
-			if !assert.Equal(t, "canceled", openOrder.Status) {
+			isValid := validateCanceledOrder(t, openOrder, k.tradingPair.String())
+			if !isValid {
 				return
 			}
 
@@ -658,4 +625,48 @@ func TestCancelOrder(t *testing.T) {
 			assert.Fail(t, "force fail")
 		})
 	}
+}
+
+func validateCanceledOrder(t *testing.T, openOrder *CcxtOpenOrder, tradingPair string) bool {
+	if !assert.NotNil(t, openOrder) {
+		return false
+	}
+
+	if !assert.Equal(t, tradingPair, openOrder.Symbol) {
+		return false
+	}
+
+	if !assert.NotEqual(t, "", openOrder.ID) {
+		return false
+	}
+
+	if !assert.True(t, openOrder.Amount > 0, fmt.Sprintf("%f", openOrder.Amount)) {
+		return false
+	}
+
+	if !assert.True(t, openOrder.Price > 0, fmt.Sprintf("%f", openOrder.Price)) {
+		return false
+	}
+
+	if !assert.Equal(t, "limit", openOrder.Type) {
+		return false
+	}
+
+	if !assert.True(t, openOrder.Side == "buy" || openOrder.Side == "sell", openOrder.Side) {
+		return false
+	}
+
+	if !assert.Equal(t, 0.0, openOrder.Cost) {
+		return false
+	}
+
+	if !assert.Equal(t, 0.0, openOrder.Filled) {
+		return false
+	}
+
+	if !assert.Equal(t, "canceled", openOrder.Status) {
+		return false
+	}
+
+	return true
 }
