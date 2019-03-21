@@ -1,5 +1,5 @@
-hash: 81ad219d2939a6ac4e4bbd94d3cebf8f1ea07291ae882f7f93ad781c8cf27ce6
-updated: 2019-03-19T16:40:20.118158839-07:00
+hash: 4a11a41d64cf5615bf9d6284fc9a8d5f271b2cfee774c6cc7e8270cdcb91a3d9
+updated: 2019-03-21T16:49:06.194307262-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -15,6 +15,8 @@ imports:
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
+- name: github.com/go-chi/chi
+  version: da24bba8dcd4021cafac38724bf10dccc97c3e36
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
 - name: github.com/golang/protobuf
