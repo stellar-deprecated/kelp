@@ -17,6 +17,8 @@ imports:
   - spew
 - name: github.com/go-chi/chi
   version: da24bba8dcd4021cafac38724bf10dccc97c3e36
+  subpackages:
+  - middleware
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
 - name: github.com/golang/protobuf
