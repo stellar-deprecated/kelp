@@ -41,3 +41,5 @@ import:
   version: v1.1.2
 - package: github.com/go-chi/chi
   version: v4.0.2
+- package: github.com/shurcooL/vfsgen
+  version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069

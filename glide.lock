@@ -1,5 +1,5 @@
-hash: 4a11a41d64cf5615bf9d6284fc9a8d5f271b2cfee774c6cc7e8270cdcb91a3d9
-updated: 2019-03-21T16:49:06.194307262-07:00
+hash: 975fad86bbb0c803dcca7060a9a2952d5691080fba4a69ba4f50683723ba89e5
+updated: 2019-03-22T17:00:25.795108352-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -63,6 +63,12 @@ imports:
   - difflib
 - name: github.com/segmentio/go-loggly
   version: eb91657e62b25699dd4e84d5562735440d4beace
+- name: github.com/shurcooL/httpfs
+  version: 74dc9339e414ad069a8d04bba7e7aafd08043a25
+  subpackages:
+  - vfsutil
+- name: github.com/shurcooL/vfsgen
+  version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069
 - name: github.com/sirupsen/logrus
   version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
   subpackages:
