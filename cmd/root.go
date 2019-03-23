@@ -53,6 +53,7 @@ func init() {
 	RootCmd.AddCommand(exchanagesCmd)
 	RootCmd.AddCommand(terminateCmd)
 	RootCmd.AddCommand(versionCmd)
+	RootCmd.AddCommand(genCmd)
 }
 
 func validateBuild() {
