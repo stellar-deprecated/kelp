@@ -448,7 +448,7 @@ func startFillTracking(
 	}
 
 	if botConfig.FillTrackerSleepMillis != 0 {
-		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis)
+		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
 		if strategyFillHandlers != nil {
