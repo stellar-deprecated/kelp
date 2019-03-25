@@ -51,6 +51,7 @@ type BotConfig struct {
 	sourceAccount  *string // can be nil
 	assetBase      horizon.Asset
 	assetQuote     horizon.Asset
+	isTradingSdex  bool
 }
 
 // String impl.
@@ -89,8 +90,15 @@ func (b *BotConfig) AssetQuote() horizon.Asset {
 	return b.assetQuote
 }
 
+// IsTradingSdex returns whether the config is set to trade on SDEX
+func (b *BotConfig) IsTradingSdex() bool {
+	return b.isTradingSdex
+}
+
 // Init initializes this config
 func (b *BotConfig) Init() error {
+	b.isTradingSdex = b.TradingExchange == "" || b.TradingExchange == "sdex"
+
 	if b.AssetCodeA == b.AssetCodeB && b.IssuerA == b.IssuerB {
 		return fmt.Errorf("error: both assets cannot be the same '%s:%s'", b.AssetCodeA, b.IssuerA)
 	}

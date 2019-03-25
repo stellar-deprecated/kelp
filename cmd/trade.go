@@ -83,8 +83,8 @@ func validateCliParams(l logger.Logger, options inputs) {
 	}
 }
 
-func validateBotConfig(l logger.Logger, botConfig trader.BotConfig, isTradingSdex bool) {
-	if isTradingSdex && botConfig.Fee == nil {
+func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
+	if botConfig.IsTradingSdex() && botConfig.Fee == nil {
 		logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file when trading on SDEX"))
 	}
 }
@@ -121,8 +121,8 @@ func makeStartupMessage(options inputs) string {
 	return startupMessage
 }
 
-func makeFeeFn(l logger.Logger, isTradingSdex bool, botConfig trader.BotConfig) plugins.OpFeeStroops {
-	if !isTradingSdex {
+func makeFeeFn(l logger.Logger, botConfig trader.BotConfig) plugins.OpFeeStroops {
+	if !botConfig.IsTradingSdex() {
 		return plugins.SdexFixedFeeFn(0)
 	}
 
@@ -138,7 +138,8 @@ func makeFeeFn(l logger.Logger, isTradingSdex bool, botConfig trader.BotConfig) 
 	return feeFn
 }
 
-func readBotConfig(l logger.Logger, options inputs) (botConfig trader.BotConfig, isTradingSdex bool) {
+func readBotConfig(l logger.Logger, options inputs) trader.BotConfig {
+	var botConfig trader.BotConfig
 	e := config.Read(*options.botConfigPath, &botConfig)
 	utils.CheckConfigError(botConfig, e, *options.botConfigPath)
 	e = botConfig.Init()
@@ -146,10 +147,8 @@ func readBotConfig(l logger.Logger, options inputs) (botConfig trader.BotConfig,
 		logger.Fatal(l, e)
 	}
 
-	isTradingSdex = botConfig.TradingExchange == "" || botConfig.TradingExchange == "sdex"
-
 	if *options.logPrefix != "" {
-		setLogFile(l, options, botConfig, isTradingSdex)
+		setLogFile(l, options, botConfig)
 	}
 
 	l.Info(makeStartupMessage(options))
@@ -158,14 +157,13 @@ func readBotConfig(l logger.Logger, options inputs) (botConfig trader.BotConfig,
 
 	// only log botConfig file here so it can be included in the log file
 	utils.LogConfig(botConfig)
-	validateBotConfig(l, botConfig, isTradingSdex)
+	validateBotConfig(l, botConfig)
 
-	return botConfig, isTradingSdex
+	return botConfig
 }
 
 func makeExchangeShimSdex(
 	l logger.Logger,
-	isTradingSdex bool,
 	botConfig trader.BotConfig,
 	options inputs,
 	client *horizon.Client,
@@ -176,7 +174,7 @@ func makeExchangeShimSdex(
 ) (api.ExchangeShim, *plugins.SDEX) {
 	var e error
 	var exchangeShim api.ExchangeShim
-	if !isTradingSdex {
+	if !botConfig.IsTradingSdex() {
 		exchangeAPIKeys := []api.ExchangeAPIKey{}
 		for _, apiKey := range botConfig.ExchangeAPIKeys {
 			exchangeAPIKeys = append(exchangeAPIKeys, api.ExchangeAPIKey{
@@ -199,7 +197,7 @@ func makeExchangeShimSdex(
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
-	feeFn := makeFeeFn(l, isTradingSdex, botConfig)
+	feeFn := makeFeeFn(l, botConfig)
 	sdex := plugins.MakeSDEX(
 		client,
 		ieif,
@@ -218,7 +216,7 @@ func makeExchangeShimSdex(
 		feeFn,
 	)
 
-	if isTradingSdex {
+	if botConfig.IsTradingSdex() {
 		exchangeShim = sdex
 	}
 	return exchangeShim, sdex
@@ -307,7 +305,7 @@ func makeBot(
 
 func runTradeCmd(options inputs) {
 	l := logger.MakeBasicLogger()
-	botConfig, isTradingSdex := readBotConfig(l, options)
+	botConfig := readBotConfig(l, options)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 	// --- start initialization of objects ----
@@ -323,11 +321,10 @@ func runTradeCmd(options inputs) {
 		URL:  botConfig.HorizonURL,
 		HTTP: http.DefaultClient,
 	}
-	ieif := plugins.MakeIEIF(isTradingSdex)
+	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
 	network := utils.ParseNetwork(botConfig.HorizonURL)
 	exchangeShim, sdex := makeExchangeShimSdex(
 		l,
-		isTradingSdex,
 		botConfig,
 		options,
 		client,
@@ -363,7 +360,7 @@ func runTradeCmd(options inputs) {
 	)
 	// --- end initialization of objects ---
 	// --- start initialization of services ---
-	validateTrustlines(l, client, &botConfig, isTradingSdex)
+	validateTrustlines(l, client, &botConfig)
 	if botConfig.MonitoringPort != 0 {
 		go func() {
 			e := startMonitoringServer(l, botConfig)
@@ -479,8 +476,8 @@ func startFillTracking(
 	}
 }
 
-func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig, isTradingSdex bool) {
-	if !isTradingSdex {
+func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {
+	if !botConfig.IsTradingSdex() {
 		l.Info("no need to validate trustlines because we're not using SDEX as the trading exchange")
 		return
 	}
@@ -550,10 +547,10 @@ func deleteAllOffersAndExit(l logger.Logger, botConfig trader.BotConfig, client 
 	}
 }
 
-func setLogFile(l logger.Logger, options inputs, botConfig trader.BotConfig, isTradingSdex bool) {
+func setLogFile(l logger.Logger, options inputs, botConfig trader.BotConfig) {
 	t := time.Now().Format("20060102T150405MST")
 	fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *options.logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
-	if !isTradingSdex {
+	if !botConfig.IsTradingSdex() {
 		fileName = fmt.Sprintf("%s_%s_%s_%s.log", *options.logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
 	}
 
