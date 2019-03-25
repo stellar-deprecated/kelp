@@ -96,6 +96,7 @@ func (f *FillTracker) TrackFills() error {
 				return fmt.Errorf(eMsg)
 			}
 			log.Printf("%s\n", eMsg)
+			time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
 			continue
 		}
 
