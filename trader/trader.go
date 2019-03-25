@@ -143,7 +143,7 @@ func (t *Trader) deleteAllOffers() {
 		return
 	}
 
-	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d\n", t.deleteCycles)
+	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d; (deleteCyclesThreshold to be exceeded=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
 	dOps := []build.TransactionMutator{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
 	t.sellingAOffers = []horizon.Offer{}

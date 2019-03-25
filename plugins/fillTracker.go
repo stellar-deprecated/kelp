@@ -66,7 +66,7 @@ func (f *FillTracker) countError() bool {
 		return false
 	}
 
-	log.Printf("deleting all offers, num. continuous fill tracking cycles with errors (including this one): %d\n", f.fillTrackerDeleteCycles)
+	log.Printf("deleting all offers, num. continuous fill tracking cycles with errors (including this one): %d; (fillTrackerDeleteCyclesThreshold to be exceeded=%d)\n", f.fillTrackerDeleteCycles, f.fillTrackerDeleteCyclesThreshold)
 	return true
 }
 

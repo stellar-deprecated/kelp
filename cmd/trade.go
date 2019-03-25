@@ -462,8 +462,7 @@ func startFillTracking(
 			e := fillTracker.TrackFills()
 			if e != nil {
 				l.Info("")
-				l.Info("problem encountered while running the fill tracker:")
-				l.Errorf("%s", e)
+				l.Errorf("problem encountered while running the fill tracker: %s", e)
 				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim)
 			}
