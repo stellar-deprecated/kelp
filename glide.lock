@@ -1,5 +1,5 @@
-hash: 81ad219d2939a6ac4e4bbd94d3cebf8f1ea07291ae882f7f93ad781c8cf27ce6
-updated: 2019-03-19T16:40:20.118158839-07:00
+hash: 0ab15bf176f8313235c90ce78694e51ca8da996fd0c80187810a19536864ca1b
+updated: 2019-03-26T14:36:41.239077092-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -46,7 +46,7 @@ imports:
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nikhilsaraf/go-tools
-  version: 19004f22be08c82a22e679726ca22853c65919ae
+  version: a26df67722de7fcf1a8e22cd934e63e553dd3875
   subpackages:
   - multithreading
 - name: github.com/PagerDuty/go-pagerduty

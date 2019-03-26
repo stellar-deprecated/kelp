@@ -209,6 +209,7 @@ type Balance struct {
 // ExchangeShim is the interface we use as a generic API for all crypto exchanges
 type ExchangeShim interface {
 	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
+	SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
 	GetBalanceHack(asset horizon.Asset) (*Balance, error)
 	LoadOffersHack() ([]horizon.Offer, error)
 	Constrainable

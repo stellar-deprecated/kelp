@@ -36,6 +36,6 @@ import:
 - package: github.com/lechengfan/googleauth
   version: 7595ba02fbce171759c10d69d96e4cd898d1fa93
 - package: github.com/nikhilsaraf/go-tools
-  version: 19004f22be08c82a22e679726ca22853c65919ae
+  version: a26df67722de7fcf1a8e22cd934e63e553dd3875
 - package: github.com/mitchellh/mapstructure
   version: v1.1.2

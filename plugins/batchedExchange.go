@@ -169,6 +169,11 @@ func (b BatchedExchange) GetLatestTradeCursor() (interface{}, error) {
 	return b.inner.GetLatestTradeCursor()
 }
 
+// SubmitOpsSynch is the forced synchronous version of SubmitOps below (same for batchedExchange)
+func (b BatchedExchange) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	return b.SubmitOps(ops, asyncCallback)
+}
+
 // SubmitOps performs any finalization or submission step needed by the exchange
 func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	var e error
