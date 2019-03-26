@@ -385,18 +385,18 @@ func (sdex *SDEX) submitOps(ops []build.TransactionMutator, asyncCallback func(h
 		if asyncMode {
 			log.Println("submitting tx XDR to network (async)")
 			e = sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-				sdex.submit(txeB64, asyncCallback)
+				sdex.submit(txeB64, asyncCallback, true)
 			}, nil)
 			if e != nil {
 				return fmt.Errorf("unable to trigger goroutine to submit tx XDR to network asynchronously: %s", e)
 			}
 		} else {
 			log.Println("submitting tx XDR to network (synch)")
-			sdex.submit(txeB64, asyncCallback)
+			sdex.submit(txeB64, asyncCallback, false)
 		}
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
-		sdex.invokeAsyncCallback(asyncCallback, "", nil)
+		sdex.invokeAsyncCallback(asyncCallback, "", nil, asyncMode)
 	}
 	return nil
 }
@@ -422,7 +422,7 @@ func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
 	return txe.Base64()
 }
 
-func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)) {
+func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error), asyncMode bool) {
 	resp, err := sdex.API.SubmitTransaction(txeB64)
 	if err != nil {
 		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
@@ -430,7 +430,7 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 			rcs, err = herr.ResultCodes()
 			if err != nil {
 				log.Printf("(async) error: no result codes from horizon: %s\n", err)
-				sdex.invokeAsyncCallback(asyncCallback, "", err)
+				sdex.invokeAsyncCallback(asyncCallback, "", err, asyncMode)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
@@ -441,25 +441,33 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 		} else {
 			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
 		}
-		sdex.invokeAsyncCallback(asyncCallback, "", err)
+		sdex.invokeAsyncCallback(asyncCallback, "", err, asyncMode)
 		return
 	}
 
-	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
-	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil)
+	modeString := "(synch)"
+	if asyncMode {
+		modeString = "(async)"
+	}
+	log.Printf("%s tx confirmation hash: %s\n", modeString, resp.Hash)
+	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil, asyncMode)
 }
 
-func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, err error), hash string, err error) {
+func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, err error), hash string, err error, asyncMode bool) {
 	if asyncCallback == nil {
 		return
 	}
 
-	e := sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+	if asyncMode {
+		e := sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			asyncCallback(hash, err)
+		}, nil)
+		if e != nil {
+			log.Printf("unable to trigger goroutine for invokeAsyncCallback: %s", e)
+			return
+		}
+	} else {
 		asyncCallback(hash, err)
-	}, nil)
-	if e != nil {
-		log.Printf("unable to trigger goroutine to invokeAsyncCallback: %s", e)
-		return
 	}
 }
 
