@@ -373,9 +373,12 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 	// submit
 	if !sdex.simMode {
 		log.Println("submitting tx XDR to network (async)")
-		sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+		e = sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 			sdex.submit(txeB64, asyncCallback)
 		}, nil)
+		if e != nil {
+			return fmt.Errorf("unable to trigger goroutine to submit tx XDR to network asynchronously: %s", e)
+		}
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
 		sdex.invokeAsyncCallback(asyncCallback, "", nil)
@@ -431,14 +434,18 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil)
 }
 
-func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, e error), hash string, e error) {
+func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, err error), hash string, err error) {
 	if asyncCallback == nil {
 		return
 	}
 
-	sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-		asyncCallback(hash, e)
+	e := sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+		asyncCallback(hash, err)
 	}, nil)
+	if e != nil {
+		log.Printf("unable to trigger goroutine to invokeAsyncCallback: %s", e)
+		return
+	}
 }
 
 // Assets returns the base and quote asset used by sdex

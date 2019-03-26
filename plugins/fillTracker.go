@@ -96,13 +96,13 @@ func (f *FillTracker) TrackFills() error {
 				return fmt.Errorf(eMsg)
 			}
 			log.Printf("%s\n", eMsg)
-			time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
+			f.sleep()
 			continue
 		}
 
 		if len(tradeHistoryResult.Trades) > 0 {
 			// use a single goroutine so we handle trades sequentially and also respect the handler sequence
-			f.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			e = f.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 				ech := inputs[0].(chan error)
 				defer handlePanic(ech)
 
@@ -119,12 +119,25 @@ func (f *FillTracker) TrackFills() error {
 					}
 				}
 			}, []interface{}{ech, f.handlers, tradeHistoryResult.Trades})
+			if e != nil {
+				eMsg := fmt.Sprintf("error spawning fill handler: %s", e)
+				if f.countError() {
+					return fmt.Errorf(eMsg)
+				}
+				log.Printf("%s\n", eMsg)
+				f.sleep()
+				continue
+			}
 		}
 
 		lastCursor = tradeHistoryResult.Cursor
 		f.fillTrackerDeleteCycles = 0
-		time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
+		f.sleep()
 	}
+}
+
+func (f *FillTracker) sleep() {
+	time.Sleep(time.Duration(f.fillTrackerSleepMillis) * time.Millisecond)
 }
 
 func handlePanic(ech chan error) {

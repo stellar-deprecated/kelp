@@ -519,7 +519,8 @@ func deleteAllOffersAndExit(
 	threadTracker *multithreading.ThreadTracker,
 ) {
 	l.Info("")
-	l.Info("waiting for all outstanding threads to finish before loading offers to be deleted...")
+	l.Infof("waiting for all outstanding threads (%d) to finish before loading offers to be deleted...", threadTracker.NumActiveThreads())
+	threadTracker.Stop(multithreading.StopModeError)
 	threadTracker.Wait()
 	l.Info("...all outstanding threads finished")
 
