@@ -341,8 +341,18 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	return &result, nil
 }
 
+// SubmitOpsSynch is the forced synchronous version of SubmitOps below
+func (sdex *SDEX) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	return sdex.submitOps(ops, asyncCallback, false)
+}
+
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
 func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	return sdex.submitOps(ops, asyncCallback, true)
+}
+
+// submitOps submits the passed in operations to the network in a single transaction. Asynchronous or not based on flag.
+func (sdex *SDEX) submitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
 	sdex.incrementSeqNum()
 	muts := []build.TransactionMutator{
 		build.Sequence{Sequence: sdex.seqNum},
@@ -372,12 +382,17 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 
 	// submit
 	if !sdex.simMode {
-		log.Println("submitting tx XDR to network (async)")
-		e = sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+		if asyncMode {
+			log.Println("submitting tx XDR to network (async)")
+			e = sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+				sdex.submit(txeB64, asyncCallback)
+			}, nil)
+			if e != nil {
+				return fmt.Errorf("unable to trigger goroutine to submit tx XDR to network asynchronously: %s", e)
+			}
+		} else {
+			log.Println("submitting tx XDR to network (synch)")
 			sdex.submit(txeB64, asyncCallback)
-		}, nil)
-		if e != nil {
-			return fmt.Errorf("unable to trigger goroutine to submit tx XDR to network asynchronously: %s", e)
 		}
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")

@@ -539,7 +539,7 @@ func deleteAllOffersAndExit(
 	l.Infof("created %d operations to delete offers\n", len(dOps))
 
 	if len(dOps) > 0 {
-		e := exchangeShim.SubmitOps(dOps, func(hash string, e error) {
+		e := exchangeShim.SubmitOpsSynch(dOps, func(hash string, e error) {
 			if e != nil {
 				logger.Fatal(l, e)
 				return
@@ -553,7 +553,7 @@ func deleteAllOffersAndExit(
 
 		for {
 			sleepSeconds := 10
-			l.Infof("sleeping for %d seconds until our deletion is confirmed and we exit...\n", sleepSeconds)
+			l.Infof("sleeping for %d seconds until our deletion is confirmed and we exit...(should never reach this line since we submit delete ops synchronously)\n", sleepSeconds)
 			time.Sleep(time.Duration(sleepSeconds) * time.Second)
 		}
 	} else {
