@@ -115,6 +115,8 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
+	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
+	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
 	return &mirrorStrategy{
 		sdex:               sdex,
 		ieif:               ieif,
