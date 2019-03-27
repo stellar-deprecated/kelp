@@ -457,7 +457,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		Volume:      newVolume,
 		Timestamp:   nil,
 	}
-	log.Printf("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
+	log.Printf("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
 		trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -465,6 +465,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrderAction.String(),
 		s.baseSurplus[newOrderAction].total.AsFloat(),
 		s.baseSurplus[newOrderAction].committed.AsFloat(),
+		s.backingConstraints.MinBaseVolume.AsFloat(),
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat())
@@ -480,7 +481,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
 	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
 
-	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
+	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
 		trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -488,6 +489,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrderAction.String(),
 		s.baseSurplus[newOrderAction].total.AsFloat(),
 		s.baseSurplus[newOrderAction].committed.AsFloat(),
+		s.backingConstraints.MinBaseVolume.AsFloat(),
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat(),
