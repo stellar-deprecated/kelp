@@ -17,12 +17,14 @@ fi
 
 if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
     MODE=deploy
+    ENV=release
 elif [[ ($# -eq 1 && ("$1" == "-h" || "$1" == "--help")) ]]; then
     usage
 elif [[ $# -eq 1 ]]; then
     usage
 else
     MODE=build
+    ENV=dev
 fi
 
 # version is git tag if it's available, otherwise git hash
@@ -31,12 +33,13 @@ GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS="-X github.com/stellar/kelp/cmd.version=$VERSION_STRING -X github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/stellar/kelp/cmd.gitHash=$GIT_HASH -X github.com/stellar/kelp/cmd.buildDate=$DATE"
+LDFLAGS="-X github.com/stellar/kelp/cmd.version=$VERSION_STRING -X github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/stellar/kelp/cmd.gitHash=$GIT_HASH -X github.com/stellar/kelp/cmd.buildDate=$DATE -X github.com/stellar/kelp/cmd.env=$ENV"
 
 echo "version: $VERSION_STRING"
 echo "git branch: $GIT_BRANCH"
 echo "git hash: $GIT_HASH"
 echo "build date: $DATE"
+echo "env: $ENV"
 
 if [[ $MODE == "build" ]]
 then
