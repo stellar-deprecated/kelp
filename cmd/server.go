@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/spf13/cobra"
+	"github.com/stellar/kelp/gui"
 )
 
 var serverCmd = &cobra.Command{
@@ -35,7 +36,11 @@ func init() {
 		r.Use(middleware.Logger)
 		r.Use(middleware.Recoverer)
 		r.Use(middleware.Timeout(60 * time.Second))
-		fileServer(r, "/", http.Dir(guiBuildDir))
+		if env == envRelease {
+			fileServer(r, "/", gui.FS)
+		} else {
+			fileServer(r, "/", http.Dir(guiBuildDir))
+		}
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving %s on HTTP port: %d\n", guiBuildDir, *options.port)
