@@ -87,6 +87,10 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 	if botConfig.IsTradingSdex() && botConfig.Fee == nil {
 		logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file when trading on SDEX"))
 	}
+
+	if botConfig.MinCentralizedBaseVolume == 0.0 {
+		logger.Fatal(l, fmt.Errorf("need to specify non-zero MIN_CENTRALIZED_BASE_VOLUME config param in trader config file"))
+	}
 }
 
 func init() {
@@ -289,6 +293,7 @@ func makeBot(
 		botConfig.AssetBase(),
 		botConfig.AssetQuote(),
 		tradingPair,
+		botConfig.MinCentralizedBaseVolume,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
