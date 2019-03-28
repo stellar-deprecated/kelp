@@ -55,7 +55,7 @@ func MakeBot(
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
 	tradingPair *model.TradingPair,
-	minBaseVolume float64,
+	minBaseVolume *float64,
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
@@ -71,7 +71,9 @@ func MakeBot(
 	submitFilters := []plugins.SubmitFilter{}
 
 	oc := exchangeShim.GetOrderConstraints(tradingPair)
-	oc.MinBaseVolume = *model.NumberFromFloat(minBaseVolume, oc.VolumePrecision)
+	if minBaseVolume != nil {
+		oc.MinBaseVolume = *model.NumberFromFloat(*minBaseVolume, oc.VolumePrecision)
+	}
 	orderConstraintsFilter := plugins.MakeFilterOrderConstraints(oc, assetBase, assetQuote)
 	submitFilters = append(submitFilters, orderConstraintsFilter)
 
