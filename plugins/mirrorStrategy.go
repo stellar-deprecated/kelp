@@ -36,6 +36,7 @@ type mirrorConfig struct {
 	OrderbookDepth  int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
 	VolumeDivideBy  float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
 	PerLevelSpread  float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	MinBaseVolume   float64             `valid:"-" toml:"MIN_BASE_VOLUME"`
 	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
 	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
 }
@@ -100,6 +101,10 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		if e != nil {
 			return nil, e
 		}
+
+		if config.MinBaseVolume == 0.0 {
+			return nil, fmt.Errorf("need to specify non-zero MIN_BASE_VOLUME config param in mirror strategy config file")
+		}
 	} else {
 		exchange, e = MakeExchange(config.Exchange, simMode)
 		if e != nil {
@@ -115,6 +120,9 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
+	if config.OffsetTrades {
+		backingConstraints.MinBaseVolume = *model.NumberFromFloat(config.MinBaseVolume, backingConstraints.VolumePrecision)
+	}
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
 	return &mirrorStrategy{
