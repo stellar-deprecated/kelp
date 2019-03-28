@@ -33,6 +33,7 @@ type BotConfig struct {
 	FillTrackerDeleteCyclesThreshold int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD"`
 	HorizonURL                       string     `valid:"-" toml:"HORIZON_URL"`
 	Fee                              *FeeConfig `valid:"-" toml:"FEE"`
+	MinCentralizedBaseVolume         float64    `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME"`
 	AlertType                        string     `valid:"-" toml:"ALERT_TYPE"`
 	AlertAPIKey                      string     `valid:"-" toml:"ALERT_API_KEY"`
 	MonitoringPort                   uint16     `valid:"-" toml:"MONITORING_PORT"`

@@ -87,6 +87,10 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 	if botConfig.IsTradingSdex() && botConfig.Fee == nil {
 		logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file when trading on SDEX"))
 	}
+
+	if !botConfig.IsTradingSdex() && botConfig.MinCentralizedBaseVolume == 0.0 {
+		logger.Fatal(l, fmt.Errorf("need to specify non-zero MIN_CENTRALIZED_BASE_VOLUME config param in trader config file when not trading on SDEX"))
+	}
 }
 
 func init() {
@@ -283,12 +287,17 @@ func makeBot(
 	if e != nil {
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
+	minCentralizedBaseVolume := &botConfig.MinCentralizedBaseVolume
+	if botConfig.IsTradingSdex() {
+		minCentralizedBaseVolume = nil
+	}
 	bot := trader.MakeBot(
 		client,
 		ieif,
 		botConfig.AssetBase(),
 		botConfig.AssetQuote(),
 		tradingPair,
+		minCentralizedBaseVolume,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
