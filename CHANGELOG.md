@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Enable trading on centralized exchanges ([505162a86777f99fba26bc953b3125aba90e2f7e](https://github.com/stellar/kelp/commit/505162a86777f99fba26bc953b3125aba90e2f7e)) ([a9ab0346ddd3500395018d1dbcf426200b5fb112](https://github.com/stellar/kelp/commit/a9ab0346ddd3500395018d1dbcf426200b5fb112)) ([3a1b4c467495a5ebb8219c554dd8a5e4d63723e5](https://github.com/stellar/kelp/commit/3a1b4c467495a5ebb8219c554dd8a5e4d63723e5))
 - support for OrderConstraintsFilter to preempt invalid orders ([b9ba73071d97e9e0e8c6f61989ff9375be4dbbeb](https://github.com/stellar/kelp/commit/b9ba73071d97e9e0e8c6f61989ff9375be4dbbeb))
 - Expand CCXT exchanges enabled on Kelp, including trading-enabled exchanges ([0631bb1ec8892e331907614cca94d66aed3ee026](https://github.com/stellar/kelp/commit/0631bb1ec8892e331907614cca94d66aed3ee026)) ([40c56416e07a5f974815ee0ca11992c8825e57c2](https://github.com/stellar/kelp/commit/40c56416e07a5f974815ee0ca11992c8825e57c2))
+- Fill Tracker should accommodate N errors before causing bot to exit ([de12bfe16e7d68f76798e4b99f60cb005386c2cb](https://github.com/stellar/kelp/commit/de12bfe16e7d68f76798e4b99f60cb005386c2cb))
 
 ### Changed
 
 - Use FeeStats() method from new horizonclient package in stellar/go repo; run `glide install` to update vendored dependencies, _do NOT run `glide up` since that will break the dependencies installed because of an issue with how glide works_ ([ce226cc20ce6a38fe56728c91432db9edd7cb272](https://github.com/stellar/kelp/commit/ce226cc20ce6a38fe56728c91432db9edd7cb272))
+- krakenExchange logs better error message when trading pair is missing ([807139ff2b4b6fb81726459b1ef1958d95f7cd95](https://github.com/stellar/kelp/commit/807139ff2b4b6fb81726459b1ef1958d95f7cd95))
+- Sort exchanges based on what is tested first ([8d6d4502032b8b5b237ad9d2a6fe3c38f176c541](https://github.com/stellar/kelp/commit/8d6d4502032b8b5b237ad9d2a6fe3c38f176c541))
 
 ### Deprecated
 
@@ -23,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fixed Mirror Strategy not working without offsetTrades flag ([09f76e891967a146363ccbd8fe8ccf53656c270e](https://github.com/stellar/kelp/commit/09f76e891967a146363ccbd8fe8ccf53656c270e))
+- Fix minVolume amounts when offsetting trades in mirror strategy ([0576aa1724b98b3d359b1d82ca36b156b0251977](https://github.com/stellar/kelp/commit/0576aa1724b98b3d359b1d82ca36b156b0251977))
 
 ### Security
 
