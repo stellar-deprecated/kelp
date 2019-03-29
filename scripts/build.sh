@@ -87,8 +87,17 @@ then
     exit 1
 fi
 
-# generate release assets for the GUI using fs_bin_gen.go
+# generate release assets for the GUI
+echo "generating contents of gui/web/build ..."
+CURRENT_DIR=`pwd`
+cd $CURRENT_DIR/gui/web
+yarn install && yarn build
+cd $CURRENT_DIR
+echo "... finished generating contents of gui/web/build"
+echo "embedding contents of gui/web/build into a .go file ..."
 go run ./scripts/fs_bin_gen.go 
+echo "... finished embedding contents of gui/web/build into a .go file"
+echo ""
 
 ARCHIVE_DIR=build/$DATE
 ARCHIVE_FOLDER_NAME=kelp-$VERSION
