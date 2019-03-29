@@ -87,6 +87,9 @@ then
     exit 1
 fi
 
+# generate release assets for the GUI using fs_bin_gen.go
+go run ./scripts/fs_bin_gen.go 
+
 ARCHIVE_DIR=build/$DATE
 ARCHIVE_FOLDER_NAME=kelp-$VERSION
 ARCHIVE_DIR_SOURCE=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME
