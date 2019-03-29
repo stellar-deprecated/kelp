@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,8 +22,6 @@ type serverInputs struct {
 	port *uint16
 }
 
-var guiBuildDir = filepath.Join("gui", "build")
-
 func init() {
 	options := serverInputs{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
@@ -36,14 +33,10 @@ func init() {
 		r.Use(middleware.Logger)
 		r.Use(middleware.Recoverer)
 		r.Use(middleware.Timeout(60 * time.Second))
-		if env == envRelease {
-			fileServer(r, "/", gui.FS)
-		} else {
-			fileServer(r, "/", http.Dir(guiBuildDir))
-		}
+		fileServer(r, "/", gui.FS)
 
 		portString := fmt.Sprintf(":%d", *options.port)
-		log.Printf("Serving %s on HTTP port: %d\n", guiBuildDir, *options.port)
+		log.Printf("Serving on HTTP port: %d\n", *options.port)
 		e := http.ListenAndServe(portString, r)
 		log.Fatal(e)
 	}

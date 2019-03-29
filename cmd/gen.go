@@ -15,9 +15,10 @@ var genCmd = &cobra.Command{
 
 func init() {
 	genCmd.Run = func(ccmd *cobra.Command, args []string) {
-		fs := http.Dir("./gui/build")
+		fs := http.Dir("./gui/web/build")
 		e := vfsgen.Generate(fs, vfsgen.Options{
-			Filename:        "./gui/filesystem_vfsdata.go",
+			Filename:        "./gui/filesystem_vfsdata_release.go",
+			BuildTags:       "!debug",
 			PackageName:     "gui",
 			VariableName:    "FS",
 			VariableComment: "file system for GUI as a blob",

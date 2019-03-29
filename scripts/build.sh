@@ -59,7 +59,7 @@ then
     mkdir -p bin
 
     echo -n "compiling ... "
-    go build -ldflags "$LDFLAGS" -o $OUTFILE
+    go build -tags debug -ldflags "$LDFLAGS" -o $OUTFILE
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
