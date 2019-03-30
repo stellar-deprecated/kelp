@@ -28,6 +28,38 @@ func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
 	return apiKeys
 }
 
+type ccxtParamsToml []struct {
+	Parameter string `valid:"-" toml:"PARAMETER"`
+	Value     string `valid:"-" toml:"VALUE"`
+}
+
+func (c *ccxtParamsToml) toCcxtParams() []api.CcxtParam {
+	ccxtParams := []api.CcxtParam{}
+	for _, param := range *c {
+		ccxtParams = append(ccxtParams, api.CcxtParam{
+			Parameter: param.Parameter,
+			Value:     param.Value,
+		})
+	}
+	return ccxtParams
+}
+
+type exchangeHeadersToml []struct {
+	Header string `valid:"-" toml:"HEADER"`
+	Value  string `valid:"-" toml:"VALUE"`
+}
+
+func (e *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
+	apiHeaders := []api.ExchangeHeader{}
+	for _, header := range *e {
+		apiHeaders = append(apiHeaders, api.ExchangeHeader{
+			Header: header.Header,
+			Value:  header.Value,
+		})
+	}
+	return apiHeaders
+}
+
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
 	Exchange        string              `valid:"-" toml:"EXCHANGE"`
@@ -39,6 +71,8 @@ type mirrorConfig struct {
 	MinBaseVolume   float64             `valid:"-" toml:"MIN_BASE_VOLUME"`
 	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
 	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	CcxtParams      ccxtParamsToml      `valid:"-" toml:"CCXT_PARAMS"`
+	ExchangeHeaders exchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 }
 
 // String impl.
@@ -97,7 +131,9 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 	var e error
 	if config.OffsetTrades {
 		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
-		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, simMode)
+		ccxtParams := config.CcxtParams.toCcxtParams()
+		exchangeHeaders := config.ExchangeHeaders.toExchangeHeaders()
+		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, ccxtParams, exchangeHeaders, simMode)
 		if e != nil {
 			return nil, e
 		}

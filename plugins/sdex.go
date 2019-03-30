@@ -93,11 +93,11 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:        simMode,
-		pair:           pair,
-		assetMap:       assetMap,
-		opFeeStroopsFn: opFeeStroopsFn,
-		tradingOnSdex:  exchangeShim == nil,
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
+		opFeeStroopsFn:                opFeeStroopsFn,
+		tradingOnSdex:                 exchangeShim == nil,
 	}
 
 	if exchangeShim == nil {

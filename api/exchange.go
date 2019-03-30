@@ -14,6 +14,18 @@ type ExchangeAPIKey struct {
 	Secret string
 }
 
+// CcxtParam specifies an additional ccxt parameter
+type CcxtParam struct {
+	Parameter string
+	Value     string
+}
+
+// ExchangeHeader specifies additional HTTP headers for centralized exchanges
+type ExchangeHeader struct {
+	Header string
+	Value  string
+}
+
 // Account allows you to access key account functions
 type Account interface {
 	GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error)

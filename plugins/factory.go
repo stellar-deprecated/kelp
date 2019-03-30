@@ -151,8 +151,10 @@ func Strategies() map[string]StrategyContainer {
 
 // exchangeFactoryData is a data container that has all the information needed to make an exchange
 type exchangeFactoryData struct {
-	simMode bool
-	apiKeys []api.ExchangeAPIKey
+	simMode    bool
+	apiKeys    []api.ExchangeAPIKey
+	ccxtParams []api.CcxtParam
+	headers    []api.ExchangeHeader
 }
 
 // ExchangeContainer contains the exchange factory method along with some metadata
@@ -210,10 +212,13 @@ func loadExchanges() {
 				TradeEnabled: true,
 				Tested:       tested,
 				makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
+					fmt.Printf("makeFn received exchange headers: %s\n", exchangeFactoryData.headers)
 					return makeCcxtExchange(
 						boundExchangeName,
 						nil,
 						exchangeFactoryData.apiKeys,
+						exchangeFactoryData.ccxtParams,
+						exchangeFactoryData.headers,
 						exchangeFactoryData.simMode,
 					)
 				},
@@ -241,7 +246,7 @@ func MakeExchange(exchangeType string, simMode bool) (api.Exchange, error) {
 }
 
 // MakeTradingExchange is a factory method to make an exchange based on a given type
-func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, simMode bool) (api.Exchange, error) {
+func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, ccxtParams []api.CcxtParam, headers []api.ExchangeHeader, simMode bool) (api.Exchange, error) {
 	if exchange, ok := getExchanges()[exchangeType]; ok {
 		if !exchange.TradeEnabled {
 			return nil, fmt.Errorf("trading is not enabled on this exchange: %s", exchangeType)
@@ -251,9 +256,13 @@ func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, simM
 			return nil, fmt.Errorf("cannot make trading exchange, apiKeys mising")
 		}
 
+		fmt.Printf("MakeTradingExchange received exchange headers: %s\n", headers)
+
 		x, e := exchange.makeFn(exchangeFactoryData{
-			simMode: simMode,
-			apiKeys: apiKeys,
+			simMode:    simMode,
+			apiKeys:    apiKeys,
+			ccxtParams: ccxtParams,
+			headers:    headers,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("error when making the '%s' exchange: %s", exchangeType, e)
