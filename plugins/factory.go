@@ -212,7 +212,6 @@ func loadExchanges() {
 				TradeEnabled: true,
 				Tested:       tested,
 				makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
-					fmt.Printf("makeFn received exchange headers: %s\n", exchangeFactoryData.headers)
 					return makeCcxtExchange(
 						boundExchangeName,
 						nil,

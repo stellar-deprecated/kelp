@@ -187,8 +187,6 @@ func makeExchangeShimSdex(
 			})
 		}
 
-		l.Infof("makeExchangeShimSdex received exchange headers: %s\n", botConfig.ExchangeHeaders)
-
 		ccxtParams := []api.CcxtParam{}
 		for _, param := range botConfig.CcxtParams {
 			ccxtParams = append(ccxtParams, api.CcxtParam{

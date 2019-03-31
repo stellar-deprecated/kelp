@@ -438,7 +438,6 @@ func (c *Ccxt) FetchBalance() (map[string]CcxtBalance, error) {
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchBalance"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	fmt.Printf("ccxt.FetchBalance received headers: %s\n", c.headersMap)
 	e := networking.JSONRequest(c.httpClient, "POST", url, "", c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching balance: %s", e)
