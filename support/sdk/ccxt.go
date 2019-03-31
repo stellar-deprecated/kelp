@@ -196,26 +196,11 @@ func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.CcxtParam) er
 	data["apiKey"] = apiKey.Key
 	data["secret"] = apiKey.Secret
 
-	// if len(params) > 0 {
 	for _, param := range params {
 		data[param.Parameter] = param.Value
 	}
-	// }
 
 	jsonData, e := json.Marshal(data)
-
-	staticData, e := json.Marshal(&struct {
-		ID     string `json:"id"`
-		APIKey string `json:"apiKey"`
-		Secret string `json:"secret"`
-	}{
-		ID:     c.instanceName,
-		APIKey: apiKey.Key,
-		Secret: apiKey.Secret,
-	})
-
-	fmt.Printf("static data for ccxt would have been: %s\n", string(staticData))
-	fmt.Printf("param including string is: %s\n", string(jsonData))
 
 	if e != nil {
 		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", c.instanceName, c.exchangeName, e)
