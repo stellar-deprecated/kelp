@@ -53,7 +53,7 @@ type CcxtMarket struct {
 const pathExchanges = "/exchanges"
 
 // MakeInitializedCcxtExchange constructs an instance of Ccxt that is bound to a specific exchange instance on the CCXT REST server
-func MakeInitializedCcxtExchange(exchangeName string, apiKey api.ExchangeAPIKey, params []api.CcxtParam, headers []api.ExchangeHeader) (*Ccxt, error) {
+func MakeInitializedCcxtExchange(exchangeName string, apiKey api.ExchangeAPIKey, params []api.ExchangeParam, headers []api.ExchangeHeader) (*Ccxt, error) {
 	if strings.HasSuffix(ccxtBaseURL, "/") {
 		return nil, fmt.Errorf("invalid format for ccxtBaseURL: %s", ccxtBaseURL)
 	}
@@ -103,7 +103,7 @@ func loadExchangeList() {
 	exchangeList = &output
 }
 
-func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey, params []api.CcxtParam, headers []api.ExchangeHeader) error {
+func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey, params []api.ExchangeParam, headers []api.ExchangeHeader) error {
 	// validate that exchange name is in the exchange list
 	exchangeListed := false
 	el := GetExchangeList()
@@ -189,7 +189,7 @@ func (c *Ccxt) hasInstance(instanceList []string) bool {
 	return false
 }
 
-func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.CcxtParam) error {
+func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam) error {
 	data := map[string]string{}
 
 	data["id"] = c.instanceName

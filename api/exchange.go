@@ -14,13 +14,13 @@ type ExchangeAPIKey struct {
 	Secret string
 }
 
-// CcxtParam specifies an additional ccxt parameter
-type CcxtParam struct {
+// ExchangeParam specifies an additional ccxt parameter
+type ExchangeParam struct {
 	Parameter string
 	Value     string
 }
 
-// ExchangeHeader specifies additional HTTP headers for centralized exchanges
+// ExchangeHeader specifies additional HTTP headers
 type ExchangeHeader struct {
 	Header string
 	Value  string

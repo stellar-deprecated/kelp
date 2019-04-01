@@ -187,9 +187,9 @@ func makeExchangeShimSdex(
 			})
 		}
 
-		ccxtParams := []api.CcxtParam{}
-		for _, param := range botConfig.CcxtParams {
-			ccxtParams = append(ccxtParams, api.CcxtParam{
+		exchangeParams := []api.ExchangeParam{}
+		for _, param := range botConfig.ExchangeParams {
+			exchangeParams = append(exchangeParams, api.ExchangeParam{
 				Parameter: param.Parameter,
 				Value:     param.Value,
 			})
@@ -204,7 +204,7 @@ func makeExchangeShimSdex(
 		}
 
 		var exchangeAPI api.Exchange
-		exchangeAPI, e = plugins.MakeTradingExchange(botConfig.TradingExchange, exchangeAPIKeys, ccxtParams, exchangeHeaders, *options.simMode)
+		exchangeAPI, e = plugins.MakeTradingExchange(botConfig.TradingExchange, exchangeAPIKeys, exchangeParams, exchangeHeaders, *options.simMode)
 		if e != nil {
 			logger.Fatal(l, fmt.Errorf("unable to make trading exchange: %s", e))
 			return nil, nil

@@ -14,15 +14,17 @@ import (
 
 var supportedExchanges = []string{"binance"}
 var emptyAPIKey = api.ExchangeAPIKey{}
-var emptyParams = api.CcxtParam{}
+var emptyParams = api.ExchangeParam{}
 var emptyHeader = api.ExchangeHeader{}
 var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
-	"binance": {},
+	"binance":     {},
+	"coinbasepro": {},
 }
 
 var testOrderConstraints = map[model.TradingPair]model.OrderConstraints{
 	*model.MakeTradingPair(model.XLM, model.USDT): *model.MakeOrderConstraints(4, 5, 0.1),
 	*model.MakeTradingPair(model.XLM, model.BTC):  *model.MakeOrderConstraints(8, 4, 1.0),
+	*model.MakeTradingPair(model.XLM, model.USD):  *model.MakeOrderConstraints(6, 0, 1.0),
 }
 
 func TestGetTickerPrice_Ccxt(t *testing.T) {
@@ -32,7 +34,7 @@ func TestGetTickerPrice_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -59,7 +61,7 @@ func TestGetOrderBook_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -92,7 +94,7 @@ func TestGetTrades_Ccxt(t *testing.T) {
 
 	for _, exchangeName := range supportedExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{emptyAPIKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -117,7 +119,7 @@ func TestGetTradeHistory_Ccxt(t *testing.T) {
 
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -175,7 +177,7 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 func TestGetLatestTradeCursor_Ccxt(t *testing.T) {
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -214,7 +216,7 @@ func TestGetAccountBalances_Ccxt(t *testing.T) {
 
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
@@ -259,7 +261,7 @@ func TestGetOpenOrders_Ccxt(t *testing.T) {
 	for exchangeName, apiKey := range supportedTradingExchanges {
 		for _, pair := range tradingPairs {
 			t.Run(exchangeName, func(t *testing.T) {
-				testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+				testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 				if !assert.NoError(t, e) {
 					return
 				}
@@ -374,7 +376,7 @@ func TestAddOrder_Ccxt(t *testing.T) {
 			},
 		} {
 			t.Run(exchangeName, func(t *testing.T) {
-				testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+				testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 				if !assert.NoError(t, e) {
 					return
 				}
@@ -424,7 +426,7 @@ func TestCancelOrder_Ccxt(t *testing.T) {
 			},
 		} {
 			t.Run(exchangeName, func(t *testing.T) {
-				testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+				testCcxtExchange, e := makeCcxtExchange(exchangeName, testOrderConstraints, []api.ExchangeAPIKey{apiKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 				if !assert.NoError(t, e) {
 					return
 				}
@@ -471,11 +473,17 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 			wantPricePrecision: 8,
 			wantVolPrecision:   0,
 		},
+		{
+			exchangeName:       "coinbasepro",
+			pair:               &model.TradingPair{Base: model.XLM, Quote: model.USD},
+			wantPricePrecision: 6,
+			wantVolPrecision:   0,
+		},
 	}
 
 	for _, kase := range testCases {
 		t.Run(kase.exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(kase.exchangeName, nil, []api.ExchangeAPIKey{emptyAPIKey}, []api.CcxtParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
+			testCcxtExchange, e := makeCcxtExchange(kase.exchangeName, nil, []api.ExchangeAPIKey{emptyAPIKey}, []api.ExchangeParam{emptyParams}, []api.ExchangeHeader{emptyHeader}, false)
 			if !assert.NoError(t, e) {
 				return
 			}
