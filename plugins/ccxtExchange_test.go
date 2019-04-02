@@ -23,7 +23,6 @@ var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
 var testOrderConstraints = map[model.TradingPair]model.OrderConstraints{
 	*model.MakeTradingPair(model.XLM, model.USDT): *model.MakeOrderConstraints(4, 5, 0.1),
 	*model.MakeTradingPair(model.XLM, model.BTC):  *model.MakeOrderConstraints(8, 4, 1.0),
-	*model.MakeTradingPair(model.XLM, model.USD):  *model.MakeOrderConstraints(6, 0, 1.0),
 }
 
 func TestGetTickerPrice_Ccxt(t *testing.T) {
