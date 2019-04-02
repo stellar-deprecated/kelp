@@ -48,14 +48,35 @@ func (p TradingPair) ToString(c *AssetConverter, delim string) (string, error) {
 
 // TradingPairFromString makes a TradingPair out of a string
 func TradingPairFromString(codeSize int8, c *AssetConverter, p string) (*TradingPair, error) {
-	base, e := c.FromString(p[0:codeSize])
+	return TradingPairFromString2(codeSize, []*AssetConverter{c}, p)
+}
+
+// TradingPairFromString2 makes a TradingPair out of a string
+func TradingPairFromString2(codeSize int8, converters []*AssetConverter, p string) (*TradingPair, error) {
+	var base Asset
+	var quote Asset
+	var e error
+
+	baseString := p[0:codeSize]
+	for _, c := range converters {
+		base, e = c.FromString(baseString)
+		if e == nil {
+			break
+		}
+	}
 	if e != nil {
-		return nil, fmt.Errorf("base asset could not be converted: %s", e)
+		return nil, fmt.Errorf("base asset could not be converted using any of the converters in the list of %d converters: %s", len(converters), baseString)
 	}
 
-	quote, e := c.FromString(p[codeSize : codeSize*2])
+	quoteString := p[codeSize : codeSize*2]
+	for _, c := range converters {
+		quote, e = c.FromString(quoteString)
+		if e == nil {
+			break
+		}
+	}
 	if e != nil {
-		return nil, fmt.Errorf("quote asset could not be converted: %s", e)
+		return nil, fmt.Errorf("quote asset could not be converted using any of the converters in the list of %d converters: %s", len(converters), quoteString)
 	}
 
 	return &TradingPair{Base: base, Quote: quote}, nil

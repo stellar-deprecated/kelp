@@ -220,10 +220,11 @@ func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tr
 		return nil, e
 	}
 
+	assetConverters := []*model.AssetConverter{k.assetConverterOpenOrders, model.Display}
 	m := map[model.TradingPair][]model.OpenOrder{}
 	for ID, o := range openOrdersResponse.Open {
 		// kraken uses different symbols when fetching open orders!
-		pair, e := model.TradingPairFromString(3, k.assetConverterOpenOrders, o.Description.AssetPair)
+		pair, e := model.TradingPairFromString2(3, assetConverters, o.Description.AssetPair)
 		if e != nil {
 			return nil, fmt.Errorf("error parsing trading pair '%s' in krakenExchange#GetOpenOrders: %s", o.Description.AssetPair, e)
 		}
