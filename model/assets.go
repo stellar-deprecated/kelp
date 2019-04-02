@@ -170,7 +170,6 @@ var KrakenAssetConverterOpenOrders = makeAssetConverter(map[Asset]string{
 	XLM: "XLM",
 	BTC: "XBT",
 	USD: "USD",
-	ETH: "ETH",
 })
 
 // FromHorizonAsset is a factory method
