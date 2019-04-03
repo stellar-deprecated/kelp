@@ -7,7 +7,8 @@ services:
 
 go:
 - "1.10.x"
-- "1.11"
+- "1.11.x"
+- "1.12.x"
 
 before_install:
 - curl https://glide.sh/get | sh
