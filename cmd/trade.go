@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	horizonclient "github.com/stellar/go/exp/clients/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -64,6 +65,7 @@ type inputs struct {
 	simMode                       *bool
 	logPrefix                     *string
 	fixedIterations               *uint64
+	noHeaders                     *bool
 }
 
 func validateCliParams(l logger.Logger, options inputs) {
@@ -105,6 +107,7 @@ func init() {
 	options.simMode = tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
+	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -125,17 +128,16 @@ func makeStartupMessage(options inputs) string {
 	return startupMessage
 }
 
-func makeFeeFn(l logger.Logger, botConfig trader.BotConfig) plugins.OpFeeStroops {
+func makeFeeFn(l logger.Logger, botConfig trader.BotConfig, newClient *horizonclient.Client) plugins.OpFeeStroops {
 	if !botConfig.IsTradingSdex() {
 		return plugins.SdexFixedFeeFn(0)
 	}
 
 	feeFn, e := plugins.SdexFeeFnFromStats(
-		botConfig.HorizonURL,
 		botConfig.Fee.CapacityTrigger,
 		botConfig.Fee.Percentile,
 		botConfig.Fee.MaxOpFeeStroops,
-		version,
+		newClient,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
@@ -172,6 +174,7 @@ func makeExchangeShimSdex(
 	botConfig trader.BotConfig,
 	options inputs,
 	client *horizon.Client,
+	newClient *horizonclient.Client,
 	ieif *plugins.IEIF,
 	network build.Network,
 	threadTracker *multithreading.ThreadTracker,
@@ -202,7 +205,7 @@ func makeExchangeShimSdex(
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
-	feeFn := makeFeeFn(l, botConfig)
+	feeFn := makeFeeFn(l, botConfig, newClient)
 	sdex := plugins.MakeSDEX(
 		client,
 		ieif,
@@ -329,11 +332,21 @@ func runTradeCmd(options inputs) {
 	}
 
 	client := &horizon.Client{
-		URL:        botConfig.HorizonURL,
-		HTTP:       http.DefaultClient,
-		AppName:    "kelp",
-		AppVersion: version,
+		URL:  botConfig.HorizonURL,
+		HTTP: http.DefaultClient,
 	}
+	newClient := &horizonclient.Client{
+		// TODO horizonclient.Client has a bug in it where it does not use "/" to separate the horizonURL from the fee_stats endpoint
+		HorizonURL: botConfig.HorizonURL + "/",
+		HTTP:       http.DefaultClient,
+	}
+	if !*options.noHeaders {
+		client.AppName = "kelp"
+		client.AppVersion = version
+		newClient.AppName = "kelp"
+		newClient.AppVersion = version
+	}
+
 	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
 	network := utils.ParseNetwork(botConfig.HorizonURL)
 	exchangeShim, sdex := makeExchangeShimSdex(
@@ -341,6 +354,7 @@ func runTradeCmd(options inputs) {
 		botConfig,
 		options,
 		client,
+		newClient,
 		ieif,
 		network,
 		threadTracker,
