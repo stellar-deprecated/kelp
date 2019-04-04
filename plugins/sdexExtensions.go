@@ -29,6 +29,7 @@ func SdexFeeFnFromStats(
 	capacityTrigger float64,
 	percentile uint8,
 	maxOpFeeStroops uint64,
+	kelpVersion string,
 ) (OpFeeStroops, error) {
 	isValid := false
 	for _, p := range validPercentiles {
@@ -53,6 +54,8 @@ func SdexFeeFnFromStats(
 		// TODO horizonclient.Client has a bug in it where it does not use "/" to separate the horizonURL from the fee_stats endpoint
 		HorizonURL: horizonBaseURL + "/",
 		HTTP:       http.DefaultClient,
+		AppName:    "kelp",
+		AppVersion: kelpVersion,
 	}
 
 	return func() (uint64, error) {

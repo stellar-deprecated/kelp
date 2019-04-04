@@ -135,6 +135,7 @@ func makeFeeFn(l logger.Logger, botConfig trader.BotConfig) plugins.OpFeeStroops
 		botConfig.Fee.CapacityTrigger,
 		botConfig.Fee.Percentile,
 		botConfig.Fee.MaxOpFeeStroops,
+		version,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not set up feeFn correctly: %s", e))
@@ -328,8 +329,10 @@ func runTradeCmd(options inputs) {
 	}
 
 	client := &horizon.Client{
-		URL:  botConfig.HorizonURL,
-		HTTP: http.DefaultClient,
+		URL:        botConfig.HorizonURL,
+		HTTP:       http.DefaultClient,
+		AppName:    "kelp",
+		AppVersion: version,
 	}
 	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
 	network := utils.ParseNetwork(botConfig.HorizonURL)
