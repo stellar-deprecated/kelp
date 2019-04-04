@@ -1,5 +1,5 @@
-hash: 0ab15bf176f8313235c90ce78694e51ca8da996fd0c80187810a19536864ca1b
-updated: 2019-03-26T14:36:41.239077092-07:00
+hash: c1a6fe42c2e0796f29822018134adc2401292b654fec58b7d790daafceec2585
+updated: 2019-04-03T12:27:32.117314051-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -74,7 +74,7 @@ imports:
 - name: github.com/spf13/viper
   version: db7ff930a189b98d602179d9001d33345f42b8c7
 - name: github.com/stellar/go
-  version: 61ed9984b1f88fda0d4e5e375021b404d9900959
+  version: a45d1ae036357adf337060c7b15dbe9abc235025
   subpackages:
   - amount
   - build
@@ -88,6 +88,7 @@ imports:
   - protocols/horizon
   - protocols/horizon/base
   - protocols/horizon/effects
+  - protocols/horizon/operations
   - strkey
   - support/app
   - support/config
