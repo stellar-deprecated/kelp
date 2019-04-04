@@ -374,7 +374,7 @@ func (s *mirrorStrategy) doModifyOffer(
 	// convert the precision from the backing exchange to the primary exchange
 	offerPrice := model.NumberByCappingPrecision(price, s.primaryConstraints.PricePrecision)
 	offerAmount := model.NumberByCappingPrecision(vol, s.primaryConstraints.VolumePrecision)
-	if offerAmount.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
+	if s.offsetTrades && offerAmount.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
 		log.Printf("deleting level, baseVolume (%f) on backing exchange dropped below minBaseVolume of backing exchange (%f)\n",
 			offerAmount.AsFloat(), s.backingConstraints.MinBaseVolume.AsFloat())
 		deleteOp := s.sdex.DeleteOffer(oldOffer)
