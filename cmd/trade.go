@@ -22,12 +22,15 @@ import (
 	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
+	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
 )
 
 const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg
   kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg --sim`
+
+const prefsFilename = "kelp.prefs"
 
 var tradeCmd = &cobra.Command{
 	Use:     "trade",
@@ -345,6 +348,17 @@ func runTradeCmd(options inputs) {
 		client.AppVersion = version
 		newClient.AppName = "kelp"
 		newClient.AppVersion = version
+
+		p := prefs.Make(prefsFilename)
+		if p.FirstTime() {
+			log.Printf("Kelp sets the 'X-App-Name' and 'X-App-Version' headers on requests made to Horizon. These can be turned off using the --no-headers flag. See `kelp trade --help` for more information.\n")
+			e := p.SetNotFirstTime()
+			if e != nil {
+				l.Info("")
+				l.Errorf("unable to create preferences file: %s", e)
+				// we can still proceed with this error
+			}
+		}
 	}
 
 	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
