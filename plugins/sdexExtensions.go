@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/stellar/go/exp/clients/horizon"
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -25,10 +24,10 @@ var validPercentiles = []uint8{10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99}
 
 // SdexFeeFnFromStats returns an OpFeeStroops that uses the /fee_stats endpoint
 func SdexFeeFnFromStats(
-	horizonBaseURL string,
 	capacityTrigger float64,
 	percentile uint8,
 	maxOpFeeStroops uint64,
+	newClient *horizonclient.Client,
 ) (OpFeeStroops, error) {
 	isValid := false
 	for _, p := range validPercentiles {
@@ -49,14 +48,8 @@ func SdexFeeFnFromStats(
 		return nil, fmt.Errorf("unable to create SdexFeeFnFromStats, maxOpFeeStroops should be >= %d (baseFeeStroops): %d", baseFeeStroops, maxOpFeeStroops)
 	}
 
-	client := &horizonclient.Client{
-		// TODO horizonclient.Client has a bug in it where it does not use "/" to separate the horizonURL from the fee_stats endpoint
-		HorizonURL: horizonBaseURL + "/",
-		HTTP:       http.DefaultClient,
-	}
-
 	return func() (uint64, error) {
-		return getFeeFromStats(client, capacityTrigger, percentile, maxOpFeeStroops)
+		return getFeeFromStats(newClient, capacityTrigger, percentile, maxOpFeeStroops)
 	}, nil
 }
 

@@ -38,8 +38,10 @@ func init() {
 
 		// --- start initialization of objects ----
 		client := &horizon.Client{
-			URL:  configFile.HorizonURL,
-			HTTP: http.DefaultClient,
+			URL:        configFile.HorizonURL,
+			HTTP:       http.DefaultClient,
+			AppName:    "kelp",
+			AppVersion: version,
 		}
 		sdex := plugins.MakeSDEX(
 			client,
