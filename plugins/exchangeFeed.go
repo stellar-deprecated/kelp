@@ -13,16 +13,18 @@ type exchangeFeed struct {
 	name      string
 	tickerAPI *api.TickerAPI
 	pairs     []model.TradingPair
+	invert    bool
 }
 
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &exchangeFeed{}
 
-func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair) *exchangeFeed {
+func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair, invert bool) *exchangeFeed {
 	return &exchangeFeed{
 		name:      name,
 		tickerAPI: tickerAPI,
 		pairs:     []model.TradingPair{*pair},
+		invert:    invert,
 	}
 }
 
@@ -40,6 +42,11 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 	}
 
 	centerPrice := (p.BidPrice.AsFloat() + p.AskPrice.AsFloat()) / 2
+
+	if f.invert {
+		centerPrice = 1.0 / centerPrice
+	}
+
 	log.Printf("price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, centerPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), centerPrice)
 	return centerPrice, nil
 }

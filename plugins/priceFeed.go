@@ -35,12 +35,12 @@ func SetPrivateSdexHack(api *horizon.Client, ieif *IEIF, network build.Network) 
 }
 
 // MakePriceFeed makes a PriceFeed
-func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
+func MakePriceFeed(feedType string, url string, invert bool) (api.PriceFeed, error) {
 	switch feedType {
 	case "crypto":
-		return newCMCFeed(url), nil
+		return newCMCFeed(url, invert), nil
 	case "fiat":
-		return newFiatFeed(url), nil
+		return newFiatFeed(url, invert), nil
 	case "fixed":
 		return newFixedFeed(url), nil
 	case "exchange":
@@ -63,7 +63,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 			Quote: quoteAsset,
 		}
 		tickerAPI := api.TickerAPI(exchange)
-		return newExchangeFeed(url, &tickerAPI, &tradingPair), nil
+		return newExchangeFeed(url, &tickerAPI, &tradingPair, invert), nil
 	case "sdex":
 		sdex, e := makeSDEXFeed(url)
 		if e != nil {
@@ -75,13 +75,13 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 }
 
 // MakeFeedPair is the factory method that we expose
-func MakeFeedPair(dataTypeA, dataFeedAUrl, dataTypeB, dataFeedBUrl string) (*api.FeedPair, error) {
-	feedA, e := MakePriceFeed(dataTypeA, dataFeedAUrl)
+func MakeFeedPair(dataTypeA string, dataFeedAUrl string, dataTypeAInvert bool, dataTypeB string, dataFeedBUrl string, dataFeedBInvert bool) (*api.FeedPair, error) {
+	feedA, e := MakePriceFeed(dataTypeA, dataFeedAUrl, dataTypeAInvert)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed A: %s", e)
 	}
 
-	feedB, e := MakePriceFeed(dataTypeB, dataFeedBUrl)
+	feedB, e := MakePriceFeed(dataTypeB, dataFeedBUrl, dataFeedBInvert)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make a feed pair because of an error when making priceFeed B: %s", e)
 	}
