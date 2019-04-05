@@ -119,6 +119,8 @@ The `trade` command has three required parameters which are:
 - **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _mirror_, _delete_).
 - **stratConf**: full path to the _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
+Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.
+
 Here's an example of how to start the trading bot with the _buysell_ strategy:
 
 `kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg`
