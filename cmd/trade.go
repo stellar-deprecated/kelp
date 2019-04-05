@@ -351,7 +351,7 @@ func runTradeCmd(options inputs) {
 
 		p := prefs.Make(prefsFilename)
 		if p.FirstTime() {
-			log.Printf("Kelp sets the 'X-App-Name' and 'X-App-Version' headers on requests made to Horizon. These can be turned off using the --no-headers flag. See `kelp trade --help` for more information.\n")
+			log.Printf("Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.\n")
 			e := p.SetNotFirstTime()
 			if e != nil {
 				l.Info("")
