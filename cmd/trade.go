@@ -96,6 +96,17 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 	if !botConfig.IsTradingSdex() && botConfig.MinCentralizedBaseVolume == 0.0 {
 		logger.Fatal(l, fmt.Errorf("need to specify non-zero MIN_CENTRALIZED_BASE_VOLUME config param in trader config file when not trading on SDEX"))
 	}
+
+	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedVolumePrecisionOverride, "CENTRALIZED_VOLUME_PRECISION_OVERRIDE")
+	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedPricePrecisionOverride, "CENTRALIZED_PRICE_PRECISION_OVERRIDE")
+}
+
+func validatePrecisionConfig(l logger.Logger, isTradingSdex bool, precisionField *int8, name string) {
+	if !isTradingSdex && precisionField == nil {
+		logger.Fatal(l, fmt.Errorf("need to specify %s config param in trader config file when not trading on SDEX", name))
+	} else if !isTradingSdex && *precisionField < 0 {
+		logger.Fatal(l, fmt.Errorf("need to specify non-negative %s config param in trader config file when not trading on SDEX", name))
+	}
 }
 
 func init() {
