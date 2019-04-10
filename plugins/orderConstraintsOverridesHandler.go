@@ -18,7 +18,7 @@ func MakeEmptyOrderConstraintsOverridesHandler() *OrderConstraintsOverridesHandl
 func MakeOrderConstraintsOverridesHandler(inputs map[model.TradingPair]model.OrderConstraints) *OrderConstraintsOverridesHandler {
 	overrides := map[string]*model.OrderConstraintsOverride{}
 	for p, oc := range inputs {
-		overrides[p.String()] = model.MakeOrderConstraintsOverride(&oc)
+		overrides[p.String()] = model.MakeOrderConstraintsOverrideFromConstraints(&oc)
 	}
 
 	return &OrderConstraintsOverridesHandler{
@@ -40,9 +40,16 @@ func (ocHandler *OrderConstraintsOverridesHandler) Get(pair *model.TradingPair) 
 	return ocHandler.overrides[pair.String()]
 }
 
-// Set allows you to set overrides to partially override values for specific pairs
-func (ocHandler *OrderConstraintsOverridesHandler) Set(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
-	ocHandler.overrides[pair.String()] = override
+// Upsert allows you to set overrides to partially override values for specific pairs
+func (ocHandler *OrderConstraintsOverridesHandler) Upsert(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	existingOverride, exists := ocHandler.overrides[pair.String()]
+	if !exists {
+		ocHandler.overrides[pair.String()] = override
+		return
+	}
+
+	existingOverride.Augment(override)
+	ocHandler.overrides[pair.String()] = existingOverride
 }
 
 // IsCompletelyOverriden returns true if the override exists and is complete for the given trading pair

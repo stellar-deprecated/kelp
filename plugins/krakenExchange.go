@@ -210,7 +210,7 @@ func (k *krakenExchange) GetOrderConstraints(pair *model.TradingPair) *model.Ord
 
 // OverrideOrderConstraints impl, can partially override values for specific pairs
 func (k *krakenExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
-	k.ocOverridesHandler.Set(pair, override)
+	k.ocOverridesHandler.Upsert(pair, override)
 }
 
 // GetAssetConverter impl.

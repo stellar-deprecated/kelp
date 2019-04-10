@@ -172,7 +172,7 @@ func (sdex *SDEX) GetOrderConstraints(pair *model.TradingPair) *model.OrderConst
 
 // OverrideOrderConstraints impl, can partially override values for specific pairs
 func (sdex *SDEX) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
-	sdex.ocOverridesHandler.Set(pair, override)
+	sdex.ocOverridesHandler.Upsert(pair, override)
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers

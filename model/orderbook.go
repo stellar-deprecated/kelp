@@ -346,8 +346,23 @@ type OrderConstraintsOverride struct {
 	MinQuoteVolume  **Number
 }
 
-// MakeOrderConstraintsOverride is a factory method for OrderConstraintsOverride
-func MakeOrderConstraintsOverride(oc *OrderConstraints) *OrderConstraintsOverride {
+// MakeOrderConstraintsOverride is a factory method
+func MakeOrderConstraintsOverride(
+	pricePrecision *int8,
+	volumePrecision *int8,
+	minBaseVolume *Number,
+	minQuoteVolume **Number,
+) *OrderConstraintsOverride {
+	return &OrderConstraintsOverride{
+		PricePrecision:  pricePrecision,
+		VolumePrecision: volumePrecision,
+		MinBaseVolume:   minBaseVolume,
+		MinQuoteVolume:  minQuoteVolume,
+	}
+}
+
+// MakeOrderConstraintsOverrideFromConstraints is a factory method for OrderConstraintsOverride
+func MakeOrderConstraintsOverrideFromConstraints(oc *OrderConstraints) *OrderConstraintsOverride {
 	return &OrderConstraintsOverride{
 		PricePrecision:  &oc.PricePrecision,
 		VolumePrecision: &oc.VolumePrecision,
@@ -375,4 +390,23 @@ func (override *OrderConstraintsOverride) IsComplete() bool {
 	}
 
 	return true
+}
+
+// Augment only updates values if updates are non-nil
+func (override *OrderConstraintsOverride) Augment(updates *OrderConstraintsOverride) {
+	if updates.PricePrecision != nil {
+		override.PricePrecision = updates.PricePrecision
+	}
+
+	if updates.VolumePrecision != nil {
+		override.VolumePrecision = updates.VolumePrecision
+	}
+
+	if updates.MinBaseVolume != nil {
+		override.MinBaseVolume = updates.MinBaseVolume
+	}
+
+	if updates.MinQuoteVolume != nil {
+		override.MinQuoteVolume = updates.MinQuoteVolume
+	}
 }

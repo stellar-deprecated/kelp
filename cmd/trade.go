@@ -213,6 +213,21 @@ func makeExchangeShimSdex(
 		}
 
 		exchangeShim = plugins.MakeBatchedExchange(exchangeAPI, *options.simMode, botConfig.AssetBase(), botConfig.AssetQuote(), botConfig.TradingAccount())
+
+		// update precision overrides
+		exchangeShim.OverrideOrderConstraints(tradingPair, model.MakeOrderConstraintsOverride(
+			botConfig.CentralizedPricePrecisionOverride,
+			botConfig.CentralizedVolumePrecisionOverride,
+			nil,
+			nil,
+		))
+		// use updated precision overrides to convert the minCentralizedBaseVolume to a model.Number
+		exchangeShim.OverrideOrderConstraints(tradingPair, model.MakeOrderConstraintsOverride(
+			nil,
+			nil,
+			model.NumberFromFloat(botConfig.MinCentralizedBaseVolume, exchangeShim.GetOrderConstraints(tradingPair).VolumePrecision),
+			nil,
+		))
 	}
 
 	sdexAssetMap := map[model.Asset]horizon.Asset{
@@ -305,17 +320,12 @@ func makeBot(
 	if e != nil {
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
-	minCentralizedBaseVolume := &botConfig.MinCentralizedBaseVolume
-	if botConfig.IsTradingSdex() {
-		minCentralizedBaseVolume = nil
-	}
 	bot := trader.MakeBot(
 		client,
 		ieif,
 		botConfig.AssetBase(),
 		botConfig.AssetQuote(),
 		tradingPair,
-		minCentralizedBaseVolume,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,

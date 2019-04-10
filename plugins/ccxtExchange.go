@@ -118,7 +118,7 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 
 // OverrideOrderConstraints impl, can partially override values for specific pairs
 func (c ccxtExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
-	c.ocOverridesHandler.Set(pair, override)
+	c.ocOverridesHandler.Upsert(pair, override)
 }
 
 // GetAccountBalances impl
