@@ -36,7 +36,7 @@ type mirrorConfig struct {
 	OrderbookDepth          int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
 	VolumeDivideBy          float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
 	PerLevelSpread          float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	MinBaseVolume           float64             `valid:"-" toml:"MIN_BASE_VOLUME"`
+	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
 	VolumePrecisionOverride *int8               `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	PricePrecisionOverride  *int8               `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
@@ -104,8 +104,8 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 			return nil, e
 		}
 
-		if config.MinBaseVolume == 0.0 {
-			return nil, fmt.Errorf("need to specify non-zero MIN_BASE_VOLUME config param in mirror strategy config file")
+		if config.MinBaseVolumeOverride != nil && *config.MinBaseVolumeOverride == 0.0 {
+			return nil, fmt.Errorf("need to specify non-zero MIN_BASE_VOLUME_OVERRIDE config param in mirror strategy config file")
 		}
 		if config.VolumePrecisionOverride != nil && *config.VolumePrecisionOverride < 0 {
 			return nil, fmt.Errorf("need to specify non-negative VOLUME_PRECISION_OVERRIDE config param in mirror strategy config file")
@@ -134,13 +134,15 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		nil,
 		nil,
 	))
-	// use updated precision overrides to convert the minBaseVolume to a model.Number
-	exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
-		nil,
-		nil,
-		model.NumberFromFloat(config.MinBaseVolume, exchange.GetOrderConstraints(backingPair).VolumePrecision),
-		nil,
-	))
+	if config.MinBaseVolumeOverride != nil {
+		// use updated precision overrides to convert the minBaseVolume to a model.Number
+		exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+			nil,
+			nil,
+			model.NumberFromFloat(*config.MinBaseVolumeOverride, exchange.GetOrderConstraints(backingPair).VolumePrecision),
+			nil,
+		))
+	}
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
