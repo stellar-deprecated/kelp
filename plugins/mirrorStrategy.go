@@ -30,15 +30,17 @@ func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange        string              `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase    string              `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote   string              `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth  int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy  float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread  float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	MinBaseVolume   float64             `valid:"-" toml:"MIN_BASE_VOLUME"`
-	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
-	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	Exchange                string              `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase            string              `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote           string              `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth          int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	VolumeDivideBy          float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
+	PerLevelSpread          float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	MinBaseVolume           float64             `valid:"-" toml:"MIN_BASE_VOLUME"`
+	VolumePrecisionOverride *int8               `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	PricePrecisionOverride  *int8               `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
+	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
+	ExchangeAPIKeys         exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
 }
 
 // String impl.
@@ -105,6 +107,12 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		if config.MinBaseVolume == 0.0 {
 			return nil, fmt.Errorf("need to specify non-zero MIN_BASE_VOLUME config param in mirror strategy config file")
 		}
+		if config.VolumePrecisionOverride != nil && *config.VolumePrecisionOverride < 0 {
+			return nil, fmt.Errorf("need to specify non-negative VOLUME_PRECISION_OVERRIDE config param in mirror strategy config file")
+		}
+		if config.PricePrecisionOverride != nil && *config.PricePrecisionOverride < 0 {
+			return nil, fmt.Errorf("need to specify non-negative PRICE_PRECISION_OVERRIDE config param in mirror strategy config file")
+		}
 	} else {
 		exchange, e = MakeExchange(config.Exchange, simMode)
 		if e != nil {
@@ -119,10 +127,21 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		Base:  exchange.GetAssetConverter().MustFromString(config.ExchangeBase),
 		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
+	// update precision overrides
+	exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+		config.PricePrecisionOverride,
+		config.VolumePrecisionOverride,
+		nil,
+		nil,
+	))
+	// use updated precision overrides to convert the minBaseVolume to a model.Number
+	exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+		nil,
+		nil,
+		model.NumberFromFloat(config.MinBaseVolume, exchange.GetOrderConstraints(backingPair).VolumePrecision),
+		nil,
+	))
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
-	if config.OffsetTrades {
-		backingConstraints.MinBaseVolume = *model.NumberFromFloat(config.MinBaseVolume, backingConstraints.VolumePrecision)
-	}
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
 	return &mirrorStrategy{
