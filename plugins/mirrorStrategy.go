@@ -39,6 +39,7 @@ type mirrorConfig struct {
 	PricePrecisionOverride  *int8               `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	VolumePrecisionOverride *int8               `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
+	MinQuoteVolumeOverride  *float64            `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
 	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
 	ExchangeAPIKeys         exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
 }
@@ -50,6 +51,7 @@ func (c mirrorConfig) String() string {
 		"PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
 		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
 		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
+		"MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
 	})
 }
 
@@ -110,6 +112,9 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		if config.MinBaseVolumeOverride != nil && *config.MinBaseVolumeOverride <= 0.0 {
 			return nil, fmt.Errorf("need to specify positive MIN_BASE_VOLUME_OVERRIDE config param in mirror strategy config file")
 		}
+		if config.MinQuoteVolumeOverride != nil && *config.MinQuoteVolumeOverride <= 0.0 {
+			return nil, fmt.Errorf("need to specify positive MIN_QUOTE_VOLUME_OVERRIDE config param in mirror strategy config file")
+		}
 		if config.VolumePrecisionOverride != nil && *config.VolumePrecisionOverride < 0 {
 			return nil, fmt.Errorf("need to specify non-negative VOLUME_PRECISION_OVERRIDE config param in mirror strategy config file")
 		}
@@ -144,6 +149,16 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 			nil,
 			model.NumberFromFloat(*config.MinBaseVolumeOverride, exchange.GetOrderConstraints(backingPair).VolumePrecision),
 			nil,
+		))
+	}
+	if config.MinQuoteVolumeOverride != nil {
+		// use updated precision overrides to convert the minQuoteVolume to a model.Number
+		minQuoteVolume := model.NumberFromFloat(*config.MinQuoteVolumeOverride, exchange.GetOrderConstraints(backingPair).VolumePrecision)
+		exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+			nil,
+			nil,
+			nil,
+			&minQuoteVolume,
 		))
 	}
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
