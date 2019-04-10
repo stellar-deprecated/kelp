@@ -104,8 +104,8 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 			return nil, e
 		}
 
-		if config.MinBaseVolumeOverride != nil && *config.MinBaseVolumeOverride == 0.0 {
-			return nil, fmt.Errorf("need to specify non-zero MIN_BASE_VOLUME_OVERRIDE config param in mirror strategy config file")
+		if config.MinBaseVolumeOverride != nil && *config.MinBaseVolumeOverride <= 0.0 {
+			return nil, fmt.Errorf("need to specify positive MIN_BASE_VOLUME_OVERRIDE config param in mirror strategy config file")
 		}
 		if config.VolumePrecisionOverride != nil && *config.VolumePrecisionOverride < 0 {
 			return nil, fmt.Errorf("need to specify non-negative VOLUME_PRECISION_OVERRIDE config param in mirror strategy config file")

@@ -67,11 +67,9 @@ func MakeBot(
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
-	submitFilters := []plugins.SubmitFilter{}
-
-	orderConstraintsFilter := plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote)
-	submitFilters = append(submitFilters, orderConstraintsFilter)
-
+	submitFilters := []plugins.SubmitFilter{
+		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote)
+	}
 	sdexSubmitFilter := plugins.MakeFilterMakerMode(submitMode, exchangeShim, sdex, tradingPair)
 	if sdexSubmitFilter != nil {
 		submitFilters = append(submitFilters, sdexSubmitFilter)
