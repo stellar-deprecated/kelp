@@ -163,6 +163,12 @@ func (t *Trader) update() {
 	t.load()
 	t.loadExistingOffers()
 
+	pair := &model.TradingPair{
+		Base:  model.FromHorizonAsset(t.assetBase),
+		Quote: model.FromHorizonAsset(t.assetQuote),
+	}
+	log.Printf("orderConstraints for trading pair %s: %s", pair, t.exchangeShim.GetOrderConstraints(pair))
+
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
 	t.sdex.IEIF().ResetCachedBalances()

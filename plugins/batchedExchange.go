@@ -198,12 +198,6 @@ func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback
 		return nil
 	}
 
-	pair := &model.TradingPair{
-		Base:  model.FromHorizonAsset(b.baseAsset),
-		Quote: model.FromHorizonAsset(b.quoteAsset),
-	}
-	log.Printf("order constraints for trading pair %s: %s", pair, b.inner.GetOrderConstraints(pair))
-
 	results := []submitResult{}
 	numProcessed := 0
 	for _, c := range b.commands {
