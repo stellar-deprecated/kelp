@@ -20,11 +20,11 @@ var _ api.Exchange = ccxtExchange{}
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
 type ccxtExchange struct {
-	assetConverter   *model.AssetConverter
-	delimiter        string
-	orderConstraints map[model.TradingPair]model.OrderConstraints
-	api              *sdk.Ccxt
-	simMode          bool
+	assetConverter     *model.AssetConverter
+	delimiter          string
+	ocOverridesHandler *OrderConstraintsOverridesHandler
+	api                *sdk.Ccxt
+	simMode            bool
 }
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
@@ -47,16 +47,17 @@ func makeCcxtExchange(
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
 	}
 
-	if orderConstraintOverrides == nil {
-		orderConstraintOverrides = map[model.TradingPair]model.OrderConstraints{}
+	ocOverridesHandler := MakeEmptyOrderConstraintsOverridesHandler()
+	if orderConstraintOverrides != nil {
+		ocOverridesHandler = MakeOrderConstraintsOverridesHandler(orderConstraintOverrides)
 	}
 
 	return ccxtExchange{
-		assetConverter:   model.CcxtAssetConverter,
-		delimiter:        "/",
-		orderConstraints: orderConstraintOverrides,
-		api:              c,
-		simMode:          simMode,
+		assetConverter:     model.CcxtAssetConverter,
+		delimiter:          "/",
+		ocOverridesHandler: ocOverridesHandler,
+		api:                c,
+		simMode:            simMode,
 	}, nil
 }
 
@@ -99,10 +100,6 @@ func (c ccxtExchange) GetAssetConverter() *model.AssetConverter {
 
 // GetOrderConstraints impl
 func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	if oc, ok := c.orderConstraints[*pair]; ok {
-		return &oc
-	}
-
 	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
 	if e != nil {
 		// this should never really panic because we would have converted this trading pair to a string previously
@@ -114,12 +111,14 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 	if ccxtMarket == nil {
 		panic(fmt.Errorf("CCXT does not have precision and limit data for the passed in market: %s", pairString))
 	}
-	oc := *model.MakeOrderConstraintsWithCost(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min, ccxtMarket.Limits.Cost.Min)
+	oc := model.MakeOrderConstraintsWithCost(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min, ccxtMarket.Limits.Cost.Min)
 
-	// cache it before returning
-	c.orderConstraints[*pair] = oc
+	return c.ocOverridesHandler.Apply(pair, oc)
+}
 
-	return &oc
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (c ccxtExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	c.ocOverridesHandler.Upsert(pair, override)
 }
 
 // GetAccountBalances impl

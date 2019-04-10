@@ -305,6 +305,28 @@ func MakeOrderConstraintsWithCost(pricePrecision int8, volumePrecision int8, min
 	}
 }
 
+// MakeOrderConstraintsWithOverride is a factory method for OrderConstraints, oc is not a pointer because we want a copy since we modify it
+func MakeOrderConstraintsWithOverride(oc OrderConstraints, override *OrderConstraintsOverride) *OrderConstraints {
+	if override.PricePrecision != nil {
+		oc.PricePrecision = *override.PricePrecision
+	}
+	if override.VolumePrecision != nil {
+		oc.VolumePrecision = *override.VolumePrecision
+	}
+	if override.MinBaseVolume != nil {
+		oc.MinBaseVolume = *override.MinBaseVolume
+	}
+	if override.MinQuoteVolume != nil {
+		oc.MinQuoteVolume = *override.MinQuoteVolume
+	}
+	return &oc
+}
+
+// MakeOrderConstraintsFromOverride is a factory method to convert an OrderConstraintsOverride to an OrderConstraints
+func MakeOrderConstraintsFromOverride(override *OrderConstraintsOverride) *OrderConstraints {
+	return MakeOrderConstraintsWithOverride(OrderConstraints{}, override)
+}
+
 // OrderConstraints describes constraints when placing orders on an excahnge
 func (o *OrderConstraints) String() string {
 	minQuoteVolumeStr := nilString
@@ -314,4 +336,77 @@ func (o *OrderConstraints) String() string {
 
 	return fmt.Sprintf("OrderConstraints[PricePrecision: %d, VolumePrecision: %d, MinBaseVolume: %s, MinQuoteVolume: %s]",
 		o.PricePrecision, o.VolumePrecision, o.MinBaseVolume.AsString(), minQuoteVolumeStr)
+}
+
+// OrderConstraintsOverride describes an override for an OrderConstraint
+type OrderConstraintsOverride struct {
+	PricePrecision  *int8
+	VolumePrecision *int8
+	MinBaseVolume   *Number
+	MinQuoteVolume  **Number
+}
+
+// MakeOrderConstraintsOverride is a factory method
+func MakeOrderConstraintsOverride(
+	pricePrecision *int8,
+	volumePrecision *int8,
+	minBaseVolume *Number,
+	minQuoteVolume **Number,
+) *OrderConstraintsOverride {
+	return &OrderConstraintsOverride{
+		PricePrecision:  pricePrecision,
+		VolumePrecision: volumePrecision,
+		MinBaseVolume:   minBaseVolume,
+		MinQuoteVolume:  minQuoteVolume,
+	}
+}
+
+// MakeOrderConstraintsOverrideFromConstraints is a factory method for OrderConstraintsOverride
+func MakeOrderConstraintsOverrideFromConstraints(oc *OrderConstraints) *OrderConstraintsOverride {
+	return &OrderConstraintsOverride{
+		PricePrecision:  &oc.PricePrecision,
+		VolumePrecision: &oc.VolumePrecision,
+		MinBaseVolume:   &oc.MinBaseVolume,
+		MinQuoteVolume:  &oc.MinQuoteVolume,
+	}
+}
+
+// IsComplete returns true if the override contains all values
+func (override *OrderConstraintsOverride) IsComplete() bool {
+	if override.PricePrecision == nil {
+		return false
+	}
+
+	if override.VolumePrecision == nil {
+		return false
+	}
+
+	if override.MinBaseVolume == nil {
+		return false
+	}
+
+	if override.MinQuoteVolume == nil {
+		return false
+	}
+
+	return true
+}
+
+// Augment only updates values if updates are non-nil
+func (override *OrderConstraintsOverride) Augment(updates *OrderConstraintsOverride) {
+	if updates.PricePrecision != nil {
+		override.PricePrecision = updates.PricePrecision
+	}
+
+	if updates.VolumePrecision != nil {
+		override.VolumePrecision = updates.VolumePrecision
+	}
+
+	if updates.MinBaseVolume != nil {
+		override.MinBaseVolume = updates.MinBaseVolume
+	}
+
+	if updates.MinQuoteVolume != nil {
+		override.MinQuoteVolume = updates.MinQuoteVolume
+	}
 }

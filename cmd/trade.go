@@ -93,8 +93,19 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 		logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file when trading on SDEX"))
 	}
 
-	if !botConfig.IsTradingSdex() && botConfig.MinCentralizedBaseVolume == 0.0 {
-		logger.Fatal(l, fmt.Errorf("need to specify non-zero MIN_CENTRALIZED_BASE_VOLUME config param in trader config file when not trading on SDEX"))
+	if !botConfig.IsTradingSdex() && botConfig.CentralizedMinBaseVolumeOverride != nil && *botConfig.CentralizedMinBaseVolumeOverride <= 0.0 {
+		logger.Fatal(l, fmt.Errorf("need to specify positive CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE config param in trader config file when not trading on SDEX"))
+	}
+	if !botConfig.IsTradingSdex() && botConfig.CentralizedMinQuoteVolumeOverride != nil && *botConfig.CentralizedMinQuoteVolumeOverride <= 0.0 {
+		logger.Fatal(l, fmt.Errorf("need to specify positive CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE config param in trader config file when not trading on SDEX"))
+	}
+	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedVolumePrecisionOverride, "CENTRALIZED_VOLUME_PRECISION_OVERRIDE")
+	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedPricePrecisionOverride, "CENTRALIZED_PRICE_PRECISION_OVERRIDE")
+}
+
+func validatePrecisionConfig(l logger.Logger, isTradingSdex bool, precisionField *int8, name string) {
+	if !isTradingSdex && precisionField != nil && *precisionField < 0 {
+		logger.Fatal(l, fmt.Errorf("need to specify non-negative %s config param in trader config file when not trading on SDEX", name))
 	}
 }
 
@@ -202,6 +213,33 @@ func makeExchangeShimSdex(
 		}
 
 		exchangeShim = plugins.MakeBatchedExchange(exchangeAPI, *options.simMode, botConfig.AssetBase(), botConfig.AssetQuote(), botConfig.TradingAccount())
+
+		// update precision overrides
+		exchangeShim.OverrideOrderConstraints(tradingPair, model.MakeOrderConstraintsOverride(
+			botConfig.CentralizedPricePrecisionOverride,
+			botConfig.CentralizedVolumePrecisionOverride,
+			nil,
+			nil,
+		))
+		if botConfig.CentralizedMinBaseVolumeOverride != nil {
+			// use updated precision overrides to convert the minCentralizedBaseVolume to a model.Number
+			exchangeShim.OverrideOrderConstraints(tradingPair, model.MakeOrderConstraintsOverride(
+				nil,
+				nil,
+				model.NumberFromFloat(*botConfig.CentralizedMinBaseVolumeOverride, exchangeShim.GetOrderConstraints(tradingPair).VolumePrecision),
+				nil,
+			))
+		}
+		if botConfig.CentralizedMinQuoteVolumeOverride != nil {
+			// use updated precision overrides to convert the minCentralizedQuoteVolume to a model.Number
+			minQuoteVolume := model.NumberFromFloat(*botConfig.CentralizedMinQuoteVolumeOverride, exchangeShim.GetOrderConstraints(tradingPair).VolumePrecision)
+			exchangeShim.OverrideOrderConstraints(tradingPair, model.MakeOrderConstraintsOverride(
+				nil,
+				nil,
+				nil,
+				&minQuoteVolume,
+			))
+		}
 	}
 
 	sdexAssetMap := map[model.Asset]horizon.Asset{
@@ -294,17 +332,12 @@ func makeBot(
 	if e != nil {
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
-	minCentralizedBaseVolume := &botConfig.MinCentralizedBaseVolume
-	if botConfig.IsTradingSdex() {
-		minCentralizedBaseVolume = nil
-	}
 	bot := trader.MakeBot(
 		client,
 		ieif,
 		botConfig.AssetBase(),
 		botConfig.AssetQuote(),
 		tradingPair,
-		minCentralizedBaseVolume,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,

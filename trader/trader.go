@@ -55,7 +55,6 @@ func MakeBot(
 	assetBase horizon.Asset,
 	assetQuote horizon.Asset,
 	tradingPair *model.TradingPair,
-	minBaseVolume *float64,
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
@@ -68,15 +67,9 @@ func MakeBot(
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
-	submitFilters := []plugins.SubmitFilter{}
-
-	oc := exchangeShim.GetOrderConstraints(tradingPair)
-	if minBaseVolume != nil {
-		oc.MinBaseVolume = *model.NumberFromFloat(*minBaseVolume, oc.VolumePrecision)
+	submitFilters := []plugins.SubmitFilter{
+		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
 	}
-	orderConstraintsFilter := plugins.MakeFilterOrderConstraints(oc, assetBase, assetQuote)
-	submitFilters = append(submitFilters, orderConstraintsFilter)
-
 	sdexSubmitFilter := plugins.MakeFilterMakerMode(submitMode, exchangeShim, sdex, tradingPair)
 	if sdexSubmitFilter != nil {
 		submitFilters = append(submitFilters, sdexSubmitFilter)
@@ -169,6 +162,12 @@ func (t *Trader) update() {
 	var e error
 	t.load()
 	t.loadExistingOffers()
+
+	pair := &model.TradingPair{
+		Base:  model.FromHorizonAsset(t.assetBase),
+		Quote: model.FromHorizonAsset(t.assetQuote),
+	}
+	log.Printf("orderConstraints for trading pair %s: %s", pair, t.exchangeShim.GetOrderConstraints(pair))
 
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances

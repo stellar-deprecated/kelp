@@ -29,6 +29,7 @@ type krakenExchange struct {
 	apis                     []*krakenapi.KrakenApi
 	apiNextIndex             uint8
 	delimiter                string
+	ocOverridesHandler       *OrderConstraintsOverridesHandler
 	withdrawKeys             asset2Address2Key
 	isSimulated              bool // will simulate add and cancel orders if this is true
 }
@@ -65,11 +66,12 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exc
 	return &krakenExchange{
 		assetConverter:           model.KrakenAssetConverter,
 		assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-		apis:         krakenAPIs,
-		apiNextIndex: 0,
-		delimiter:    "",
-		withdrawKeys: asset2Address2Key{},
-		isSimulated:  isSimulated,
+		apis:               krakenAPIs,
+		apiNextIndex:       0,
+		delimiter:          "",
+		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+		withdrawKeys:       asset2Address2Key{},
+		isSimulated:        isSimulated,
 	}, nil
 }
 
@@ -194,11 +196,21 @@ func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float64 {
 
 // GetOrderConstraints impl
 func (k *krakenExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	constraints, ok := krakenPrecisionMatrix[*pair]
-	if !ok {
-		panic(fmt.Sprintf("krakenExchange could not find orderConstraints for trading pair %v. Try using the \"ccxt-kraken\" integration instead.", pair))
+	oc, ok := krakenPrecisionMatrix[*pair]
+	if ok {
+		return k.ocOverridesHandler.Apply(pair, &oc)
 	}
-	return &constraints
+
+	if k.ocOverridesHandler.IsCompletelyOverriden(pair) {
+		override := k.ocOverridesHandler.Get(pair)
+		return model.MakeOrderConstraintsFromOverride(override)
+	}
+	panic(fmt.Sprintf("krakenExchange could not find orderConstraints for trading pair %v. Try using the \"ccxt-kraken\" integration instead.", pair))
+}
+
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (k *krakenExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	k.ocOverridesHandler.Upsert(pair, override)
 }
 
 // GetAssetConverter impl.

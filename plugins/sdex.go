@@ -46,9 +46,10 @@ type SDEX struct {
 	tradingOnSdex                 bool
 
 	// uninitialized
-	seqNum       uint64
-	reloadSeqNum bool
-	ieif         *IEIF
+	seqNum             uint64
+	reloadSeqNum       bool
+	ieif               *IEIF
+	ocOverridesHandler *OrderConstraintsOverridesHandler
 }
 
 // enforce SDEX implements api.Constrainable
@@ -93,11 +94,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:        simMode,
-		pair:           pair,
-		assetMap:       assetMap,
-		opFeeStroopsFn: opFeeStroopsFn,
-		tradingOnSdex:  exchangeShim == nil,
+		simMode:            simMode,
+		pair:               pair,
+		assetMap:           assetMap,
+		opFeeStroopsFn:     opFeeStroopsFn,
+		tradingOnSdex:      exchangeShim == nil,
+		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
@@ -165,7 +167,12 @@ func (sdex *SDEX) incrementSeqNum() {
 
 // GetOrderConstraints impl
 func (sdex *SDEX) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	return sdexOrderConstraints
+	return sdex.ocOverridesHandler.Apply(pair, sdexOrderConstraints)
+}
+
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (sdex *SDEX) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	sdex.ocOverridesHandler.Upsert(pair, override)
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
