@@ -33,7 +33,7 @@ type BotConfig struct {
 	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD"`
 	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL"`
 	Fee                                *FeeConfig `valid:"-" toml:"FEE"`
-	MinCentralizedBaseVolumeOverride   *float64   `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME_OVERRIDE"`
+	CentralizedMinBaseVolumeOverride   *float64   `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
 	AlertType                          string     `valid:"-" toml:"ALERT_TYPE"`

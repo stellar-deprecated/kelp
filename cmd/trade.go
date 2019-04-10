@@ -93,8 +93,8 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 		logger.Fatal(l, fmt.Errorf("The `FEE` object needs to exist in the trader config file when trading on SDEX"))
 	}
 
-	if !botConfig.IsTradingSdex() && botConfig.MinCentralizedBaseVolumeOverride != nil && *botConfig.MinCentralizedBaseVolumeOverride <= 0.0 {
-		logger.Fatal(l, fmt.Errorf("need to specify positive MIN_CENTRALIZED_BASE_VOLUME_OVERRIDE config param in trader config file when not trading on SDEX"))
+	if !botConfig.IsTradingSdex() && botConfig.CentralizedMinBaseVolumeOverride != nil && *botConfig.CentralizedMinBaseVolumeOverride <= 0.0 {
+		logger.Fatal(l, fmt.Errorf("need to specify positive CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE config param in trader config file when not trading on SDEX"))
 	}
 	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedVolumePrecisionOverride, "CENTRALIZED_VOLUME_PRECISION_OVERRIDE")
 	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedPricePrecisionOverride, "CENTRALIZED_PRICE_PRECISION_OVERRIDE")
@@ -218,12 +218,12 @@ func makeExchangeShimSdex(
 			nil,
 			nil,
 		))
-		if botConfig.MinCentralizedBaseVolumeOverride != nil {
+		if botConfig.CentralizedMinBaseVolumeOverride != nil {
 			// use updated precision overrides to convert the minCentralizedBaseVolume to a model.Number
 			exchangeShim.OverrideOrderConstraints(tradingPair, model.MakeOrderConstraintsOverride(
 				nil,
 				nil,
-				model.NumberFromFloat(*botConfig.MinCentralizedBaseVolumeOverride, exchangeShim.GetOrderConstraints(tradingPair).VolumePrecision),
+				model.NumberFromFloat(*botConfig.CentralizedMinBaseVolumeOverride, exchangeShim.GetOrderConstraints(tradingPair).VolumePrecision),
 				nil,
 			))
 		}
