@@ -33,9 +33,9 @@ type BotConfig struct {
 	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD"`
 	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL"`
 	Fee                                *FeeConfig `valid:"-" toml:"FEE"`
-	CentralizedMinBaseVolumeOverride   *float64   `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
-	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
+	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
+	CentralizedMinBaseVolumeOverride   *float64   `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
 	AlertType                          string     `valid:"-" toml:"ALERT_TYPE"`
 	AlertAPIKey                        string     `valid:"-" toml:"ALERT_API_KEY"`
 	MonitoringPort                     uint16     `valid:"-" toml:"MONITORING_PORT"`
@@ -68,9 +68,9 @@ func (b BotConfig) String() string {
 		"GOOGLE_CLIENT_ID":                      utils.Hide,
 		"GOOGLE_CLIENT_SECRET":                  utils.Hide,
 		"ACCEPTABLE_GOOGLE_EMAILS":              utils.Hide,
-		"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
-		"CENTRALIZED_VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
 		"CENTRALIZED_PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
+		"CENTRALIZED_VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
+		"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
 	})
 }
 

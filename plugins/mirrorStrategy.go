@@ -36,9 +36,9 @@ type mirrorConfig struct {
 	OrderbookDepth          int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
 	VolumeDivideBy          float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
 	PerLevelSpread          float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
-	VolumePrecisionOverride *int8               `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	PricePrecisionOverride  *int8               `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
+	VolumePrecisionOverride *int8               `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
 	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
 	ExchangeAPIKeys         exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
 }
@@ -47,9 +47,9 @@ type mirrorConfig struct {
 func (c mirrorConfig) String() string {
 	return utils.StructString(c, map[string]func(interface{}) interface{}{
 		"EXCHANGE_API_KEYS":         utils.Hide,
-		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
-		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
 		"PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
+		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
+		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
 	})
 }
 
