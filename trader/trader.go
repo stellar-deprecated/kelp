@@ -68,7 +68,7 @@ func MakeBot(
 	alert api.Alert,
 ) *Trader {
 	submitFilters := []plugins.SubmitFilter{
-		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote)
+		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
 	}
 	sdexSubmitFilter := plugins.MakeFilterMakerMode(submitMode, exchangeShim, sdex, tradingPair)
 	if sdexSubmitFilter != nil {
