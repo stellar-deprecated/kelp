@@ -36,6 +36,7 @@ type BotConfig struct {
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
 	CentralizedMinBaseVolumeOverride   *float64   `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
+	CentralizedMinQuoteVolumeOverride  *float64   `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE"`
 	AlertType                          string     `valid:"-" toml:"ALERT_TYPE"`
 	AlertAPIKey                        string     `valid:"-" toml:"ALERT_API_KEY"`
 	MonitoringPort                     uint16     `valid:"-" toml:"MONITORING_PORT"`
@@ -71,6 +72,7 @@ func (b BotConfig) String() string {
 		"CENTRALIZED_PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
 		"CENTRALIZED_VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
 		"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
+		"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
 	})
 }
 
