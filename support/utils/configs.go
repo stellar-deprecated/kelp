@@ -79,3 +79,21 @@ func passthrough(i interface{}) interface{} {
 func Hide(i interface{}) interface{} {
 	return ""
 }
+
+// UnwrapFloat64Pointer unwraps a float64 pointer
+func UnwrapFloat64Pointer(i interface{}) interface{} {
+	p := i.(*float64)
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+// UnwrapInt8Pointer unwraps a int8 pointer
+func UnwrapInt8Pointer(i interface{}) interface{} {
+	p := i.(*int8)
+	if p == nil {
+		return ""
+	}
+	return *p
+}

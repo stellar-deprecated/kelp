@@ -61,13 +61,16 @@ type BotConfig struct {
 // String impl.
 func (b BotConfig) String() string {
 	return utils.StructString(b, map[string]func(interface{}) interface{}{
-		"EXCHANGE_API_KEYS":        utils.Hide,
-		"SOURCE_SECRET_SEED":       utils.SecretKey2PublicKey,
-		"TRADING_SECRET_SEED":      utils.SecretKey2PublicKey,
-		"ALERT_API_KEY":            utils.Hide,
-		"GOOGLE_CLIENT_ID":         utils.Hide,
-		"GOOGLE_CLIENT_SECRET":     utils.Hide,
-		"ACCEPTABLE_GOOGLE_EMAILS": utils.Hide,
+		"EXCHANGE_API_KEYS":                     utils.Hide,
+		"SOURCE_SECRET_SEED":                    utils.SecretKey2PublicKey,
+		"TRADING_SECRET_SEED":                   utils.SecretKey2PublicKey,
+		"ALERT_API_KEY":                         utils.Hide,
+		"GOOGLE_CLIENT_ID":                      utils.Hide,
+		"GOOGLE_CLIENT_SECRET":                  utils.Hide,
+		"ACCEPTABLE_GOOGLE_EMAILS":              utils.Hide,
+		"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
+		"CENTRALIZED_VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
+		"CENTRALIZED_PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
 	})
 }
 
