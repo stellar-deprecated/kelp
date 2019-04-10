@@ -102,9 +102,7 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 }
 
 func validatePrecisionConfig(l logger.Logger, isTradingSdex bool, precisionField *int8, name string) {
-	if !isTradingSdex && precisionField == nil {
-		logger.Fatal(l, fmt.Errorf("need to specify %s config param in trader config file when not trading on SDEX", name))
-	} else if !isTradingSdex && *precisionField < 0 {
+	if !isTradingSdex && precisionField != nil && *precisionField < 0 {
 		logger.Fatal(l, fmt.Errorf("need to specify non-negative %s config param in trader config file when not trading on SDEX", name))
 	}
 }
