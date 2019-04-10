@@ -73,6 +73,8 @@ type FillTrackable interface {
 type Constrainable interface {
 	// return nil if the constraint does not exist for the exchange
 	GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints
+
+	OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride)
 }
 
 // OrderbookFetcher extracts out the method that should go into ExchangeShim for now

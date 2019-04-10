@@ -154,6 +154,11 @@ func (b BatchedExchange) GetOrderConstraints(pair *model.TradingPair) *model.Ord
 	return b.inner.GetOrderConstraints(pair)
 }
 
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (b BatchedExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	b.inner.OverrideOrderConstraints(pair, override)
+}
+
 // GetOrderBook impl
 func (b BatchedExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
 	return b.inner.GetOrderBook(pair, maxCount)
