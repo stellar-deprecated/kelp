@@ -17,7 +17,6 @@ var emptyAPIKey = api.ExchangeAPIKey{}
 var emptyParams = api.ExchangeParam{}
 var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
 	"binance": {},
-	// "coinbasepro": {},
 }
 
 var testOrderConstraints = map[model.TradingPair]model.OrderConstraints{
@@ -444,6 +443,7 @@ func TestCancelOrder_Ccxt(t *testing.T) {
 }
 
 func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
+	// coinbasepro gives incorrect precision values so we do not test it here
 	testCases := []struct {
 		exchangeName       string
 		pair               *model.TradingPair
@@ -471,13 +471,6 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 			wantPricePrecision: 8,
 			wantVolPrecision:   0,
 		},
-		// disabled until volume precision is fixed
-		// {
-		// 	exchangeName:       "coinbasepro",
-		// 	pair:               &model.TradingPair{Base: model.XLM, Quote: model.USD},
-		// 	wantPricePrecision: 6,
-		// 	wantVolPrecision:   0,
-		// },
 	}
 
 	for _, kase := range testCases {
