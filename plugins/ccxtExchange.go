@@ -32,6 +32,8 @@ func makeCcxtExchange(
 	exchangeName string,
 	orderConstraintOverrides map[model.TradingPair]model.OrderConstraints,
 	apiKeys []api.ExchangeAPIKey,
+	exchangeParams []api.ExchangeParam,
+	headers []api.ExchangeHeader,
 	simMode bool,
 ) (api.Exchange, error) {
 	if len(apiKeys) == 0 {
@@ -42,7 +44,7 @@ func makeCcxtExchange(
 		return nil, fmt.Errorf("need exactly 1 ExchangeAPIKey")
 	}
 
-	c, e := sdk.MakeInitializedCcxtExchange(exchangeName, apiKeys[0])
+	c, e := sdk.MakeInitializedCcxtExchange(exchangeName, apiKeys[0], exchangeParams, headers)
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
 	}

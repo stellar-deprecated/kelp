@@ -151,8 +151,10 @@ func Strategies() map[string]StrategyContainer {
 
 // exchangeFactoryData is a data container that has all the information needed to make an exchange
 type exchangeFactoryData struct {
-	simMode bool
-	apiKeys []api.ExchangeAPIKey
+	simMode        bool
+	apiKeys        []api.ExchangeAPIKey
+	exchangeParams []api.ExchangeParam
+	headers        []api.ExchangeHeader
 }
 
 // ExchangeContainer contains the exchange factory method along with some metadata
@@ -214,6 +216,8 @@ func loadExchanges() {
 						boundExchangeName,
 						nil,
 						exchangeFactoryData.apiKeys,
+						exchangeFactoryData.exchangeParams,
+						exchangeFactoryData.headers,
 						exchangeFactoryData.simMode,
 					)
 				},
@@ -241,7 +245,7 @@ func MakeExchange(exchangeType string, simMode bool) (api.Exchange, error) {
 }
 
 // MakeTradingExchange is a factory method to make an exchange based on a given type
-func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, simMode bool) (api.Exchange, error) {
+func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, exchangeParams []api.ExchangeParam, headers []api.ExchangeHeader, simMode bool) (api.Exchange, error) {
 	if exchange, ok := getExchanges()[exchangeType]; ok {
 		if !exchange.TradeEnabled {
 			return nil, fmt.Errorf("trading is not enabled on this exchange: %s", exchangeType)
@@ -252,8 +256,10 @@ func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, simM
 		}
 
 		x, e := exchange.makeFn(exchangeFactoryData{
-			simMode: simMode,
-			apiKeys: apiKeys,
+			simMode:        simMode,
+			apiKeys:        apiKeys,
+			exchangeParams: exchangeParams,
+			headers:        headers,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("error when making the '%s' exchange: %s", exchangeType, e)
