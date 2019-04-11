@@ -29,16 +29,16 @@ func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
 }
 
 type exchangeParamsToml []struct {
-	Parameter string `valid:"-" toml:"PARAMETER"`
-	Value     string `valid:"-" toml:"VALUE"`
+	Param string `valid:"-" toml:"PARAM"`
+	Value string `valid:"-" toml:"VALUE"`
 }
 
 func (t *exchangeParamsToml) toExchangeParams() []api.ExchangeParam {
 	exchangeParams := []api.ExchangeParam{}
 	for _, param := range *t {
 		exchangeParams = append(exchangeParams, api.ExchangeParam{
-			Parameter: param.Parameter,
-			Value:     param.Value,
+			Param: param.Param,
+			Value: param.Value,
 		})
 	}
 	return exchangeParams

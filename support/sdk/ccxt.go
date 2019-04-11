@@ -191,12 +191,12 @@ func (c *Ccxt) hasInstance(instanceList []string) bool {
 
 func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam) error {
 	data := map[string]string{
-		"id": c.instanceName,
+		"id":     c.instanceName,
 		"apiKey": apiKey.Key,
 		"secret": apiKey.Secret,
 	}
 	for _, param := range params {
-		data[param.Parameter] = param.Value
+		data[param.Param] = param.Value
 	}
 	jsonData, e := json.Marshal(data)
 	if e != nil {

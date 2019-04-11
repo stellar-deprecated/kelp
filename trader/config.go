@@ -51,8 +51,8 @@ type BotConfig struct {
 		Secret string `valid:"-" toml:"SECRET"`
 	} `valid:"-" toml:"EXCHANGE_API_KEYS"`
 	ExchangeParams []struct {
-		Parameter string `valid:"-" toml:"PARAMETER"`
-		Value     string `valid:"-" toml:"VALUE"`
+		Param string `valid:"-" toml:"PARAM"`
+		Value string `valid:"-" toml:"VALUE"`
 	} `valid:"-" toml:"EXCHANGE_PARAMS"`
 	ExchangeHeaders []struct {
 		Header string `valid:"-" toml:"HEADER"`

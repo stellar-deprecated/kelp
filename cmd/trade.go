@@ -208,8 +208,8 @@ func makeExchangeShimSdex(
 		exchangeParams := []api.ExchangeParam{}
 		for _, param := range botConfig.ExchangeParams {
 			exchangeParams = append(exchangeParams, api.ExchangeParam{
-				Parameter: param.Parameter,
-				Value:     param.Value,
+				Param: param.Param,
+				Value: param.Value,
 			})
 		}
 
