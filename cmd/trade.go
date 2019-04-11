@@ -467,33 +467,35 @@ func runTradeCmd(options inputs) {
 }
 
 func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
+	healthMetrics, e := monitoring.MakeMetricsRecorder(map[string]interface{}{"success": true})
+	if e != nil {
+		return fmt.Errorf("unable to make metrics recorder for the /health endpoint: %s", e)
+	}
+	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/health", healthMetrics, networking.NoAuth)
+	if e != nil {
+		return fmt.Errorf("unable to make /health endpoint: %s", e)
+	}
+
+	kelpMetrics, e := monitoring.MakeMetricsRecorder(nil)
+	if e != nil {
+		return fmt.Errorf("unable to make metrics recorder for the /metrics endpoint: %s", e)
+	}
+	metricsAuth := networking.NoAuth
+	if botConfig.GoogleClientID != "" || botConfig.GoogleClientSecret != "" {
+		metricsAuth = networking.GoogleAuth
+	}
+	metricsEndpoint, e := monitoring.MakeMetricsEndpoint("/metrics", kelpMetrics, metricsAuth)
+	if e != nil {
+		return fmt.Errorf("unable to make /metrics endpoint: %s", e)
+	}
+
 	serverConfig := &networking.Config{
 		GoogleClientID:     botConfig.GoogleClientID,
 		GoogleClientSecret: botConfig.GoogleClientSecret,
 		PermittedEmails:    map[string]bool{},
 	}
-	// Load acceptable Google emails into the map
 	for _, email := range strings.Split(botConfig.AcceptableEmails, ",") {
 		serverConfig.PermittedEmails[email] = true
-	}
-
-	healthMetrics, e := monitoring.MakeMetricsRecorder(map[string]interface{}{"success": true})
-	if e != nil {
-		return fmt.Errorf("unable to make metrics recorder for the health endpoint: %s", e)
-	}
-
-	healthEndpoint, e := monitoring.MakeMetricsEndpoint("/health", healthMetrics, networking.NoAuth)
-	if e != nil {
-		return fmt.Errorf("unable to make /health endpoint: %s", e)
-	}
-	kelpMetrics, e := monitoring.MakeMetricsRecorder(nil)
-	if e != nil {
-		return fmt.Errorf("unable to make metrics recorder for the /metrics endpoint: %s", e)
-	}
-
-	metricsEndpoint, e := monitoring.MakeMetricsEndpoint("/metrics", kelpMetrics, networking.GoogleAuth)
-	if e != nil {
-		return fmt.Errorf("unable to make /metrics endpoint: %s", e)
 	}
 	server, e := networking.MakeServer(serverConfig, []networking.Endpoint{healthEndpoint, metricsEndpoint})
 	if e != nil {
