@@ -255,8 +255,6 @@ func MakeTradingExchange(exchangeType string, apiKeys []api.ExchangeAPIKey, exch
 			return nil, fmt.Errorf("cannot make trading exchange, apiKeys mising")
 		}
 
-		fmt.Printf("MakeTradingExchange received exchange headers: %s\n", headers)
-
 		x, e := exchange.makeFn(exchangeFactoryData{
 			simMode:        simMode,
 			apiKeys:        apiKeys,
