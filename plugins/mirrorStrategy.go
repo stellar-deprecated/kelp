@@ -79,6 +79,8 @@ type mirrorConfig struct {
 func (c mirrorConfig) String() string {
 	return utils.StructString(c, map[string]func(interface{}) interface{}{
 		"EXCHANGE_API_KEYS": utils.Hide,
+		"EXCHANGE_PARAMS": utils.Hide,
+		"EXCHANGE_HEADERS": utils.Hide,
 	})
 }
 
