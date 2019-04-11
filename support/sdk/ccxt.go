@@ -190,18 +190,15 @@ func (c *Ccxt) hasInstance(instanceList []string) bool {
 }
 
 func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam) error {
-	data := map[string]string{}
-
-	data["id"] = c.instanceName
-	data["apiKey"] = apiKey.Key
-	data["secret"] = apiKey.Secret
-
+	data := map[string]string{
+		"id": c.instanceName,
+		"apiKey": apiKey.Key,
+		"secret": apiKey.Secret,
+	}
 	for _, param := range params {
 		data[param.Parameter] = param.Value
 	}
-
 	jsonData, e := json.Marshal(data)
-
 	if e != nil {
 		return fmt.Errorf("error marshaling instanceName '%s' as ID for exchange '%s': %s", c.instanceName, c.exchangeName, e)
 	}
