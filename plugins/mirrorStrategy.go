@@ -71,7 +71,7 @@ type mirrorConfig struct {
 	MinBaseVolume   float64             `valid:"-" toml:"MIN_BASE_VOLUME"`
 	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
 	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
-	ExchangeParams  exchangeParamsToml  `valid:"-" toml:"CCXT_PARAMS"`
+	ExchangeParams  exchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
 	ExchangeHeaders exchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 }
 
