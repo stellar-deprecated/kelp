@@ -14,7 +14,7 @@ type ExchangeAPIKey struct {
 	Secret string
 }
 
-// ExchangeParam specifies an additional ccxt parameter
+// ExchangeParam specifies an additional parameter to be sent when initializing the exchange
 type ExchangeParam struct {
 	Parameter string
 	Value     string
