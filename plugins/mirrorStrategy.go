@@ -33,9 +33,9 @@ type exchangeParamsToml []struct {
 	Value     string `valid:"-" toml:"VALUE"`
 }
 
-func (c *exchangeParamsToml) toExchangeParams() []api.ExchangeParam {
+func (t *exchangeParamsToml) toExchangeParams() []api.ExchangeParam {
 	exchangeParams := []api.ExchangeParam{}
-	for _, param := range *c {
+	for _, param := range *t {
 		exchangeParams = append(exchangeParams, api.ExchangeParam{
 			Parameter: param.Parameter,
 			Value:     param.Value,
@@ -49,9 +49,9 @@ type exchangeHeadersToml []struct {
 	Value  string `valid:"-" toml:"VALUE"`
 }
 
-func (e *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
+func (t *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
 	apiHeaders := []api.ExchangeHeader{}
-	for _, header := range *e {
+	for _, header := range *t {
 		apiHeaders = append(apiHeaders, api.ExchangeHeader{
 			Header: header.Header,
 			Value:  header.Value,
