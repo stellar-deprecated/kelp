@@ -28,6 +28,38 @@ func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
 	return apiKeys
 }
 
+type exchangeParamsToml []struct {
+	Param string `valid:"-" toml:"PARAM"`
+	Value string `valid:"-" toml:"VALUE"`
+}
+
+func (t *exchangeParamsToml) toExchangeParams() []api.ExchangeParam {
+	exchangeParams := []api.ExchangeParam{}
+	for _, param := range *t {
+		exchangeParams = append(exchangeParams, api.ExchangeParam{
+			Param: param.Param,
+			Value: param.Value,
+		})
+	}
+	return exchangeParams
+}
+
+type exchangeHeadersToml []struct {
+	Header string `valid:"-" toml:"HEADER"`
+	Value  string `valid:"-" toml:"VALUE"`
+}
+
+func (t *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
+	apiHeaders := []api.ExchangeHeader{}
+	for _, header := range *t {
+		apiHeaders = append(apiHeaders, api.ExchangeHeader{
+			Header: header.Header,
+			Value:  header.Value,
+		})
+	}
+	return apiHeaders
+}
+
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
 	Exchange                string              `valid:"-" toml:"EXCHANGE"`
@@ -42,12 +74,16 @@ type mirrorConfig struct {
 	MinQuoteVolumeOverride  *float64            `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
 	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
 	ExchangeAPIKeys         exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	ExchangeParams          exchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
+	ExchangeHeaders         exchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 }
 
 // String impl.
 func (c mirrorConfig) String() string {
 	return utils.StructString(c, map[string]func(interface{}) interface{}{
 		"EXCHANGE_API_KEYS":         utils.Hide,
+		"EXCHANGE_PARAMS":           utils.Hide,
+		"EXCHANGE_HEADERS":          utils.Hide,
 		"PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
 		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
 		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
@@ -104,7 +140,9 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 	var e error
 	if config.OffsetTrades {
 		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
-		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, simMode)
+		exchangeParams := config.ExchangeParams.toExchangeParams()
+		exchangeHeaders := config.ExchangeHeaders.toExchangeHeaders()
+		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, exchangeParams, exchangeHeaders, simMode)
 		if e != nil {
 			return nil, e
 		}

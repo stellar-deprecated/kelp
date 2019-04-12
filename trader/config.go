@@ -50,6 +50,14 @@ type BotConfig struct {
 		Key    string `valid:"-" toml:"KEY"`
 		Secret string `valid:"-" toml:"SECRET"`
 	} `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	ExchangeParams []struct {
+		Param string `valid:"-" toml:"PARAM"`
+		Value string `valid:"-" toml:"VALUE"`
+	} `valid:"-" toml:"EXCHANGE_PARAMS"`
+	ExchangeHeaders []struct {
+		Header string `valid:"-" toml:"HEADER"`
+		Value  string `valid:"-" toml:"VALUE"`
+	} `valid:"-" toml:"EXCHANGE_HEADERS"`
 
 	// initialized later
 	tradingAccount *string
@@ -63,6 +71,8 @@ type BotConfig struct {
 func (b BotConfig) String() string {
 	return utils.StructString(b, map[string]func(interface{}) interface{}{
 		"EXCHANGE_API_KEYS":                     utils.Hide,
+		"EXCHANGE_PARAMS":                       utils.Hide,
+		"EXCHANGE_HEADERS":                      utils.Hide,
 		"SOURCE_SECRET_SEED":                    utils.SecretKey2PublicKey,
 		"TRADING_SECRET_SEED":                   utils.SecretKey2PublicKey,
 		"ALERT_API_KEY":                         utils.Hide,
