@@ -36,6 +36,7 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 		if fieldDisplayName == "" {
 			fieldDisplayName = fieldName
 		}
+		isDeprecated := field.Tag.Get("deprecated") == "true"
 
 		// set the transformation function
 		transformFn := passthrough
@@ -44,9 +45,15 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 		}
 
 		if reflect.ValueOf(s).Field(i).CanInterface() {
-			value := reflect.ValueOf(s).Field(i).Interface()
-			transformedValue := transformFn(value)
-			buf.WriteString(fmt.Sprintf("%s: %+v\n", fieldDisplayName, transformedValue))
+			if !isDeprecated || !reflect.ValueOf(s).Field(i).IsNil() {
+				value := reflect.ValueOf(s).Field(i).Interface()
+				transformedValue := transformFn(value)
+				deprecatedWarning := ""
+				if isDeprecated {
+					deprecatedWarning = " (deprecated)"
+				}
+				buf.WriteString(fmt.Sprintf("%s: %+v%s\n", fieldDisplayName, transformedValue, deprecatedWarning))
+			}
 		}
 	}
 	return buf.String()

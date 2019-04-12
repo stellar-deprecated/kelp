@@ -62,14 +62,16 @@ func (t *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange                string              `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase            string              `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote           string              `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth          int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy          float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread          float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	PricePrecisionOverride  *int8               `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
-	VolumePrecisionOverride *int8               `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	Exchange                string  `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase            string  `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote           string  `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth          int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	VolumeDivideBy          float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
+	PerLevelSpread          float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	PricePrecisionOverride  *int8   `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
+	VolumePrecisionOverride *int8   `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	// Deprecated: use MIN_BASE_VOLUME_OVERRIDE instead
+	MinBaseVolumeDeprecated *float64            `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
 	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
 	MinQuoteVolumeOverride  *float64            `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
 	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
@@ -86,6 +88,7 @@ func (c mirrorConfig) String() string {
 		"EXCHANGE_HEADERS":          utils.Hide,
 		"PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
 		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
+		"MIN_BASE_VOLUME":           utils.UnwrapFloat64Pointer,
 		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
 		"MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
 	})
@@ -134,8 +137,20 @@ var _ api.Strategy = &mirrorStrategy{}
 // ensure this implements api.FillHandler
 var _ api.FillHandler = &mirrorStrategy{}
 
+func convertDeprecatedMirrorConfigValues(config *mirrorConfig) {
+	if config.MinBaseVolumeOverride != nil && config.MinBaseVolumeDeprecated != nil {
+		log.Printf("deprecation warning: cannot set both '%s' (deprecated) and '%s' in the mirror strategy config, using value from '%s'\n", "MIN_BASE_VOLUME", "MIN_BASE_VOLUME_OVERRIDE", "MIN_BASE_VOLUME_OVERRIDE")
+	} else if config.MinBaseVolumeDeprecated != nil {
+		log.Printf("deprecation warning: '%s' is deprecated, use the field '%s' in the mirror strategy config instead, see sample_mirror.cfg as an example\n", "MIN_BASE_VOLUME", "MIN_BASE_VOLUME_OVERRIDE")
+	}
+	if config.MinBaseVolumeOverride == nil {
+		config.MinBaseVolumeOverride = config.MinBaseVolumeDeprecated
+	}
+}
+
 // makeMirrorStrategy is a factory method
 func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+	convertDeprecatedMirrorConfigValues(config)
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {

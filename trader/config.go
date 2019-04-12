@@ -35,17 +35,19 @@ type BotConfig struct {
 	Fee                                *FeeConfig `valid:"-" toml:"FEE"`
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
-	CentralizedMinBaseVolumeOverride   *float64   `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
-	CentralizedMinQuoteVolumeOverride  *float64   `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE"`
-	AlertType                          string     `valid:"-" toml:"ALERT_TYPE"`
-	AlertAPIKey                        string     `valid:"-" toml:"ALERT_API_KEY"`
-	MonitoringPort                     uint16     `valid:"-" toml:"MONITORING_PORT"`
-	MonitoringTLSCert                  string     `valid:"-" toml:"MONITORING_TLS_CERT"`
-	MonitoringTLSKey                   string     `valid:"-" toml:"MONITORING_TLS_KEY"`
-	GoogleClientID                     string     `valid:"-" toml:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret                 string     `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
-	AcceptableEmails                   string     `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
-	TradingExchange                    string     `valid:"-" toml:"TRADING_EXCHANGE"`
+	// Deprecated: use CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE instead
+	MinCentralizedBaseVolumeDeprecated *float64 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true"`
+	CentralizedMinBaseVolumeOverride   *float64 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
+	CentralizedMinQuoteVolumeOverride  *float64 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE"`
+	AlertType                          string   `valid:"-" toml:"ALERT_TYPE"`
+	AlertAPIKey                        string   `valid:"-" toml:"ALERT_API_KEY"`
+	MonitoringPort                     uint16   `valid:"-" toml:"MONITORING_PORT"`
+	MonitoringTLSCert                  string   `valid:"-" toml:"MONITORING_TLS_CERT"`
+	MonitoringTLSKey                   string   `valid:"-" toml:"MONITORING_TLS_KEY"`
+	GoogleClientID                     string   `valid:"-" toml:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret                 string   `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
+	AcceptableEmails                   string   `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
+	TradingExchange                    string   `valid:"-" toml:"TRADING_EXCHANGE"`
 	ExchangeAPIKeys                    []struct {
 		Key    string `valid:"-" toml:"KEY"`
 		Secret string `valid:"-" toml:"SECRET"`
@@ -81,6 +83,7 @@ func (b BotConfig) String() string {
 		"ACCEPTABLE_GOOGLE_EMAILS":              utils.Hide,
 		"CENTRALIZED_PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
 		"CENTRALIZED_VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
+		"MIN_CENTRALIZED_BASE_VOLUME":           utils.UnwrapFloat64Pointer,
 		"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
 		"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
 	})
