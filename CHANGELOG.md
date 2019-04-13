@@ -18,6 +18,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Security
 
+## [v1.6.1] - 2019-04-12
+
+### Added
+
+- Use app name and version headers from horizon client in Go SDKs ([d21a75fcdbff323de46e3d2a46f37d64831b1cb7](https://github.com/stellar/kelp/commit/d21a75fcdbff323de46e3d2a46f37d64831b1cb7))
+- Add overrides for remaining orderConstraints via configs, fixing precision errors on centralized exchanges ([6d989c8d78ea7c088e36b2b6f2bb7679013617d0](https://github.com/stellar/kelp/commit/6d989c8d78ea7c088e36b2b6f2bb7679013617d0))
+- Add support for passing in params and headers to CCXT exchanges, such as coinbasepro ([e7c76fe14191f14410aa0bcc34b06e202cc1c020](https://github.com/stellar/kelp/commit/e7c76fe14191f14410aa0bcc34b06e202cc1c020))
+
+### Fixed
+
+- Fixed "Asset converter could not recognize string" error when trading using krakenExchange ([258f1d67d3899ed21c3ee69cefd6299ea1c8bd4a](https://github.com/stellar/kelp/commit/258f1d67d3899ed21c3ee69cefd6299ea1c8bd4a))
+- Turn off minBaseVolume checks in mirror strategy when OFFSET_TRADES=false ([82e58b49381973efa5adc12c0f0238432f6cce2c](https://github.com/stellar/kelp/commit/82e58b49381973efa5adc12c0f0238432f6cce2c))
+- fix monitoring by only checking google auth when related config values are passed in ([860d76b0c089efa62299093ff9ccf2d7b868a14c](https://github.com/stellar/kelp/commit/860d76b0c089efa62299093ff9ccf2d7b868a14c))
+
 ## [v1.6.0] - 2019-03-29
 
 ### Added
@@ -142,7 +156,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.6.1...HEAD
+[v1.6.1]: https://github.com/stellar/kelp/compare/v1.6.0...v1.6.1
 [v1.6.0]: https://github.com/stellar/kelp/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/stellar/kelp/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/stellar/kelp/compare/v1.3.0...v1.4.0
