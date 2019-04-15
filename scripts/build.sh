@@ -9,6 +9,16 @@ function usage() {
     exit 1
 }
 
+function generate_web_build() {
+    echo "generating contents of gui/web/build ..."
+    CURRENT_DIR=`pwd`
+    cd $CURRENT_DIR/gui/web
+    yarn install && yarn build
+    cd $CURRENT_DIR
+    echo "... finished generating contents of gui/web/build"
+    echo ""
+}
+
 if [[ ($# -gt 1 || `pwd | rev | cut -d'/' -f1 | rev` != "kelp") ]]
 then
     echo "need to invoke from the root 'kelp' directory"
@@ -47,6 +57,8 @@ then
     echo "GOARCH: $(go env GOARCH)"
     echo ""
 
+    generate_web_build
+
     # explicit check for windows
     EXTENSION=""
     if [[ `go env GOOS` == "windows" ]]
@@ -71,6 +83,8 @@ then
     echo ""
     echo "BUILD SUCCESSFUL"
     exit 0
+else
+    generate_web_build
 fi
 # else, we are in deploy mode
 echo ""
@@ -87,13 +101,6 @@ then
     exit 1
 fi
 
-# generate release assets for the GUI
-echo "generating contents of gui/web/build ..."
-CURRENT_DIR=`pwd`
-cd $CURRENT_DIR/gui/web
-yarn install && yarn build
-cd $CURRENT_DIR
-echo "... finished generating contents of gui/web/build"
 echo "embedding contents of gui/web/build into a .go file ..."
 go run ./scripts/fs_bin_gen.go 
 echo "... finished embedding contents of gui/web/build into a .go file"
