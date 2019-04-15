@@ -28,22 +28,69 @@ func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
 	return apiKeys
 }
 
+type exchangeParamsToml []struct {
+	Param string `valid:"-" toml:"PARAM"`
+	Value string `valid:"-" toml:"VALUE"`
+}
+
+func (t *exchangeParamsToml) toExchangeParams() []api.ExchangeParam {
+	exchangeParams := []api.ExchangeParam{}
+	for _, param := range *t {
+		exchangeParams = append(exchangeParams, api.ExchangeParam{
+			Param: param.Param,
+			Value: param.Value,
+		})
+	}
+	return exchangeParams
+}
+
+type exchangeHeadersToml []struct {
+	Header string `valid:"-" toml:"HEADER"`
+	Value  string `valid:"-" toml:"VALUE"`
+}
+
+func (t *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
+	apiHeaders := []api.ExchangeHeader{}
+	for _, header := range *t {
+		apiHeaders = append(apiHeaders, api.ExchangeHeader{
+			Header: header.Header,
+			Value:  header.Value,
+		})
+	}
+	return apiHeaders
+}
+
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange        string              `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase    string              `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote   string              `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth  int32               `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy  float64             `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread  float64             `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	OffsetTrades    bool                `valid:"-" toml:"OFFSET_TRADES"`
-	ExchangeAPIKeys exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	Exchange                string  `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase            string  `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote           string  `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth          int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	VolumeDivideBy          float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
+	PerLevelSpread          float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	PricePrecisionOverride  *int8   `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
+	VolumePrecisionOverride *int8   `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	// Deprecated: use MIN_BASE_VOLUME_OVERRIDE instead
+	MinBaseVolumeDeprecated *float64            `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
+	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
+	MinQuoteVolumeOverride  *float64            `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
+	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
+	ExchangeAPIKeys         exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	ExchangeParams          exchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
+	ExchangeHeaders         exchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 }
 
 // String impl.
 func (c mirrorConfig) String() string {
 	return utils.StructString(c, map[string]func(interface{}) interface{}{
-		"EXCHANGE_API_KEYS": utils.Hide,
+		"EXCHANGE_API_KEYS":         utils.Hide,
+		"EXCHANGE_PARAMS":           utils.Hide,
+		"EXCHANGE_HEADERS":          utils.Hide,
+		"PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
+		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
+		"MIN_BASE_VOLUME":           utils.UnwrapFloat64Pointer,
+		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
+		"MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
 	})
 }
 
@@ -90,15 +137,42 @@ var _ api.Strategy = &mirrorStrategy{}
 // ensure this implements api.FillHandler
 var _ api.FillHandler = &mirrorStrategy{}
 
+func convertDeprecatedMirrorConfigValues(config *mirrorConfig) {
+	if config.MinBaseVolumeOverride != nil && config.MinBaseVolumeDeprecated != nil {
+		log.Printf("deprecation warning: cannot set both '%s' (deprecated) and '%s' in the mirror strategy config, using value from '%s'\n", "MIN_BASE_VOLUME", "MIN_BASE_VOLUME_OVERRIDE", "MIN_BASE_VOLUME_OVERRIDE")
+	} else if config.MinBaseVolumeDeprecated != nil {
+		log.Printf("deprecation warning: '%s' is deprecated, use the field '%s' in the mirror strategy config instead, see sample_mirror.cfg as an example\n", "MIN_BASE_VOLUME", "MIN_BASE_VOLUME_OVERRIDE")
+	}
+	if config.MinBaseVolumeOverride == nil {
+		config.MinBaseVolumeOverride = config.MinBaseVolumeDeprecated
+	}
+}
+
 // makeMirrorStrategy is a factory method
 func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+	convertDeprecatedMirrorConfigValues(config)
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
 		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
-		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, simMode)
+		exchangeParams := config.ExchangeParams.toExchangeParams()
+		exchangeHeaders := config.ExchangeHeaders.toExchangeHeaders()
+		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, exchangeParams, exchangeHeaders, simMode)
 		if e != nil {
 			return nil, e
+		}
+
+		if config.MinBaseVolumeOverride != nil && *config.MinBaseVolumeOverride <= 0.0 {
+			return nil, fmt.Errorf("need to specify positive MIN_BASE_VOLUME_OVERRIDE config param in mirror strategy config file")
+		}
+		if config.MinQuoteVolumeOverride != nil && *config.MinQuoteVolumeOverride <= 0.0 {
+			return nil, fmt.Errorf("need to specify positive MIN_QUOTE_VOLUME_OVERRIDE config param in mirror strategy config file")
+		}
+		if config.VolumePrecisionOverride != nil && *config.VolumePrecisionOverride < 0 {
+			return nil, fmt.Errorf("need to specify non-negative VOLUME_PRECISION_OVERRIDE config param in mirror strategy config file")
+		}
+		if config.PricePrecisionOverride != nil && *config.PricePrecisionOverride < 0 {
+			return nil, fmt.Errorf("need to specify non-negative PRICE_PRECISION_OVERRIDE config param in mirror strategy config file")
 		}
 	} else {
 		exchange, e = MakeExchange(config.Exchange, simMode)
@@ -114,7 +188,35 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 		Base:  exchange.GetAssetConverter().MustFromString(config.ExchangeBase),
 		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
+	// update precision overrides
+	exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+		config.PricePrecisionOverride,
+		config.VolumePrecisionOverride,
+		nil,
+		nil,
+	))
+	if config.MinBaseVolumeOverride != nil {
+		// use updated precision overrides to convert the minBaseVolume to a model.Number
+		exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+			nil,
+			nil,
+			model.NumberFromFloat(*config.MinBaseVolumeOverride, exchange.GetOrderConstraints(backingPair).VolumePrecision),
+			nil,
+		))
+	}
+	if config.MinQuoteVolumeOverride != nil {
+		// use updated precision overrides to convert the minQuoteVolume to a model.Number
+		minQuoteVolume := model.NumberFromFloat(*config.MinQuoteVolumeOverride, exchange.GetOrderConstraints(backingPair).VolumePrecision)
+		exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
+			nil,
+			nil,
+			nil,
+			&minQuoteVolume,
+		))
+	}
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
+	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
+	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
 	return &mirrorStrategy{
 		sdex:               sdex,
 		ieif:               ieif,
@@ -364,7 +466,7 @@ func (s *mirrorStrategy) doModifyOffer(
 	// convert the precision from the backing exchange to the primary exchange
 	offerPrice := model.NumberByCappingPrecision(price, s.primaryConstraints.PricePrecision)
 	offerAmount := model.NumberByCappingPrecision(vol, s.primaryConstraints.VolumePrecision)
-	if offerAmount.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
+	if s.offsetTrades && offerAmount.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
 		log.Printf("deleting level, baseVolume (%f) on backing exchange dropped below minBaseVolume of backing exchange (%f)\n",
 			offerAmount.AsFloat(), s.backingConstraints.MinBaseVolume.AsFloat())
 		deleteOp := s.sdex.DeleteOffer(oldOffer)
@@ -457,7 +559,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		Volume:      newVolume,
 		Timestamp:   nil,
 	}
-	log.Printf("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
+	log.Printf("offset-attempt | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
 		trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -465,6 +567,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrderAction.String(),
 		s.baseSurplus[newOrderAction].total.AsFloat(),
 		s.baseSurplus[newOrderAction].committed.AsFloat(),
+		s.backingConstraints.MinBaseVolume.AsFloat(),
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat())
@@ -480,7 +583,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
 	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
 
-	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
+	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
 		trade.Volume.Multiply(*trade.Price).AsFloat(),
@@ -488,6 +591,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrderAction.String(),
 		s.baseSurplus[newOrderAction].total.AsFloat(),
 		s.baseSurplus[newOrderAction].committed.AsFloat(),
+		s.backingConstraints.MinBaseVolume.AsFloat(),
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat(),

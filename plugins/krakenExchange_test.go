@@ -16,11 +16,12 @@ import (
 var testKrakenExchange api.Exchange = &krakenExchange{
 	assetConverter:           model.KrakenAssetConverter,
 	assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-	apis:         []*krakenapi.KrakenApi{krakenapi.New("", "")},
-	apiNextIndex: 0,
-	delimiter:    "",
-	withdrawKeys: asset2Address2Key{},
-	isSimulated:  true,
+	apis:               []*krakenapi.KrakenApi{krakenapi.New("", "")},
+	apiNextIndex:       0,
+	delimiter:          "",
+	ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+	withdrawKeys:       asset2Address2Key{},
+	isSimulated:        true,
 }
 
 func TestGetTickerPrice(t *testing.T) {

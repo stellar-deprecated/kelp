@@ -59,24 +59,24 @@ There is **one** binary associated with this project: `kelp`. Once the binary is
 
 You can find the pre-compiled binary for your platform from the [Github Releases Page][github-releases].
 
-Here is a list of binaries for the most recent release **v1.5.0**:
+Here is a list of binaries for the most recent release **v1.6.1**:
 
 | Platform       | Architecture | Binary File Name |
 | -------------- | ------------ | ---------------- |
-| MacOS (Darwin) | 64-bit       | [kelp-v1.5.0-darwin-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-darwin-amd64.tar) |
-| Windows        | 64-bit       | [kelp-v1.5.0-windows-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-windows-amd64.tar) |
-| Linux          | 64-bit       | [kelp-v1.5.0-linux-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-linux-amd64.tar) |
-| Linux          | 64-bit arm   | [kelp-v1.5.0-linux-arm64.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-linux-arm64.tar) |
-| Linux          | 32-bit arm5  | [kelp-v1.5.0-linux-arm5.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-linux-arm5.tar) |
-| Linux          | 32-bit arm6  | [kelp-v1.5.0-linux-arm6.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-linux-arm6.tar) |
-| Linux          | 32-bit arm7  | [kelp-v1.5.0-linux-arm7.tar](https://github.com/stellar/kelp/releases/download/v1.5.0/kelp-v1.5.0-linux-arm7.tar) |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.6.1-darwin-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-darwin-amd64.tar) |
+| Windows        | 64-bit       | [kelp-v1.6.1-windows-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-windows-amd64.tar) |
+| Linux          | 64-bit       | [kelp-v1.6.1-linux-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-linux-amd64.tar) |
+| Linux          | 64-bit arm   | [kelp-v1.6.1-linux-arm64.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-linux-arm64.tar) |
+| Linux          | 32-bit arm5  | [kelp-v1.6.1-linux-arm5.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-linux-arm5.tar) |
+| Linux          | 32-bit arm6  | [kelp-v1.6.1-linux-arm6.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-linux-arm6.tar) |
+| Linux          | 32-bit arm7  | [kelp-v1.6.1-linux-arm7.tar](https://github.com/stellar/kelp/releases/download/v1.6.1/kelp-v1.6.1-linux-arm7.tar) |
 
-After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.5.0`) and invoke the `kelp` binary.
+After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.6.1`) and invoke the `kelp` binary.
 
 Here's an example to get you started (replace `filename` with the name of the file that you download):
 
     tar xvf filename
-    cd kelp-v1.5.0
+    cd kelp-v1.6.1
     ./kelp
 
 To run the bot in simulation mode, try this command:
@@ -118,6 +118,8 @@ The `trade` command has three required parameters which are:
 - **botConf**: full path to the _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
 - **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _mirror_, _delete_).
 - **stratConf**: full path to the _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
+
+Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.
 
 Here's an example of how to start the trading bot with the _buysell_ strategy:
 

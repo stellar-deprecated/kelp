@@ -36,6 +36,7 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 		if fieldDisplayName == "" {
 			fieldDisplayName = fieldName
 		}
+		isDeprecated := field.Tag.Get("deprecated") == "true"
 
 		// set the transformation function
 		transformFn := passthrough
@@ -44,9 +45,15 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 		}
 
 		if reflect.ValueOf(s).Field(i).CanInterface() {
-			value := reflect.ValueOf(s).Field(i).Interface()
-			transformedValue := transformFn(value)
-			buf.WriteString(fmt.Sprintf("%s: %+v\n", fieldDisplayName, transformedValue))
+			if !isDeprecated || !reflect.ValueOf(s).Field(i).IsNil() {
+				value := reflect.ValueOf(s).Field(i).Interface()
+				transformedValue := transformFn(value)
+				deprecatedWarning := ""
+				if isDeprecated {
+					deprecatedWarning = " (deprecated)"
+				}
+				buf.WriteString(fmt.Sprintf("%s: %+v%s\n", fieldDisplayName, transformedValue, deprecatedWarning))
+			}
 		}
 	}
 	return buf.String()
@@ -78,4 +85,22 @@ func passthrough(i interface{}) interface{} {
 // Hide returns an empty string
 func Hide(i interface{}) interface{} {
 	return ""
+}
+
+// UnwrapFloat64Pointer unwraps a float64 pointer
+func UnwrapFloat64Pointer(i interface{}) interface{} {
+	p := i.(*float64)
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+// UnwrapInt8Pointer unwraps a int8 pointer
+func UnwrapInt8Pointer(i interface{}) interface{} {
+	p := i.(*int8)
+	if p == nil {
+		return ""
+	}
+	return *p
 }

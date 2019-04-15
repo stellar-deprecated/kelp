@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/api"
@@ -168,15 +169,16 @@ func (ieif *IEIF) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.
 }
 
 func (ieif *IEIF) logLiabilities(asset horizon.Asset, assetStr string) {
+	trimmedAssetStr := strings.TrimSpace(assetStr)
 	l, e := ieif.assetLiabilities(asset)
 	if e != nil {
-		log.Printf("could not fetch liability for asset '%s', error = %s\n", assetStr, e)
+		log.Printf("could not fetch liability for %s asset, error = %s\n", trimmedAssetStr, e)
 		return
 	}
 
 	balance, e := ieif.assetBalance(asset)
 	if e != nil {
-		log.Printf("cannot fetch balance for asset '%s', error = %s\n", assetStr, e)
+		log.Printf("cannot fetch balance for %s asset, error = %s\n", trimmedAssetStr, e)
 		return
 	}
 	// TODO don't break out into vars

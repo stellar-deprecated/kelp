@@ -29,6 +29,7 @@ type krakenExchange struct {
 	apis                     []*krakenapi.KrakenApi
 	apiNextIndex             uint8
 	delimiter                string
+	ocOverridesHandler       *OrderConstraintsOverridesHandler
 	withdrawKeys             asset2Address2Key
 	isSimulated              bool // will simulate add and cancel orders if this is true
 }
@@ -65,11 +66,12 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exc
 	return &krakenExchange{
 		assetConverter:           model.KrakenAssetConverter,
 		assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-		apis:         krakenAPIs,
-		apiNextIndex: 0,
-		delimiter:    "",
-		withdrawKeys: asset2Address2Key{},
-		isSimulated:  isSimulated,
+		apis:               krakenAPIs,
+		apiNextIndex:       0,
+		delimiter:          "",
+		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+		withdrawKeys:       asset2Address2Key{},
+		isSimulated:        isSimulated,
 	}, nil
 }
 
@@ -194,12 +196,21 @@ func getFieldValue(object krakenapi.BalanceResponse, fieldName string) float64 {
 
 // GetOrderConstraints impl
 func (k *krakenExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	constraints, ok := krakenPrecisionMatrix[*pair]
-	if !ok {
-		log.Printf("krakenExchange could not find orderConstraints for trading pair %v, returning nil\n", pair)
-		return nil
+	oc, ok := krakenPrecisionMatrix[*pair]
+	if ok {
+		return k.ocOverridesHandler.Apply(pair, &oc)
 	}
-	return &constraints
+
+	if k.ocOverridesHandler.IsCompletelyOverriden(pair) {
+		override := k.ocOverridesHandler.Get(pair)
+		return model.MakeOrderConstraintsFromOverride(override)
+	}
+	panic(fmt.Sprintf("krakenExchange could not find orderConstraints for trading pair %v. Try using the \"ccxt-kraken\" integration instead.", pair))
+}
+
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (k *krakenExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	k.ocOverridesHandler.Upsert(pair, override)
 }
 
 // GetAssetConverter impl.
@@ -221,12 +232,13 @@ func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tr
 		return nil, e
 	}
 
+	assetConverters := []*model.AssetConverter{k.assetConverterOpenOrders, model.Display}
 	m := map[model.TradingPair][]model.OpenOrder{}
 	for ID, o := range openOrdersResponse.Open {
 		// kraken uses different symbols when fetching open orders!
-		pair, e := model.TradingPairFromString(3, k.assetConverterOpenOrders, o.Description.AssetPair)
+		pair, e := model.TradingPairFromString2(3, assetConverters, o.Description.AssetPair)
 		if e != nil {
-			return nil, e
+			return nil, fmt.Errorf("error parsing trading pair '%s' in krakenExchange#GetOpenOrders: %s", o.Description.AssetPair, e)
 		}
 
 		if _, ok := pairsMap[*pair]; !ok {
@@ -377,7 +389,7 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 		var pair *model.TradingPair
 		pair, e = model.TradingPairFromString(4, k.assetConverter, _pair)
 		if e != nil {
-			return nil, e
+			return nil, fmt.Errorf("error parsing trading pair '%s' in krakenExchange#getTradeHistory: %s", _pair, e)
 		}
 		orderConstraints := k.GetOrderConstraints(pair)
 		// for now use the max precision between price and volume for fee and cost

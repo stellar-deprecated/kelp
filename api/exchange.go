@@ -14,6 +14,18 @@ type ExchangeAPIKey struct {
 	Secret string
 }
 
+// ExchangeParam specifies an additional parameter to be sent when initializing the exchange
+type ExchangeParam struct {
+	Param string
+	Value string
+}
+
+// ExchangeHeader specifies additional HTTP headers
+type ExchangeHeader struct {
+	Header string
+	Value  string
+}
+
 // Account allows you to access key account functions
 type Account interface {
 	GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error)
@@ -73,6 +85,8 @@ type FillTrackable interface {
 type Constrainable interface {
 	// return nil if the constraint does not exist for the exchange
 	GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints
+
+	OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride)
 }
 
 // OrderbookFetcher extracts out the method that should go into ExchangeShim for now
@@ -209,6 +223,7 @@ type Balance struct {
 // ExchangeShim is the interface we use as a generic API for all crypto exchanges
 type ExchangeShim interface {
 	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
+	SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
 	GetBalanceHack(asset horizon.Asset) (*Balance, error)
 	LoadOffersHack() ([]horizon.Offer, error)
 	Constrainable

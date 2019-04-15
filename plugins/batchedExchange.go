@@ -154,6 +154,11 @@ func (b BatchedExchange) GetOrderConstraints(pair *model.TradingPair) *model.Ord
 	return b.inner.GetOrderConstraints(pair)
 }
 
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (b BatchedExchange) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	b.inner.OverrideOrderConstraints(pair, override)
+}
+
 // GetOrderBook impl
 func (b BatchedExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
 	return b.inner.GetOrderBook(pair, maxCount)
@@ -167,6 +172,11 @@ func (b BatchedExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStar
 // GetLatestTradeCursor impl
 func (b BatchedExchange) GetLatestTradeCursor() (interface{}, error) {
 	return b.inner.GetLatestTradeCursor()
+}
+
+// SubmitOpsSynch is the forced synchronous version of SubmitOps below (same for batchedExchange)
+func (b BatchedExchange) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	return b.SubmitOps(ops, asyncCallback)
 }
 
 // SubmitOps performs any finalization or submission step needed by the exchange
@@ -187,12 +197,6 @@ func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback
 		}
 		return nil
 	}
-
-	pair := &model.TradingPair{
-		Base:  model.FromHorizonAsset(b.baseAsset),
-		Quote: model.FromHorizonAsset(b.quoteAsset),
-	}
-	log.Printf("order constraints for trading pair %s: %s", pair, b.inner.GetOrderConstraints(pair))
 
 	results := []submitResult{}
 	numProcessed := 0

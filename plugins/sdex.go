@@ -46,9 +46,10 @@ type SDEX struct {
 	tradingOnSdex                 bool
 
 	// uninitialized
-	seqNum       uint64
-	reloadSeqNum bool
-	ieif         *IEIF
+	seqNum             uint64
+	reloadSeqNum       bool
+	ieif               *IEIF
+	ocOverridesHandler *OrderConstraintsOverridesHandler
 }
 
 // enforce SDEX implements api.Constrainable
@@ -93,11 +94,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:        simMode,
-		pair:           pair,
-		assetMap:       assetMap,
-		opFeeStroopsFn: opFeeStroopsFn,
-		tradingOnSdex:  exchangeShim == nil,
+		simMode:            simMode,
+		pair:               pair,
+		assetMap:           assetMap,
+		opFeeStroopsFn:     opFeeStroopsFn,
+		tradingOnSdex:      exchangeShim == nil,
+		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
@@ -165,7 +167,12 @@ func (sdex *SDEX) incrementSeqNum() {
 
 // GetOrderConstraints impl
 func (sdex *SDEX) GetOrderConstraints(pair *model.TradingPair) *model.OrderConstraints {
-	return sdexOrderConstraints
+	return sdex.ocOverridesHandler.Apply(pair, sdexOrderConstraints)
+}
+
+// OverrideOrderConstraints impl, can partially override values for specific pairs
+func (sdex *SDEX) OverrideOrderConstraints(pair *model.TradingPair, override *model.OrderConstraintsOverride) {
+	sdex.ocOverridesHandler.Upsert(pair, override)
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
@@ -341,8 +348,18 @@ func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.As
 	return &result, nil
 }
 
+// SubmitOpsSynch is the forced synchronous version of SubmitOps below
+func (sdex *SDEX) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	return sdex.submitOps(ops, asyncCallback, false)
+}
+
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
 func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	return sdex.submitOps(ops, asyncCallback, true)
+}
+
+// submitOps submits the passed in operations to the network in a single transaction. Asynchronous or not based on flag.
+func (sdex *SDEX) submitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
 	sdex.incrementSeqNum()
 	muts := []build.TransactionMutator{
 		build.Sequence{Sequence: sdex.seqNum},
@@ -372,13 +389,21 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 
 	// submit
 	if !sdex.simMode {
-		log.Println("submitting tx XDR to network (async)")
-		sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			sdex.submit(txeB64, asyncCallback)
-		}, nil)
+		if asyncMode {
+			log.Println("submitting tx XDR to network (async)")
+			e = sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+				sdex.submit(txeB64, asyncCallback, true)
+			}, nil)
+			if e != nil {
+				return fmt.Errorf("unable to trigger goroutine to submit tx XDR to network asynchronously: %s", e)
+			}
+		} else {
+			log.Println("submitting tx XDR to network (synch)")
+			sdex.submit(txeB64, asyncCallback, false)
+		}
 	} else {
 		log.Println("not submitting tx XDR to network in simulation mode, calling asyncCallback with empty hash value")
-		sdex.invokeAsyncCallback(asyncCallback, "", nil)
+		sdex.invokeAsyncCallback(asyncCallback, "", nil, asyncMode)
 	}
 	return nil
 }
@@ -404,7 +429,7 @@ func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
 	return txe.Base64()
 }
 
-func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)) {
+func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error), asyncMode bool) {
 	resp, err := sdex.API.SubmitTransaction(txeB64)
 	if err != nil {
 		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
@@ -412,7 +437,7 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 			rcs, err = herr.ResultCodes()
 			if err != nil {
 				log.Printf("(async) error: no result codes from horizon: %s\n", err)
-				sdex.invokeAsyncCallback(asyncCallback, "", err)
+				sdex.invokeAsyncCallback(asyncCallback, "", err, asyncMode)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
@@ -423,22 +448,34 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 		} else {
 			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
 		}
-		sdex.invokeAsyncCallback(asyncCallback, "", err)
+		sdex.invokeAsyncCallback(asyncCallback, "", err, asyncMode)
 		return
 	}
 
-	log.Printf("(async) tx confirmation hash: %s\n", resp.Hash)
-	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil)
+	modeString := "(synch)"
+	if asyncMode {
+		modeString = "(async)"
+	}
+	log.Printf("%s tx confirmation hash: %s\n", modeString, resp.Hash)
+	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil, asyncMode)
 }
 
-func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, e error), hash string, e error) {
+func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, err error), hash string, err error, asyncMode bool) {
 	if asyncCallback == nil {
 		return
 	}
 
-	sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-		asyncCallback(hash, e)
-	}, nil)
+	if asyncMode {
+		e := sdex.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			asyncCallback(hash, err)
+		}, nil)
+		if e != nil {
+			log.Printf("unable to trigger goroutine for invokeAsyncCallback: %s", e)
+			return
+		}
+	} else {
+		asyncCallback(hash, err)
+	}
 }
 
 // Assets returns the base and quote asset used by sdex

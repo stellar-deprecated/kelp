@@ -9,10 +9,11 @@ import:
 - package: github.com/spf13/pflag
   version: v1.0.0
 - package: github.com/stellar/go
-  version: 61ed9984b1f88fda0d4e5e375021b404d9900959
+  version: a45d1ae036357adf337060c7b15dbe9abc235025
   subpackages:
   - build
   - clients/horizon
+  - exp/clients/horizon
   - support/config
   - support/errors
 ##############################################################
@@ -36,7 +37,7 @@ import:
 - package: github.com/lechengfan/googleauth
   version: 7595ba02fbce171759c10d69d96e4cd898d1fa93
 - package: github.com/nikhilsaraf/go-tools
-  version: 19004f22be08c82a22e679726ca22853c65919ae
+  version: a26df67722de7fcf1a8e22cd934e63e553dd3875
 - package: github.com/mitchellh/mapstructure
   version: v1.1.2
 - package: github.com/go-chi/chi
