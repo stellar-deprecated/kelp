@@ -7,6 +7,7 @@
 [![Godoc](https://godoc.org/github.com/stellar/kelp?status.svg)](https://godoc.org/github.com/stellar/kelp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stellar/kelp)](https://goreportcard.com/report/github.com/stellar/kelp)
 [![Build Status](https://travis-ci.org/stellar/kelp.svg?branch=master)](https://travis-ci.org/stellar/kelp)
+[![Contributors](https://img.shields.io/github/contributors/stellar/kelp.svg)](https://github.com/stellar/kelp/graphs/contributors)
 
 Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
 
