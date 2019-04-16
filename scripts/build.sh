@@ -9,11 +9,25 @@ function usage() {
     exit 1
 }
 
-function generate_web_build() {
+function install_web_dependencies() {
+    echo "installing web dependencies ..."
+    CURRENT_DIR=`pwd`
+    cd $CURRENT_DIR/gui/web
+
+    yarn install
+
+    cd $CURRENT_DIR
+    echo "... finished installing web dependencies"
+    echo ""
+}
+
+function generate_static_web_files() {
     echo "generating contents of gui/web/build ..."
     CURRENT_DIR=`pwd`
     cd $CURRENT_DIR/gui/web
-    yarn install && yarn build
+
+    yarn build
+
     cd $CURRENT_DIR
     echo "... finished generating contents of gui/web/build"
     echo ""
@@ -57,7 +71,7 @@ then
     echo "GOARCH: $(go env GOARCH)"
     echo ""
 
-    generate_web_build
+    install_web_dependencies
 
     # explicit check for windows
     EXTENSION=""
@@ -84,7 +98,8 @@ then
     echo "BUILD SUCCESSFUL"
     exit 0
 else
-    generate_web_build
+    install_web_dependencies
+    generate_static_web_files
 fi
 # else, we are in deploy mode
 echo ""
