@@ -85,7 +85,7 @@ then
     mkdir -p bin
 
     echo -n "compiling ... "
-    go build -tags debug -ldflags "$LDFLAGS" -o $OUTFILE
+    go build -tags dev -ldflags "$LDFLAGS" -o $OUTFILE
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -145,7 +145,7 @@ do
     fi
 
     # compile
-    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -tags release -ldflags "$LDFLAGS" -o $BINARY
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
