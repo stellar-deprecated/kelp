@@ -7,4 +7,5 @@ vendor/
 build/
 bin/
 .idea
+gui/filesystem_vfsdata_release.go
 kelp.prefs

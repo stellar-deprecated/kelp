@@ -22,9 +22,9 @@ import:
 - package: github.com/sirupsen/logrus
   version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
 - package: github.com/Sirupsen/logrus
+  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
   repo: git@github.com:sirupsen/logrus
   vcs: git
-  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
 - package: golang.org/x/crypto
   version: 2509b142fb2b797aa7587dad548f113b2c0f20ce
 - package: golang.org/x/sys
@@ -40,3 +40,7 @@ import:
   version: a26df67722de7fcf1a8e22cd934e63e553dd3875
 - package: github.com/mitchellh/mapstructure
   version: v1.1.2
+- package: github.com/go-chi/chi
+  version: v4.0.2
+- package: github.com/shurcooL/vfsgen
+  version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069

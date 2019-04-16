@@ -10,9 +10,13 @@ import (
 
 // build flags
 var version string
-var buildDate string
 var gitBranch string
 var gitHash string
+var buildDate string
+var env string
+
+const envRelease = "release"
+const envDev = "dev"
 
 const rootShort = "Kelp is a free and open-source trading bot for the Stellar universal marketplace."
 const rootLong = `Kelp is a free and open-source trading bot for the Stellar universal marketplace (https://stellar.org).
@@ -48,6 +52,7 @@ func init() {
 	validateBuild()
 
 	RootCmd.AddCommand(tradeCmd)
+	RootCmd.AddCommand(serverCmd)
 	RootCmd.AddCommand(strategiesCmd)
 	RootCmd.AddCommand(exchanagesCmd)
 	RootCmd.AddCommand(terminateCmd)

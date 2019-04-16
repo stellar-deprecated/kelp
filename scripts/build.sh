@@ -9,6 +9,30 @@ function usage() {
     exit 1
 }
 
+function install_web_dependencies() {
+    echo "installing web dependencies ..."
+    CURRENT_DIR=`pwd`
+    cd $CURRENT_DIR/gui/web
+
+    yarn install
+
+    cd $CURRENT_DIR
+    echo "... finished installing web dependencies"
+    echo ""
+}
+
+function generate_static_web_files() {
+    echo "generating contents of gui/web/build ..."
+    CURRENT_DIR=`pwd`
+    cd $CURRENT_DIR/gui/web
+
+    yarn build
+
+    cd $CURRENT_DIR
+    echo "... finished generating contents of gui/web/build"
+    echo ""
+}
+
 if [[ ($# -gt 1 || `pwd | rev | cut -d'/' -f1 | rev` != "kelp") ]]
 then
     echo "need to invoke from the root 'kelp' directory"
@@ -17,12 +41,14 @@ fi
 
 if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
     MODE=deploy
+    ENV=release
 elif [[ ($# -eq 1 && ("$1" == "-h" || "$1" == "--help")) ]]; then
     usage
 elif [[ $# -eq 1 ]]; then
     usage
 else
     MODE=build
+    ENV=dev
 fi
 
 # version is git tag if it's available, otherwise git hash
@@ -31,18 +57,21 @@ GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS="-X github.com/stellar/kelp/cmd.version=$VERSION_STRING -X github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/stellar/kelp/cmd.gitHash=$GIT_HASH -X github.com/stellar/kelp/cmd.buildDate=$DATE"
+LDFLAGS="-X github.com/stellar/kelp/cmd.version=$VERSION_STRING -X github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/stellar/kelp/cmd.gitHash=$GIT_HASH -X github.com/stellar/kelp/cmd.buildDate=$DATE -X github.com/stellar/kelp/cmd.env=$ENV"
 
 echo "version: $VERSION_STRING"
 echo "git branch: $GIT_BRANCH"
 echo "git hash: $GIT_HASH"
 echo "build date: $DATE"
+echo "env: $ENV"
 
 if [[ $MODE == "build" ]]
 then
     echo "GOOS: $(go env GOOS)"
     echo "GOARCH: $(go env GOARCH)"
     echo ""
+
+    install_web_dependencies
 
     # explicit check for windows
     EXTENSION=""
@@ -56,7 +85,7 @@ then
     mkdir -p bin
 
     echo -n "compiling ... "
-    go build -ldflags "$LDFLAGS" -o $OUTFILE
+    go build -tags debug -ldflags "$LDFLAGS" -o $OUTFILE
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -83,6 +112,14 @@ then
     echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
     exit 1
 fi
+
+install_web_dependencies
+generate_static_web_files
+
+echo "embedding contents of gui/web/build into a .go file ..."
+go run ./scripts/fs_bin_gen.go 
+echo "... finished embedding contents of gui/web/build into a .go file"
+echo ""
 
 ARCHIVE_DIR=build/$DATE
 ARCHIVE_FOLDER_NAME=kelp-$VERSION

@@ -1,5 +1,5 @@
-hash: c1a6fe42c2e0796f29822018134adc2401292b654fec58b7d790daafceec2585
-updated: 2019-04-03T12:27:32.117314051-07:00
+hash: 243f6af8b6be9b957efb6fd8e916355c4c6ced464e547cf75644357468681eb8
+updated: 2019-04-15T14:53:14.587569967-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -15,6 +15,10 @@ imports:
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
   subpackages:
   - spew
+- name: github.com/go-chi/chi
+  version: da24bba8dcd4021cafac38724bf10dccc97c3e36
+  subpackages:
+  - middleware
 - name: github.com/go-errors/errors
   version: a41850380601eeb43f4350f7d17c6bbd8944aaf8
 - name: github.com/golang/protobuf
@@ -59,6 +63,12 @@ imports:
   - difflib
 - name: github.com/segmentio/go-loggly
   version: eb91657e62b25699dd4e84d5562735440d4beace
+- name: github.com/shurcooL/httpfs
+  version: 74dc9339e414ad069a8d04bba7e7aafd08043a25
+  subpackages:
+  - vfsutil
+- name: github.com/shurcooL/vfsgen
+  version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069
 - name: github.com/sirupsen/logrus
   version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
   subpackages:
