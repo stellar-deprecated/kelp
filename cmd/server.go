@@ -72,9 +72,10 @@ func checkHomeDir() {
 }
 
 func runWithYarn(options serverInputs) {
+	// yarn requires the PORT variable to be set when serving
 	os.Setenv("PORT", fmt.Sprintf("%d", *options.port))
-	log.Printf("Serving on HTTP port: %d\n", *options.port)
-	e := exec.Command("yarn", "--cwd", "gui/web", "start").Run()
+
+	e := runCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "start"))
 	if e != nil {
 		panic(e)
 	}
@@ -83,10 +84,19 @@ func runWithYarn(options serverInputs) {
 func generateStaticFiles() {
 	log.Printf("generating contents of gui/web/build ...\n")
 
-	command := exec.Command("yarn", "--cwd", "gui/web", "build")
-	stdout, e := command.StdoutPipe()
+	e := runCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "build"))
 	if e != nil {
 		panic(e)
+	}
+
+	log.Printf("... finished generating contents of gui/web/build\n")
+	log.Println()
+}
+
+func runCommandStreamOutput(command *exec.Cmd) error {
+	stdout, e := command.StdoutPipe()
+	if e != nil {
+		return fmt.Errorf("error while creating Stdout pipe: %s", e)
 	}
 	command.Start()
 
@@ -99,11 +109,9 @@ func generateStaticFiles() {
 
 	e = command.Wait()
 	if e != nil {
-		panic(e)
+		return fmt.Errorf("could not execute command: %s", e)
 	}
-
-	log.Printf("... finished generating contents of gui/web/build\n")
-	log.Println()
+	return nil
 }
 
 // fileServer sets up a http.FileServer handler to serve static files from a http.FileSystem
