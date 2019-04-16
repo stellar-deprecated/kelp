@@ -1,5 +1,8 @@
 language: go
 
+node_js:
+- "10.5.0"
+
 go_import_path: github.com/stellar/kelp
 
 services:
