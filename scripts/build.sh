@@ -97,9 +97,6 @@ then
     echo ""
     echo "BUILD SUCCESSFUL"
     exit 0
-else
-    install_web_dependencies
-    generate_static_web_files
 fi
 # else, we are in deploy mode
 echo ""
@@ -115,6 +112,9 @@ then
     echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
     exit 1
 fi
+
+install_web_dependencies
+generate_static_web_files
 
 echo "embedding contents of gui/web/build into a .go file ..."
 go run ./scripts/fs_bin_gen.go 
