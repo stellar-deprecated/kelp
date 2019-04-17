@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Use v0.0.4 for ccxt-rest to fix travis build and update the instructions in our README file. The APIs have diverged with the latest release of ccxt-rest v1.0.0 yesterday so we are sticking to the old version for now.
+
 ### Security
 
 ## [v1.6.1] - 2019-04-12
