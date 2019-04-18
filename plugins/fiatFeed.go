@@ -26,12 +26,13 @@ type fiatAPIReturn struct {
 type fiatFeed struct {
 	url    string
 	client http.Client
+	invert bool
 }
 
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &fiatFeed{}
 
-func newFiatFeed(url string) *fiatFeed {
+func newFiatFeed(url string, invert bool) *fiatFeed {
 	m := new(fiatFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
@@ -51,5 +52,9 @@ func (f *fiatFeed) GetPrice() (float64, error) {
 		pA = value
 	}
 
-	return (1.0 / pA), nil
+	if !f.invert {
+		pA = 1.0 / pA
+	}
+
+	return (pA), nil
 }

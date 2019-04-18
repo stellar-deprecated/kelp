@@ -14,8 +14,10 @@ import (
 type sellConfig struct {
 	DataTypeA              string        `valid:"-" toml:"DATA_TYPE_A"`
 	DataFeedAURL           string        `valid:"-" toml:"DATA_FEED_A_URL"`
+	DataFeedAInvert        bool          `valid:"-" toml:"DATA_FEED_A_INVERT"`
 	DataTypeB              string        `valid:"-" toml:"DATA_TYPE_B"`
 	DataFeedBURL           string        `valid:"-" toml:"DATA_FEED_B_URL"`
+	DataFeedBInvert        bool          `valid:"-" toml:"DATA_FEED_B_INVERT"`
 	PriceTolerance         float64       `valid:"-" toml:"PRICE_TOLERANCE"`
 	AmountTolerance        float64       `valid:"-" toml:"AMOUNT_TOLERANCE"`
 	AmountOfABase          float64       `valid:"-" toml:"AMOUNT_OF_A_BASE"` // the size of order
@@ -42,8 +44,10 @@ func makeSellStrategy(
 	pf, e := MakeFeedPair(
 		config.DataTypeA,
 		config.DataFeedAURL,
+		config.DataFeedAInvert,
 		config.DataTypeB,
 		config.DataFeedBURL,
+		config.DataFeedBInvert,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make the sell strategy because we could not make the feed pair: %s", e)

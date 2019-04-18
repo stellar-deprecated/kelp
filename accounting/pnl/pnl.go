@@ -110,5 +110,5 @@ func loadAccount(client *horizon.Client, address string) horizon.Account {
 
 func makeCmcFeed(cmcRef string) (api.PriceFeed, error) {
 	url := fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", cmcRef)
-	return plugins.MakePriceFeed("crypto", url)
+	return plugins.MakePriceFeed("crypto", url, false)
 }

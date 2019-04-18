@@ -40,16 +40,18 @@ type cmcAPIReturn struct {
 type cmcFeed struct {
 	url    string
 	client http.Client
+	invert bool
 }
 
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &cmcFeed{}
 
 // newCMCFeed creates a new CMC Feed from a URL
-func newCMCFeed(url string) *cmcFeed {
+func newCMCFeed(url string, invert bool) *cmcFeed {
 	m := new(cmcFeed)
 	m.url = url
 	m.client = http.Client{Timeout: 10 * time.Second}
+	m.invert = invert
 	return m
 }
 
@@ -64,6 +66,10 @@ func (c *cmcFeed) GetPrice() (float64, error) {
 	pA, err := strconv.ParseFloat(retA[0].Price, 64)
 	if err != nil {
 		return 0, err
+	}
+
+	if c.invert {
+		pA = 1.0 / pA
 	}
 
 	return pA, nil
