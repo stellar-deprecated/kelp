@@ -1,0 +1,8 @@
+.button {
+    border-radius: 30px;
+}
+
+.error {
+    composes: button;
+    background-color: red;
+}
