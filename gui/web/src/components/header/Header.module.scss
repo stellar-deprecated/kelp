@@ -1,4 +1,4 @@
-// @value variables: "./styles/variables.scss";
+@import '../../styles/variables.module.scss';
 
 .wrapper {
   max-width: 920px;
@@ -6,7 +6,7 @@
 }
 
 .header {
-  background-color: #141415;
+  background-color: $black95;
   border-bottom: 1px solid #000;
 }
 
