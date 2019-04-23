@@ -1,16 +1,35 @@
-@import-normalize; /* bring in normalize.css styles */
+@font-face {
+  font-family: 'SuisseIntl';
+  src: url('fonts/suisseintl-light-webfont.woff2') format('woff2'),
+       url('fonts/suisseintl-light-webfont.woff') format('woff');
+  font-style: lighter;
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SuisseIntl';
+  src: url('fonts/suisseintl-book-webfont.woff2') format('woff2'),
+       url('fonts/suisseintl-book-webfont.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SuisseIntlMono';
+  src: url('fonts/suisseintlmono-regular-webfont.woff2') format('woff2'),
+       url('fonts/suisseintlmono-regular-webfont.woff') format('woff'),
+       url('fonts/suisseintlmono-regular-webfont.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: "SuisseIntl", "Roboto", "Helvetica Neue", sans-serif;
+  font-weight: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
 }

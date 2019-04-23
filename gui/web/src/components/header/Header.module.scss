@@ -1,12 +1,17 @@
 // @value variables: "./styles/variables.scss";
 
+.wrapper {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
 .header {
-    background-color: #141415;
-    border-bottom: 1px solid #000;
+  background-color: #141415;
+  border-bottom: 1px solid #000;
 }
 
 .logo-wrapper {
-
+  
 }
 
 .logo {
@@ -14,5 +19,13 @@
 }
 
 .version {
+  color: gray;
+}
 
+.iconsMenu {
+  float: right;
+}
+
+.icon {
+  width: 19px;
 }
