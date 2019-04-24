@@ -6,9 +6,22 @@
     color: #fff;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.3s ease-out;
-    padding: 0;
+    transition: color .15s ease-in-out, 
+                background-color .15s ease-in-out,
+                border-color .15s ease-in-out,
+                box-shadow .15s ease-in-out;
+    padding: 10px 25px;;
+    border: 0;
     display: block;
+
+    &:hover {
+        background-color: darken($purple, 5%);
+    }
+
+    &:focus {
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba($purple, 0.5);
+    }
 
     img {
         display: block;
@@ -18,16 +31,29 @@
 .medium {
     composes: button;
     font-size: 14/16+rem;
-    padding: 5px 20px;
+    padding: 10px 25px;
     font-family: 'SuisseIntl';
 }
 
+.faded {
+    composes: button;
+    background-color: #242433;
+    font-size: 14/16+rem;
+    color: $light-gray;
+}
+
 .link {
+    color:#CECECE;
+    font-size: 14/16+rem;
     composes: button;
     background: none;
     text-decoration: underline;
     &:hover {
-        background: none
+        background: none;
+        color: #fff;
+    }
+    &:focus {
+        box-shadow: none;
     }
 }
 
@@ -37,6 +63,7 @@
     background: transparent;
     padding: 6px;
     margin-left: 3px;
+    outline: 0;
 
     &:hover {
         background-color: #242433;
@@ -47,6 +74,6 @@
     }
 
     &:focus {
-        outline: 0;
+        box-shadow: none;
     }
 }

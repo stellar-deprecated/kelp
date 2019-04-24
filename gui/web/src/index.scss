@@ -30,11 +30,10 @@
 }
 
 body {
-  // font-family: $primary-typeface;
   margin: 0;
   padding: 0;
   background-color: $black90;
-  font-family: "SuisseIntl", "Roboto", "Helvetica Neue", sans-serif;
+  font-family: $primary-typeface;
   font-weight: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -1,0 +1,74 @@
+@import '../../styles/variables.module.scss';
+
+$card-border-radius: 3px;
+
+.card {
+  margin-top: 3rem;
+  position: relative;
+  background-color: $black80;
+  border-radius: $card-border-radius;
+  border: 1px solid #212126;
+  color: #fff;
+  padding: 12/16+rem 22/16+rem;
+  display: flex;
+
+  > * {
+    flex-basis: 33.333%;
+    max-width: 33.333%;
+  }
+}
+
+.status {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background-color: $green;
+  border-radius: $card-border-radius 0 0  $card-border-radius;
+}
+
+.title {
+  font-size: 18/16 + rem;
+  font-weight: 400;
+  margin: 0;
+  margin-bottom: 0.3rem;
+}
+
+.netTag {
+  font-size: 9/16+rem;
+  text-transform: uppercase;
+  background-color: $yellow;
+  padding: 3px 6px 2px 6px;
+  border-radius: 20px;
+  text-shadow: 0 0.5 0 rgba($black100, 20%);
+  margin-right: 10px;
+}
+
+.exchange {
+  font-size: 14/16+rem;
+}
+
+.lightText {
+  color: $medium-gray;
+  font-size: 14/16+rem;
+}
+
+.textMono {
+  font-family: $secondary-typeface;
+  color: $light-gray;
+  letter-spacing: -0.5px;
+  font-size: 13/16 +rem;
+}
+
+.chartThumb {
+  max-width: 170px;
+}
+
+.infoIcon {
+  display: inline-block;
+  background-color: #2D2D34;
+  width: 13px;
+  height: 13px;
+}
