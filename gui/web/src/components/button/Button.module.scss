@@ -1,8 +1,52 @@
+@import '../../styles/variables.module.scss';
+
 .button {
     border-radius: 30px;
+    background-color: $purple;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease-out;
+    padding: 0;
+    display: block;
+
+    img {
+        display: block;
+    }
 }
 
-.error {
+.medium {
     composes: button;
-    background-color: red;
+    font-size: 14/16+rem;
+    padding: 5px 20px;
+    font-family: 'SuisseIntl';
+}
+
+.link {
+    composes: button;
+    background: none;
+    text-decoration: underline;
+    &:hover {
+        background: none
+    }
+}
+
+.transparent {
+    composes: button;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    margin-left: 3px;
+
+    &:hover {
+        background-color: #242433;
+    }
+
+    &:active {
+        background-color: $black100;
+    }
+
+    &:focus {
+        outline: 0;
+    }
 }

@@ -1,33 +1,39 @@
+@import './styles/variables.module.scss';
+
+:global {
+
+}
+
 @font-face {
-  font-family: 'SuisseIntl';
-  src: url('fonts/suisseintl-light-webfont.woff2') format('woff2'),
-       url('fonts/suisseintl-light-webfont.woff') format('woff');
-  font-style: lighter;
-  font-weight: 200;
-  font-style: normal;
+    font-family: 'SuisseIntl';
+    src: url('./fonts/suisseintl-light-webfont.woff2') format('woff2'),
+          url('./fonts/suisseintl-light-webfont.woff') format('woff');
+    font-style: lighter;
+    font-weight: 200;
 }
 
 @font-face {
   font-family: 'SuisseIntl';
-  src: url('fonts/suisseintl-book-webfont.woff2') format('woff2'),
-       url('fonts/suisseintl-book-webfont.woff') format('woff');
+  src: url('./fonts/suisseintl-book-webfont.woff2') format('woff2'),
+          url('./fonts/suisseintl-book-webfont.woff') format('woff');
   font-style: normal;
-  font-weight: 400;
-  font-style: normal;
+  font-weight: normal;
 }
 
 @font-face {
-  font-family: 'SuisseIntlMono';
-  src: url('fonts/suisseintlmono-regular-webfont.woff2') format('woff2'),
-       url('fonts/suisseintlmono-regular-webfont.woff') format('woff'),
-       url('fonts/suisseintlmono-regular-webfont.ttf') format('truetype');
+  font-family: 'SuisseIntlMonos';
+  src: url('./fonts/suisseintlmono-regular-webfont.woff2') format('woff2'),
+          url('./fonts/suisseintlmono-regular-webfont.woff') format('woff'),
+          url('./fonts/suisseintlmono-regular-webfont.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 body {
+  // font-family: $primary-typeface;
   margin: 0;
   padding: 0;
+  background-color: $black90;
   font-family: "SuisseIntl", "Roboto", "Helvetica Neue", sans-serif;
   font-weight: normal;
   -webkit-font-smoothing: antialiased;
