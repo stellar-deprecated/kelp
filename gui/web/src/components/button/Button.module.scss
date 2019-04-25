@@ -2,7 +2,7 @@
 
 .button {
     border-radius: 30px;
-    background-color: $purple;
+    background-color: $color-primary;
     color: #fff;
     text-decoration: none;
     cursor: pointer;
@@ -15,12 +15,12 @@
     display: block;
 
     &:hover {
-        background-color: darken($purple, 5%);
+        background-color: darken($color-primary, 5%);
     }
 
     &:focus {
         outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba($purple, 0.5);
+        box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.5);
     }
 
     img {
@@ -39,13 +39,13 @@
     composes: button;
     background-color: #242433;
     font-size: 14/16+rem;
-    color: $light-gray;
+    color: $color-contrast-2;
 }
 
 .link {
-    color:#CECECE;
-    font-size: 14/16+rem;
     composes: button;
+    color: $color-contrast-2;
+    font-size: 14/16+rem;
     background: none;
     text-decoration: underline;
     &:hover {
@@ -70,7 +70,7 @@
     }
 
     &:active {
-        background-color: $black100;
+        background-color: $color-base-1;
     }
 
     &:focus {

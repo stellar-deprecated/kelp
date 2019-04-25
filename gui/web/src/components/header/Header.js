@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import logo from '../../images/kelp-logo.svg';
-import helpIcon from '../../images/ico-help.svg';
-import dayIcon from '../../images/ico-day.svg';
+import logo from '../../assets/images/kelp-logo.svg';
+import helpIcon from '../../assets/images/ico-help.svg';
+import dayIcon from '../../assets/images/ico-day.svg';
 import grid from '../../styles/grid.module.scss';
-import button from '../button/Button.module.scss';
+import button from '../Button/Button.module.scss';
 import styles from './Header.module.scss';
 
 

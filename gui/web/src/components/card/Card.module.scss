@@ -1,14 +1,37 @@
 @import '../../styles/variables.module.scss';
 
 $card-border-radius: 3px;
+$card-border-size: 1px;
+$small-spacing: 3px;
+
+// Compose classes
+
+.lightText {
+  color: $color-contrast-3;
+  font-weight: 200;
+  font-size: 14/16+rem;
+}
+
+.textMono {
+  font-family: $typeface-secondary;
+  color: $color-contrast-2;
+  letter-spacing: -0.5px;
+  font-size: 13/16 +rem;
+}
+
+.line {
+  margin-bottom: $small-spacing;
+}
+
+// Elements classes
 
 .card {
   margin-top: 3rem;
   position: relative;
-  background-color: $black80;
+  background-color: $color-base-4;
   border-radius: $card-border-radius;
-  border: 1px solid #212126;
-  color: #fff;
+  border: $card-border-size solid rgba($color-contrast-4, .04);
+  color: $color-contrast-1;
   padding: 12/16+rem 22/16+rem;
   display: flex;
 
@@ -21,12 +44,20 @@ $card-border-radius: 3px;
 .status {
   display: block;
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: -$card-border-size;
+  top: -$card-border-size;
+  bottom: -$card-border-size;
   width: 6px;
-  background-color: $green;
-  border-radius: $card-border-radius 0 0  $card-border-radius;
+  background-color: $color-success;
+  border-radius: $card-border-radius 0 0 $card-border-radius;
+}
+
+.optionsMenu {
+  position: absolute;
+  right: 2px;
+  top: 4px;
+  border: 0;
+  background-color: transparent;
 }
 
 .title {
@@ -36,13 +67,59 @@ $card-border-radius: 3px;
   margin-bottom: 0.3rem;
 }
 
+.botDetailsLine {
+  margin-bottom: 20px;
+}
+
+.baseAssetLine {
+  composes: line;
+}
+
+.quoteAssetLine {
+}
+
+.notificationsLine {
+  composes: line;
+  flex-grow: 1;
+}
+
+.spreadLine {
+  composes: line;
+}
+
+.bidsLine {
+  composes: line;
+}
+
+.asksLine {
+}
+
+.secondColumn {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.thirdColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fourthColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .netTag {
   font-size: 9/16+rem;
   text-transform: uppercase;
-  background-color: $yellow;
+  background-color: $color-tag-test;
   padding: 3px 6px 2px 6px;
   border-radius: 20px;
-  text-shadow: 0 0.5 0 rgba($black100, 20%);
+  text-shadow: 0 0.5 0 rgba($color-base-1, 20%);
   margin-right: 10px;
 }
 
@@ -50,17 +127,6 @@ $card-border-radius: 3px;
   font-size: 14/16+rem;
 }
 
-.lightText {
-  color: $medium-gray;
-  font-size: 14/16+rem;
-}
-
-.textMono {
-  font-family: $secondary-typeface;
-  color: $light-gray;
-  letter-spacing: -0.5px;
-  font-size: 13/16 +rem;
-}
 
 .chartThumb {
   max-width: 170px;
@@ -68,7 +134,66 @@ $card-border-radius: 3px;
 
 .infoIcon {
   display: inline-block;
-  background-color: #2D2D34;
+  background-color: rgba($color-contrast-4, 0.25);
   width: 13px;
   height: 13px;
+  border-radius: 20px;
+
+   img {
+      padding: 0px 2px;
+   }
+}
+
+.statusDetails {
+  margin-bottom: 1rem;
+}
+
+.runningIcon {
+  display: inline-block;
+  border: 1px solid $color-success;
+  width: 9px;
+  height: 9px;
+  border-radius: 30px;
+  margin-right: 7px;
+}
+
+.runningTime {
+  font-family: $typeface-secondary;
+  font-size: 11/16 +rem;
+  color: $color-success;
+}
+
+
+.startStopButton {
+  // compose these options from button
+  display: flex;
+  border-radius: 30px;
+  font-size: 12/16+rem;
+  background-color: $color-primary;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .15s ease-in-out, 
+              background-color .15s ease-in-out,
+              border-color .15s ease-in-out,
+              box-shadow .15s ease-in-out;
+  padding: 10px 25px;;
+  border: 0;
+  display: block;
+
+  &:hover {
+      background-color: darken($color-error, 5%);
+  }
+
+  &:focus {
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.5);
+  }
+
+  img {
+      display: block;
+  }
+
+  background-color: $color-base-2;
+  
 }

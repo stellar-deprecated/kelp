@@ -7,7 +7,6 @@ class Button extends Component {
   render() {
     return (
         <button className={styles.error}>Error Button</button>
-        // <h1>Hello {this.props.name}</h1>
     );
   }
 }

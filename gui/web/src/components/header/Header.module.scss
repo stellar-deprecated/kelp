@@ -1,8 +1,8 @@
 @import '../../styles/variables.module.scss';
 
 .header {
-  background-color: $black95;
-  border-bottom: 1px solid $black100;
+  background-color: $color-base-2;
+  border-bottom: 1px solid $color-base-1;
 }
 
 .headerWrapper {
@@ -22,8 +22,8 @@
 }
 
 .version {
-  color: #5F6274;
-  font-family: $secondary-typeface;
+  color: $color-contrast-4;
+  font-family: $typeface-secondary;
   letter-spacing: -0.5/16+rem;
   font-size: 11/16+rem;
   padding-left: 4px;
