@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import './Label.css';
+import styles from './Label.module.scss';
 
 class Label extends Component {
   render() {
     return (
-      <label>{this.props.children}</label>
+      <label className={styles.label}>{this.props.children}</label>
     );
   }
 }

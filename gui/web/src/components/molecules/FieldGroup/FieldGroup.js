@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import './FieldGroup.css';
+import styles from './FieldGroup.module.scss';
 
 class FieldGroup extends Component {
 
   render() {
     return (
-      <div>
+      <div className={styles.wrapper}>
         {this.props.children}
       </div>
     );

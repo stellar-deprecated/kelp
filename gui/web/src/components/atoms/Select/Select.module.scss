@@ -1,0 +1,21 @@
+@import '../../_settings/variables.module.scss';
+
+.select {
+    border: none;
+    border-radius: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: transparent;
+    border-bottom: 1px solid $color-contrast-5;
+    color: $color-contrast-1;
+    font-family: $typeface-secondary;
+    font-size: 13/16+rem;
+    padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem;
+    margin-bottom: 1px;
+
+    &:focus {
+        border-bottom: 2px solid $color-primary;
+        outline: 0;
+        margin-bottom: 0;
+    }
+}

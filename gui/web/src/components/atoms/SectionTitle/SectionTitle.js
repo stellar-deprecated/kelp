@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import './SectionTitle.css';
+import styles from './SectionTitle.module.scss';
 
 class SectionTitle extends Component {
 
   render() {
     return (
-      <h3>{this.props.children}</h3>
+      <h3 className={styles.title}>{this.props.children}</h3>
     );
   }
 }

@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import Input from './components/atoms/Input/Input';
 import Header from './components/molecules/Header/Header';
 
-import style from './components/templates/Form/Form.module.scss';
+import styles from './components/templates/Form/Form.module.scss';
 import button from './components/atoms/Button/Button.module.scss';
 import grid from './components/_settings/grid.module.scss';
 
@@ -14,49 +14,81 @@ import SegmentedControl from './components/atoms/SegmentedControl/SegmentedContr
 import SectionDescription from './components/atoms/SectionDescription/SectionDescription';
 import Select from './components/atoms/Select/Select';
 import FieldGroup from './components/molecules/FieldGroup/FieldGroup';
+import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
 
 class Form extends Component {
   render() {
     return (
       <div>
         <Header version="v1.04"/>
-        
+
         <div className={grid.container}>
-            <div className={grid.col8}>
-            <FieldGroup>
-              <Label>Name</Label>
-              <Input/>
-            </FieldGroup>
-            {/* Trader Settings */}
-            <SectionTitle>
-              Trader Settings
-            </SectionTitle>
-            <SectionDescription>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-              Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
-            </SectionDescription>
-            <FieldGroup>
-              <Label>Name</Label>
-              <Select/>
-            </FieldGroup>
-            <FieldGroup>
-              <Label>Name</Label>
-              <SegmentedControl/>
-            </FieldGroup>
-            <FieldGroup>
-              <Label>Trader</Label>
-              <Input/>
-            </FieldGroup>
+            <ScreenHeader title="New Bot"/>
             <div className={grid.row}>
-              <div className={grid.col4}>
-                Hello
-              </div>
               <div className={grid.col8}>
-                World
+              
+              <FieldGroup>
+                <Input/>
+              </FieldGroup>
+              
+              {/* Trader Settings */}
+              <SectionTitle>
+                Trader Settings
+              </SectionTitle>
+              
+              <SectionDescription>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+                Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
+              </SectionDescription>
+              
+              <FieldGroup>
+                <Label>Name</Label>
+                <Select/>
+              </FieldGroup>
+              
+              <FieldGroup>
+                <Label>Name</Label>
+                <SegmentedControl/>
+              </FieldGroup>
+              
+              <FieldGroup>
+                <Label>Trader</Label>
+                <Input/>
+              </FieldGroup>
+              
+              <div className={grid.row}>
+                <div className={grid.col4}>
+                  <FieldGroup>
+                    <Label>Base asset code</Label>
+                    <Input/>
+                  </FieldGroup>
+                </div>
+
+                <div className={grid.col8}>
+                  <FieldGroup>
+                    <Label>Base asset issuer</Label>
+                    <Input/>
+                  </FieldGroup>
+                </div>
+              </div>
+
+              <div className={grid.row}>
+                <div className={grid.col4}>
+                  <FieldGroup>
+                    <Label>Quote asset code</Label>
+                    <Input/>
+                  </FieldGroup>
+                </div>
+
+                <div className={grid.col8}>
+                  <FieldGroup>
+                    <Label>Quote asset issuer</Label>
+                    <Input/>
+                  </FieldGroup>
+                </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     );

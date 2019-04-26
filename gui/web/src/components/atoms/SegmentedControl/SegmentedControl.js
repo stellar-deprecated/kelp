@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
-import './SegmentedControl.css';
+import styles from './SegmentedControl.module.scss';
 
 class SegmentedControl extends Component {
 
   render() {
     return (
-      <ul>
-        <li>TestNet</li>
-        <li>MainNet</li>
+      <ul className={styles.segmentedControl}>
+        <li className={styles.segmentedControlItemSelected}>TestNet</li>
+        <li className={styles.segmentedControlItem}>MainNet</li>
       </ul>
     );
   }

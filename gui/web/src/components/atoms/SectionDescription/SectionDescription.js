@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import './SectionDescription.css';
+import styles from './SectionDescription.module.scss';
 
 class SectionDescription extends Component {
 
   render() {
     return (
-      <p>{this.props.children}</p>
+      <p className={styles.text}>{this.props.children}</p>
     );
   }
 }

@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import './Input.css';
+import styles from './Input.module.scss';
 
 class Input extends Component {
 
   render() {
     return (
-      <input type="text" name="fname"/>
+      <input className={styles.input} type="text" name="fname"/>
     );
   }
 }

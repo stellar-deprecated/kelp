@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import './Select.css';
+import styles from './Select.module.scss';
 
 class Select extends Component {
   render() {
     return (
-      <select>
+      <select className={styles.select}>
         <option value="sdex">SDEX</option>
         <option value="binance">Binance</option>
         <option value="other">Other</option>
