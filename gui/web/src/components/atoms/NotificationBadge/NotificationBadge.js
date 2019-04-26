@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import styles from './NotificationBadge.module.scss';
-import warningIcon from '../../assets/images/ico-warning-small.svg';
+import warningIcon from '../../../assets/images/ico-warning-small.svg';
 
 
 

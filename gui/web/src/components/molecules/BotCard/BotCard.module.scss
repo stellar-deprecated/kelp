@@ -1,4 +1,4 @@
-@import '../../styles/variables.module.scss';
+@import '../../_settings/variables.module.scss';
 
 $card-border-radius: 3px;
 $card-border-size: 1px;
@@ -148,24 +148,9 @@ $small-spacing: 3px;
   margin-bottom: 1rem;
 }
 
-.runningIcon {
-  display: inline-block;
-  border: 1px solid $color-success;
-  width: 9px;
-  height: 9px;
-  border-radius: 30px;
-  margin-right: 7px;
-}
-
-.runningTime {
-  font-family: $typeface-secondary;
-  font-size: 11/16 +rem;
-  color: $color-success;
-}
-
 
 .startStopButton {
-  composes: button from  '../Button/Button.module.scss';
+  // composes: button from  '../Button/Button.module.scss';
 
   img {
       display: block;

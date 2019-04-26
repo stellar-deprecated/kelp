@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
-import Header from './components/Header/Header';
-import Card from './components/Card/Card';
-import button from './components/Button/Button.module.scss';
+import Header from './components/molecules/Header/Header';
+import Card from './components/molecules/BotCard/BotCard';
+import button from './components/atoms/Button/Button.module.scss';
 import style from './App.module.scss';
-import grid from './styles/grid.module.scss';
+import grid from './components/_settings/grid.module.scss';
 import emptyIcon from './assets/images/ico-empty.svg';
-import { styles } from 'ansi-colors';
 
 class App extends Component {
   render() {

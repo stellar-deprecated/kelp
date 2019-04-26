@@ -1,0 +1,43 @@
+@import '../../_settings/variables.module.scss';
+
+._icon {
+    display: inline-block;
+    border: 1px solid $color-success;
+    width: 9px;
+    height: 9px;  
+}
+
+.runningIcon {
+    composes: _icon;
+    display: inline-block;
+    border: 1px solid $color-success;
+    width: 9px;
+    height: 9px;
+    border-radius: 30px;
+    margin-right: 7px;
+}
+
+.stoppedIcon {
+    display: inline-block;
+    border: 1px solid $color-error;
+    width: 9px;
+    height: 9px;
+    border-radius: 30px;
+    margin-right: 7px;
+}
+
+._label {
+    font-family: $typeface-secondary;
+    font-size: 11/16 +rem;
+}
+
+.runningLabel {
+    composes: _label;
+    color: $color-success;
+}
+
+.stoppedLabel {
+    composes: _label;
+    color: $color-error;
+}
+
