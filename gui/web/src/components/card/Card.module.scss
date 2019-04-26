@@ -165,30 +165,7 @@ $small-spacing: 3px;
 
 
 .startStopButton {
-  // compose these options from button
-  display: flex;
-  border-radius: 30px;
-  font-size: 12/16+rem;
-  background-color: $color-primary;
-  color: #fff;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color .15s ease-in-out, 
-              background-color .15s ease-in-out,
-              border-color .15s ease-in-out,
-              box-shadow .15s ease-in-out;
-  padding: 10px 25px;;
-  border: 0;
-  display: block;
-
-  &:hover {
-      background-color: darken($color-error, 5%);
-  }
-
-  &:focus {
-      outline: 0;
-      box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.5);
-  }
+  composes: button from  '../Button/Button.module.scss';
 
   img {
       display: block;

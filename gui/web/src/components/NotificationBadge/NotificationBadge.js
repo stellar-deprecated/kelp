@@ -8,8 +8,8 @@ class NotificationBadge extends Component {
   render() {
     return (
         <div className={styles.error}>
-        <img src={warningIcon}/> 
-        {this.props.number}
+          <img src={warningIcon}/> 
+          {this.props.number}
         </div>
     );
   }
