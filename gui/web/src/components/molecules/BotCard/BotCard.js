@@ -1,26 +1,92 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
-import NotificationBadge from '../../atoms/NotificationBadge/NotificationBadge';
+import Pill from '../../atoms/Pill/Pill';
 import RunStatus from '../../atoms/RunStatus/RunStatus';
 
 import chartThumb from '../../../assets/images/chart-thumb.png';
 import infoIcon from '../../../assets/images/ico-info.svg';
-import stopIcon from '../../../assets/images/ico-stop.svg';
 import optionsIcon from '../../../assets/images/ico-options.svg';
 
-import button from '../../atoms/Button/Button.module.scss';
-import grid from '../../_settings/grid.module.scss';
 import styles from './BotCard.module.scss';
 
 
 class BotCard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      timeStarted: null,
+      timeElapsed: null,
+      isRunning: false,
+    };
+    this.toggleBot = this.toggleBot.bind(this);
+  }
+
+
+  static defaultProps = {
+    name: '',
+    test: true,
+    warnings: 0,
+    errors: 0, 
+  }
+
+  static propTypes = {
+    name: PropTypes.string,
+    test: PropTypes.bool,
+    warnings: PropTypes.number,
+    errors: PropTypes.number, 
+  };
+
+  toggleBot() {
+    if(this.state.isRunning){
+      this.stopBot();
+    }
+    else {
+      this.startBot();
+    }
+  }
+
+  startBot(){
+    this.setState({
+      timeStarted: new Date(),
+      isRunning: true,
+    }, () => {
+      this.tick();
+    
+      this.timer = setInterval(
+        () => this.tick(),
+        1000
+      );
+    });
+  }
+
+  stopBot() {
+    this.setState({
+      timeStarted: null,
+      timeElapsed: null,
+      isRunning: false,
+    });
+    clearTimeout(this.timer);
+  }
+
+  tick() {
+    let timeNow = new Date();
+    let diffTime = timeNow - this.state.timeStarted;
+    
+    let elapsed = new Date(diffTime);
+    
+    this.setState({
+      timeElapsed: elapsed,
+    });
+  }
+
   render() {
     return (
       <div className={styles.card}>
-        <span className={styles.status}></span>
+        <span className={this.state.isRunning ? styles.statusRunning : styles.statusStopped}></span>
         <button className={styles.optionsMenu}><img src={optionsIcon}/></button>
         <div>
-          <h2 className={styles.title}>Sally te Blue Eel</h2>
+          <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
             <span className={styles.netTag}>Test</span>
             <span className={styles.exchange}>SDEX </span>
@@ -46,7 +112,7 @@ class BotCard extends Component {
 
         <div className={styles.secondColumn}>
           <div className={styles.notificationsLine}>
-            <NotificationBadge number=" 2" type="warning"/>
+            <Pill number=" 2" type="warning"/>
           </div>
           <div className={styles.spreadLine}>
             <span className={styles.lightText}>Spread </span>
@@ -67,11 +133,8 @@ class BotCard extends Component {
         </div>
 
         <div className={styles.fourthColumn}>
-          <RunStatus className={styles.statusDetails}/>
-
-          <button className={styles.startStopButton}>
-            <img src={stopIcon}/>Stop
-          </button>
+          <RunStatus className={styles.statusDetails} timeRunning={this.state.timeElapsed}/>
+          <button className={styles.startStopButton} onClick={this.toggleBot}>Stop</button>
         </div>
 
       </div>

@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import logo from '../../../assets/images/kelp-logo.svg';
-import helpIcon from '../../../assets/images/ico-help.svg';
-import dayIcon from '../../../assets/images/ico-day.svg';
 import grid from '../../_settings/grid.module.scss';
 import button from '../../atoms/Button/Button.module.scss';
 import styles from './Header.module.scss';
+import Icon from '../../atoms/Icon/Icon';
 
 
 class Header extends Component {
@@ -19,10 +18,10 @@ class Header extends Component {
             </div>
             <div className={styles.iconMenu}>
               <button className={button.transparent}>
-                <img src={helpIcon} alt="Help icon"/>
+                <Icon icon={'help'} width={'19px'} height={'19px'}/>
               </button>
               <button className={button.transparent}>
-                <img src={dayIcon} alt="Light icon"/>
+                <Icon icon={'day'} width={'19px'} height={'19px'}/>
               </button>
             </div>
           </div>

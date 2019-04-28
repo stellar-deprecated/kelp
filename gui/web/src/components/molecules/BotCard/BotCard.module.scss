@@ -41,15 +41,24 @@ $small-spacing: 3px;
   }
 }
 
-.status {
+._status {
   display: block;
   position: absolute;
   left: -$card-border-size;
   top: -$card-border-size;
   bottom: -$card-border-size;
   width: 6px;
-  background-color: $color-success;
   border-radius: $card-border-radius 0 0 $card-border-radius;
+}
+
+.statusRunning {
+  composes: _status;
+  background-color: $color-success;
+}
+
+.statusStopped {
+  composes: _status;
+  background-color: $color-error;
 }
 
 .optionsMenu {

@@ -1,11 +1,15 @@
-/*
- * ScreenHeader css File
-*/
+@import '../../../components/_settings/variables.module.scss';
 
 .wrapper {
     display: flex;
     align-items: center;
     margin: 2rem 0 3rem 0;
+    justify-content: space-between;
+}
+
+.leftSide {
+    display: flex;
+    align-items: center;
 }
 
 .buttonWrapper {

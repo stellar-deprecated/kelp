@@ -29,9 +29,14 @@
 }
 
 .medium {
-    composes: button;
     font-size: 14/16+rem;
     padding: 10px 25px;
+    font-family: 'SuisseIntl';
+}
+
+.large {
+    font-size: 15/16+rem;
+    padding: 15px 35px;
     font-family: 'SuisseIntl';
 }
 

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import styles from './NotificationBadge.module.scss';
+import styles from './Pill.module.scss';
 import warningIcon from '../../../assets/images/ico-warning-small.svg';
 
 
 
-class NotificationBadge extends Component {
+class Pill extends Component {
   render() {
     return (
         <div className={styles.error}>
@@ -15,4 +15,4 @@ class NotificationBadge extends Component {
   }
 }
 
-export default NotificationBadge;
+export default Pill;

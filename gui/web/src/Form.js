@@ -12,18 +12,18 @@ import Label from './components/atoms/Label/Label';
 import SectionTitle from './components/atoms/SectionTitle/SectionTitle';
 import SegmentedControl from './components/atoms/SegmentedControl/SegmentedControl';
 import SectionDescription from './components/atoms/SectionDescription/SectionDescription';
+import Button from './components/atoms/Button/Button';
 import Select from './components/atoms/Select/Select';
 import FieldGroup from './components/molecules/FieldGroup/FieldGroup';
 import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
+import Icon from './components/atoms/Icon/Icon';
 
 class Form extends Component {
   render() {
     return (
       <div>
-        <Header version="v1.04"/>
-
         <div className={grid.container}>
-            <ScreenHeader title="New Bot"/>
+            <ScreenHeader title="New Bot" backButton={true}/>
             <div className={grid.row}>
               <div className={grid.col8}>
               
@@ -89,6 +89,11 @@ class Form extends Component {
               </div>
             </div>
           </div>
+        </div>
+
+
+        <div className={grid.container}>
+          <Button size="large">Create Bot</Button>
         </div>
       </div>
     );
