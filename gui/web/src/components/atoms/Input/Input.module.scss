@@ -1,18 +1,46 @@
 @import '../../_settings/variables.module.scss';
 
+.wrapper {
+    position: relative;
+}
+
 .input {
+    width: 100%;
     border: none;
     background-color: transparent;
     border-bottom: 1px solid $color-contrast-5;
     color: $color-contrast-1;
-    font-family: $typeface-secondary;
-    font-size: 13/16+rem;
-    padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem; 
-    margin-bottom: 1px;
+    outline: 0;
+    transition: all 0.3s ease-out;
+    margin-bottom: 3/16+rem;
 
     &:focus {
-        border-bottom: 2px solid $color-primary;
-        outline: 0;
-        margin-bottom: 0;
+        border-color: $color-primary;
+        box-shadow: 0 1px 0 0 $color-primary;
     }
+}
+
+.inputError {
+    border-color: $color-error;
+}
+
+.medium {
+    font-size: 13/16+rem;
+    padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem; 
+    font-family: $typeface-secondary;
+}
+
+.large {
+    font-size: 21/16+rem;
+    padding: 7/16+rem 5/16+rem 0 5/16+rem; 
+    font-family: $typeface-primary;
+    font-weight: 200;
+}
+
+.errorMessage {
+    position: absolute;
+    margin: 0;
+    bottom: -0.8rem;
+    color: $color-error;
+    font-size: 12/16+rem;
 }

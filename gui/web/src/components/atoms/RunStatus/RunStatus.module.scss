@@ -7,9 +7,26 @@
     height: 9px;  
 }
 
-.wrapper {
+._wrapper {
     display: flex;
     align-items: center;
+}
+
+.runningWrapper {
+    composes: _wrapper;
+    
+    
+}
+
+.stoppedWrapper {
+    composes: _wrapper;
+    display: flex;
+    align-items: center;
+    
+    svg {
+        margin-right: 8px;
+        fill: $color-error;
+    }
 }
 
 .runningIcon {

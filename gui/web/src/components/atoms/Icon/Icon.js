@@ -11,6 +11,7 @@ import download from '../../../assets/images/ico-download.svg';
 import start from '../../../assets/images/ico-start.svg';
 import stop from '../../../assets/images/ico-stop.svg';
 import wave from '../../../assets/images/ico-wave.svg';
+import arrowDown from '../../../assets/images/ico-arrow-down.svg';
 
 
 const viewBox = {
@@ -21,9 +22,10 @@ const viewBox = {
   info: '0 0 8 8',
   add: '0 0 13 13',
   download: '0 0 13 13',
-  start: '0 0 13 13',
-  stop: '0 0 13 13',
+  start: '0 0 8 8',
+  stop: '0 0 8 8',
   wave: '0 0 20 4',
+  arrowDown: '0 0 12 7',
 }
 
 const icons = {
@@ -36,7 +38,8 @@ const icons = {
   download,
   start,
   stop,
-  wave
+  wave,
+  arrowDown
 }
 
 class Icon extends Component {

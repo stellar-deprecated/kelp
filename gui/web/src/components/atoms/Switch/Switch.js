@@ -1,24 +1,12 @@
 import React, { Component } from 'react';
-import './Switch.css';
+import styles from './Switch.module.scss';
 
 class Switch extends Component {
-  // constructor(props){
-    // super(props);
-    // this.state = {};
-  // }
-
-  // componentWillMount(){}
-  // componentDidMount(){}
-  // componentWillUnmount(){}
-
-  // componentWillReceiveProps(){}
-  // shouldComponentUpdate(){}
-  // componentWillUpdate(){}
-  // componentDidUpdate(){}
-
   render() {
     return (
-      <div></div>
+      <div>
+        <input className={styles.switch} type="checkbox" value={this.props.value}/>
+      </div>
     );
   }
 }

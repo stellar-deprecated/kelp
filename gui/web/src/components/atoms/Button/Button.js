@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import styles from './Button.module.scss';
 import classNames from 'classnames';
+import styles from './Button.module.scss';
 import Icon from '../Icon/Icon';
 
 const iconSizes = {

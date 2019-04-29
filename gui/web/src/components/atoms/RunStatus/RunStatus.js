@@ -8,7 +8,7 @@ class RunStatus extends Component {
 
     if (this.props.timeRunning) {
       return ( 
-        <div className={styles.wrapper}>
+        <div className={styles.runningWrapper}>
           <div className={styles.runningIcon}>
             <Icon symbol="wave"/>
           </div>
@@ -16,8 +16,8 @@ class RunStatus extends Component {
         </div>)
     } else {
       return ( 
-        <div className={styles.wrapper}> 
-          <i className={styles.stoppedIcon}></i>
+        <div className={styles.stoppedWrapper}> 
+          <Icon symbol="stop" width="7px" height="7px"/>
           <span className={styles.stoppedLabel}>Stopped</span>
         </div>
       )
