@@ -6,10 +6,11 @@ import styles from './Badge.module.scss';
 
 class Badge extends Component {
   render() {
+
     return (
-        <div className={styles.error}>
-          {this.props.number}
-        </div>
+        <span className={this.props.test ? styles.test : styles.main}>
+          {this.props.test ? 'Test' : 'Main'}
+        </span>
     );
   }
 }

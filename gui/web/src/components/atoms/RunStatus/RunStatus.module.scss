@@ -7,6 +7,11 @@
     height: 9px;  
 }
 
+.wrapper {
+    display: flex;
+    align-items: center;
+}
+
 .runningIcon {
     composes: _icon;
     display: inline-block;
@@ -15,6 +20,27 @@
     height: 9px;
     border-radius: 30px;
     margin-right: 7px;
+    overflow: hidden;
+    position: relative;
+
+    svg {
+        position: absolute;
+        left: 0;
+        top: 2px;
+        animation-name: runAnimation;
+        animation-duration: 2s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+    }
+}
+
+@keyframes runAnimation {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-45%);
+    }
 }
 
 .stoppedIcon {

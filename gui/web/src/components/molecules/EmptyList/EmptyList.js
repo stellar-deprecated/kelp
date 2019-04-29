@@ -14,7 +14,7 @@ class EmptyList extends Component {
         <h2 className={styles.title}>Your Kelp forest is empty</h2>
         <Button onClick={this.props.onClick}>Autogenerate your first test bot</Button>
         <span className={styles.separator}>or</span>
-        <Button onClick={this.props.onClick}>Create your first bot</Button>
+        <Button onClick={this.props.onClick} variant="link">Create your first bot</Button>
       </div> 
     );
   }

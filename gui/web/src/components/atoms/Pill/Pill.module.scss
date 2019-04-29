@@ -1,20 +1,29 @@
 @import '../../_settings/variables.module.scss';
 
 
-.badge {
-    padding: 3px 10px;
-    display: inline-block;
+._pill {
+    padding: 3px 7px 3px 6px;
     border-radius: 50px;
     font-family: $typeface-secondary;
     font-size: 10/16+rem;
+    display: inline-flex;
+    align-items: center;
 }
 
 .warning {
-    composes: badge;
+    composes: _pill;
     background-color: $color-warning;
 }
 
 .error {
-    composes: badge;
+    composes: _pill;
     background-color: $color-error;
+}
+
+.icon {
+ margin-right: 5/16+rem;
+}
+
+.label {
+
 }

@@ -18,10 +18,10 @@ class Header extends Component {
             </div>
             <div className={styles.iconMenu}>
               <button className={button.transparent}>
-                <Icon icon={'help'} width={'19px'} height={'19px'}/>
+                <Icon symbol="help" width="19px" height="19px"/>
               </button>
               <button className={button.transparent}>
-                <Icon icon={'day'} width={'19px'} height={'19px'}/>
+                <Icon symbol="day" width="19px" height="19px"/>
               </button>
             </div>
           </div>

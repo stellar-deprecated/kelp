@@ -3,14 +3,13 @@
 .button {
     border-radius: 30px;
     background-color: $color-primary;
-    color: #fff;
+    color: $color-contrast-2;
     text-decoration: none;
     cursor: pointer;
     transition: color .15s ease-in-out, 
                 background-color .15s ease-in-out,
                 border-color .15s ease-in-out,
                 box-shadow .15s ease-in-out;
-    padding: 10px 25px;;
     border: 0;
     display: block;
 
@@ -23,26 +22,41 @@
         box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.5);
     }
 
-    img {
-        display: block;
+    svg {
+        transition: fill 0.3s ease-out;
+        vertical-align: middle;
+        margin-right: 8/16+rem;
+        fill: $color-contrast-2
     }
+}
+
+.iconOnly {
+    svg {
+        margin-right: 0;
+    }
+}
+
+.small {
+    font-size: 12/16+rem;
+    padding: 6px 15px;
+    font-family: 'SuisseIntl';
 }
 
 .medium {
     font-size: 14/16+rem;
-    padding: 10px 25px;
+    padding: 10px 20px;
     font-family: 'SuisseIntl';
 }
 
 .large {
     font-size: 15/16+rem;
-    padding: 15px 35px;
+    padding: 15px 25px;
     font-family: 'SuisseIntl';
 }
 
 .faded {
     composes: button;
-    background-color: #242433;
+    background-color: rgba($color-contrast-4, 0.15%);
     font-size: 14/16+rem;
     color: $color-contrast-2;
 }
@@ -55,7 +69,7 @@
     text-decoration: underline;
     &:hover {
         background: none;
-        color: #fff;
+        color: $color-contrast-1;
     }
     &:focus {
         box-shadow: none;
@@ -64,11 +78,7 @@
 
 .transparent {
     composes: button;
-    border: none;
     background: transparent;
-    padding: 6px;
-    margin-left: 3px;
-    outline: 0;
 
     &:hover {
         background-color: #242433;
@@ -80,5 +90,40 @@
 
     &:focus {
         box-shadow: none;
+    }
+}
+
+._startStop {
+    background-color: $color-base-2;
+    color: $color-contrast-4;
+
+    svg {
+        fill: $color-contrast-4;
+    }
+
+    &:hover  {
+        color: $color-contrast-1;
+        svg {
+            fill: $color-contrast-1;
+        }
+    }
+
+    &:focus {
+        outline: 0;
+        box-shadow: none;
+    }
+}
+
+.start {
+    composes: _startStop;
+    &:hover  {
+        background-color: $color-success;
+    }
+}
+
+.stop {
+    composes: _startStop;
+    &:hover  {
+        background-color: $color-error;
     }
 }

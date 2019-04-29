@@ -26,7 +26,7 @@ $small-spacing: 3px;
 // Elements classes
 
 .card {
-  margin-top: 3rem;
+  margin-top: 1.5rem;
   position: relative;
   background-color: $color-base-4;
   border-radius: $card-border-radius;
@@ -34,11 +34,6 @@ $small-spacing: 3px;
   color: $color-contrast-1;
   padding: 12/16+rem 22/16+rem;
   display: flex;
-
-  > * {
-    flex-basis: 33.333%;
-    max-width: 33.333%;
-  }
 }
 
 ._status {
@@ -49,6 +44,7 @@ $small-spacing: 3px;
   bottom: -$card-border-size;
   width: 6px;
   border-radius: $card-border-radius 0 0 $card-border-radius;
+  transition: background-color 0.3s ease-out;
 }
 
 .statusRunning {
@@ -103,33 +99,41 @@ $small-spacing: 3px;
 .asksLine {
 }
 
-.secondColumn {
+._column {
   display: flex;
   flex-direction: column;
+}
+
+.firstColumn {
+  composes: _column;
+  width: 35%;
+}
+
+.secondColumn {
+  composes: _column;
+  width: 25%;
   align-self: stretch;
 }
 
 .thirdColumn {
-  display: flex;
-  flex-direction: column;
+  composes: _column;
+  width: 20%;
   justify-content: center;
 }
 
 .fourthColumn {
-  display: flex;
-  flex-direction: column;
+  composes: _column;
+  width: 20%;
   align-items: center;
   justify-content: center;
-}
 
-.netTag {
-  font-size: 9/16+rem;
-  text-transform: uppercase;
-  background-color: $color-tag-test;
-  padding: 3px 6px 2px 6px;
-  border-radius: 20px;
-  text-shadow: 0 0.5 0 rgba($color-base-1, 20%);
-  margin-right: 10px;
+  > * {
+    margin-bottom: 1rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
 .exchange {
@@ -141,30 +145,7 @@ $small-spacing: 3px;
   max-width: 170px;
 }
 
-.infoIcon {
-  display: inline-block;
-  background-color: rgba($color-contrast-4, 0.25);
-  width: 13px;
-  height: 13px;
-  border-radius: 20px;
-
-   img {
-      padding: 0px 2px;
-   }
-}
 
 .statusDetails {
   margin-bottom: 1rem;
-}
-
-
-.startStopButton {
-  // composes: button from  '../Button/Button.module.scss';
-
-  img {
-      display: block;
-  }
-
-  background-color: $color-base-2;
-  
 }

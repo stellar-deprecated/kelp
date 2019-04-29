@@ -7,9 +7,13 @@
     justify-content: space-between;
 }
 
-.leftSide {
+.titleWrapper, .childrenWrapper {
     display: flex;
     align-items: center;
+}
+
+.childrenWrapper > * {
+    margin-left: 8/16+rem;
 }
 
 .buttonWrapper {

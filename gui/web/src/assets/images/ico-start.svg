@@ -3,7 +3,7 @@
     <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
     <title>ico-start</title>
     <desc>Created with Sketch.</desc>
-    <g id="ico-start" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <polygon id="Rectangle" fill="#52525F" points="1 0 7 4 1 8"></polygon>
+    <g id="ico" stroke="none" stroke-width="1"  fill-rule="evenodd">
+        <polygon id="Rectangle"  points="1 0 7 4 1 8"></polygon>
     </g>
 </svg>

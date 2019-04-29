@@ -3,15 +3,14 @@ import BotCard from './components/molecules/BotCard/BotCard';
 import Button from './components/atoms/Button/Button';
 import EmptyList from './components/molecules/EmptyList/EmptyList';
 import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
-import { BrowserRouter as Link } from "react-router-dom";
-
+import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 
 import grid from './components/_settings/grid.module.scss';
 
 
 const placeaholderBots = [
   {
-    name: 'Harry the Green Palnkton',
+    name: 'Harry the Green Plankton',
     running: true,
     test: false,
     warnings: 2,
@@ -39,6 +38,11 @@ class Bots extends Component {
     this.state = { bots: [] };
  
     this.createBot = this.createBot.bind(this);
+    this.gotoForm = this.gotoForm.bind(this);
+  }
+  
+  gotoForm() {
+    this.props.history.push('/form')
   }
   
   createBot () {
@@ -57,10 +61,17 @@ class Bots extends Component {
           { this.state.bots.length ? (
             <div>
               <ScreenHeader title={'My Bots'}>
-              <Button onClick={this.createBot}>+</Button>
-              <Link to="/form">
-                <Button>+ New Bot</Button>
-              </Link>
+                <Button 
+                  variant="faded"
+                  icon="download"     
+                  onClick={this.createBot}
+                > 
+                </Button>
+                <Button 
+                  variant="faded" 
+                  icon="add" 
+                  onClick={this.gotoForm}>New Bot
+                </Button>
               </ScreenHeader>
               {this.state.bots.map(bot => (
                 <BotCard 

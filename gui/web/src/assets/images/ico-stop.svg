@@ -3,7 +3,7 @@
     <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
     <title>ico-stop</title>
     <desc>Created with Sketch.</desc>
-    <g id="ico-stop" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="Rectangle" fill="#52525F" x="0" y="0" width="8" height="8"></rect>
+    <g id="ico" stroke="none" stroke-width="1" fill-rule="evenodd">
+        <rect id="Rectangle" x="0" y="0" width="8" height="8"></rect>
     </g>
 </svg>

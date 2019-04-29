@@ -2,8 +2,13 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import styles from './Button.module.scss';
 import classNames from 'classnames';
+import Icon from '../Icon/Icon';
 
-
+const iconSizes = {
+  small:'10px',
+  medium: '13px',
+  large: '16px',
+}
 
 class Button extends Component {
   static defaultProps = {
@@ -22,16 +27,29 @@ class Button extends Component {
     disabled: PropTypes.bool
   };
 
-
   render() {
-    const className = classNames(
+    const iconOnly = this.props.children ? null : styles.iconOnly;
+
+    const classNameList = classNames(
       styles.button, 
       styles[this.props.size],
       styles[this.props.variant],
+      iconOnly,
     );
 
     return (
-        <button className={className} disabled={this.props.disabled} onClick={this.props.onClick}>
+        <button 
+          className={classNameList} 
+          disabled={this.props.disabled} 
+          onClick= {this.props.onClick}
+        >
+          { this.props.icon && (
+            <Icon 
+              symbol={this.props.icon} 
+              width={iconSizes[this.props.size]}
+              height={iconSizes[this.props.size]}
+            />
+          )}
           {this.props.children}
         </button>
     );

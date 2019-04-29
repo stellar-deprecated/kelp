@@ -1,17 +1,38 @@
 import React, { Component } from 'react';
 import styles from './Pill.module.scss';
-import warningIcon from '../../../assets/images/ico-warning-small.svg';
+import Icon from '../Icon/Icon';
+
 
 
 
 class Pill extends Component {
+  static defaultProps = {
+    type: null,
+    number: 0,
+  }
+
   render() {
-    return (
-        <div className={styles.error}>
-          <img src={warningIcon}/> 
-          {this.props.number}
-        </div>
-    );
+    if(this.props.number){
+      let symbolName = null
+      if(this.props.type == 'warning'){
+        symbolName = 'warningSmall'
+      }
+      else {
+        symbolName = 'errorSmall'
+      }
+
+      return (
+          <div className={styles[this.props.type]}>
+            <Icon className={styles.icon} symbol={symbolName} width={'11px'} height={'11px'}></Icon>
+            <span className={'styles.label'}>
+              {this.props.number}
+            </span>
+          </div>
+      );
+    }
+    else {
+      return null;
+    }
   }
 }
 
