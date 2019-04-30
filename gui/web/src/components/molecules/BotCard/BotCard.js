@@ -25,7 +25,6 @@ class BotCard extends Component {
     this.toggleBot = this.toggleBot.bind(this);
   }
 
-
   static defaultProps = {
     name: '',
     test: true,

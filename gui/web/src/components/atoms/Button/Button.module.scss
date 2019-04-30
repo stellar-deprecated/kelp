@@ -36,6 +36,8 @@
     }
 }
 
+// Sizes
+
 .small {
     font-size: 12/16+rem;
     padding: 6px 15px;
@@ -44,7 +46,7 @@
 
 .medium {
     font-size: 14/16+rem;
-    padding: 10px 30px;
+    padding: 10px 25px;
     font-family: 'SuisseIntl';
 }
 
@@ -54,9 +56,18 @@
     font-family: 'SuisseIntl';
 }
 
+// Variants
+
 .faded {
     composes: button;
     background-color: rgba($color-contrast-4, 0.15%);
+    font-size: 14/16+rem;
+    color: $color-contrast-2;
+}
+
+.danger {
+    composes: button;
+    background-color: $color-error;
     font-size: 14/16+rem;
     color: $color-contrast-2;
 }

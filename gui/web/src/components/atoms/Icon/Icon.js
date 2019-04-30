@@ -16,6 +16,8 @@ import close from '../../../assets/images/ico-close.svg';
 import warning from '../../../assets/images/ico-alert.svg';
 import error from '../../../assets/images/ico-error.svg';
 import refresh from '../../../assets/images/ico-refresh.svg';
+import remove from '../../../assets/images/ico-remove.svg';
+import options from '../../../assets/images/ico-options.svg';
 
 
 const viewBox = {
@@ -34,6 +36,9 @@ const viewBox = {
   error: '0 0 50 50',
   warning: '0 0 50 50',
   refresh: '0 0 15 15',
+  remove: '0 0 11 11',
+  options: '0 0 19 19',
+  
 }
 
 const icons = {
@@ -52,6 +57,8 @@ const icons = {
   error,
   warning,
   refresh,
+  remove,
+  options
 }
 
 class Icon extends Component {

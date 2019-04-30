@@ -1,13 +1,7 @@
-  import React, { Component } from 'react';
-
-import Input from './components/atoms/Input/Input';
-import Header from './components/molecules/Header/Header';
-
+import React, { Component } from 'react';
 import styles from './components/templates/Form/Form.module.scss';
-import button from './components/atoms/Button/Button.module.scss';
 import grid from './components/_settings/grid.module.scss';
-
-import emptyIcon from './assets/images/ico-empty.svg';
+import Input from './components/atoms/Input/Input';
 import Label from './components/atoms/Label/Label';
 import SectionTitle from './components/atoms/SectionTitle/SectionTitle';
 import Switch from './components/atoms/Switch/Switch';
@@ -23,20 +17,20 @@ import FieldGroup from './components/molecules/FieldGroup/FieldGroup';
 import PriceFeedSelector from './components/molecules/PriceFeedSelector/PriceFeedSelector';
 import PriceFeedTitle from './components/molecules/PriceFeedTitle/PriceFeedTitle';
 import PriceFeedFormula from './components/molecules/PriceFeedFormula/PriceFeedFormula';
+import RepeaterField from './components/molecules/RepeaterField/RepeaterField';
 
 class Form extends Component {
   render() {
     return (
       <div>
         <div className={grid.container}>
-          <ScreenHeader title="New Bot" backButton={true}>
+          <ScreenHeader title="New Bot">
             <Switch></Switch>
             <Label>Helper Fields</Label>
           </ScreenHeader>
             <FormSection>
               <Input size="large" value={'Harry the Green Plankton'}/>
 
-              
               {/* Trader Settings */}
               <SectionTitle>
                 Trader Settings
@@ -239,18 +233,84 @@ class Form extends Component {
             </FieldGroup>
             
             
-            <FieldItem>
-              <Label>Trading Platform</Label>
-              <Input/>
-            </FieldItem>
-
+            <div className={grid.row}>
+              <div className={grid.col4}>
+                <FieldItem>
+                  <Label>Order size</Label>
+                  <Input/>
+                </FieldItem>
+              </div>
+            </div>
+            
+            <div className={grid.row}>
+              <div className={grid.col4}>
+                <FieldItem>
+                  <Label>Spread of a market</Label>
+                  <Input suffix="%"/>
+                </FieldItem>
+              </div>
+            </div>
           </FormSection>
         </div>
 
+        <AdvancedWrapper headerClass={grid.container}>
+          <div className={grid.container}>
+            <FormSection>
+              <div className={grid.row}>
+                <div className={grid.col8}>
+                  <FieldGroup groupTitle="Levels">
+                    <RepeaterField>
+                          <FieldItem>
+                            <Label>Spread</Label>
+                            <Input suffix="%"/>
+                          </FieldItem>
+                          <FieldItem>
+                            <Label>Amount</Label>
+                            <Input/>
+                          </FieldItem>
+                    </RepeaterField>
+                  </FieldGroup>
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection>
+              <div className={grid.row}>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Price tolerance</Label>
+                    <Input/>
+                  </FieldItem>
+                </div>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Amount tolerance</Label>
+                    <Input/>
+                  </FieldItem>
+                </div>
+              </div>
+
+              <div className={grid.row}>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Rate offset percentage</Label>
+                    <Input/>
+                  </FieldItem>
+                </div>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Rate offset</Label>
+                    <Input/>
+                  </FieldItem>
+                </div>
+              </div>
+            </FormSection>
+          </div>
+        </AdvancedWrapper>
 
         <div className={grid.container}>
           <div className={styles.formFooter}>
-            <Button size="large">Create Bot</Button>
+            <Button icon="add" size="large">Create Bot</Button>
           </div>
         </div>
       </div>

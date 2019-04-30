@@ -1,0 +1,24 @@
+@import '../../_settings/variables.module.scss';
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem 1rem 1.5rem;
+    margin-top: 30/16+rem;
+    background-color: $color-base-4;
+}
+
+.actions {
+    margin-top: 2rem;
+    width: 4rem;
+}
+
+.add {
+    margin-top: 30/16+rem;
+}
