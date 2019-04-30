@@ -24,7 +24,7 @@ class Pill extends Component {
       return (
           <div className={styles[this.props.type]}>
             <Icon className={styles.icon} symbol={symbolName} width={'11px'} height={'11px'}></Icon>
-            <span className={'styles.label'}>
+            <span>
               {this.props.number}
             </span>
           </div>

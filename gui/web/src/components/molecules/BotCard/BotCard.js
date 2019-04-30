@@ -8,7 +8,7 @@ import chartThumb from '../../../assets/images/chart-thumb.png';
 import optionsIcon from '../../../assets/images/ico-options.svg';
 
 import styles from './BotCard.module.scss';
-import Info from '../../atoms/Info/Info';
+import InfoIcon from '../../atoms/InfoIcon/InfoIcon';
 import Badge from '../../atoms/Badge/Badge';
 import PillGroup from '../PillGroup/PillGroup';
 import StartStop from '../../atoms/StartStop/StartStop';
@@ -103,7 +103,7 @@ class BotCard extends Component {
             </div>
             <div className={styles.quoteAssetLine}>
               <span className={styles.textMono}>USD </span>
-              <Info/>
+              <InfoIcon/>
               <span className={styles.textMono}> 5,001.56</span>
             </div>
           </div>

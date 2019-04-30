@@ -1,3 +1,25 @@
-.formFooter {
-    margin: 2rem 0;
+@import '../../_settings/variables.module.scss';
+
+
+.mainInfo {
+    display: flex;
+}
+
+._infoGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.firstInfoGroup {
+    composes: _infoGroup;
+    width: 50%;
+}
+
+.secondInfoGroup {
+    composes: _infoGroup;
+    width: 50%;
+}
+
+.notificationsLine {
+
 }

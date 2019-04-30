@@ -6,6 +6,7 @@
     border-radius: 50px;
     font-family: $typeface-secondary;
     font-size: 10/16+rem;
+    color: $color-contrast-1;
     display: inline-flex;
     align-items: center;
 }
@@ -22,8 +23,4 @@
 
 .icon {
  margin-right: 5/16+rem;
-}
-
-.label {
-
 }
