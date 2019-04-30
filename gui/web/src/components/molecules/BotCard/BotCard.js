@@ -87,7 +87,9 @@ class BotCard extends Component {
     return (
       <div className={styles.card}>
         <span className={this.state.isRunning ? styles.statusRunning : styles.statusStopped}></span>
-        <button className={styles.optionsMenu}><img src={optionsIcon}/></button>
+        <button className={styles.optionsMenu}>
+          <img src={optionsIcon}/>
+        </button>
         <div className={styles.firstColumn}>
           <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
@@ -134,8 +136,14 @@ class BotCard extends Component {
         </div>
 
         <div className={styles.fourthColumn}>
-          <RunStatus className={styles.statusDetails} timeRunning={this.state.timeElapsed}/>
-          <StartStop onClick={this.toggleBot} isRunning={this.state.isRunning}/>
+          <RunStatus 
+            className={styles.statusDetails} 
+            timeRunning={this.state.timeElapsed}
+          />
+          <StartStop 
+            onClick={this.toggleBot} 
+            isRunning={this.state.isRunning}
+          />
         </div>
 
       </div>

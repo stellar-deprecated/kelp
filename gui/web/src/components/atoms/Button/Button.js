@@ -31,6 +31,7 @@ class Button extends Component {
     const iconOnly = this.props.children ? null : styles.iconOnly;
 
     const classNameList = classNames(
+      this.props.className,
       styles.button, 
       styles[this.props.size],
       styles[this.props.variant],

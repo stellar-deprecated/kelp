@@ -12,6 +12,9 @@ import start from '../../../assets/images/ico-start.svg';
 import stop from '../../../assets/images/ico-stop.svg';
 import wave from '../../../assets/images/ico-wave.svg';
 import arrowDown from '../../../assets/images/ico-arrow-down.svg';
+import close from '../../../assets/images/ico-close.svg';
+import warning from '../../../assets/images/ico-alert.svg';
+import error from '../../../assets/images/ico-error.svg';
 
 
 const viewBox = {
@@ -26,6 +29,9 @@ const viewBox = {
   stop: '0 0 8 8',
   wave: '0 0 20 4',
   arrowDown: '0 0 12 7',
+  close: '0 0 12 12',
+  error: '0 0 50 50',
+  warning: '0 0 50 50',
 }
 
 const icons = {
@@ -39,7 +45,10 @@ const icons = {
   start,
   stop,
   wave,
-  arrowDown
+  arrowDown,
+  close,
+  error,
+  warning,
 }
 
 class Icon extends Component {

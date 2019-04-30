@@ -6,6 +6,8 @@ import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 
 import grid from './components/_settings/grid.module.scss';
+import Modal from './components/molecules/Modal/Modal';
+import Welcome from './components/molecules/Welcome/Welcome';
 
 
 const placeaholderBots = [
@@ -87,6 +89,15 @@ class Bots extends Component {
             <EmptyList onClick={this.createBot}/>
           )}
         </div>
+
+        <Modal 
+          type="error"
+          title="Harry the Green Plankton has two warnings:"
+          actionLabel="Go to bot settings"
+          bullets={['Funds are low', 'Another warning example']}
+        />
+
+        <Welcome/>
       </div>
     );
   }
