@@ -33,8 +33,8 @@
     composes: _icon;
     display: inline-block;
     border: 1px solid $color-success;
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     border-radius: 30px;
     margin-right: 7px;
     overflow: hidden;
@@ -43,7 +43,7 @@
     svg {
         position: absolute;
         left: 0;
-        top: 2px;
+        top: 3px;
         animation-name: runAnimation;
         animation-duration: 2s;
         animation-iteration-count: infinite;
@@ -53,10 +53,10 @@
 
 @keyframes runAnimation {
     from {
-        transform: translateX(0);
+        transform: translateX(-45%);
     }
     to {
-        transform: translateX(-45%);
+        transform: translateX(0);
     }
 }
 

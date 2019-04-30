@@ -47,7 +47,7 @@ class Welcome extends Component {
           />
 
           <div className={styles.image}>
-            <img src={symbol} alt="Kelp Symbol"/>
+            <img className={styles.symbol} src={symbol} alt="Kelp Symbol"/>
           </div>
           <div className={styles.content}>
             <h3 className={styles.title}>

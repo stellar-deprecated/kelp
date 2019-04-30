@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+  import React, { Component } from 'react';
 
 import Input from './components/atoms/Input/Input';
 import Header from './components/molecules/Header/Header';
@@ -18,6 +18,7 @@ import Select from './components/atoms/Select/Select';
 import FieldGroup from './components/molecules/FieldGroup/FieldGroup';
 import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
 import AdvancedWrapper from './components/molecules/AdvacedWrapper/AdvancedWrapper';
+import FormSection from './components/molecules/FormSection/FormSection';
 
 class Form extends Component {
   render() {
@@ -28,9 +29,7 @@ class Form extends Component {
             <Switch></Switch>
             <Label>Helper Fields</Label>
           </ScreenHeader>
-          <div className={grid.row}>
-            <div className={grid.col8}>
-              
+            <FormSection>
               <FieldGroup>
                 <Input size="large" value={'Harry the Green Plankton'}/>
               </FieldGroup>
@@ -39,27 +38,37 @@ class Form extends Component {
               <SectionTitle>
                 Trader Settings
               </SectionTitle>
-              
+            </FormSection>
+            
+            <FormSection>
               <SectionDescription>
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
                 Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
               </SectionDescription>
-              
+            </FormSection>
+
+            <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
               <FieldGroup>
                 <Label>Trading Platform</Label>
                 <Select/>
               </FieldGroup>
+            </FormSection>
               
+            <FormSection>
               <FieldGroup>
                 <Label padding>Network</Label>
                 <SegmentedControl/>
               </FieldGroup>
-              
+            </FormSection>
+            
+            <FormSection>
               <FieldGroup>
                 <Label>Trader account secret key</Label>
                 <Input error="Please enter a valid trader account secret key"/>
               </FieldGroup>
-              
+            </FormSection>
+
+            <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
               <div className={grid.row}>
                 <div className={grid.col4}>
                   <FieldGroup>
@@ -91,57 +100,76 @@ class Form extends Component {
                   </FieldGroup>
                 </div>
               </div>
-            </div>
-          </div>
+            </FormSection>
         </div>
 
         <AdvancedWrapper headerClass={grid.container}>
           <div className={grid.container}>
-            <div className={grid.row}>
-              <div className={grid.col8}>
+            <FormSection>
+              <FieldGroup>
+                <Label optional>Source account secret key</Label>
+                <Input/>
+              </FieldGroup>
 
-                <div className={grid.row}>
-                  <div className={grid.col4}>
-                    <FieldGroup>
-                      <Label>Quote asset code</Label>
-                      <Input/>
-                    </FieldGroup>
-                  </div>
+              <FieldGroup>
+                <Label>Tick interval</Label>
+                <Input value="300" suffix="seconds"/>
+              </FieldGroup>
 
-                  <div className={grid.col8}>
-                    <FieldGroup>
-                      <Label>Quote asset issuer</Label>
-                      <Input/>
-                    </FieldGroup>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <FieldGroup>
+                <Label>Randomized interval delay</Label>
+                <Input value="0" suffix="miliseconds"/>
+              </FieldGroup>
+
+              <FieldGroup inline>
+                <Switch></Switch>
+                <Label>Maker only mode</Label>
+              </FieldGroup>
+
+              <FieldGroup>
+                <Label>Delete cycles treshold</Label>
+                <Input value="0"/>
+              </FieldGroup>
+
+              <FieldGroup inline>
+                <Switch></Switch>
+                <Label>Fill tracker</Label>
+              </FieldGroup>
+
+              <FieldGroup>
+                <Label>Fill tracker duration</Label>
+                <Input value="0" suffix="miliseconds"/>
+              </FieldGroup>
+
+              <FieldGroup>
+                <Label>Fill tracker delete cycles threshold</Label>
+                <Input value="0"/>
+              </FieldGroup>
+
+
+            </FormSection>
           </div>
         </AdvancedWrapper>
 
 
         {/* Stratefy Settings */}
         <div className={grid.container}>
-          <div className={grid.row}>
-            <div className={grid.col8}>
-              
-              <SectionTitle>
-                Strategy Settings (buysell)
-              </SectionTitle>
-              
-              <SectionDescription>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
-              </SectionDescription>
-              
-              <FieldGroup>
-                <Label>Trading Platform</Label>
-                <Input/>
-              </FieldGroup>
-              
-            </div>
-          </div>
+          <FormSection>
+            <SectionTitle>
+              Strategy Settings (buysell)
+            </SectionTitle>
+            
+            <SectionDescription>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+              Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
+            </SectionDescription>
+            
+            <FieldGroup>
+              <Label>Trading Platform</Label>
+              <Input/>
+            </FieldGroup>
+
+          </FormSection>
         </div>
 
 

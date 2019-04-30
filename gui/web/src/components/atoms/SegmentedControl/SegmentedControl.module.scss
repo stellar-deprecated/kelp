@@ -23,6 +23,7 @@
 
     &:hover {
         background-color: darken($color-primary, 5%);
+        border-color:  darken($color-primary, 5%);
     }
 
     &:focus {

@@ -2,6 +2,8 @@
 
 .wrapper {
     position: relative;
+    display: flex;
+    align-items: flex-end; 
 }
 
 .input {
@@ -13,11 +15,22 @@
     outline: 0;
     transition: all 0.3s ease-out;
     margin-bottom: 3/16+rem;
+    margin-top: 3/16+rem;
+
 
     &:focus {
         border-color: $color-primary;
         box-shadow: 0 1px 0 0 $color-primary;
     }
+}
+
+.suffix {
+    color: $color-contrast-3;
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
+    margin: 0;
+    padding: 0 0 2/16+rem 5/16+rem;
+    font-size: 13/16+rem;
 }
 
 .inputError {
@@ -28,6 +41,7 @@
     font-size: 13/16+rem;
     padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem; 
     font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
 }
 
 .large {

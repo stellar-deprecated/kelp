@@ -7,3 +7,10 @@
     flex-direction: column;
     margin-bottom: 27/16+rem;
 }
+
+.inline {
+    flex-direction: row;
+    >:first-child {
+        padding-right: 13/16+rem;
+    }
+}

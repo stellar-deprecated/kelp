@@ -27,7 +27,7 @@
 .content {
     overflow: hidden;
     transition: max-height 0.5s ease-out;
-    margin-bottom: 40/16+rem 0;
+    margin: 20/16+rem 0 40/16+rem 0;
     max-height: 0;
     opacity: 0;
 }
@@ -36,7 +36,7 @@
     background-color: $color-base-2;
     .content {
         opacity: 1;
-        max-height: 400px;
+        max-height: 1400px;
     }
     svg {
         transform: rotate(180deg);

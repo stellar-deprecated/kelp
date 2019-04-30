@@ -1,11 +1,16 @@
 @import '../../_settings/variables.module.scss';
 
 .label {
-    width: 100%;
     color: $color-contrast-2;
     font-size: 14/16+rem;
     margin-bottom: 3/16+rem;
     margin-top: 5/16+rem;
+}
+
+.optional {
+    font-size: 12/16+rem;
+    color: $color-contrast-4;
+    margin-left: 6/16+rem;
 }
 
 .padding {

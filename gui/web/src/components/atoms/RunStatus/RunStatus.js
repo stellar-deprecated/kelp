@@ -10,7 +10,7 @@ class RunStatus extends Component {
       return ( 
         <div className={styles.runningWrapper}>
           <div className={styles.runningIcon}>
-            <Icon symbol="wave"/>
+            <Icon symbol="wave" width="22px"/>
           </div>
           <span className={styles.runningLabel}>Running {this.props.timeRunning.toISOString().slice(14, -5)}</span>
         </div>)

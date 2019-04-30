@@ -13,7 +13,12 @@ class Label extends Component {
     );
 
     return (
-      <label className={classNameList}>{this.props.children}</label>
+      <label className={classNameList}>
+      {this.props.children}
+      {this.props.optional && (
+        <span className={styles.optional}>Optional</span>
+      )}
+      </label>
     );
   }
 }

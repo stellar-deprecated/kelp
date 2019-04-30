@@ -7,7 +7,7 @@ class AdvancedWrapper extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isOpened: false,
+      isOpened: true,
     };
     this.toggleOpen = this.toggleOpen.bind(this);
   }

@@ -32,9 +32,15 @@ class Input extends Component {
     return (
       <div className={styles.wrapper}>
         <input className={inputClassList} defaultValue={this.props.value} type="text"/>
+        { this.props.suffix && (
+        <p className={styles.suffix}>{this.props.suffix}</p>
+        )}
+
         { this.props.error && (
         <p className={styles.errorMessage}>{this.props.error}</p>
         )}
+
+
       </div>
     );
   }

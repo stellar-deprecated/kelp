@@ -44,3 +44,15 @@
     max-width: 66.667%;
 }
 
+.col5 {
+    composes: _col;
+    flex-basis: 41.667%;
+    max-width: 41.667%;
+}
+
+.col7 {
+    composes: _col;
+    flex-basis: 58.333%;
+    max-width: 58.333%;
+}
+
