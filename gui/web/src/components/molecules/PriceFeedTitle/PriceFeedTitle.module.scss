@@ -1,0 +1,22 @@
+@import '../../_settings/variables.module.scss';
+
+.wrapper {
+    display: flex;
+    align-items: center;
+}
+
+._result {
+    font-size: 14/16+rem;
+    font-family: $typeface-secondary;
+    color: $color-contrast-2;
+}
+
+.equals {
+    composes: _result;
+    margin: 0 1rem;
+}
+
+.value {
+    composes: _result;
+    margin-right: 1rem;
+}

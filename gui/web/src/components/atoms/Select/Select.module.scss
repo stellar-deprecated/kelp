@@ -1,8 +1,11 @@
 @import '../../_settings/variables.module.scss';
 
 .select {
+    display: block;
+    width: 100%;
     border: none;
     border-radius: 0;
+    box-sizing: border-box;
     -webkit-appearance: none;
     -moz-appearance: none;
     background-color: transparent;
@@ -11,11 +14,27 @@
     font-family: $typeface-secondary;
     font-size: 13/16+rem;
     padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem;
+    background-image: url('../../../assets/images/ico-arrow-down.svg');
+    background-repeat: no-repeat;
+    background-position: right 7/16+rem top 50%, 0 0;
     margin-bottom: 1px;
+    transition: all 0.3s ease-out;
 
     &:focus {
-        border-bottom: 2px solid $color-primary;
-        outline: 0;
+        outline: none;
         margin-bottom: 0;
     }
+
+    &::-ms-expand {
+        display: none;
+    }
+
+    &:hover {
+        border-color: $color-contrast-4;
+    }
+    
+    option {
+        font-weight:normal;
+    }
 }
+

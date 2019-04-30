@@ -15,10 +15,14 @@ import SegmentedControl from './components/atoms/SegmentedControl/SegmentedContr
 import SectionDescription from './components/atoms/SectionDescription/SectionDescription';
 import Button from './components/atoms/Button/Button';
 import Select from './components/atoms/Select/Select';
-import FieldGroup from './components/molecules/FieldGroup/FieldGroup';
+import FieldItem from './components/molecules/FieldItem/FieldItem';
 import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
 import AdvancedWrapper from './components/molecules/AdvacedWrapper/AdvancedWrapper';
 import FormSection from './components/molecules/FormSection/FormSection';
+import FieldGroup from './components/molecules/FieldGroup/FieldGroup';
+import PriceFeedSelector from './components/molecules/PriceFeedSelector/PriceFeedSelector';
+import PriceFeedTitle from './components/molecules/PriceFeedTitle/PriceFeedTitle';
+import PriceFeedFormula from './components/molecules/PriceFeedFormula/PriceFeedFormula';
 
 class Form extends Component {
   render() {
@@ -30,9 +34,8 @@ class Form extends Component {
             <Label>Helper Fields</Label>
           </ScreenHeader>
             <FormSection>
-              <FieldGroup>
-                <Input size="large" value={'Harry the Green Plankton'}/>
-              </FieldGroup>
+              <Input size="large" value={'Harry the Green Plankton'}/>
+
               
               {/* Trader Settings */}
               <SectionTitle>
@@ -48,56 +51,56 @@ class Form extends Component {
             </FormSection>
 
             <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
-              <FieldGroup>
+              <FieldItem>
                 <Label>Trading Platform</Label>
                 <Select/>
-              </FieldGroup>
+              </FieldItem>
             </FormSection>
               
             <FormSection>
-              <FieldGroup>
+              <FieldItem>
                 <Label padding>Network</Label>
                 <SegmentedControl/>
-              </FieldGroup>
+              </FieldItem>
             </FormSection>
             
             <FormSection>
-              <FieldGroup>
+              <FieldItem>
                 <Label>Trader account secret key</Label>
                 <Input error="Please enter a valid trader account secret key"/>
-              </FieldGroup>
+              </FieldItem>
             </FormSection>
 
             <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
               <div className={grid.row}>
                 <div className={grid.col4}>
-                  <FieldGroup>
+                  <FieldItem>
                     <Label>Base asset code</Label>
                     <Input/>
-                  </FieldGroup>
+                  </FieldItem>
                 </div>
 
                 <div className={grid.col8}>
-                  <FieldGroup>
+                  <FieldItem>
                     <Label>Base asset issuer</Label>
                     <Input/>
-                  </FieldGroup>
+                  </FieldItem>
                 </div>
               </div>
 
               <div className={grid.row}>
                 <div className={grid.col4}>
-                  <FieldGroup>
+                  <FieldItem>
                     <Label>Quote asset code</Label>
                     <Input/>
-                  </FieldGroup>
+                  </FieldItem>
                 </div>
 
                 <div className={grid.col8}>
-                  <FieldGroup>
+                  <FieldItem>
                     <Label>Quote asset issuer</Label>
                     <Input/>
-                  </FieldGroup>
+                  </FieldItem>
                 </div>
               </div>
             </FormSection>
@@ -106,46 +109,102 @@ class Form extends Component {
         <AdvancedWrapper headerClass={grid.container}>
           <div className={grid.container}>
             <FormSection>
-              <FieldGroup>
+              <FieldItem>
                 <Label optional>Source account secret key</Label>
                 <Input/>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup>
+              <FieldItem>
                 <Label>Tick interval</Label>
                 <Input value="300" suffix="seconds"/>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup>
+              <FieldItem>
                 <Label>Randomized interval delay</Label>
                 <Input value="0" suffix="miliseconds"/>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup inline>
+              <FieldItem inline>
                 <Switch></Switch>
                 <Label>Maker only mode</Label>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup>
+              <FieldItem>
                 <Label>Delete cycles treshold</Label>
                 <Input value="0"/>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup inline>
+              <FieldItem inline>
                 <Switch></Switch>
                 <Label>Fill tracker</Label>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup>
+              <FieldItem>
                 <Label>Fill tracker duration</Label>
                 <Input value="0" suffix="miliseconds"/>
-              </FieldGroup>
+              </FieldItem>
 
-              <FieldGroup>
+              <FieldItem>
                 <Label>Fill tracker delete cycles threshold</Label>
                 <Input value="0"/>
+              </FieldItem>
+
+              <FieldGroup groupTitle="Fee">
+                <div className={grid.row}>
+                  <div className={grid.col5}>
+                    <FieldItem>
+                      <Label>Fee capacity trigger</Label>
+                      <Input value="0.8"/>
+                    </FieldItem>
+                  </div>
+                </div>
+                <div className={grid.row}>
+                  <div className={grid.col5}>
+                    <FieldItem>
+                      <Label>Fee capacity computation</Label>
+                      <Input value="90" suffix="%"/>
+                    </FieldItem>
+                    </div>
+                </div>
+                <div className={grid.row}>
+                  <div className={grid.col5}>
+                    <FieldItem>
+                      <Label>Maximum fee per operation</Label>
+                      <Input value="5000" suffix="miliseconds"/>
+                    </FieldItem>
+                    </div>
+                </div>
               </FieldGroup>
 
+              <div className={grid.row}>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Decimal units for price</Label>
+                    <Input value="6" />
+                  </FieldItem>
+                </div>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Decimal units for volume</Label>
+                    <Input value="1" />
+                  </FieldItem>
+                </div>
+              </div>
+
+              <div className={grid.row}>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Min. volume of base units</Label>
+                    <Input value="30.0" />
+                  </FieldItem>
+                </div>
+                <div className={grid.col5}>
+                  <FieldItem>
+                    <Label>Min. volume of quote units</Label>
+                    <Input value="10.0" />
+                  </FieldItem>
+                </div>
+              </div>  
 
             </FormSection>
           </div>
@@ -164,10 +223,26 @@ class Form extends Component {
               Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
             </SectionDescription>
             
-            <FieldGroup>
+
+            <FieldGroup groupTitle="Price Feed">
+              <FieldItem>
+                <PriceFeedTitle label="Current numerator price"/>
+                <PriceFeedSelector />
+              </FieldItem>
+
+              <FieldItem>
+                <PriceFeedTitle label="Current denominator price"/>
+                <PriceFeedSelector />
+              </FieldItem>
+
+              <PriceFeedFormula/>
+            </FieldGroup>
+            
+            
+            <FieldItem>
               <Label>Trading Platform</Label>
               <Input/>
-            </FieldGroup>
+            </FieldItem>
 
           </FormSection>
         </div>

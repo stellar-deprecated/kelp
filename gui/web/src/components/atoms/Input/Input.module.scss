@@ -15,9 +15,11 @@
     outline: 0;
     transition: all 0.3s ease-out;
     margin-bottom: 3/16+rem;
-    margin-top: 3/16+rem;
+    margin-top: 6/16+rem;
 
-
+    &:hover {
+        border-color: $color-contrast-4;
+    }
     &:focus {
         border-color: $color-primary;
         box-shadow: 0 1px 0 0 $color-primary;

@@ -1,16 +1,16 @@
-/*
- * FieldGroup css File
-*/
+@import '../../_settings/variables.module.scss';
 
 .wrapper {
     display: flex;
     flex-direction: column;
-    margin-bottom: 27/16+rem;
+    padding-left: 1rem;
+    border-left: 1px solid $color-contrast-5;
+    margin-top: 27/16+rem;
 }
 
-.inline {
-    flex-direction: row;
-    >:first-child {
-        padding-right: 13/16+rem;
-    }
+.title {
+    color: $color-contrast-1;
+    font-size: 1rem;
+    margin-bottom: 0;
+    margin-top: 0;
 }

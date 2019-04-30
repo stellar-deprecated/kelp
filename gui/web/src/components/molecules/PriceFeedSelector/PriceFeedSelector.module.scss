@@ -1,0 +1,11 @@
+@import '../../_settings/variables.module.scss';
+
+.wrapper {
+    display: flex;
+    flex-direction: row;
+
+    > * {
+        flex-grow: 1;
+    }
+}
+

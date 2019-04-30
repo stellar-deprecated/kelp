@@ -1,6 +1,7 @@
 @import '../../_settings/variables.module.scss';
 
 .wrapper {
+    margin-top: 2rem;
     margin-bottom: 2rem;
     transition: background-color 0.3s ease-out;
 }
@@ -11,7 +12,7 @@
     align-items: center;
     color: $color-contrast-2;
     font-size: 13/16+rem;
-    padding: 20/16+rem 0;
+    padding: 20/16+rem 0 0 0;
 
     &:hover {
         text-decoration: underline;
@@ -27,7 +28,7 @@
 .content {
     overflow: hidden;
     transition: max-height 0.5s ease-out;
-    margin: 20/16+rem 0 40/16+rem 0;
+    padding: 10/16+rem 0 80/16+rem 0;
     max-height: 0;
     opacity: 0;
 }
@@ -36,7 +37,7 @@
     background-color: $color-base-2;
     .content {
         opacity: 1;
-        max-height: 1400px;
+        max-height: 3400px;
     }
     svg {
         transform: rotate(180deg);

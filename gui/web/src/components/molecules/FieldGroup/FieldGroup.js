@@ -4,19 +4,16 @@ import classNames from 'classnames';
 
 class FieldGroup extends Component {
   static defaultProps = {
-    inline: false,
+    groupTitle: "",
   }
 
   render() {
-    var inlineClass = this.props.inline ? styles.inline : null;
-
-    const wrapperClassList = classNames(
-      styles.wrapper, 
-      inlineClass,
-    );
 
     return (
-      <div className={wrapperClassList}>
+      <div className={styles.wrapper}>
+        {this.props.groupTitle && (
+          <h4 className={styles.title}>{this.props.groupTitle}</h4>
+        )}
         {this.props.children}
       </div>
     );

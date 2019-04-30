@@ -32,6 +32,13 @@
     margin-left: -1rem;
 }
 
+
+.col3 {
+    composes: _col;
+    flex-basis: 25%;
+    max-width: 25%;
+}
+
 .col4 {
     composes: _col;
     flex-basis: 33.333%;
@@ -48,6 +55,12 @@
     composes: _col;
     flex-basis: 41.667%;
     max-width: 41.667%;
+}
+
+.col6 {
+    composes: _col;
+    flex-basis: 50%;
+    max-width: 50%;
 }
 
 .col7 {
