@@ -14,7 +14,7 @@ class Pill extends Component {
   render() {
     if(this.props.number){
       let symbolName = null
-      if(this.props.type == 'warning'){
+      if(this.props.type === 'warning'){
         symbolName = 'warningSmall'
       }
       else {

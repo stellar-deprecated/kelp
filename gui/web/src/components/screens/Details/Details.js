@@ -1,19 +1,19 @@
 import React, { Component } from 'react';
 
-import styles from './components/templates/Details/Details.module.scss';
-import grid from './components/_settings/grid.module.scss';
-import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
-import StartStop from './components/atoms/StartStop/StartStop';
-import RunStatus from './components/atoms/RunStatus/RunStatus';
-import Button from './components/atoms/Button/Button';
-import PillGroup from './components/molecules/PillGroup/PillGroup';
-import Pill from './components/atoms/Pill/Pill';
-import BotAssetsInfo from './components/atoms/BotAssetsInfo/BotAssetsInfo';
-import BotExchangeInfo from './components/atoms/BotExchangeInfo/BotExchangeInfo';
-import BotBidAskInfo from './components/atoms/BotBidAskInfo/BotBidAskInfo';
+import styles from './Details.module.scss';
+import grid from '../../_styles/grid.module.scss';
+import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
+import StartStop from '../../atoms/StartStop/StartStop';
+import RunStatus from '../../atoms/RunStatus/RunStatus';
+import Button from '../../atoms/Button/Button';
+import PillGroup from '../../molecules/PillGroup/PillGroup';
+import Pill from '../../atoms/Pill/Pill';
+import BotAssetsInfo from '../../atoms/BotAssetsInfo/BotAssetsInfo';
+import BotExchangeInfo from '../../atoms/BotExchangeInfo/BotExchangeInfo';
+import BotBidAskInfo from '../../atoms/BotBidAskInfo/BotBidAskInfo';
 
-import chartImg from './assets/images/chart-big.png';
-import SectionTitle from './components/atoms/SectionTitle/SectionTitle';
+import chartImg from '../../../assets/images/chart-big.png';
+import SectionTitle from '../../atoms/SectionTitle/SectionTitle';
 
 class Details extends Component {
 
@@ -104,7 +104,7 @@ class Details extends Component {
           </div>
 
           <div className={styles.chartWrapper}>
-            <img src={chartImg}/>
+            <img src={chartImg} alt="placeholder"/>
           </div>
 
           

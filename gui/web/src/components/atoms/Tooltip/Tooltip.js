@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import classNames from 'classnames';
 import styles from './Tooltip.module.scss';
 
 class Tooltip extends Component {

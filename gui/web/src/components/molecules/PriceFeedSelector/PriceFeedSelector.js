@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import styles from './PriceFeedSelector.module.scss';
 import classNames from 'classnames';
 import Select from '../../atoms/Select/Select';
-import grid from '../../../components/_settings/grid.module.scss';
+import grid from '../../../components/_styles/grid.module.scss';
 
 class PriceFeedSelector extends Component {
   static defaultProps = {

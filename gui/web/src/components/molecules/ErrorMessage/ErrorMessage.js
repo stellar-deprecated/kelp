@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import classNames from 'classnames';
 import styles from './ErrorMessage.module.scss';
 
 class ErrorMessage extends Component {

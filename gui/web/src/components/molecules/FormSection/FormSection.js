@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import styles from './FormSection.module.scss';
 import classNames from 'classnames';
-import grid from '../../../components/_settings/grid.module.scss';
+import grid from '../../../components/_styles/grid.module.scss';
 
 class FormSection extends Component {
   

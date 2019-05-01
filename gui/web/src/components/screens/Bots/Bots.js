@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
-import BotCard from './components/molecules/BotCard/BotCard';
-import Button from './components/atoms/Button/Button';
-import EmptyList from './components/molecules/EmptyList/EmptyList';
-import ScreenHeader from './components/molecules/ScreenHeader/ScreenHeader';
+import styles from './Bots.molecule.scss';
+import BotCard from '../../molecules/BotCard/BotCard';
+import Button from '../../atoms/Button/Button';
+import EmptyList from '../../molecules/EmptyList/EmptyList';
+import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 
-import grid from './components/_settings/grid.module.scss';
-import Modal from './components/molecules/Modal/Modal';
-import Welcome from './components/molecules/Welcome/Welcome';
+import grid from '../../_styles/grid.module.scss';
+import Modal from '../../molecules/Modal/Modal';
+import Welcome from '../../molecules/Welcome/Welcome';
 
 
 const placeaholderBots = [
@@ -44,7 +45,7 @@ class Bots extends Component {
   }
   
   gotoForm() {
-    this.props.history.push('/form')
+    this.props.history.push('/new')
   }
   
   createBot () {

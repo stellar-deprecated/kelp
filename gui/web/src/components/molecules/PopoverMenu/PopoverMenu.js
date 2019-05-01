@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import classNames from 'classnames';
 import styles from './PopoverMenu.module.scss';
 
 class PopoverMenu extends Component {
