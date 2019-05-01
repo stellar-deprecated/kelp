@@ -38,8 +38,6 @@ class Button extends Component {
     const iconOnly = this.props.children ? null : styles.iconOnly;
 
     const iconSize = this.props.hsize == 'round' ? iconSizesRound[this.props.size] : iconSizes[this.props.size];
-    console.log(this.props.hsize);
-    console.log(iconSize);
 
     const classNameList = classNames(
       this.props.className,
