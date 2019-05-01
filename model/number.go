@@ -39,15 +39,26 @@ func (n Number) AsString() string {
 
 // AsRatio returns an integer numerator and denominator
 func (n Number) AsRatio() (int32, int32, error) {
-	denominator := int32(math.Pow(10, float64(n.Precision())))
+	denominator64 := uint64(math.Pow(10, float64(n.Precision())))
 
+	var numerator64 uint64
 	// add an adjustment because the computed value should not have any digits beyond the decimal
 	// and we want to roll over values that are not computed correctly rather than using the expensive math/big library
-	adjustment := 0.1
+	unsignedPartial := n.AsFloat() * float64(denominator64)
 	if n.AsFloat() < 0 {
-		adjustment = -0.1
+		unsignedPartial *= -1
 	}
-	numerator := int32(n.AsFloat()*float64(denominator) + adjustment)
+	numerator64 = uint64(unsignedPartial + 0.1)
+
+	for numerator64%10 == 0 {
+		numerator64 /= 10
+		denominator64 /= 10
+	}
+
+	numerator, denominator := int32(numerator64), int32(denominator64)
+	if n.AsFloat() < 0 {
+		numerator *= -1
+	}
 
 	if float64(numerator)/float64(denominator) != n.AsFloat() {
 		return 0, 0, fmt.Errorf("invalid conversion to a ratio probably caused by an overflow, float input: %f, numerator: %d, denominator: %d", n.AsFloat(), numerator, denominator)

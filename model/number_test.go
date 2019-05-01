@@ -287,6 +287,10 @@ func TestAsRatio(t *testing.T) {
 			n:     NumberFromFloat(-0.251841, 6),
 			wantN: -251841,
 			wantD: 1000000,
+		}, {
+			n:     NumberFromFloat(5274.26, 8),
+			wantN: 527426,
+			wantD: 100,
 		},
 	}
 
