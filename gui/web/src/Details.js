@@ -14,7 +14,6 @@ import BotBidAskInfo from './components/atoms/BotBidAskInfo/BotBidAskInfo';
 
 import chartImg from './assets/images/chart-big.png';
 import SectionTitle from './components/atoms/SectionTitle/SectionTitle';
-import AdvancedWrapper from './components/molecules/AdvacedWrapper/AdvancedWrapper';
 
 class Details extends Component {
 

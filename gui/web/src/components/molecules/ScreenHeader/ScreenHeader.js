@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import styles from './ScreenHeader.module.scss';
-import optionsIcon from '../../../assets/images/ico-options.svg';
 import ScreenTitle from '../../atoms/ScreenTitle/ScreenTitle';
-import BackButton from '../../atoms/BackButton/BackButton';
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
+import Button from '../../atoms/Button/Button';
 
 
 class ScreenHeader extends Component {
@@ -15,7 +14,10 @@ class ScreenHeader extends Component {
           <div className={styles.buttonWrapper}>
             { this.props.backButton && (
               <Link to="/">
-                <BackButton />
+                <Button
+                icon="back"
+                variant="transparent"
+                hsize="round"/>
               </Link>
             )}
           </div>
