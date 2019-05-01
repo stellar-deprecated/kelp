@@ -50,7 +50,9 @@ class AdvancedWrapper extends Component {
           </div>
         </div>
         <div className={styles.content}>
+          <div className={styles.contentWrapper}>
             {this.props.children}
+          </div>
         </div>
       </div>
     );

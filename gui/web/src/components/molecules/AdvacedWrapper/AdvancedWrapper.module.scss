@@ -25,10 +25,10 @@
 }
 
 
+
 .content {
     overflow: hidden;
     transition: max-height 0.5s ease-out;
-    padding: 10/16+rem 0 80/16+rem 0;
     max-height: 0;
     opacity: 0;
 }
@@ -42,4 +42,8 @@
     svg {
         transform: rotate(180deg);
     }
+}
+
+.contentWrapper {
+    padding: 10/16+rem 0 80/16+rem 0;
 }

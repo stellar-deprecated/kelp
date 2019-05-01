@@ -1,8 +1,5 @@
 @import './components/_settings/variables.module.scss';
 
-:global {
-
-}
 
 @font-face {
     font-family: 'SuisseIntl';
@@ -15,7 +12,7 @@
 @font-face {
   font-family: 'SuisseIntl';
   src: url('./assets/fonts/suisseintl-book-webfont.woff2') format('woff2'),
-          url('./assets/fonts/suisseintl-book-webfont.woff') format('woff');
+      url('./assets/fonts/suisseintl-book-webfont.woff') format('woff');
   font-style: normal;
   font-weight: normal;
 }
@@ -23,8 +20,8 @@
 @font-face {
   font-family: 'SuisseIntlMonos';
   src: url('./assets/fonts/suisseintlmono-regular-webfont.woff2') format('woff2'),
-          url('./assets/fonts/suisseintlmono-regular-webfont.woff') format('woff'),
-          url('./assets/fonts/suisseintlmono-regular-webfont.ttf') format('truetype');
+      url('./assets/fonts/suisseintlmono-regular-webfont.woff') format('woff'),
+      url('./assets/fonts/suisseintlmono-regular-webfont.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
