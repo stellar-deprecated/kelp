@@ -1,15 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
 import Pill from '../../atoms/Pill/Pill';
 import RunStatus from '../../atoms/RunStatus/RunStatus';
-
 import chartThumb from '../../../assets/images/chart-thumb.png';
-import optionsIcon from '../../../assets/images/ico-options.svg';
-
 import styles from './BotCard.module.scss';
-import InfoIcon from '../../atoms/InfoIcon/InfoIcon';
-import Badge from '../../atoms/Badge/Badge';
 import PillGroup from '../PillGroup/PillGroup';
 import StartStop from '../../atoms/StartStop/StartStop';
 import BotExchangeInfo from '../../atoms/BotExchangeInfo/BotExchangeInfo';

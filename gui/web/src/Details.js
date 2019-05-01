@@ -115,11 +115,11 @@ class Details extends Component {
               Trader Settings
             </SectionTitle>
             
-            {this.infoListItem('trading Platform', 'World')}
+            {this.infoListItem('trading Platform', 'Information')}
             {this.infoListItem('Trader account public key', 'SDDAHRX2JB663N3OLKZSDDAHRX2JB663N3OLKZ')}
-            {this.infoListItem('Hello', 'World')}
-            {this.infoListItem('Hello', 'World')}
-            {this.infoListItem('Hello', 'World')}
+            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Title', 'Information')}
 
           </div>
 
@@ -128,26 +128,26 @@ class Details extends Component {
             <div className={grid.container}>
               <h3 className={styles.advancedTitle}>Advanced Settings</h3>
 
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
               
               {this.divider()}
 
               {this.groupTitle('Fee')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
 
               {this.divider()}
 
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
 
             </div>  
           </div>
@@ -157,21 +157,21 @@ class Details extends Component {
                 Trader Settings
             </SectionTitle>
             
-            {this.infoListItem('Hello', 'World')}
-            {this.infoListItem('Hello', 'World')}
-            {this.infoListItem('Hello', 'World')}
-            {this.infoListItem('Hello', 'World')}
-            {this.infoListItem('Hello', 'World')}
+            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Title', 'Information')}
           </div>
 
           <div className={styles.advancedWrapper}>
             <div className={grid.container}>
               <h3 className={styles.advancedTitle}>Advanced Settings</h3>
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
-              {this.infoListItem('Hello', 'World')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Title', 'Information')}
             </div>  
           </div>
           
