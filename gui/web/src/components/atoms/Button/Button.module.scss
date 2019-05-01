@@ -33,6 +33,7 @@
 .iconOnly {
     svg {
         margin-right: 0;
+        display: block;
     }
 }
 
@@ -42,34 +43,62 @@
     font-size: 12/16+rem;
     padding: 6px 15px;
     font-family: 'SuisseIntl';
+
+    &.round {
+        padding: 7px 7px;
+        min-height: auto;
+    }
 }
 
 .medium {
     font-size: 14/16+rem;
-    padding: 10px 25px;
+    padding: 10px 30px;
     font-family: 'SuisseIntl';
+    min-height: 37px;
+
+    &.short {
+        padding-left: 20px; 
+        padding-right: 20px;
+    }
+
+    &.round {
+        padding: 7px 7px;
+        min-height: auto;
+    }
 }
 
 .large {
     font-size: 15/16+rem;
     padding: 15px 25px;
     font-family: 'SuisseIntl';
+
+    &.round {
+        padding: 7px 7px;
+        min-height: auto;
+    }
 }
+
+
+
 
 // Variants
 
 .faded {
     composes: button;
-    background-color: rgba($color-contrast-4, 0.15%);
+    background-color: $color-base-5;
     font-size: 14/16+rem;
     color: $color-contrast-2;
 }
 
 .danger {
     composes: button;
-    background-color: $color-error;
+    background-color: $color-danger;
     font-size: 14/16+rem;
     color: $color-contrast-2;
+    
+    &:hover {
+        background-color: darken($color-danger, 8%);
+    }
 }
 
 .link {
@@ -92,11 +121,11 @@
     background: transparent;
 
     &:hover {
-        background-color: #242433;
+        background-color: $color-base-5;
     }
 
     &:active {
-        background-color: $color-base-1;
+        background-color: $color-base-4;
     }
 
     &:focus {
@@ -135,6 +164,6 @@
 .stop {
     composes: _startStop;
     &:hover  {
-        background-color: $color-error;
+        background-color: $color-danger;
     }
 }

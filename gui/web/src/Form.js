@@ -18,6 +18,9 @@ import PriceFeedSelector from './components/molecules/PriceFeedSelector/PriceFee
 import PriceFeedTitle from './components/molecules/PriceFeedTitle/PriceFeedTitle';
 import PriceFeedFormula from './components/molecules/PriceFeedFormula/PriceFeedFormula';
 import RepeaterField from './components/molecules/RepeaterField/RepeaterField';
+import Tooltip from './components/atoms/Tooltip/Tooltip';
+import PopoverMenu from './components/molecules/PopoverMenu/PopoverMenu';
+import ErrorMessage from './components/molecules/ErrorMessage/ErrorMessage';
 
 class Form extends Component {
   render() {
@@ -228,7 +231,6 @@ class Form extends Component {
                 <PriceFeedTitle label="Current denominator price"/>
                 <PriceFeedSelector />
               </FieldItem>
-
               <PriceFeedFormula/>
             </FieldGroup>
             
@@ -309,10 +311,17 @@ class Form extends Component {
         </AdvancedWrapper>
 
         <div className={grid.container}>
+          <ErrorMessage/>
           <div className={styles.formFooter}>
             <Button icon="add" size="large">Create Bot</Button>
           </div>
         </div>
+        
+        {/* These are to preview only */}
+        <Tooltip/>
+        <br/><br/>
+        <PopoverMenu/>
+        <br/><br/>
       </div>
     );
   }

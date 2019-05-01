@@ -5,7 +5,9 @@ class SectionTitle extends Component {
 
   render() {
     return (
-      <h3 className={styles.title}>{this.props.children}</h3>
+      <div className={this.props.className}>
+        <h3 className={styles.title}>{this.props.children}</h3>
+      </div>
     );
   }
 }

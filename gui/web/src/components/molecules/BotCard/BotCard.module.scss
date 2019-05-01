@@ -6,18 +6,6 @@ $small-spacing: 3px;
 
 // Compose classes
 
-.lightText {
-  color: $color-contrast-3;
-  font-weight: 200;
-  font-size: 14/16+rem;
-}
-
-.textMono {
-  font-family: $typeface-secondary;
-  color: $color-contrast-2;
-  letter-spacing: -0.5px;
-  font-size: 13/16 +rem;
-}
 
 .line {
   margin-bottom: $small-spacing;
@@ -54,13 +42,13 @@ $small-spacing: 3px;
 
 .statusStopped {
   composes: _status;
-  background-color: $color-error;
+  background-color: $color-danger;
 }
 
 .optionsMenu {
   position: absolute;
   right: 2px;
-  top: 4px;
+  top: 2px;
   border: 0;
   background-color: transparent;
 }
@@ -76,27 +64,9 @@ $small-spacing: 3px;
   margin-bottom: 20px;
 }
 
-.baseAssetLine {
-  composes: line;
-}
-
-.quoteAssetLine {
-}
-
 .notificationsLine {
   composes: line;
   flex-grow: 1;
-}
-
-.spreadLine {
-  composes: line;
-}
-
-.bidsLine {
-  composes: line;
-}
-
-.asksLine {
 }
 
 ._column {
@@ -136,9 +106,6 @@ $small-spacing: 3px;
   }
 }
 
-.exchange {
-  font-size: 14/16+rem;
-}
 
 
 .chartThumb {

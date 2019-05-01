@@ -37,8 +37,7 @@ const viewBox = {
   warning: '0 0 50 50',
   refresh: '0 0 15 15',
   remove: '0 0 11 11',
-  options: '0 0 19 19',
-  
+  options: '0 0 20 20',
 }
 
 const icons = {
@@ -69,10 +68,11 @@ class Icon extends Component {
   }
   
   render() {
+
     return (
       <svg 
         className={this.props.className}
-        viewBox={viewBox[this.props.icon]}
+        viewBox={viewBox[this.props.symbol]}
         width={this.props.width}
         height={this.props.height}
       >

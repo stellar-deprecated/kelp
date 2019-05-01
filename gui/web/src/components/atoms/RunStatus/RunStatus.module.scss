@@ -25,7 +25,7 @@
     
     svg {
         margin-right: 8px;
-        fill: $color-error;
+        fill: $color-danger;
     }
 }
 
@@ -62,7 +62,7 @@
 
 .stoppedIcon {
     display: inline-block;
-    border: 1px solid $color-error;
+    border: 1px solid $color-danger;
     width: 9px;
     height: 9px;
     border-radius: 30px;
@@ -81,6 +81,6 @@
 
 .stoppedLabel {
     composes: _label;
-    color: $color-error;
+    color: $color-danger;
 }
 

@@ -36,7 +36,7 @@
 }
 
 .inputError {
-    border-color: $color-error;
+    border-color: $color-danger;
 }
 
 .medium {
@@ -57,6 +57,6 @@
     position: absolute;
     margin: 0;
     bottom: -0.8rem;
-    color: $color-error;
+    color: $color-danger;
     font-size: 12/16+rem;
 }

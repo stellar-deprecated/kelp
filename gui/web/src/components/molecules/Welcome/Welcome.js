@@ -39,10 +39,10 @@ class Welcome extends Component {
         <div className={styles.window}>
           <Button 
             icon="close"
+            size="small"
             variant="transparent"
+            hsize="round"
             className={styles.closeButton} 
-            width="12px" 
-            height="12px"
             onClick={this.close}
           />
 

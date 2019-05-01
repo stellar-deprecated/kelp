@@ -6,7 +6,12 @@ import Button from '../Button/Button';
 class ReloadButton extends Component {
   render() {
     return (
-      <Button icon="refresh" className={styles.button}>
+      <Button 
+        icon="refresh"
+        className={styles.button}
+        variant="transparent"
+        hsize="round"
+        >
       </Button>
     );
   }

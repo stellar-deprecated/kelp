@@ -12,6 +12,10 @@ import InfoIcon from '../../atoms/InfoIcon/InfoIcon';
 import Badge from '../../atoms/Badge/Badge';
 import PillGroup from '../PillGroup/PillGroup';
 import StartStop from '../../atoms/StartStop/StartStop';
+import BotExchangeInfo from '../../atoms/BotExchangeInfo/BotExchangeInfo';
+import BotAssetsInfo from '../../atoms/BotAssetsInfo/BotAssetsInfo';
+import BotBidAskInfo from '../../atoms/BotBidAskInfo/BotBidAskInfo';
+import Button from '../../atoms/Button/Button';
 
 
 class BotCard extends Component {
@@ -86,26 +90,23 @@ class BotCard extends Component {
     return (
       <div className={styles.card}>
         <span className={this.state.isRunning ? styles.statusRunning : styles.statusStopped}></span>
-        <button className={styles.optionsMenu}>
-          <img src={optionsIcon}/>
-        </button>
+
+        <Button
+            icon="options"
+            size="large"
+            variant="transparent"
+            hsize="round"
+            className={styles.optionsMenu} 
+            onClick={this.close}
+        />
+
         <div className={styles.firstColumn}>
           <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
-            <Badge test={this.props.test}/>
-            <span className={styles.exchange}>SDEX </span>
-            <span className={styles.lightText}> buysell</span>
+            <BotExchangeInfo/>
           </div>
           <div>
-            <div className={styles.baseAssetLine}>
-              <span className={styles.textMono}>XLM </span>
-              <span className={styles.textMono}> 5,001.56</span>
-            </div>
-            <div className={styles.quoteAssetLine}>
-              <span className={styles.textMono}>USD </span>
-              <InfoIcon/>
-              <span className={styles.textMono}> 5,001.56</span>
-            </div>
+            <BotAssetsInfo/>
           </div>
         </div>
 
@@ -116,18 +117,7 @@ class BotCard extends Component {
               <Pill number={this.props.errors} type={'error'}/>
             </PillGroup>
           </div>
-          <div className={styles.spreadLine}>
-            <span className={styles.lightText}>Spread </span>
-            <span className={styles.textMono}> $0.0014 (0.32%)</span>
-          </div>
-          <div className={styles.bidsLine}>
-            <span className={styles.textMono}>5 </span>
-            <span className={styles.textMono}> bids</span>
-          </div>
-          <div className={styles.asksLine}>
-            <span className={styles.textMono}>3 </span>
-            <span className={styles.textMono}> asks</span>
-          </div>
+          <BotBidAskInfo/>
         </div>
 
         <div className={styles.thirdColumn}>

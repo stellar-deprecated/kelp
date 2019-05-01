@@ -10,11 +10,18 @@ const iconSizes = {
   large: '16px',
 }
 
+const iconSizesRound = {
+  small:'12px',
+  medium: '14px',
+  large: '19px',
+}
+
 class Button extends Component {
   static defaultProps = {
     icon: null,
     size: 'medium',
-    variant: 'regular',
+    variant: '',
+    hsize: 'regular',
     onClick: () => {},
     disabled: false    
   }
@@ -30,10 +37,15 @@ class Button extends Component {
   render() {
     const iconOnly = this.props.children ? null : styles.iconOnly;
 
+    const iconSize = this.props.hsize == 'round' ? iconSizesRound[this.props.size] : iconSizes[this.props.size];
+    console.log(this.props.hsize);
+    console.log(iconSize);
+
     const classNameList = classNames(
       this.props.className,
       styles.button, 
       styles[this.props.size],
+      styles[this.props.hsize],
       styles[this.props.variant],
       iconOnly,
     );
@@ -47,8 +59,8 @@ class Button extends Component {
           { this.props.icon && (
             <Icon 
               symbol={this.props.icon} 
-              width={iconSizes[this.props.size]}
-              height={iconSizes[this.props.size]}
+              width={iconSize}
+              height={iconSize}
             />
           )}
           {this.props.children}

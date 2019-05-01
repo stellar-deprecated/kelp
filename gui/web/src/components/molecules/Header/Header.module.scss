@@ -33,8 +33,7 @@
 
 .iconMenu {
   display: flex;
-}
-
-.icon {
-  width: 19px;
+  > * {
+    margin-left: 0.5rem;
+  }
 }

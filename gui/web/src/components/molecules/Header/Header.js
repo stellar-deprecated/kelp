@@ -4,6 +4,7 @@ import grid from '../../_settings/grid.module.scss';
 import button from '../../atoms/Button/Button.module.scss';
 import styles from './Header.module.scss';
 import Icon from '../../atoms/Icon/Icon';
+import Button from '../../atoms/Button/Button';
 
 
 class Header extends Component {
@@ -17,12 +18,18 @@ class Header extends Component {
               <span className={styles.version}>{this.props.version}</span>
             </div>
             <div className={styles.iconMenu}>
-              <button className={button.transparent}>
-                <Icon symbol="help" width="19px" height="19px"/>
-              </button>
-              <button className={button.transparent}>
-                <Icon symbol="day" width="19px" height="19px"/>
-              </button>
+              <Button
+                icon="day"
+                size="large"
+                variant="transparent"
+                hsize="round"
+              />
+              <Button
+                icon="help"
+                size="large"
+                variant="transparent"
+                hsize="round"
+              />
             </div>
           </div>
         </div>

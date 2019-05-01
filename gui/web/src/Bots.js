@@ -65,12 +65,14 @@ class Bots extends Component {
               <ScreenHeader title={'My Bots'}>
                 <Button 
                   variant="faded"
-                  icon="download"     
+                  icon="download"
+                  hsize="short"
                   onClick={this.createBot}
                 > 
                 </Button>
                 <Button 
                   variant="faded" 
+                  hsize="short"
                   icon="add" 
                   onClick={this.gotoForm}>New Bot
                 </Button>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="14px" height="12px" viewBox="0 0 14 12" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
     <title>ico-arrow-back</title>
     <desc>Created with Sketch.</desc>
-    <g id="ico-arrow-back" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <polygon id="arrow" fill="#ABABAB" fill-rule="nonzero" transform="translate(7.000000, 6.000000) scale(-1, 1) translate(-7.000000, -6.000000) " points="14 6 8.21657754 12 7.01871658 10.7266881 10.7058824 6.94533762 0 6.94533762 0 5.07395498 10.7433155 5.07395498 7.01871658 1.2733119 8.21657754 0"></polygon>
+    <g id="ico" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <polygon id="arrow" fill="#ABABAB" fill-rule="nonzero" transform="translate(7.000000, 7.000000) scale(-1, 1) translate(-7.000000, -7.000000) " points="14 7 8.21657754 13 7.01871658 11.7266881 10.7058824 7.94533762 0 7.94533762 0 6.07395498 10.7433155 6.07395498 7.01871658 2.2733119 8.21657754 1"></polygon>
     </g>
 </svg>
