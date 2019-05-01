@@ -50,7 +50,7 @@ func (n Number) AsRatio() (int32, int32, error) {
 	}
 	numerator64 = uint64(unsignedPartial + 0.1)
 
-	for numerator64%10 == 0 {
+	for numerator64%10 == 0 && denominator64 > 1 {
 		numerator64 /= 10
 		denominator64 /= 10
 	}

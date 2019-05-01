@@ -291,6 +291,18 @@ func TestAsRatio(t *testing.T) {
 			n:     NumberFromFloat(5274.26, 8),
 			wantN: 527426,
 			wantD: 100,
+		}, {
+			n:     NumberFromFloat(-5274.26, 8),
+			wantN: -527426,
+			wantD: 100,
+		}, {
+			n:     NumberFromFloat(10.0, 4),
+			wantN: 10,
+			wantD: 1,
+		}, {
+			n:     NumberFromFloat(-10.0, 4),
+			wantN: -10,
+			wantD: 1,
 		},
 	}
 
@@ -314,18 +326,14 @@ func TestAsRatio_Error(t *testing.T) {
 		n *Number
 	}{
 		{
-			n: NumberFromFloat(1.0, 10),
-		}, {
-			n: NumberFromFloat(2.5, 9),
-		}, {
-			n: NumberFromFloat(-2.5, 9),
+			n: NumberFromFloat(2.599999999, 9),
 		},
 	}
 
 	for _, kase := range testCases {
 		t.Run(kase.n.AsString(), func(t *testing.T) {
 			num, den, e := kase.n.AsRatio()
-			if !assert.Error(t, e, fmt.Sprintf("got back num=%d, den=%d", num, den)) {
+			if !assert.Error(t, e, fmt.Sprintf("got back num=%d, den=%d, expected an error", num, den)) {
 				return
 			}
 		})
