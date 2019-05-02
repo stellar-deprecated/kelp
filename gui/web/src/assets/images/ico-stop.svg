@@ -4,7 +4,7 @@
     <title>ico-stop</title>
     <desc>Created with Sketch.</desc>
     <g id="ico" stroke="none" stroke-width="1" fill-rule="evenodd">
-        <rect id="Rectangle" x="0" y="0" width="8" height="8"></rect>
+        <rect id="Rectangle" x="1" y="1" width="6" height="6"></rect>
         <polyline id="Path" stroke="#676E8A" transform="translate(0.656854, 12.656854) rotate(-135.000000) translate(-0.656854, -12.656854) " points="-3.34314575 16.6568542 -3.34314575 8.65685425 -3.34314575 8.65685425 4.65685425 8.65685425"></polyline>
     </g>
 </svg>

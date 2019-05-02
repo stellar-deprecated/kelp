@@ -17,7 +17,7 @@ class RunStatus extends Component {
     } else {
       return ( 
         <div className={styles.stoppedWrapper}> 
-          <Icon symbol="stop" width="7px" height="7px"/>
+          <Icon symbol="stop" width="8px" height="8px"/>
           <span className={styles.stoppedLabel}>Stopped</span>
         </div>
       )

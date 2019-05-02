@@ -56,6 +56,8 @@
 
 .image {
     background-image: url('../../../assets/images/welcome-bg.png');
+    background-size: cover;
+    background-position: center;
     width: 43%;
     display: flex;
     align-items: center;
