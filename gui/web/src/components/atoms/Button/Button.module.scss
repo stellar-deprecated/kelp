@@ -22,6 +22,11 @@
         box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.5);
     }
 
+    &:disabled {
+        opacity: 0.5;
+        background-color: $color-primary;
+    }
+
     svg {
         transition: fill 0.3s ease-out;
         vertical-align: middle;
@@ -88,6 +93,10 @@
     background-color: $color-base-5;
     font-size: 14/16+rem;
     color: $color-contrast-2;
+
+    &:disabled {
+        background-color: $color-base-5;
+    }
 }
 
 .danger {
@@ -99,6 +108,10 @@
     &:hover {
         background-color: darken($color-danger, 8%);
     }
+
+    &:disabled {
+        background-color: $color-danger;
+    }
 }
 
 .link {
@@ -107,12 +120,17 @@
     font-size: 14/16+rem;
     background: none;
     text-decoration: underline;
+
     &:hover {
-        background: none;
         color: $color-contrast-1;
     }
+
     &:focus {
         box-shadow: none;
+    }
+
+    &:disabled {
+        color: $color-contrast-2;
     }
 }
 
@@ -131,6 +149,11 @@
     &:focus {
         box-shadow: none;
     }
+    
+    &:disabled {
+        background: transparent;
+    }
+    
 }
 
 ._startStop {

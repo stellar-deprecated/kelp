@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import styles from './PriceFeedTitle.module.scss';
-import ReloadButton from '../../atoms/ReloadButton/ReloadButton';
 import Label from '../../atoms/Label/Label';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 import classNames from 'classnames';
+import Button from '../../atoms/Button/Button';
 
 
 class PriceFeedTitle extends Component {
@@ -37,9 +37,9 @@ class PriceFeedTitle extends Component {
 
 
   render() {
-    let isLoading = this.state.isLoading ? styles.isLoading : null;
+    const isLoading = this.state.isLoading ? styles.isLoading : null;
 
-    let valueClasses = classNames(
+    const valueClasses = classNames(
       styles.value,
       isLoading,
     );
@@ -57,7 +57,15 @@ class PriceFeedTitle extends Component {
           )}
         </div>
         
-        <ReloadButton onClick={this.onClickSimulation}/>
+        <Button 
+          onClick={this.onClickSimulation}
+          icon="refresh"
+          className={styles.button}
+          variant="transparent"
+          hsize="round"
+          disabled={this.state.isLoading}
+          >
+        </Button>
       </div>
     );
   }

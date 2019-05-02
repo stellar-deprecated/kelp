@@ -17,11 +17,21 @@ const iconSizesRound = {
 }
 
 class Button extends Component {
+  // constructor(props) {
+  //   super(props);
+  //   this.state = {
+  //     isDisabled: this.props.disabled,
+  //     isLoading: this.props.disabled,
+  //   };
+  // }
+
+
   static defaultProps = {
     icon: null,
     size: 'medium',
     variant: '',
     hsize: 'regular',
+    loading: false,
     onClick: () => {},
     disabled: false    
   }
@@ -31,6 +41,7 @@ class Button extends Component {
     size: PropTypes.string,
     variant: PropTypes.string,
     onClick: PropTypes.func,
+    loading: PropTypes.bool,
     disabled: PropTypes.bool
   };
 

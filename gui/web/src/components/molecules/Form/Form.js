@@ -316,12 +316,7 @@ class Form extends Component {
             <Button icon="add" size="large">Create Bot</Button>
           </div>
         </div>
-        
-        {/* These are to preview only */}
-        <Tooltip/>
-        <br/><br/>
-        <PopoverMenu/>
-        <br/><br/>
+      
       </div>
     );
   }
