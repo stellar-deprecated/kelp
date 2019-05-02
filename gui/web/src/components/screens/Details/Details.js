@@ -36,7 +36,14 @@ class Details extends Component {
     )
   }
 
-  divider(title, value) {
+  spacer() {
+    return (
+      <span className={styles.spacer}>
+      </span>
+    )
+  }
+
+  divider() {
     return (
       <div className={styles.item}>
         <div className={grid.row}>
@@ -114,64 +121,84 @@ class Details extends Component {
               Trader Settings
             </SectionTitle>
             
-            {this.infoListItem('Source Public key', 'SDDAHRX2JB663N3OLKZSDDAHRX2JB663N3OLKZ')}
-            {this.infoListItem('Tick interval', '300 seconds')}
-            {this.infoListItem('Randomized interval delay', '0')}
-            {this.infoListItem('Submit mode', 'both')}
-            {this.infoListItem('Delete cycles threshold', '0')}
-            {this.infoListItem('Fill tracker', 'Off')}
+            {this.infoListItem('Trading platform', 'SDDAHRX2JB663N3OLKZSDDAHRX2JB663N3OLKZ')}
+            {this.infoListItem('Trader account public key', '300 seconds')}
+            {this.infoListItem('Base asset code', '0')}
+            {this.infoListItem('Quote asset code', 'both')}
+            {this.infoListItem('Quote asset issuer', 'interstellar.exchange')}
 
           </div>
 
 
           <div className={styles.advancedWrapper}>
             <div className={grid.container}>
-              <h3 className={styles.advancedTitle}>Advanced Settings</h3>
+              <h3 className={styles.advancedTitle}>Advanced trader settings</h3>
 
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Source public key', 'SDDAHRX2JB663N3OLKZSDDAHRX2JB663N3OLKZ')}
+              {this.infoListItem('Tick interval', '300 seconds')}
+              {this.infoListItem('Randomized interval delay', '0')}
+              {this.infoListItem('Submit mode', 'both')}
+              {this.infoListItem('Delete cycles threshold', '0')}
+              {this.infoListItem('Fill tracker', 'Off')}
               
               {this.divider()}
 
               {this.groupTitle('Fee')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Fee capacity trigger', '0.5')}
+              {this.infoListItem('Fee percentile computation', '90%')}
+              {this.infoListItem('Maximum fee per operation', '5.000 stroops')}
 
               {this.divider()}
 
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
+              {this.infoListItem('Decimal units for price', '6')}
+              {this.infoListItem('Decimal units for volume', '1')}
+              {this.infoListItem('Maximum volume of base units', '30')}
+              {this.infoListItem('Maximum volume of quote units', '10')}
 
             </div>  
           </div>
 
           <div className={grid.container}>
             <SectionTitle className={styles.title}>
-                Trader Settings
+                Strategy Settings
             </SectionTitle>
             
-            {this.infoListItem('Title', 'Information')}
-            {this.infoListItem('Title', 'Information')}
-            {this.infoListItem('Title', 'Information')}
-            {this.infoListItem('Title', 'Information')}
-            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Strategy type', 'buysell')}
+
+            {this.divider()}
+
+            {this.groupTitle('Price feed')}
+            {this.infoListItem('Numerator price', 'Exchange > Kraken > XLM USD')}
+            {this.infoListItem('Denominator price', 'Fixed > 1.0')}
+            {this.infoListItem('Current Price', '0.0116 / 1 = 0.0116')}
+
+            {this.divider()}
+
+            {this.infoListItem('Amount of a base', '10')}
+            {this.infoListItem('Spread of a market', '1%')}
+
           </div>
 
           <div className={styles.advancedWrapper}>
             <div className={grid.container}>
-              <h3 className={styles.advancedTitle}>Advanced Settings</h3>
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
-              {this.infoListItem('Title', 'Information')}
+              <h3 className={styles.advancedTitle}>Advanced strategy settings</h3>
+              
+              {this.groupTitle('Levels')}
+              {this.infoListItem('Spread', '2%')}
+              {this.infoListItem('Amount', '10')}
+
+              {this.spacer()}
+
+              {this.infoListItem('Spread', '1%')}
+              {this.infoListItem('Amount', '10')}
+              
+              {this.divider()}
+
+              {this.infoListItem('Price tolerance', '1%')}
+              {this.infoListItem('Amount tolerance', '0%')}
+              {this.infoListItem('Rate offset percentage', '0%')}
+              {this.infoListItem('Rate offset', '0')}
+              {this.infoListItem('Use ra offset percent. first', 'On')}
             </div>  
           </div>
           
