@@ -23,6 +23,20 @@ import PopoverMenu from '../PopoverMenu/PopoverMenu';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Form extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isLoading: false,
+    };
+    this.onClickSimulation = this.onClickSimulation.bind(this);
+  }
+
+  onClickSimulation() {
+    this.setState({
+      isLoading: true,
+    })
+  }
+
   render() {
     return (
       <div>
@@ -313,7 +327,13 @@ class Form extends Component {
         <div className={grid.container}>
           <ErrorMessage/>
           <div className={styles.formFooter}>
-            <Button icon="add" size="large">Create Bot</Button>
+            <Button 
+              icon="add" 
+              size="large" 
+              loading={this.state.isLoading} 
+              onClick={this.onClickSimulation}>
+              Create Bot
+            </Button>
           </div>
         </div>
       

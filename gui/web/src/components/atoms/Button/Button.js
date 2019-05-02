@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import styles from './Button.module.scss';
 import Icon from '../Icon/Icon';
+import LoadingAnimation from '../LoadingAnimation/LoadingAnimation';
 
 const iconSizes = {
   small:'10px',
@@ -17,15 +18,6 @@ const iconSizesRound = {
 }
 
 class Button extends Component {
-  // constructor(props) {
-  //   super(props);
-  //   this.state = {
-  //     isDisabled: this.props.disabled,
-  //     isLoading: this.props.disabled,
-  //   };
-  // }
-
-
   static defaultProps = {
     icon: null,
     size: 'medium',
@@ -47,7 +39,7 @@ class Button extends Component {
 
   render() {
     const iconOnly = this.props.children ? null : styles.iconOnly;
-
+    const isLoading = this.props.loading ? styles.isLoading : null;
     const iconSize = this.props.hsize == 'round' ? iconSizesRound[this.props.size] : iconSizes[this.props.size];
 
     const classNameList = classNames(
@@ -57,14 +49,23 @@ class Button extends Component {
       styles[this.props.hsize],
       styles[this.props.variant],
       iconOnly,
+      isLoading,
+
     );
 
     return (
-        <button 
-          className={classNameList} 
-          disabled={this.props.disabled} 
-          onClick= {this.props.onClick}
-        >
+      <button 
+        className={classNameList} 
+        disabled={this.props.disabled || this.props.loading } 
+        onClick= {this.props.onClick}
+      >
+        {this.props.loading &&
+          <span className={styles.loader}>
+            <LoadingAnimation/> 
+          </span>
+        }
+
+        <span className={styles.content}>          
           { this.props.icon && (
             <Icon 
               symbol={this.props.icon} 
@@ -73,7 +74,8 @@ class Button extends Component {
             />
           )}
           {this.props.children}
-        </button>
+        </span>
+      </button>
     );
   }
 }

@@ -1,6 +1,7 @@
 @import '../../_styles/variables.module.scss';
 
 .button {
+    position: relative;
     border-radius: 30px;
     background-color: $color-primary;
     color: $color-contrast-2;
@@ -189,4 +190,18 @@
     &:hover  {
         background-color: $color-danger;
     }
+}
+
+.isLoading{
+    .content {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+.loader {
+    position: absolute;
+    left: 50%;
+    top:50%;
+    transform: translate(-50%, -50%);
 }
