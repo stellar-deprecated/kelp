@@ -10,12 +10,11 @@
 ._wrapper {
     display: flex;
     align-items: center;
+    padding: 0 10/16+rem;
 }
 
 .runningWrapper {
-    composes: _wrapper;
-    
-    
+    composes: _wrapper;    
 }
 
 .stoppedWrapper {
@@ -24,7 +23,7 @@
     align-items: center;
     
     svg {
-        margin-right: 8px;
+        margin-right: 6px;
         fill: $color-danger;
     }
 }

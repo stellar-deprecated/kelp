@@ -70,6 +70,10 @@ class Details extends Component {
       <div>
         <div className={grid.container}>
           <ScreenHeader title="Harry the Green Plankton" backButton>
+            <PillGroup>
+              <Pill number="1" type={'warning'}/>
+              <Pill number="2" type={'error'}/>
+            </PillGroup>
             <RunStatus />
             <StartStop/>
             <Button
@@ -90,12 +94,7 @@ class Details extends Component {
               <BotAssetsInfo/>
             </div>
             <div className={styles.secondInfoGroup}>
-              <div className={styles.notificationsLine}>
-                <PillGroup>
-                  <Pill number="1" type={'warning'}/>
-                  <Pill number="2" type={'error'}/>
-                </PillGroup>
-              </div>
+              
               <div className={styles.bidAskLine}>
                 <BotBidAskInfo/>
               </div>
@@ -115,11 +114,12 @@ class Details extends Component {
               Trader Settings
             </SectionTitle>
             
-            {this.infoListItem('trading Platform', 'Information')}
-            {this.infoListItem('Trader account public key', 'SDDAHRX2JB663N3OLKZSDDAHRX2JB663N3OLKZ')}
-            {this.infoListItem('Title', 'Information')}
-            {this.infoListItem('Title', 'Information')}
-            {this.infoListItem('Title', 'Information')}
+            {this.infoListItem('Source Public key', 'SDDAHRX2JB663N3OLKZSDDAHRX2JB663N3OLKZ')}
+            {this.infoListItem('Tick interval', '300 seconds')}
+            {this.infoListItem('Randomized interval delay', '0')}
+            {this.infoListItem('Submit mode', 'both')}
+            {this.infoListItem('Delete cycles threshold', '0')}
+            {this.infoListItem('Fill tracker', 'Off')}
 
           </div>
 

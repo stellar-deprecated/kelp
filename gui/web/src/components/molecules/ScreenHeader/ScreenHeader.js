@@ -11,16 +11,16 @@ class ScreenHeader extends Component {
     return (
       <div className={styles.wrapper}>
         <div  className={styles.titleWrapper}>
-          <div className={styles.buttonWrapper}>
-            { this.props.backButton && (
+          { this.props.backButton && (
+            <div className={styles.buttonWrapper}>
               <Link to="/">
                 <Button
                 icon="back"
                 variant="transparent"
                 hsize="round"/>
               </Link>
-            )}
-          </div>
+            </div>
+          )}
           <ScreenTitle>{this.props.title}</ScreenTitle>
         </div>
         <div className={styles.childrenWrapper}>

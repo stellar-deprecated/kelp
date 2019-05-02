@@ -11,21 +11,17 @@
 }
 
 .botDetailsLine {
-    margin-bottom: 20/16+rem;
+    margin-bottom: 10/16+rem;
   }
 
 .firstInfoGroup {
     composes: _infoGroup;
-    width: 50%;
+    width: 30%;
 }
 
 .secondInfoGroup {
     composes: _infoGroup;
-    width: 50%;
-}
-
-.notificationsLine {
-    margin-bottom: 1rem;
+    width: 30%;
 }
 
 .chartWrapper {
