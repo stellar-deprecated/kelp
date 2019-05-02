@@ -11,7 +11,7 @@ import download from '../../../assets/images/ico-download.svg';
 import start from '../../../assets/images/ico-start.svg';
 import stop from '../../../assets/images/ico-stop.svg';
 import wave from '../../../assets/images/ico-wave.svg';
-import arrowDown from '../../../assets/images/ico-arrow-down.svg';
+import caretDown from '../../../assets/images/ico-caret-down.svg';
 import close from '../../../assets/images/ico-close.svg';
 import warning from '../../../assets/images/ico-alert.svg';
 import error from '../../../assets/images/ico-error.svg';
@@ -19,6 +19,8 @@ import refresh from '../../../assets/images/ico-refresh.svg';
 import remove from '../../../assets/images/ico-remove.svg';
 import options from '../../../assets/images/ico-options.svg';
 import back from '../../../assets/images/ico-arrow-back.svg';
+import chevronUp from '../../../assets/images/ico-chevron-up.svg';
+import chevronDown from '../../../assets/images/ico-chevron-down.svg';
 
 
 const viewBox = {
@@ -32,7 +34,7 @@ const viewBox = {
   start: '0 0 8 8',
   stop: '0 0 8 8',
   wave: '0 0 20 4',
-  arrowDown: '0 0 12 7',
+  caretDown: '0 0 12 12',
   close: '0 0 12 12',
   error: '0 0 50 50',
   warning: '0 0 50 50',
@@ -40,6 +42,8 @@ const viewBox = {
   remove: '0 0 11 11',
   options: '0 0 20 20',
   back: '0 0 14 14',
+  chevronUp: '0 0 14 14',
+  chevronDown: '0 0 14 14',
 }
 
 const icons = {
@@ -53,7 +57,7 @@ const icons = {
   start,
   stop,
   wave,
-  arrowDown,
+  caretDown,
   close,
   error,
   warning,
@@ -61,6 +65,8 @@ const icons = {
   remove,
   options,
   back,
+  chevronUp,
+  chevronDown,
 }
 
 class Icon extends Component {

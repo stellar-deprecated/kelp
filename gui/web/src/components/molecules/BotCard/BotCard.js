@@ -94,6 +94,19 @@ class BotCard extends Component {
             onClick={this.close}
         />
 
+        <div className={styles.sortingArrows}>
+          <Button
+              icon="chevronUp"
+              variant="transparent"
+              hsize="round"
+          />
+          <Button
+              icon="chevronDown"
+              variant="transparent"
+              hsize="round"
+          />
+        </div>
+
         <div className={styles.firstColumn}>
           <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>

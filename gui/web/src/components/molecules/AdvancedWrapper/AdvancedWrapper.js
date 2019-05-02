@@ -45,7 +45,7 @@ class AdvancedWrapper extends Component {
       <div className={classNameList}>
         <div className={this.props.headerClass}>
           <div className={styles.header} onClick={this.toggleOpen}>
-            <Icon symbol="arrowDown" width="12px" height="12px"/>
+            <Icon symbol="caretDown" width="12px" height="12px"/>
             Advanced Settings
           </div>
         </div>

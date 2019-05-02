@@ -192,6 +192,11 @@
     }
 }
 
+.content {
+    display: flex;
+    align-items: center;
+}
+
 .isLoading{
     .content {
         opacity: 0;

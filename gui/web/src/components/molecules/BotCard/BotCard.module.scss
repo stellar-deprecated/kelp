@@ -22,6 +22,11 @@ $small-spacing: 3px;
   color: $color-contrast-1;
   padding: 12/16+rem 22/16+rem;
   display: flex;
+  &:hover {
+    .sortingArrows {
+      opacity: 1;
+    }
+  }
 }
 
 ._status {
@@ -51,6 +56,20 @@ $small-spacing: 3px;
   top: 2px;
   border: 0;
   background-color: transparent;
+}
+
+.sortingArrows {
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+  position: absolute;
+  padding: 0 0.5rem;
+  right: -2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  bottom: 0;
 }
 
 .title {
@@ -106,12 +125,9 @@ $small-spacing: 3px;
   }
 }
 
-
-
 .chartThumb {
   max-width: 170px;
 }
-
 
 .statusDetails {
   margin-bottom: 1rem;
