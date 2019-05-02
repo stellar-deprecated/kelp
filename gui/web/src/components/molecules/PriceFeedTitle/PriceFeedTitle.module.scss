@@ -17,7 +17,24 @@
     margin: 0 1rem;
 }
 
+.valueWrapper {
+    min-width: 60/16+rem;
+    position: relative;
+}
+
 .value {
     composes: _result;
     margin-right: 1rem;
+    transition: all 0.3s ease-out;
+
+    &.isLoading {
+        visibility: hidden;
+        opacity: 0.2;
+    }
+}
+
+.loaderWrapper {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }

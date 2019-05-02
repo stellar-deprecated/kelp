@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import styles from './StartStop.module.scss';
-import Icon from '../Icon/Icon';
 import Button from '../Button/Button';
 
 

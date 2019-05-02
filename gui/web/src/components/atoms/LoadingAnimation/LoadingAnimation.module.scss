@@ -1,0 +1,55 @@
+@import '../../_styles/variables.module.scss';
+
+$color:$color-contrast-1;
+$size: 12px;
+$height: 20px;
+$border-size: 8px;
+$gap: 6px;
+$duration: 0.8s;
+$align: null;
+
+.loader {
+  $unique-name: unique-id();
+  width: $size;
+  height: $size;
+  margin: 0 $size+$gap;
+  border-radius: 50%;
+  position: relative;
+  animation: loaderAnimation $duration ease alternate infinite;
+  animation-delay: ($duration / 5) * 2;
+
+  &::after,
+  &::before {
+    content: '';
+    position: absolute;
+    width: $size;
+    height: $size;
+    border-radius: 50%;
+    animation: loaderAnimation $duration ease alternate infinite;
+  }
+
+  &::before {
+    left: -($size + $gap);
+    animation-delay: ($duration / 5) * 1;
+  }
+
+  &::after {
+    right: -($size + $gap);
+    animation-delay: ($duration / 5) * 3;
+  }
+
+
+    top: -$size;
+
+  @keyframes loaderAnimation {
+    0% {
+      box-shadow: 0 $size 0 (-$size) $color;
+    }
+
+    100% {
+      box-shadow: 0 $size 0 $color;
+    }
+  }
+}
+
+

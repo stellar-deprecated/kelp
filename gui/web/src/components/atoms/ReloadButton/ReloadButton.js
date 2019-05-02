@@ -7,6 +7,7 @@ class ReloadButton extends Component {
   render() {
     return (
       <Button 
+        onClick={this.props.onClick}
         icon="refresh"
         className={styles.button}
         variant="transparent"
