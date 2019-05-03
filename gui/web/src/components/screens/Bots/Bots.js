@@ -1,11 +1,8 @@
 import React, { Component } from 'react';
-import styles from './Bots.molecule.scss';
 import BotCard from '../../molecules/BotCard/BotCard';
 import Button from '../../atoms/Button/Button';
 import EmptyList from '../../molecules/EmptyList/EmptyList';
 import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
-import { BrowserRouter as Router, Route, Link } from "react-router-dom";
-
 import grid from '../../_styles/grid.module.scss';
 import Modal from '../../molecules/Modal/Modal';
 import Welcome from '../../molecules/Welcome/Welcome';
@@ -78,8 +75,9 @@ class Bots extends Component {
                   onClick={this.gotoForm}>New Bot
                 </Button>
               </ScreenHeader>
-              {this.state.bots.map(bot => (
-                <BotCard 
+              {this.state.bots.map((bot, index) => (
+                <BotCard
+                  key={index} 
                   name={bot.name}
                   running={bot.running}
                   test={bot.test}

@@ -9,7 +9,6 @@ import SegmentedControl from '../../atoms/SegmentedControl/SegmentedControl';
 import SectionDescription from '../../atoms/SectionDescription/SectionDescription';
 import Button from '../../atoms/Button/Button';
 import Select from '../../atoms/Select/Select';
-import Tooltip from '../../atoms/Tooltip/Tooltip';
 import FieldItem from '../FieldItem/FieldItem';
 import ScreenHeader from '../ScreenHeader/ScreenHeader';
 import AdvancedWrapper from '../AdvancedWrapper/AdvancedWrapper';
@@ -19,7 +18,6 @@ import PriceFeedSelector from '../PriceFeedSelector/PriceFeedSelector';
 import PriceFeedTitle from '../PriceFeedTitle/PriceFeedTitle';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import RepeaterField from '../RepeaterField/RepeaterField';
-import PopoverMenu from '../PopoverMenu/PopoverMenu';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Form extends Component {

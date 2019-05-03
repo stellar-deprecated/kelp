@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import styles from './RepeaterField.module.scss';
-import classNames from 'classnames';
 import RemoveButton from '../../atoms/RemoveButton/RemoveButton';
 import Button from '../../atoms/Button/Button';
 

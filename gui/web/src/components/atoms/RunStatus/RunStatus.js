@@ -4,8 +4,6 @@ import Icon from '../Icon/Icon';
 
 class RunStatus extends Component {  
   render() {
-    let statusComponent;
-
     if (this.props.timeRunning) {
       return ( 
         <div className={styles.runningWrapper}>

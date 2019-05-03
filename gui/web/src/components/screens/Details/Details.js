@@ -198,7 +198,7 @@ class Details extends Component {
               {this.infoListItem('Amount tolerance', '0%')}
               {this.infoListItem('Rate offset percentage', '0%')}
               {this.infoListItem('Rate offset', '0')}
-              {this.infoListItem('Use ra offset percent. first', 'On')}
+              {this.infoListItem('Use rate offset percent. first', 'On')}
             </div>  
           </div>
           

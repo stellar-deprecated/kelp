@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import styles from './BotExchangeInfo.module.scss';
-import Icon from '../Icon/Icon';
 import Badge from '../Badge/Badge';
-
 
 
 

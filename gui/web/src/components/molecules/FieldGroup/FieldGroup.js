@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import styles from './FieldGroup.module.scss';
-import classNames from 'classnames';
 
 class FieldGroup extends Component {
   static defaultProps = {
@@ -8,7 +7,6 @@ class FieldGroup extends Component {
   }
 
   render() {
-
     return (
       <div className={styles.wrapper}>
         {this.props.groupTitle && (

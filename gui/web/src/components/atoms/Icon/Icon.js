@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import styles from './Icon.module.scss';
 
 import day from '../../../assets/images/ico-day.svg';
 import help from '../../../assets/images/ico-help.svg';

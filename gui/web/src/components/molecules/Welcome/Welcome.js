@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import styles from './Welcome.module.scss';
 import classNames from 'classnames';
-import Icon from '../../atoms/Icon/Icon'; 
 import Button from '../../atoms/Button/Button';
 import symbol from '../../../assets/images/kelp-symbol.svg';
 

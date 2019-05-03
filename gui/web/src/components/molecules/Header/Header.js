@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
 import logo from '../../../assets/images/kelp-logo.svg';
 import grid from '../../_styles/grid.module.scss';
-import button from '../../atoms/Button/Button.module.scss';
 import styles from './Header.module.scss';
-import Icon from '../../atoms/Icon/Icon';
 import Button from '../../atoms/Button/Button';
 
 

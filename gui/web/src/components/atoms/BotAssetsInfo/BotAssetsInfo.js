@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import styles from './BotAssetsInfo.module.scss';
-import Icon from '../Icon/Icon';
 import InfoIcon from '../InfoIcon/InfoIcon';
 
 

@@ -40,7 +40,7 @@ class Button extends Component {
   render() {
     const iconOnly = this.props.children ? null : styles.iconOnly;
     const isLoading = this.props.loading ? styles.isLoading : null;
-    const iconSize = this.props.hsize == 'round' ? iconSizesRound[this.props.size] : iconSizes[this.props.size];
+    const iconSize = this.props.hsize === 'round' ? iconSizesRound[this.props.size] : iconSizes[this.props.size];
 
     const classNameList = classNames(
       this.props.className,

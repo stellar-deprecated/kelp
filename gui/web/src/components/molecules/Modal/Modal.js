@@ -75,8 +75,8 @@ class Modal extends Component {
 
           {this.props.bullets.length > 0 && (
             <ul className={bulletsClasses}>
-             {this.props.bullets.map(item => (
-              <li>{item}</li>
+             {this.props.bullets.map((item, index) => (
+              <li key={index}>{item}</li>
              ))}
             </ul>
           )}

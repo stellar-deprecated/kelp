@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import styles from './PriceFeedFormula.module.scss';
-import classNames from 'classnames';
 import Label from '../../atoms/Label/Label';
 
 class PriceFeedFormula extends Component {
