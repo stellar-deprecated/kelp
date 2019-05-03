@@ -4,8 +4,6 @@ import Button from '../../atoms/Button/Button';
 import EmptyList from '../../molecules/EmptyList/EmptyList';
 import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import grid from '../../_styles/grid.module.scss';
-import Modal from '../../molecules/Modal/Modal';
-import Welcome from '../../molecules/Welcome/Welcome';
 
 
 const placeaholderBots = [
@@ -54,51 +52,49 @@ class Bots extends Component {
   }
 
   render() {
+    let inner = <EmptyList autogenerateFn={this.createBot} createBotFn={this.createBot}/>;
+    if (this.state.bots.length) {
+      let screenHeader = (
+        <ScreenHeader title={'My Bots'}>
+          <Button 
+            variant="faded"
+            icon="download"
+            hsize="short"
+            onClick={this.createBot}
+          />
+          <Button 
+            variant="faded" 
+            hsize="short"
+            icon="add" 
+            onClick={this.gotoForm}
+            children="New Bots"/>
+        </ScreenHeader>
+      );
+
+      let cards = this.state.bots.map((bot, index) => (
+        <BotCard
+          key={index} 
+          name={bot.name}
+          running={bot.running}
+          test={bot.test}
+          warnings={bot.warnings}
+          errors={bot.errors}
+        />
+      ));
+
+      inner = (
+        <div>
+          {screenHeader}
+          {cards}
+        </div>
+      );
+    }
 
     return (
       <div>
         <div className={grid.container}> 
-          { this.state.bots.length ? (
-            <div>
-              <ScreenHeader title={'My Bots'}>
-                <Button 
-                  variant="faded"
-                  icon="download"
-                  hsize="short"
-                  onClick={this.createBot}
-                > 
-                </Button>
-                <Button 
-                  variant="faded" 
-                  hsize="short"
-                  icon="add" 
-                  onClick={this.gotoForm}>New Bot
-                </Button>
-              </ScreenHeader>
-              {this.state.bots.map((bot, index) => (
-                <BotCard
-                  key={index} 
-                  name={bot.name}
-                  running={bot.running}
-                  test={bot.test}
-                  warnings={bot.warnings}
-                  errors={bot.errors}
-                />
-              ))}
-          </div>
-          ) : (
-            <EmptyList onClick={this.createBot}/>
-          )}
+          {inner}
         </div>
-
-        <Modal 
-          type="error"
-          title="Harry the Green Plankton has two warnings:"
-          actionLabel="Go to bot settings"
-          bullets={['Funds are low', 'Another warning example']}
-        />
-
-        <Welcome/>
       </div>
     );
   }
