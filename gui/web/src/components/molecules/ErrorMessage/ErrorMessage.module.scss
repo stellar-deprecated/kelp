@@ -1,0 +1,24 @@
+@import '../../_styles/variables.module.scss';
+
+$arrow-size: 8px;
+
+.wrapper {
+    max-width: 400/16+rem;
+    background-color: $color-danger;
+    color: $color-contrast-1;
+    border-radius: 2px;
+    padding: 15/16+rem 14/16+rem;
+    position: relative;
+}
+
+.title {
+    margin: 0;
+    font-size: 14/16+rem;
+    margin-bottom: 8/16+rem;
+}
+
+.text {
+    margin: 0;
+    font-size: 14/16+rem;
+    font-weight: 200;
+}

@@ -1,0 +1,95 @@
+@import '../../_styles/variables.module.scss';
+
+
+.mainInfo {
+    display: flex;
+}
+
+._infoGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.botDetailsLine {
+    margin-bottom: 10/16+rem;
+  }
+
+.firstInfoGroup {
+    composes: _infoGroup;
+    width: 30%;
+}
+
+.secondInfoGroup {
+    composes: _infoGroup;
+    width: 30%;
+}
+
+.chartWrapper {
+    img {
+        max-width: 100%;
+    }
+}
+
+// Componets for the settings read-only
+
+.title {
+    margin: 2rem 0;
+}   
+
+.fullInfoWrapper {
+    background-color: $color-base-4;
+    padding-top: 2rem;
+    margin-top: 3rem;
+}
+
+// Advanced
+
+.advancedWrapper {
+    background-color: $color-base-3;
+    padding: 1.5rem 0 2rem 0;
+    margin-top: 2rem;
+}
+
+.advancedTitle {
+    color: $color-contrast-1;
+    font-size: 14/16+rem;
+    font-weight: 200;
+    margin-bottom: 2rem;
+}
+
+
+// Item
+
+.item {
+    margin-top: 13/16+rem;
+}
+
+.divider {
+    display: block;
+    margin: 2rem 0;
+    max-width: 200px;
+    border-bottom: 1px solid $color-contrast-5;
+}
+
+.spacer {
+    display: block;
+    height: 1.5rem;
+}
+
+
+.groupTitle {
+    color: $color-contrast-1;
+    margin: 0;
+}
+
+.label {
+    color: $color-contrast-2;
+    font-size: 13/16+rem;
+}
+
+.value {
+    color: $color-contrast-1;
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
+    font-size: 13/16+rem;
+}

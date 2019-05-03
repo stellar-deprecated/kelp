@@ -1,0 +1,38 @@
+@import '../../_styles/variables.module.scss';
+
+$spacing-small: 3/16+rem;
+
+._textMono {
+    font-family: $typeface-secondary;
+    color: $color-contrast-2;
+    letter-spacing: -0.5px;
+    font-size: 13/16 +rem;
+}
+
+._assetLine {
+    display: flex;
+    align-items: center;
+}
+
+.baseAssetLine {
+    composes: _assetLine;
+    margin-bottom: $spacing-small;
+}
+
+.quoteAssetLine {
+    composes: _assetLine;
+}
+
+.assetHelper {
+    width: 13/16+rem;
+}
+
+.assetCode {
+    composes: _textMono;
+    margin-right:0.3rem;
+}
+
+.assetValue {
+    composes: _textMono;
+    margin-left: 1rem;
+}

@@ -1,0 +1,21 @@
+@import '../../_styles/variables.module.scss';
+
+._badge {
+    font-size: 9/16+rem;
+    text-transform: uppercase;
+    padding: 3px 6px 2px 6px;
+    border-radius: 20px;
+    text-shadow: 0 0.5 0 rgba($color-base-1, 20%);
+    margin-right: 10px;
+    color: $color-contrast-1;
+}
+
+.test {
+    composes: _badge;
+    background-color: $color-tag-test;
+}
+
+.main {
+    composes: _badge;
+    background-color: $color-tag-main;
+}

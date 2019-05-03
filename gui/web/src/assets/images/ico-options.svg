@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>ico-options</title>
+    <desc>Created with Sketch.</desc>
+    <g id="ico" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M2,12 C0.8954305,12 0,11.1045695 0,10 C0,8.8954305 0.8954305,8 2,8 C3.1045695,8 4,8.8954305 4,10 C4,11.1045695 3.1045695,12 2,12 Z M10,12 C8.8954305,12 8,11.1045695 8,10 C8,8.8954305 8.8954305,8 10,8 C11.1045695,8 12,8.8954305 12,10 C12,11.1045695 11.1045695,12 10,12 Z M18,12 C16.8954305,12 16,11.1045695 16,10 C16,8.8954305 16.8954305,8 18,8 C19.1045695,8 20,8.8954305 20,10 C20,11.1045695 19.1045695,12 18,12 Z" id="Combined-Shape" fill="#52525F"></path>
+    </g>
+</svg>

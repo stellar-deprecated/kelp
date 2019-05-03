@@ -1,0 +1,18 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    padding-left: 1rem;
+    border-left: 1px solid $color-contrast-5;
+    margin-top: 30/16+rem;
+    margin-bottom: 10/16+rem;
+}
+
+.title {
+    font-weight: normal;
+    color: $color-contrast-1;
+    font-size: 1rem;
+    margin-bottom: 0;
+    margin-top: 0;
+}

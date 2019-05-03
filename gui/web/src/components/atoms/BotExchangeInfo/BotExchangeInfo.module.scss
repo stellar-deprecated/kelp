@@ -1,0 +1,13 @@
+@import '../../_styles/variables.module.scss';
+
+.exchange {
+    color: $color-contrast-1;
+    font-size: 14/16+rem;
+}
+
+.strategy {
+    font-family: $typeface-secondary;
+    color: $color-contrast-2;
+    letter-spacing: -0.5px;
+    font-size: 13/16 +rem;
+}

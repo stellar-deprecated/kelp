@@ -1,0 +1,134 @@
+@import '../../_styles/variables.module.scss';
+
+$card-border-radius: 3px;
+$card-border-size: 1px;
+$small-spacing: 3px;
+
+// Compose classes
+
+
+.line {
+  margin-bottom: $small-spacing;
+}
+
+// Elements classes
+
+.card {
+  margin-top: 1.5rem;
+  position: relative;
+  background-color: $color-base-4;
+  border-radius: $card-border-radius;
+  border: $card-border-size solid rgba($color-contrast-4, .04);
+  color: $color-contrast-1;
+  padding: 12/16+rem 22/16+rem;
+  display: flex;
+  &:hover {
+    .sortingArrows {
+      opacity: 1;
+    }
+  }
+}
+
+._status {
+  display: block;
+  position: absolute;
+  left: -$card-border-size;
+  top: -$card-border-size;
+  bottom: -$card-border-size;
+  width: 6px;
+  border-radius: $card-border-radius 0 0 $card-border-radius;
+  transition: background-color 0.3s ease-out;
+}
+
+.statusRunning {
+  composes: _status;
+  background-color: $color-success;
+}
+
+.statusStopped {
+  composes: _status;
+  background-color: $color-danger;
+}
+
+.optionsMenu {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  border: 0;
+  background-color: transparent;
+}
+
+.sortingArrows {
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+  position: absolute;
+  padding: 0 0.5rem;
+  right: -2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  bottom: 0;
+}
+
+.title {
+  font-size: 18/16 + rem;
+  font-weight: 400;
+  margin: 0;
+  margin-bottom: 0.3rem;
+}
+
+.botDetailsLine {
+  margin-bottom: 20px;
+}
+
+.notificationsLine {
+  composes: line;
+  flex-grow: 1;
+}
+
+._column {
+  display: flex;
+  flex-direction: column;
+}
+
+.firstColumn {
+  composes: _column;
+  width: 35%;
+}
+
+.secondColumn {
+  composes: _column;
+  width: 25%;
+  align-self: stretch;
+}
+
+.thirdColumn {
+  composes: _column;
+  width: 20%;
+  justify-content: center;
+}
+
+.fourthColumn {
+  composes: _column;
+  width: 20%;
+  align-items: center;
+  justify-content: center;
+
+  > * {
+    margin-bottom: 1rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.chartThumb {
+  max-width: 170px;
+}
+
+.statusDetails {
+  margin-bottom: 1rem;
+}

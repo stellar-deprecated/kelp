@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="13px" height="13px" viewBox="0 0 13 13" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>ico-add</title>
+    <desc>Created with Sketch.</desc>
+    <g id="ico" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="Rectangle" fill="#CECECE" x="5.75" y="1" width="1.5" height="11" rx="0.75"></rect>
+        <rect id="Rectangle" fill="#CECECE" transform="translate(6.500000, 6.500000) rotate(-270.000000) translate(-6.500000, -6.500000) " x="5.75" y="1" width="1.5" height="11" rx="0.75"></rect>
+    </g>
+</svg>

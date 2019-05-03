@@ -1,0 +1,16 @@
+@import '../../_styles/variables.module.scss';
+
+.label {
+    color: $color-contrast-2;
+    font-size: 14/16+rem;
+}
+
+.optional {
+    font-size: 12/16+rem;
+    color: $color-contrast-4;
+    margin-left: 6/16+rem;
+}
+
+.padding {
+    padding-bottom: 0.5rem;
+}

@@ -1,0 +1,62 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+    position: relative;
+    display: flex;
+    align-items: flex-end; 
+}
+
+.input {
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    border-bottom: 1px solid $color-contrast-5;
+    color: $color-contrast-1;
+    outline: 0;
+    transition: all 0.3s ease-out;
+    margin-bottom: 3/16+rem;
+    margin-top: 6/16+rem;
+
+    &:hover {
+        border-color: $color-contrast-4;
+    }
+    &:focus {
+        border-color: $color-primary;
+        box-shadow: 0 1px 0 0 $color-primary;
+    }
+}
+
+.suffix {
+    color: $color-contrast-3;
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
+    margin: 0;
+    padding: 0 0 2/16+rem 5/16+rem;
+    font-size: 13/16+rem;
+}
+
+.inputError {
+    border-color: $color-danger;
+}
+
+.medium {
+    font-size: 13/16+rem;
+    padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem; 
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
+}
+
+.large {
+    font-size: 21/16+rem;
+    padding: 7/16+rem 5/16+rem 0 5/16+rem; 
+    font-family: $typeface-primary;
+    font-weight: 200;
+}
+
+.errorMessage {
+    position: absolute;
+    margin: 0;
+    bottom: -0.8rem;
+    color: $color-danger;
+    font-size: 12/16+rem;
+}

@@ -1,0 +1,97 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+}
+
+.isOpened {
+    opacity: 1;
+    visibility: visible;
+    .window {
+        transform: translateY(0);
+    }
+}
+
+.backdrop {
+    background-color: $color-base-2;
+    opacity: 0.8;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.window {
+    transition: transform 0.3s ease-out;
+    transform: translateY(-10%);
+    display: flex;
+    align-items: stretch;
+    flex-direction: row;
+    background-color: $color-base-3;
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 1;
+    width: 90%;
+    max-width: 700/16+rem;
+    box-shadow: 0 20px 30px 0 rgba($color-base-1, 0.3%), 0 10px 50px 0  rgba($color-base-1, 0.2%);
+}
+
+.closeButton {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
+.image {
+    background-image: url('../../../assets/images/welcome-bg.png');
+    background-size: cover;
+    background-position: center;
+    width: 43%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.content {
+    width: 57%;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.title {
+    font-size: 20/16+rem;
+    margin-top: 1.5rem;
+    color: $color-contrast-1;
+    font-weight: 200;
+}
+
+.version {
+    color: $color-contrast-4;
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5/16+rem;
+    font-size: 11/16+rem;
+    padding-left: 4px;
+}
+
+.text {
+    font-size: 13/16+rem;
+    line-height: 23/16+rem;
+    margin: 1rem 0;
+    color: $color-contrast-2;
+}
+
+.footer {
+    margin-top: 4rem;
+}

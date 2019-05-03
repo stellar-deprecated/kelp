@@ -1,0 +1,85 @@
+@import '../../_styles/variables.module.scss';
+
+._icon {
+    display: inline-block;
+    border: 1px solid $color-success;
+    width: 9px;
+    height: 9px;  
+}
+
+._wrapper {
+    display: flex;
+    align-items: center;
+    padding: 0 10/16+rem;
+}
+
+.runningWrapper {
+    composes: _wrapper;    
+}
+
+.stoppedWrapper {
+    composes: _wrapper;
+    display: flex;
+    align-items: center;
+    
+    svg {
+        margin-right: 6px;
+        fill: $color-danger;
+    }
+}
+
+.runningIcon {
+    composes: _icon;
+    display: inline-block;
+    border: 1px solid $color-success;
+    width: 10px;
+    height: 10px;
+    border-radius: 30px;
+    margin-right: 7px;
+    overflow: hidden;
+    position: relative;
+
+    svg {
+        position: absolute;
+        left: 0;
+        top: 3px;
+        animation-name: runAnimation;
+        animation-duration: 2s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+    }
+}
+
+@keyframes runAnimation {
+    from {
+        transform: translateX(-45%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.stoppedIcon {
+    display: inline-block;
+    border: 1px solid $color-danger;
+    width: 9px;
+    height: 9px;
+    border-radius: 30px;
+    margin-right: 7px;
+}
+
+._label {
+    font-family: $typeface-secondary;
+    font-size: 11/16 +rem;
+}
+
+.runningLabel {
+    composes: _label;
+    color: $color-success;
+}
+
+.stoppedLabel {
+    composes: _label;
+    color: $color-danger;
+}
+

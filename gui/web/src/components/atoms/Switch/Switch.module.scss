@@ -1,0 +1,47 @@
+@import '../../_styles/variables.module.scss';
+
+$switch-width: 48px;
+$switch-height: 24px;
+$switch-padding: 2px;
+
+
+.switch {
+    display: block;
+    margin: 0;
+    width: $switch-width;
+    height: $switch-height;
+    position: relative;
+
+    &:before {
+        border-radius: $switch-height;
+        width: 100%;
+        height: 100%;
+        display: block;
+        content: "";
+        background-color: $color-contrast-5;
+        transition: background 0.3s ease-out; 
+    }
+
+    &:after {
+        position: absolute;
+        left: $switch-padding;
+        top: $switch-padding;
+        width: $switch-height - $switch-padding*2;
+        height: $switch-height - $switch-padding*2;
+        border-radius: $switch-height;
+        display: block;
+        content: "";
+        background-color: $color-contrast-2;
+        transition: transform 0.3s ease-out;
+    }
+}
+
+.switch:checked {
+    &:before {
+        background-color: $color-primary;
+    }
+    &:after {
+        left: auto;
+        transform: translateX($switch-width - $switch-height + $switch-padding);
+    }
+}

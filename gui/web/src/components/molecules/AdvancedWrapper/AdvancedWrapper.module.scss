@@ -1,0 +1,49 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+    margin-top: 2rem;
+    margin-bottom: 4rem;
+    transition: background-color 0.3s ease-out;
+}
+
+.header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: $color-contrast-2;
+    font-size: 13/16+rem;
+    padding: 20/16+rem 0 0 0;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    svg {
+        margin-right: 0.5rem;
+        fill: $color-contrast-2;
+    }
+}
+
+
+
+.content {
+    overflow: hidden;
+    transition: max-height 0.5s ease-out;
+    max-height: 0;
+    opacity: 0;
+}
+
+.isOpened {
+    background-color: $color-base-2;
+    .content {
+        opacity: 1;
+        max-height: 3400px;
+    }
+    svg {
+        transform: rotate(180deg);
+    }
+}
+
+.contentWrapper {
+    padding: 10/16+rem 0 80/16+rem 0;
+}

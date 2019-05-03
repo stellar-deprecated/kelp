@@ -1,0 +1,39 @@
+@import '../../_styles/variables.module.scss';
+
+.header {
+  background-color: $color-base-2;
+  border-bottom: 1px solid $color-base-1;
+}
+
+.headerWrapper {
+  height: 65/16+rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logoWrapper {
+  display: flex;
+  align-items: flex-end;
+}
+
+.logo {
+  width: 75px;
+}
+
+.version {
+  color: $color-contrast-4;
+  font-family: $typeface-secondary;
+  letter-spacing: -0.5/16+rem;
+  font-size: 11/16+rem;
+  padding-left: 4px;
+  padding-bottom: 2px;
+
+}
+
+.iconMenu {
+  display: flex;
+  > * {
+    margin-left: 0.5rem;
+  }
+}

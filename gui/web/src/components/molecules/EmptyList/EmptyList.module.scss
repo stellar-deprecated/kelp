@@ -1,0 +1,32 @@
+@import '../../_styles/variables.module.scss';
+
+.empty {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 15vh;
+}
+
+.icon {
+  border-radius: 100%;
+}
+
+.title {
+  color: $color-contrast-1;
+  font-size: 18/16+rem;
+  font-weight: 200;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+.primary-action {
+}
+
+.separator {
+  color: $color-contrast-2;
+  margin: 1.7rem;
+}
+
+.secondary-action {
+}

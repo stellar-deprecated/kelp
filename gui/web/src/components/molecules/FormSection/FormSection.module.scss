@@ -1,0 +1,31 @@
+@import '../../_styles/variables.module.scss';
+
+$arrow-size: 8px;
+
+.tipWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.tip {
+    color: $color-contrast-2;
+    font-size: 13/16+rem;
+    font-weight: 200;
+    background-color: $color-base-4;
+    line-height: 18/16+rem;
+    padding: 0.7rem 1rem;
+    border-radius: 2px;
+    position: relative;
+
+    &:before {
+        content: "";
+        width:0;
+        height: 0;
+        border: $arrow-size solid transparent;
+        border-right: $arrow-size solid $color-base-4;
+        position: absolute;
+        left: -$arrow-size*2;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+}

@@ -1,0 +1,40 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5/16+rem;
+}
+
+._result {
+    font-size: 14/16+rem;
+    font-family: $typeface-secondary;
+    color: $color-contrast-2;
+}
+
+.equals {
+    composes: _result;
+    margin: 0 1rem;
+}
+
+.valueWrapper {
+    min-width: 60/16+rem;
+    position: relative;
+}
+
+.value {
+    composes: _result;
+    margin-right: 1rem;
+    transition: all 0.3s ease-out;
+
+    &.isLoading {
+        visibility: hidden;
+        opacity: 0.2;
+    }
+}
+
+.loaderWrapper {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}

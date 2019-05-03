@@ -1,0 +1,13 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    margin-top: 33/16+rem;
+}
+
+.inline {
+    flex-direction: row;
+    align-items: center;
+    >:first-child {
+        padding-right: 13/16+rem;
+    }
+}

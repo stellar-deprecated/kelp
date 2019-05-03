@@ -1,0 +1,15 @@
+@import '../../_styles/variables.module.scss';
+
+.box {
+    background-color: $color-base-4;
+    display: inline-block;
+    padding: 1rem 1.5rem;
+    margin-top: 27/16+rem;
+}
+
+.formula {
+    padding-top: 14/16+rem;
+    font-size: 14/16+rem;
+    font-family: $typeface-secondary;
+    color: $color-contrast-2;
+}

@@ -1,0 +1,47 @@
+@import '../../_styles/variables.module.scss';
+
+$arrow-size: 8px;
+
+.wrapper {
+    max-width: 500/16+rem;
+    background-color: $color-base-5;
+    border-radius: 2px;
+    padding: 0.5rem 0.7rem;
+    position: relative;
+
+    &:before {
+        content: "";
+        width:0;
+        height: 0;
+        border: $arrow-size solid transparent;
+        border-bottom: $arrow-size solid $color-base-5;
+        position: absolute;
+        top: -$arrow-size*2;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+.group {
+    margin-bottom: 1rem;
+}
+
+.title {
+    font-size: 13/16+rem;
+    color: $color-contrast-2;
+    margin: 5/16+rem;
+}
+
+.info {
+    font-size: 13/16+rem;
+    color: $color-contrast-1;
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
+    margin: 5/16+rem;
+}
+
+.text {
+    font-size: 13/16+rem;
+    color: $color-contrast-2;
+    margin: 5/16+rem;
+}

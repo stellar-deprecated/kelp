@@ -1,0 +1,84 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+}
+
+.isOpened {
+    opacity: 1;
+    visibility: visible;
+    .window {
+        transform: translateY(0);
+    }
+}
+
+.backdrop {
+    background-color: $color-base-2;
+    opacity: 0.8;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.window {
+    transition: transform 0.3s ease-out;
+    transform: translateY(-10%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: $color-base-3;
+    position: relative;
+    z-index: 1;
+    border-radius: 4px;
+    max-width: 400/16+rem;
+    min-width: 320/16+rem;
+    padding: 2rem 3rem 2rem 3rem; 
+    box-shadow: 0 20px 30px 0 rgba($color-base-1, 0.3%), 0 10px 50px 0  rgba($color-base-1, 0.2%);
+}
+
+.closeButton {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
+.title {
+    font-size: 1rem;
+    margin-top: 1.5rem;
+    color: $color-contrast-1;
+    font-weight: 200;
+    text-align: center;
+}
+
+.bullets {
+    text-align: left;
+    font-size: 12/16+rem;
+    padding: 0;
+    margin: 0.5rem;
+    color: $color-contrast-2;
+
+    &.warning {
+        color: $color-warning;
+    }
+
+    &.error {
+        color: $color-danger;
+    }
+}
+
+
+.footer {
+    margin-top: 2rem;
+}

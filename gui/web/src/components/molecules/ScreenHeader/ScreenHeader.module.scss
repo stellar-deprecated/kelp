@@ -1,0 +1,21 @@
+@import '../../../components/_styles/variables.module.scss';
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    margin: 2rem 0 1.5rem 0;
+    justify-content: space-between;
+}
+
+.titleWrapper, .childrenWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.childrenWrapper > * {
+    margin-left: 8/16+rem;
+}
+
+.buttonWrapper {
+    margin-right: 10px;
+}

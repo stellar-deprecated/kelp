@@ -1,0 +1,8 @@
+@import '../../_styles/variables.module.scss';
+
+.title {
+    font-size: 24/16+rem;
+    font-weight: 200;
+    color: $color-contrast-1;
+    margin: 0;
+}

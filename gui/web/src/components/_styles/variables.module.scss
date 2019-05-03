@@ -1,0 +1,36 @@
+/* 
+* Color definitions
+*/
+
+// Base colors are mainly used for background
+$color-base-1: #000000;
+$color-base-2: #141415;
+$color-base-3: #17171B;
+$color-base-4: #1B1B23;
+$color-base-5: #242433;
+
+
+// Base colors are mainly used for text over the bg color
+$color-contrast-1: #FFFFFF;
+$color-contrast-2: #CECECE;
+$color-contrast-3: #919197;
+$color-contrast-4: #5F6274;
+$color-contrast-5: #414556;
+
+
+// Colors used across the app
+$color-success: #00AA46;
+$color-primary: #431F73;
+$color-danger: #CA3334;
+$color-warning: #FF8900;
+
+// Specific component colors
+$color-tag-test: #FF9900;
+$color-tag-main: #006CFF;
+
+/* 
+* Font definitions
+*/
+
+$typeface-primary: "SuisseIntl", "Roboto", "Helvetica Neue", sans-serif;
+$typeface-secondary: 'SuisseIntlMono', "Roboto", "Helvetica Neue", sans-serif;

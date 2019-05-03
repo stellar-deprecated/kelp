@@ -1,0 +1,212 @@
+@import '../../_styles/variables.module.scss';
+
+.button {
+    position: relative;
+    border-radius: 30px;
+    background-color: $color-primary;
+    color: $color-contrast-2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color .15s ease-in-out, 
+                background-color .15s ease-in-out,
+                border-color .15s ease-in-out,
+                box-shadow .15s ease-in-out;
+    border: 0;
+    display: block;
+
+    &:hover {
+        background-color: darken($color-primary, 5%);
+    }
+
+    &:focus {
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.5);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        background-color: $color-primary;
+    }
+
+    svg {
+        transition: fill 0.3s ease-out;
+        vertical-align: middle;
+        margin-right: 8/16+rem;
+        fill: $color-contrast-2
+    }
+}
+
+.iconOnly {
+    svg {
+        margin-right: 0;
+        display: block;
+    }
+}
+
+// Sizes
+
+.small {
+    font-size: 12/16+rem;
+    padding: 6px 15px;
+    font-family: 'SuisseIntl';
+
+    &.round {
+        padding: 7px 7px;
+        min-height: auto;
+    }
+}
+
+.medium {
+    font-size: 14/16+rem;
+    padding: 10px 30px;
+    font-family: 'SuisseIntl';
+    min-height: 37px;
+
+    &.short {
+        padding-left: 20px; 
+        padding-right: 20px;
+    }
+
+    &.round {
+        padding: 7px 7px;
+        min-height: auto;
+    }
+}
+
+.large {
+    font-size: 15/16+rem;
+    padding: 15px 25px;
+    font-family: 'SuisseIntl';
+
+    &.round {
+        padding: 7px 7px;
+        min-height: auto;
+    }
+}
+
+
+
+
+// Variants
+
+.faded {
+    composes: button;
+    background-color: $color-base-5;
+    font-size: 14/16+rem;
+    color: $color-contrast-2;
+
+    &:disabled {
+        background-color: $color-base-5;
+    }
+}
+
+.danger {
+    composes: button;
+    background-color: $color-danger;
+    font-size: 14/16+rem;
+    color: $color-contrast-2;
+    
+    &:hover {
+        background-color: darken($color-danger, 8%);
+    }
+
+    &:disabled {
+        background-color: $color-danger;
+    }
+}
+
+.link {
+    composes: button;
+    color: $color-contrast-2;
+    font-size: 14/16+rem;
+    background: none;
+    text-decoration: underline;
+
+    &:hover {
+        color: $color-contrast-1;
+    }
+
+    &:focus {
+        box-shadow: none;
+    }
+
+    &:disabled {
+        color: $color-contrast-2;
+    }
+}
+
+.transparent {
+    composes: button;
+    background: transparent;
+
+    &:hover {
+        background-color: $color-base-5;
+    }
+
+    &:active {
+        background-color: $color-base-4;
+    }
+
+    &:focus {
+        box-shadow: none;
+    }
+    
+    &:disabled {
+        background: transparent;
+    }
+    
+}
+
+._startStop {
+    background-color: $color-base-2;
+    color: $color-contrast-4;
+
+    svg {
+        fill: $color-contrast-4;
+    }
+
+    &:hover  {
+        color: $color-contrast-1;
+        svg {
+            fill: $color-contrast-1;
+        }
+    }
+
+    &:focus {
+        outline: 0;
+        box-shadow: none;
+    }
+}
+
+.start {
+    composes: _startStop;
+    &:hover  {
+        background-color: $color-success;
+    }
+}
+
+.stop {
+    composes: _startStop;
+    &:hover  {
+        background-color: $color-danger;
+    }
+}
+
+.content {
+    display: flex;
+    align-items: center;
+}
+
+.isLoading{
+    .content {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+.loader {
+    position: absolute;
+    left: 50%;
+    top:50%;
+    transform: translate(-50%, -50%);
+}

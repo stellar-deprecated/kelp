@@ -1,0 +1,47 @@
+@import '../../_styles/variables.module.scss';
+
+$small-spacing: 3px;
+
+.line {
+    margin-bottom: $small-spacing;
+}
+
+._textMono {
+    font-family: $typeface-secondary;
+    letter-spacing: -0.5px;
+    font-size: 13/16 +rem;
+}
+
+.spreadLine {
+    composes: line;
+}
+
+.spreadLabel {
+    color: $color-contrast-3;
+    font-weight: 200;
+    font-size: 13/16+rem;
+    margin-right: 4/16+rem;
+}
+
+.spreadValue {
+    color: $color-contrast-2;
+    composes: _textMono;
+}
+
+.bidsLine {
+    composes: line;
+}
+
+.asksLine {
+    composes: line;
+}
+
+.quoteNumber {
+    composes: _textMono;
+    color: $color-contrast-2;
+}
+
+.quotelabel {
+    composes: _textMono;
+    color: $color-contrast-3;
+}

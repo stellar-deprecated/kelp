@@ -1,0 +1,18 @@
+@import '../../_styles/variables.module.scss';
+
+.wrapper {
+   cursor: pointer;
+   background-color: rgba($color-contrast-4, 0.25);
+   width: 14/16+rem;
+   height: 14/16+rem;
+   border-radius: 30px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.icon {
+   display: block;
+   width: 8px;
+   height: 8px;
+}
