@@ -33,17 +33,33 @@ const placeaholderBots = [
 class Bots extends Component {
   constructor(props) {
     super(props);
-    this.state = { bots: [] };
+    this.state = {
+      bots: [],
+    };
  
-    this.createBot = this.createBot.bind(this);
     this.gotoForm = this.gotoForm.bind(this);
+    this.gotoDetails = this.gotoDetails.bind(this);
+    this.autogenerateBot = this.autogenerateBot.bind(this);
+    this.createBot = this.createBot.bind(this);
   }
   
   gotoForm() {
     this.props.history.push('/new')
   }
+
+  gotoDetails() {
+    this.props.history.push('/details')
+  }
+
+  autogenerateBot() {
+    let rand = Math.floor(Math.random() * placeaholderBots.length);
+    let newElement = placeaholderBots[rand];
+    this.setState(prevState => ({
+      bots: [...prevState.bots, newElement]
+    }))
+  }
   
-  createBot () {
+  createBot() {
     let rand = Math.floor(Math.random() * placeaholderBots.length);
     let newElement = placeaholderBots[rand];
     this.setState(prevState => ({
@@ -52,7 +68,7 @@ class Bots extends Component {
   }
 
   render() {
-    let inner = <EmptyList autogenerateFn={this.createBot} createBotFn={this.createBot}/>;
+    let inner = <EmptyList autogenerateFn={this.autogenerateBot} createBotFn={this.createBot}/>;
     if (this.state.bots.length) {
       let screenHeader = (
         <ScreenHeader title={'My Bots'}>
@@ -60,7 +76,7 @@ class Bots extends Component {
             variant="faded"
             icon="download"
             hsize="short"
-            onClick={this.createBot}
+            onClick={this.autogenerateBot}
           />
           <Button 
             variant="faded" 
@@ -79,6 +95,7 @@ class Bots extends Component {
           test={bot.test}
           warnings={bot.warnings}
           errors={bot.errors}
+          showDetailsFn={this.gotoDetails}
         />
       ));
 
