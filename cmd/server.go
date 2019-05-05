@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/spf13/cobra"
 	"github.com/stellar/kelp/gui"
+	"github.com/stellar/kelp/gui/backend"
 )
 
 var serverCmd = &cobra.Command{
@@ -22,18 +23,21 @@ var serverCmd = &cobra.Command{
 }
 
 type serverInputs struct {
-	port *uint16
-	dev  *bool
+	port       *uint16
+	dev        *bool
+	devAPIPort *uint16
 }
 
 func init() {
 	options := serverInputs{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
+	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		if env == envDev && *options.dev {
 			checkHomeDir()
+			go runAPIServerDevBlocking(*options.devAPIPort)
 			runWithYarn(options)
 			return
 		}
@@ -44,11 +48,8 @@ func init() {
 		}
 
 		r := chi.NewRouter()
-		r.Use(middleware.RequestID)
-		r.Use(middleware.RealIP)
-		r.Use(middleware.Logger)
-		r.Use(middleware.Recoverer)
-		r.Use(middleware.Timeout(60 * time.Second))
+		setMiddleware(r)
+		backend.SetRoutes(r)
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
@@ -57,6 +58,24 @@ func init() {
 		e := http.ListenAndServe(portString, r)
 		log.Fatal(e)
 	}
+}
+
+func setMiddleware(r *chi.Mux) {
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
+}
+
+func runAPIServerDevBlocking(port uint16) {
+	r := chi.NewRouter()
+	setMiddleware(r)
+	backend.SetRoutes(r)
+	portString := fmt.Sprintf(":%d", port)
+	log.Printf("Serving on HTTP port: %d\n", port)
+	e := http.ListenAndServe(portString, r)
+	log.Fatal(e)
 }
 
 func checkHomeDir() {
