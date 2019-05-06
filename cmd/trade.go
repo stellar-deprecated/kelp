@@ -23,6 +23,7 @@ import (
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
+	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
 )
@@ -422,6 +423,14 @@ func runTradeCmd(options inputs) {
 			}
 		}
 	}
+
+	if botConfig.CcxtRestURL != nil {
+		e := sdk.SetBaseURL(*botConfig.CcxtRestURL)
+		if e != nil {
+			logger.Fatal(l, fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *botConfig.CcxtRestURL, e))
+		}
+	}
+	l.Infof("using CCXT-rest URL: %s\n", sdk.GetBaseURL())
 
 	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
 	network := utils.ParseNetwork(botConfig.HorizonURL)
