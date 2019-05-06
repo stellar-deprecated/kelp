@@ -44,3 +44,5 @@ import:
   version: v4.0.2
 - package: github.com/shurcooL/vfsgen
   version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069
+- package: github.com/rs/cors
+  version: v1.6.0

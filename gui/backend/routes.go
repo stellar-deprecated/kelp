@@ -9,7 +9,6 @@ import (
 // SetRoutes
 func SetRoutes(r *chi.Mux) {
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/one", http.HandlerFunc(one))
-		r.Get("/two", http.HandlerFunc(two))
+		r.Get("/version", http.HandlerFunc(version))
 	})
 }
