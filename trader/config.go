@@ -32,6 +32,7 @@ type BotConfig struct {
 	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS"`
 	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD"`
 	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL"`
+	CcxtRestURL                        *string    `valid:"-" toml:"CCXT_REST_URL"`
 	Fee                                *FeeConfig `valid:"-" toml:"FEE"`
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`

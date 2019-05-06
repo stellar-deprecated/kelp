@@ -16,7 +16,21 @@ import (
 )
 
 // ccxtBaseURL should not have suffix of '/'
-const ccxtBaseURL = "http://localhost:3000"
+var ccxtBaseURL = "http://localhost:3000"
+
+// SetBaseURL allows setting the base URL for ccxt
+func SetBaseURL(baseURL string) error {
+	if strings.HasSuffix(baseURL, "/") {
+		return fmt.Errorf("invalid format for baseURL, should not end with trailing '/': %s", baseURL)
+	}
+	ccxtBaseURL = baseURL
+	return nil
+}
+
+// GetBaseURL returns the base URL for ccxt
+func GetBaseURL() string {
+	return ccxtBaseURL
+}
 
 // Ccxt Rest SDK (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
 type Ccxt struct {
