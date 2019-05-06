@@ -52,7 +52,9 @@ func init() {
 	validateBuild()
 
 	RootCmd.AddCommand(tradeCmd)
-	RootCmd.AddCommand(serverCmd)
+	if env == envDev {
+		RootCmd.AddCommand(serverCmd)
+	}
 	RootCmd.AddCommand(strategiesCmd)
 	RootCmd.AddCommand(exchanagesCmd)
 	RootCmd.AddCommand(terminateCmd)
