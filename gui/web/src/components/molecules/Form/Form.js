@@ -39,7 +39,7 @@ class Form extends Component {
     return (
       <div>
         <div className={grid.container}>
-          <ScreenHeader title="New Bot" backButton>
+          <ScreenHeader title="New Bot" backButtonFn={this.props.router.goBack}>
             <Switch></Switch>
             <Label>Helper Fields</Label>
           </ScreenHeader>

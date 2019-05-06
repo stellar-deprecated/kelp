@@ -6,17 +6,22 @@ import Button from '../../atoms/Button/Button';
 
 class ScreenHeader extends Component {
   render() {
+    let backButton = null;
+    if (this.props.backButtonFn) {
+      backButton = (
+        <div className={styles.buttonWrapper}>
+          <Button
+          icon="back"
+          variant="transparent"
+          hsize="round"
+          onClick={this.props.backButtonFn}/>
+        </div>
+      );
+    }
     return (
       <div className={styles.wrapper}>
         <div  className={styles.titleWrapper}>
-          { this.props.backButton && (
-            <div className={styles.buttonWrapper}>
-              <Button
-              icon="back"
-              variant="transparent"
-              hsize="round"/>
-            </div>
-          )}
+          {backButton}
           <ScreenTitle>{this.props.title}</ScreenTitle>
         </div>
         <div className={styles.childrenWrapper}>

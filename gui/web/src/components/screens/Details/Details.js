@@ -76,7 +76,7 @@ class Details extends Component {
     return (
       <div>
         <div className={grid.container}>
-          <ScreenHeader title="Harry the Green Plankton" backButton>
+          <ScreenHeader title="Harry the Green Plankton" backButtonFn={this.props.history.goBack}>
             <PillGroup>
               <Pill number="1" type={'warning'}/>
               <Pill number="2" type={'error'}/>

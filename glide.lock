@@ -1,5 +1,5 @@
-hash: 243f6af8b6be9b957efb6fd8e916355c4c6ced464e547cf75644357468681eb8
-updated: 2019-04-15T14:53:14.587569967-07:00
+hash: 9241e59b7d407fb7068a854d8095fe3e47c061c24444ad02967f4fae601679f3
+updated: 2019-05-05T16:24:15.137639328-07:00
 imports:
 - name: cloud.google.com/go
   version: 793297ec250352b0ece46e103381a0fc3dab95a1
@@ -61,6 +61,8 @@ imports:
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
+- name: github.com/rs/cors
+  version: 9a47f48565a795472d43519dd49aac781f3034fb
 - name: github.com/segmentio/go-loggly
   version: eb91657e62b25699dd4e84d5562735440d4beace
 - name: github.com/shurcooL/httpfs

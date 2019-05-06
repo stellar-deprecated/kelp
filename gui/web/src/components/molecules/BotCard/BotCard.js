@@ -35,6 +35,7 @@ class BotCard extends Component {
     test: PropTypes.bool,
     warnings: PropTypes.number,
     errors: PropTypes.number, 
+    showDetailsFn: PropTypes.func, 
   };
 
   toggleBot() {
@@ -108,7 +109,7 @@ class BotCard extends Component {
         </div>
 
         <div className={styles.firstColumn}>
-          <h2 className={styles.title}>{this.props.name}</h2>
+          <h2 className={styles.title} onClick={this.props.showDetailsFn}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
             <BotExchangeInfo/>
           </div>

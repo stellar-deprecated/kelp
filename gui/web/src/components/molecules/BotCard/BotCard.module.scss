@@ -22,6 +22,7 @@ $small-spacing: 3px;
   color: $color-contrast-1;
   padding: 12/16+rem 22/16+rem;
   display: flex;
+  cursor: default;
   &:hover {
     .sortingArrows {
       opacity: 1;
@@ -77,6 +78,10 @@ $small-spacing: 3px;
   font-weight: 400;
   margin: 0;
   margin-bottom: 0.3rem;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .botDetailsLine {

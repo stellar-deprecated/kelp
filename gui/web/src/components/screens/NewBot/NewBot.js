@@ -4,7 +4,7 @@ import Form from '../../molecules/Form/Form';
 class NewBot extends Component {
   render() {
     return (
-      <Form/>
+      <Form router={this.props.history}/>
     );
   }
 }
