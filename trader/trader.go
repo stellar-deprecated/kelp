@@ -297,5 +297,5 @@ func (t *Trader) loadExistingOffers() {
 	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)
 
 	sort.Sort(utils.ByPrice(t.buyingAOffers))
-	sort.Sort(utils.ByPrice(t.sellingAOffers)) // don't need to reverse since the prices are inverse
+	sort.Sort(utils.ByPrice(t.sellingAOffers)) // don't reverse since prices are inverse
 }
