@@ -36,11 +36,16 @@ func init() {
 	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		s, e := backend.MakeAPIServer()
+		if e != nil {
+			panic(e)
+		}
+
 		if env == envDev && *options.dev {
 			checkHomeDir()
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
-			go runAPIServerDevBlocking(*options.port, *options.devAPIPort)
+			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
 			runWithYarn(options)
 			return
 		} else {
@@ -56,13 +61,13 @@ func init() {
 
 		r := chi.NewRouter()
 		setMiddleware(r)
-		backend.SetRoutes(r)
+		backend.SetRoutes(r, s)
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
-		e := http.ListenAndServe(portString, r)
+		e = http.ListenAndServe(portString, r)
 		log.Fatal(e)
 	}
 }
@@ -75,7 +80,7 @@ func setMiddleware(r *chi.Mux) {
 	r.Use(middleware.Timeout(60 * time.Second))
 }
 
-func runAPIServerDevBlocking(frontendPort uint16, devAPIPort uint16) {
+func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPort uint16) {
 	r := chi.NewRouter()
 	// Add CORS middleware around every request since both ports are different when running server in dev mode
 	r.Use(cors.New(cors.Options{
@@ -83,7 +88,7 @@ func runAPIServerDevBlocking(frontendPort uint16, devAPIPort uint16) {
 	}).Handler)
 
 	setMiddleware(r)
-	backend.SetRoutes(r)
+	backend.SetRoutes(r, s)
 	portString := fmt.Sprintf(":%d", devAPIPort)
 	log.Printf("Serving API server on HTTP port: %d\n", devAPIPort)
 	e := http.ListenAndServe(portString, r)

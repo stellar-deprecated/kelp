@@ -7,8 +7,8 @@ import (
 )
 
 // SetRoutes
-func SetRoutes(r *chi.Mux) {
+func SetRoutes(r *chi.Mux, s *APIServer) {
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/version", http.HandlerFunc(version))
+		r.Get("/version", http.HandlerFunc(s.version))
 	})
 }
