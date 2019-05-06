@@ -138,23 +138,23 @@ func String2Asset(code string, issuer string) horizon.Asset {
 }
 
 // LoadAllOffers loads all the offers for a given account
-func LoadAllOffers(account string, api *horizon.Client) (offersRet []horizon.Offer, err error) {
+func LoadAllOffers(account string, api *horizon.Client) ([]horizon.Offer, error) {
 	// get what orders are outstanding now
-	offersPage, err := api.LoadAccountOffers(account)
-	if err != nil {
-		log.Printf("Can't load offers: %s\n", err)
-		return
+	offersPage, e := api.LoadAccountOffers(account, horizon.Limit(193))
+	if e != nil {
+		return []horizon.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
 	}
-	offersRet = offersPage.Embedded.Records
+
+	offersRet := offersPage.Embedded.Records
 	for len(offersPage.Embedded.Records) > 0 {
-		offersPage, err = api.LoadAccountOffers(account, horizon.At(offersPage.Links.Next.Href))
-		if err != nil {
-			log.Printf("Can't load offers: %s\n", err)
-			return
+		offersPage, e = api.LoadAccountOffers(account, horizon.Limit(193), horizon.At(offersPage.Links.Next.Href))
+		if e != nil {
+			return []horizon.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
 		}
 		offersRet = append(offersRet, offersPage.Embedded.Records...)
 	}
-	return
+
+	return offersRet, nil
 }
 
 // FilterOffers filters out the offers into selling and buying, where sellOffers sells the sellAsset and buyOffers buys the sellAsset
