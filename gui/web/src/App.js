@@ -12,8 +12,11 @@ import version from './kelp-ops-api/version';
 
 let baseUrl = function() {
   let origin = window.location.origin
-  let parts = origin.split(":")
-  return parts[0] + ":" + parts[1] + ":" + process.env.REACT_APP_API_PORT;
+  if (process.env.REACT_APP_API_PORT) {
+    let parts = origin.split(":")
+    return parts[0] + ":" + parts[1] + ":" + process.env.REACT_APP_API_PORT;
+  }
+  return origin;
 }()
 
 class App extends Component {
