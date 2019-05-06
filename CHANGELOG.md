@@ -16,9 +16,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Use v0.0.4 for ccxt-rest to fix travis build and update the instructions in our README file. The APIs have diverged with the latest release of ccxt-rest v1.0.0 yesterday so we are sticking to the old version for now.
-
 ### Security
+
+
+## [v1.7.0] - 2019-05-05
+
+### Added
+
+- Bundle React.js into Kelp with 3 modes of running with 'server' command in dev mode ([857214c14a5fd2c67a20d618f45614e33c6a97ae](https://github.com/stellar/kelp/commit/857214c14a5fd2c67a20d618f45614e33c6a97ae))
+- added UI components for GUI ([22e3d4242e93f2f0ddaf2e66a3f796ed668e1a0e](https://github.com/stellar/kelp/commit/22e3d4242e93f2f0ddaf2e66a3f796ed668e1a0e))
+- allow setting custom URL for CCXT-rest server ([3c9af0cb098e0476512de2d002693b9b6cae426b](https://github.com/stellar/kelp/commit/3c9af0cb098e0476512de2d002693b9b6cae426b))
+
+### Changed
+
+- improve function number.AsRatio() for more accurate pricing on centralized exchanges ([5d33101192a4834ee186228c4c3a17d6112086d7](https://github.com/stellar/kelp/commit/5d33101192a4834ee186228c4c3a17d6112086d7), [f193eeef1c7cc328a529e6403af67f0f325ca0e6](https://github.com/stellar/kelp/commit/f193eeef1c7cc328a529e6403af67f0f325ca0e6))
+- increased limit when checking for open offers, reducing total requests to horizon ([5416d78c754360144ed1f7e3cc0b31135eb47fea](https://github.com/stellar/kelp/commit/5416d78c754360144ed1f7e3cc0b31135eb47fea))
+
+### Fixed
+
+- Use v0.0.4 for ccxt-rest to fix travis build and update the instructions in our README file. The APIs have diverged with the latest release of ccxt-rest v1.0.0 so we are sticking to the older version for now ([659bb20560a018c766c5c5db1bed55df922b7a2e](https://github.com/stellar/kelp/commit/659bb20560a018c766c5c5db1bed55df922b7a2e)).
 
 ## [v1.6.1] - 2019-04-12
 
