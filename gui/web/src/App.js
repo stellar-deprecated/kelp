@@ -5,8 +5,8 @@ import Header from './components/molecules/Header/Header';
 import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
 import Details from './components/screens/Details/Details';
-import Welcome from './components/molecules/Welcome/Welcome';
-import Modal from './components/molecules/Modal/Modal';
+// import Welcome from './components/molecules/Welcome/Welcome';
+// import Modal from './components/molecules/Modal/Modal';
 
 import version from './kelp-ops-api/version';
 
