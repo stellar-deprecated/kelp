@@ -9,56 +9,9 @@ import (
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
 )
-
-type exchangeAPIKeysToml []struct {
-	Key    string `valid:"-" toml:"KEY"`
-	Secret string `valid:"-" toml:"SECRET"`
-}
-
-func (t *exchangeAPIKeysToml) toExchangeAPIKeys() []api.ExchangeAPIKey {
-	apiKeys := []api.ExchangeAPIKey{}
-	for _, apiKey := range *t {
-		apiKeys = append(apiKeys, api.ExchangeAPIKey{
-			Key:    apiKey.Key,
-			Secret: apiKey.Secret,
-		})
-	}
-	return apiKeys
-}
-
-type exchangeParamsToml []struct {
-	Param string `valid:"-" toml:"PARAM"`
-	Value string `valid:"-" toml:"VALUE"`
-}
-
-func (t *exchangeParamsToml) toExchangeParams() []api.ExchangeParam {
-	exchangeParams := []api.ExchangeParam{}
-	for _, param := range *t {
-		exchangeParams = append(exchangeParams, api.ExchangeParam{
-			Param: param.Param,
-			Value: param.Value,
-		})
-	}
-	return exchangeParams
-}
-
-type exchangeHeadersToml []struct {
-	Header string `valid:"-" toml:"HEADER"`
-	Value  string `valid:"-" toml:"VALUE"`
-}
-
-func (t *exchangeHeadersToml) toExchangeHeaders() []api.ExchangeHeader {
-	apiHeaders := []api.ExchangeHeader{}
-	for _, header := range *t {
-		apiHeaders = append(apiHeaders, api.ExchangeHeader{
-			Header: header.Header,
-			Value:  header.Value,
-		})
-	}
-	return apiHeaders
-}
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
@@ -71,13 +24,13 @@ type mirrorConfig struct {
 	PricePrecisionOverride  *int8   `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	VolumePrecisionOverride *int8   `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	// Deprecated: use MIN_BASE_VOLUME_OVERRIDE instead
-	MinBaseVolumeDeprecated *float64            `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
-	MinBaseVolumeOverride   *float64            `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
-	MinQuoteVolumeOverride  *float64            `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
-	OffsetTrades            bool                `valid:"-" toml:"OFFSET_TRADES"`
-	ExchangeAPIKeys         exchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
-	ExchangeParams          exchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
-	ExchangeHeaders         exchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
+	MinBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
+	MinBaseVolumeOverride   *float64                 `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
+	MinQuoteVolumeOverride  *float64                 `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
+	OffsetTrades            bool                     `valid:"-" toml:"OFFSET_TRADES"`
+	ExchangeAPIKeys         toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	ExchangeParams          toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
+	ExchangeHeaders         toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 }
 
 // String impl.
@@ -154,9 +107,9 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
-		exchangeAPIKeys := config.ExchangeAPIKeys.toExchangeAPIKeys()
-		exchangeParams := config.ExchangeParams.toExchangeParams()
-		exchangeHeaders := config.ExchangeHeaders.toExchangeHeaders()
+		exchangeAPIKeys := config.ExchangeAPIKeys.ToExchangeAPIKeys()
+		exchangeParams := config.ExchangeParams.ToExchangeParams()
+		exchangeHeaders := config.ExchangeHeaders.ToExchangeHeaders()
 		exchange, e = MakeTradingExchange(config.Exchange, exchangeAPIKeys, exchangeParams, exchangeHeaders, simMode)
 		if e != nil {
 			return nil, e
