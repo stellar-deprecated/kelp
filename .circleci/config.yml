@@ -3,12 +3,21 @@ commands:
   install_deps:
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+            - v1-node-cache
       - run:
           name: Install glide
           command: curl https://glide.sh/get | sh
       - run:
           name: Install dependencies using glide
           command: glide install
+
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - "/go/src/github.com/stellar/kelp/vendor"
 
       - run:
           name: Install nvm
@@ -31,6 +40,11 @@ commands:
       - run:
           name: Ensure build was successful
           command: ./bin/kelp version
+
+      - save_cache:
+          key: v1-node-cache
+          paths:
+            - "/go/src/github.com/stellar/kelp/gui/web/node_modules"
 
 
 jobs:
