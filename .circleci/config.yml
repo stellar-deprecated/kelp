@@ -17,6 +17,12 @@ commands:
           name: Use Node 10.5
           command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
 
+  test_kelp:
+    steps:
+      - run:
+          name: Run Kelp tests
+          command: go test -tags dev --short ./...
+
   build_kelp:
     steps:
       - run:
@@ -38,7 +44,7 @@ jobs:
 
     steps:
       - install_deps
-      - run: go test -tags dev --short ./...
+      - test_kelp
 
   test_1_11:
     working_directory: /go/src/github.com/stellar/kelp
@@ -49,7 +55,7 @@ jobs:
 
     steps:
       - install_deps
-      - run: go test -tags dev --short ./...
+      - test_kelp
 
   test_1_12:
     working_directory: /go/src/github.com/stellar/kelp
@@ -60,7 +66,7 @@ jobs:
 
     steps:
       - install_deps
-      - run: go test -tags dev --short ./...
+      - test_kelp
 
 
   # build tries building Kelp
