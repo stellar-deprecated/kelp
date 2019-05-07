@@ -19,13 +19,6 @@ commands:
           paths:
             - "/go/src/github.com/stellar/kelp/vendor"
 
-      - run:
-          name: Install nvm
-          command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-      - run:
-          name: Use Node 10.5
-          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
-
   test_kelp:
     steps:
       - run:
@@ -35,24 +28,28 @@ commands:
   build_kelp:
     steps:
       - run:
+          name: Install nvm
+          command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+      - run:
+          name: Use Node 10.5
+          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
+      - run:
           name: Build Kelp
           command: ./scripts/build.sh
-      - run:
-          name: Ensure build was successful
-          command: ./bin/kelp version
-
       - save_cache:
           key: v1-node-cache
           paths:
             - "/go/src/github.com/stellar/kelp/gui/web/node_modules"
-
+      - run:
+          name: Ensure build was successful
+          command: ./bin/kelp version
 
 jobs:
   # test performs all package tests from Kelp
   test_1_10:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
-      - image: circleci/golang:1.10-node # primary image
+      - image: circleci/golang:1.10
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
 
@@ -63,7 +60,7 @@ jobs:
   test_1_11:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
-      - image: circleci/golang:1.11-node # primary image
+      - image: circleci/golang:1.11
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
 
@@ -74,7 +71,7 @@ jobs:
   test_1_12:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
-      - image: circleci/golang:1.12-node # primary image
+      - image: circleci/golang:1.12
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
 
