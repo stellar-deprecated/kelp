@@ -1,0 +1,60 @@
+version: 2
+jobs:
+
+  # setup installs all dependencies necessary for building / testing
+  setup:
+    docker:
+      - image: circleci/golang:1.12-node
+
+    steps:
+      - checkout
+      - run:
+          name: Install glide
+          command: curl https://glide.sh/get | sh
+      - run:
+          name: Install dependencies using glide
+          command: glide install
+
+      - run:
+          name: Use Node 10.5
+          command: nvm install 10.5 && nvm use 10.5
+
+      - run:
+          name: Run CCXT
+          command: docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4
+
+  # test performs all package tests from Kelp
+  test:
+    docker:
+      - image: circleci/golang:1.12-node
+
+    steps:
+      - run:
+          name: Run package tests
+          command: go test -tags dev --short ./...
+
+  # build tries building Kelp
+  build:
+    docker:
+      - image: circleci/golang:1.12-node
+
+    steps:
+      - run:
+          name: Build Kelp
+          command: ./scripts/build.sh
+
+      - run:
+          name: Ensure build was successful
+          command: ./bin/kelp version
+
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - test:
+          requires:
+            - setup
+      - build:
+          requires:
+            - setup
