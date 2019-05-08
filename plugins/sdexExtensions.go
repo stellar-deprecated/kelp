@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/stellar/go/exp/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 )
 

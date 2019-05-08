@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	horizonclient "github.com/stellar/go/exp/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
