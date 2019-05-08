@@ -16,7 +16,6 @@ import:
   - exp/clients/horizon
   - support/config
   - support/errors
-##############################################################
 # manually added dependencies to fix glide import resolution
 ##############################################################
 - package: github.com/sirupsen/logrus
