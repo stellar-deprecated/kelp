@@ -1,0 +1,120 @@
+version: 2.1
+commands:
+  install_deps:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+            - v1-node-cache
+      - run:
+          name: Install glide
+          command: curl https://glide.sh/get | sh
+      - run:
+          name: Install dependencies using glide
+          command: glide install
+
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - "/go/src/github.com/stellar/kelp/vendor"
+
+  test_kelp:
+    steps:
+      - run:
+          name: Run Kelp tests
+          command: go test -tags dev --short ./...
+
+  build_kelp:
+    steps:
+      - run:
+          name: Install nvm
+          command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+      - run:
+          name: Use Node 10.5
+          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
+      - run:
+          name: Build Kelp
+          command: ./scripts/build.sh
+      - save_cache:
+          key: v1-node-cache
+          paths:
+            - "/go/src/github.com/stellar/kelp/gui/web/node_modules"
+      - run:
+          name: Ensure build was successful
+          command: ./bin/kelp version
+
+jobs:
+  # test performs all package tests from Kelp
+  test_1_10:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.10
+      - image: franzsee/ccxt-rest:v0.0.4
+        command: ["node", "/usr/local/bin/ccxt-rest"]
+
+    steps:
+      - install_deps
+      - test_kelp
+
+  test_1_11:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.11
+      - image: franzsee/ccxt-rest:v0.0.4
+        command: ["node", "/usr/local/bin/ccxt-rest"]
+
+    steps:
+      - install_deps
+      - test_kelp
+
+  test_1_12:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.12
+      - image: franzsee/ccxt-rest:v0.0.4
+        command: ["node", "/usr/local/bin/ccxt-rest"]
+
+    steps:
+      - install_deps
+      - test_kelp
+
+
+  # build tries building Kelp
+  build_1_10:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.10-node
+
+    steps:
+      - install_deps
+      - build_kelp
+
+  build_1_11:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.11-node
+
+    steps:
+      - install_deps
+      - build_kelp
+
+  build_1_12:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.12-node
+
+    steps:
+      - install_deps
+      - build_kelp
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - test_1_10
+      - test_1_11
+      - test_1_12
+      - build_1_10
+      - build_1_11
+      - build_1_12
