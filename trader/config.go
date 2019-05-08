@@ -62,6 +62,51 @@ type BotConfig struct {
 	isTradingSdex  bool
 }
 
+// MakeBotConfig factory method for BotConfig
+func MakeBotConfig(
+	sourceSecretSeed string,
+	tradingSecretSeed string,
+	assetCodeA string,
+	issuerA string,
+	assetCodeB string,
+	issuerB string,
+	tickIntervalSeconds int32,
+	maxTickDelayMillis int64,
+	deleteCyclesThreshold int64,
+	submitMode string,
+	fillTrackerSleepMillis uint32,
+	fillTrackerDeleteCyclesThreshold int64,
+	horizonURL string,
+	ccxtRestURL *string,
+	fee *FeeConfig,
+	centralizedPricePrecisionOverride *int8,
+	centralizedVolumePrecisionOverride *int8,
+	centralizedMinBaseVolumeOverride *float64,
+	centralizedMinQuoteVolumeOverride *float64,
+) *BotConfig {
+	return &BotConfig{
+		SourceSecretSeed:                 sourceSecretSeed,
+		TradingSecretSeed:                tradingSecretSeed,
+		AssetCodeA:                       assetCodeA,
+		IssuerA:                          issuerA,
+		AssetCodeB:                       assetCodeB,
+		IssuerB:                          issuerB,
+		TickIntervalSeconds:              tickIntervalSeconds,
+		MaxTickDelayMillis:               maxTickDelayMillis,
+		DeleteCyclesThreshold:            deleteCyclesThreshold,
+		SubmitMode:                       submitMode,
+		FillTrackerSleepMillis:           fillTrackerSleepMillis,
+		FillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
+		HorizonURL:                       horizonURL,
+		CcxtRestURL:                      ccxtRestURL,
+		Fee:                              fee,
+		CentralizedPricePrecisionOverride:  centralizedPricePrecisionOverride,
+		CentralizedVolumePrecisionOverride: centralizedVolumePrecisionOverride,
+		CentralizedMinBaseVolumeOverride:   centralizedMinBaseVolumeOverride,
+		CentralizedMinQuoteVolumeOverride:  centralizedMinQuoteVolumeOverride,
+	}
+}
+
 // String impl.
 func (b BotConfig) String() string {
 	return utils.StructString(b, map[string]func(interface{}) interface{}{
