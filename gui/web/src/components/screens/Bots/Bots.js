@@ -105,6 +105,7 @@ class Bots extends Component {
           warnings={bot.warnings}
           errors={bot.errors}
           showDetailsFn={this.gotoDetails}
+          baseUrl={this.props.baseUrl}
         />
       ));
 

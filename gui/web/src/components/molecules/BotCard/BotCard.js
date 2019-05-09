@@ -11,6 +11,7 @@ import BotAssetsInfo from '../../atoms/BotAssetsInfo/BotAssetsInfo';
 import BotBidAskInfo from '../../atoms/BotBidAskInfo/BotBidAskInfo';
 import Button from '../../atoms/Button/Button';
 
+import start from '../../../kelp-ops-api/start';
 
 class BotCard extends Component {
   constructor(props) {
@@ -36,28 +37,38 @@ class BotCard extends Component {
     warnings: PropTypes.number,
     errors: PropTypes.number, 
     showDetailsFn: PropTypes.func, 
+    baseUrl: PropTypes.string, 
   };
+
+  componentWillUnmount() {
+    if (this._asyncRequest) {
+      this._asyncRequest.cancel();
+      this._asyncRequest = null;
+    }
+  }
 
   toggleBot() {
     if(this.state.isRunning){
       this.stopBot();
-    }
-    else {
+    } else {
       this.startBot();
     }
   }
 
   startBot(){
-    this.setState({
-      timeStarted: new Date(),
-      isRunning: true,
-    }, () => {
-      this.tick();
-    
-      this.timer = setInterval(
-        () => this.tick(),
-        1000
-      );
+    var _this = this;
+    start(this.props.baseUrl, this.props.name).then(resp => {
+      _this.setState({
+        timeStarted: new Date(),
+        isRunning: true,
+      }, () => {
+        _this.tick();
+      
+        _this.timer = setInterval(
+          () => _this.tick(),
+          1000
+        );
+      });
     });
   }
 
