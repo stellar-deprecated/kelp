@@ -71,8 +71,8 @@ func setupAccount(address string, signer string, botName string) {
 
 	client := horizon.DefaultTestNetClient
 	txn, e := build.Transaction(
-		build.SourceAccount{address},
-		build.AutoSequence{client},
+		build.SourceAccount{AddressOrSeed: address},
+		build.AutoSequence{SequenceProvider: client},
 		build.TestNetwork,
 		build.Trust("COUPON", "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"),
 	)
