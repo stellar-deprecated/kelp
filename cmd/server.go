@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
+	"github.com/stellar/kelp/support/utils"
 )
 
 var serverCmd = &cobra.Command{
@@ -112,7 +112,7 @@ func runWithYarn(options serverInputs) {
 	os.Setenv("PORT", fmt.Sprintf("%d", *options.port))
 
 	log.Printf("Serving frontend via yarn on HTTP port: %d\n", *options.port)
-	e := runCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "start"))
+	e := utils.RunCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "start"))
 	if e != nil {
 		panic(e)
 	}
@@ -121,32 +121,11 @@ func runWithYarn(options serverInputs) {
 func generateStaticFiles() {
 	log.Printf("generating contents of gui/web/build ...\n")
 
-	e := runCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "build"))
+	e := utils.RunCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "build"))
 	if e != nil {
 		panic(e)
 	}
 
 	log.Printf("... finished generating contents of gui/web/build\n")
 	log.Println()
-}
-
-func runCommandStreamOutput(command *exec.Cmd) error {
-	stdout, e := command.StdoutPipe()
-	if e != nil {
-		return fmt.Errorf("error while creating Stdout pipe: %s", e)
-	}
-	command.Start()
-
-	scanner := bufio.NewScanner(stdout)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := scanner.Text()
-		log.Printf("\t%s\n", line)
-	}
-
-	e = command.Wait()
-	if e != nil {
-		return fmt.Errorf("could not execute command: %s", e)
-	}
-	return nil
 }

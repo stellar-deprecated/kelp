@@ -33,11 +33,22 @@ type FilenamePair struct {
 	Strategy string
 }
 
-// Filename where we should save bot file
+// Filenames where we should save bot config file
 func (b *Bot) Filenames() *FilenamePair {
-	converted := strings.ToLower(strings.ReplaceAll(b.Name, " ", "_"))
+	return GetBotFilenames(b.Name, b.Strategy)
+}
+
+// GetBotFilenames from botName
+func GetBotFilenames(botName string, strategy string) *FilenamePair {
+	converted := strings.ToLower(strings.ReplaceAll(botName, " ", "_"))
 	return &FilenamePair{
 		Trader:   fmt.Sprintf("%s__trader.%s", converted, "cfg"),
-		Strategy: fmt.Sprintf("%s__strategy_%s.%s", converted, b.Strategy, "cfg"),
+		Strategy: fmt.Sprintf("%s__strategy_%s.%s", converted, strategy, "cfg"),
 	}
+}
+
+// GetLogPrefix from botName
+func GetLogPrefix(botName string, strategy string) string {
+	converted := strings.ToLower(strings.ReplaceAll(botName, " ", "_"))
+	return fmt.Sprintf("%s__%s_", converted, strategy)
 }
