@@ -95,7 +95,7 @@ func setupAccount(address string, signer string, botName string) {
 		log.Printf("error submitting change trust transaction for address %s for bot '%s': %s\n", address, botName, e)
 		return
 	}
-	log.Printf("successfully added trustline for address %s for bot '%s': %s\n", address, botName, resp)
+	log.Printf("successfully added trustline for address %s for bot '%s': %v\n", address, botName, resp)
 }
 
 func makeSampleTrader(seed string) *trader.BotConfig {
