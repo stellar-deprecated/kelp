@@ -7,9 +7,9 @@ import (
 	"github.com/stellar/kelp/model"
 )
 
-// staticLevel represents a layer in the orderbook defined statically
+// StaticLevel represents a layer in the orderbook defined statically
 // extracted here because it's shared by strategy and sideStrategy where strategy depeneds on sideStrategy
-type staticLevel struct {
+type StaticLevel struct {
 	SPREAD float64 `valid:"-"`
 	AMOUNT float64 `valid:"-"`
 }
@@ -34,7 +34,7 @@ type rateOffset struct {
 
 // staticSpreadLevelProvider provides a fixed number of levels using a static percentage spread
 type staticSpreadLevelProvider struct {
-	staticLevels     []staticLevel
+	staticLevels     []StaticLevel
 	amountOfBase     float64
 	offset           rateOffset
 	pf               *api.FeedPair
@@ -45,7 +45,7 @@ type staticSpreadLevelProvider struct {
 var _ api.LevelProvider = &staticSpreadLevelProvider{}
 
 // makeStaticSpreadLevelProvider is a factory method
-func makeStaticSpreadLevelProvider(staticLevels []staticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair, orderConstraints *model.OrderConstraints) api.LevelProvider {
+func makeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase float64, offset rateOffset, pf *api.FeedPair, orderConstraints *model.OrderConstraints) api.LevelProvider {
 	return &staticSpreadLevelProvider{
 		staticLevels:     staticLevels,
 		amountOfBase:     amountOfBase,
