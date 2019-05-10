@@ -17,6 +17,7 @@ import (
 )
 
 const publicTestnetHorizon = "https://horizon-testnet.stellar.org"
+const issuerSeed = "SANPCJHHXCPRN6IIZRBEQXS5M3L2LY7EYQLAVTYD56KL3V7ABO4I3ISZ"
 
 var centralizedPricePrecisionOverride = int8(6)
 var centralizedVolumePrecisionOverride = int8(1)
@@ -96,12 +97,17 @@ func setupAccount(address string, signer string, botName string) {
 		build.AutoSequence{SequenceProvider: client},
 		build.TestNetwork,
 		build.Trust("COUPON", "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"),
+		build.Payment(
+			build.Destination{AddressOrSeed: address},
+			build.CreditAmount{Code: "COUPON", Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI", Amount: "1000.0"},
+			build.SourceAccount{AddressOrSeed: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+		),
 	)
 	if e != nil {
 		log.Printf("cannot create trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
 		return
 	}
-	txnS, e := txn.Sign(signer)
+	txnS, e := txn.Sign(signer, issuerSeed)
 	if e != nil {
 		log.Printf("cannot sign trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
 		return
