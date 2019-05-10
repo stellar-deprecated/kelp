@@ -12,6 +12,7 @@ import BotBidAskInfo from '../../atoms/BotBidAskInfo/BotBidAskInfo';
 import Button from '../../atoms/Button/Button';
 
 import start from '../../../kelp-ops-api/start';
+import stop from '../../../kelp-ops-api/stop';
 
 class BotCard extends Component {
   constructor(props) {
@@ -73,12 +74,15 @@ class BotCard extends Component {
   }
 
   stopBot() {
-    this.setState({
-      timeStarted: null,
-      timeElapsed: null,
-      isRunning: false,
+    var _this = this;
+    stop(this.props.baseUrl, this.props.name).then(resp => {
+      _this.setState({
+        timeStarted: null,
+        timeElapsed: null,
+        isRunning: false,
+      });
+      clearTimeout(_this.timer);
     });
-    clearTimeout(this.timer);
   }
 
   tick() {
