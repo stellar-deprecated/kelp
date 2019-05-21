@@ -16,7 +16,7 @@ func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	botName := string(botNameBytes)
-	e = s.stopCommand(botName)
+	e = s.kos.Stop(botName)
 	if e != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("error when killing bot %s: %s\n", botName, e)))

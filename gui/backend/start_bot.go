@@ -44,7 +44,7 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	}
 
 	go func(kelpCommand *exec.Cmd, name string) {
-		defer s.safeUnregisterCommand(name)
+		defer s.kos.SafeUnregister(name)
 
 		if kelpCommand != nil {
 			e := kelpCommand.Wait()

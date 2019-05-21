@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
-	"github.com/stellar/kelp/support/utils"
+	"github.com/stellar/kelp/support/kelpos"
 )
 
 var serverCmd = &cobra.Command{
@@ -36,7 +36,8 @@ func init() {
 	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		s, e := backend.MakeAPIServer()
+		kos := kelpos.GetKelpOS()
+		s, e := backend.MakeAPIServer(kos)
 		if e != nil {
 			panic(e)
 		}
@@ -46,7 +47,7 @@ func init() {
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
-			runWithYarn(options)
+			runWithYarn(kos, options)
 			return
 		} else {
 			options.devAPIPort = nil
@@ -56,7 +57,7 @@ func init() {
 
 		if env == envDev {
 			checkHomeDir()
-			generateStaticFiles()
+			generateStaticFiles(kos)
 		}
 
 		r := chi.NewRouter()
@@ -107,21 +108,21 @@ func checkHomeDir() {
 	}
 }
 
-func runWithYarn(options serverInputs) {
+func runWithYarn(kos *kelpos.KelpOS, options serverInputs) {
 	// yarn requires the PORT variable to be set when serving
 	os.Setenv("PORT", fmt.Sprintf("%d", *options.port))
 
 	log.Printf("Serving frontend via yarn on HTTP port: %d\n", *options.port)
-	e := utils.RunCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "start"))
+	e := kos.StreamOutput(exec.Command("yarn", "--cwd", "gui/web", "start"))
 	if e != nil {
 		panic(e)
 	}
 }
 
-func generateStaticFiles() {
+func generateStaticFiles(kos *kelpos.KelpOS) {
 	log.Printf("generating contents of gui/web/build ...\n")
 
-	e := utils.RunCommandStreamOutput(exec.Command("yarn", "--cwd", "gui/web", "build"))
+	e := kos.StreamOutput(exec.Command("yarn", "--cwd", "gui/web", "build"))
 	if e != nil {
 		panic(e)
 	}
