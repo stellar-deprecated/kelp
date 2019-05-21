@@ -40,7 +40,7 @@ func (b *Bot) Filenames() *FilenamePair {
 
 // GetBotFilenames from botName
 func GetBotFilenames(botName string, strategy string) *FilenamePair {
-	converted := strings.ToLower(strings.ReplaceAll(botName, " ", "_"))
+	converted := strings.ToLower(strings.Replace(botName, " ", "_", -1))
 	return &FilenamePair{
 		Trader:   fmt.Sprintf("%s__trader.%s", converted, "cfg"),
 		Strategy: fmt.Sprintf("%s__strategy_%s.%s", converted, strategy, "cfg"),
@@ -49,6 +49,6 @@ func GetBotFilenames(botName string, strategy string) *FilenamePair {
 
 // GetLogPrefix from botName
 func GetLogPrefix(botName string, strategy string) string {
-	converted := strings.ToLower(strings.ReplaceAll(botName, " ", "_"))
+	converted := strings.ToLower(strings.Replace(botName, " ", "_", -1))
 	return fmt.Sprintf("%s__%s_", converted, strategy)
 }
