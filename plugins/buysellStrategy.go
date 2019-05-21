@@ -9,8 +9,8 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-// buySellConfig contains the configuration params for this strategy
-type buySellConfig struct {
+// BuySellConfig contains the configuration params for this strategy
+type BuySellConfig struct {
 	PriceTolerance         float64       `valid:"-" toml:"PRICE_TOLERANCE"`
 	AmountTolerance        float64       `valid:"-" toml:"AMOUNT_TOLERANCE"`
 	RateOffsetPercent      float64       `valid:"-" toml:"RATE_OFFSET_PERCENT"`
@@ -21,11 +21,40 @@ type buySellConfig struct {
 	DataFeedAURL           string        `valid:"-" toml:"DATA_FEED_A_URL"`
 	DataTypeB              string        `valid:"-" toml:"DATA_TYPE_B"`
 	DataFeedBURL           string        `valid:"-" toml:"DATA_FEED_B_URL"`
-	Levels                 []staticLevel `valid:"-" toml:"LEVELS"`
+	Levels                 []StaticLevel `valid:"-" toml:"LEVELS"`
+}
+
+// MakeBuysellConfig factory method
+func MakeBuysellConfig(
+	priceTolerance float64,
+	amountTolerance float64,
+	rateOffsetPercent float64,
+	rateOffset float64,
+	rateOffsetPercentFirst bool,
+	amountOfABase float64,
+	dataTypeA string,
+	dataFeedAURL string,
+	dataTypeB string,
+	dataFeedBURL string,
+	levels []StaticLevel,
+) *BuySellConfig {
+	return &BuySellConfig{
+		PriceTolerance:         priceTolerance,
+		AmountTolerance:        amountTolerance,
+		RateOffsetPercent:      rateOffsetPercent,
+		RateOffset:             rateOffset,
+		RateOffsetPercentFirst: rateOffsetPercentFirst,
+		AmountOfABase:          amountOfABase,
+		DataTypeA:              dataTypeA,
+		DataFeedAURL:           dataFeedAURL,
+		DataTypeB:              dataTypeB,
+		DataFeedBURL:           dataFeedBURL,
+		Levels:                 levels,
+	}
 }
 
 // String impl.
-func (c buySellConfig) String() string {
+func (c BuySellConfig) String() string {
 	return utils.StructString(c, nil)
 }
 
@@ -36,7 +65,7 @@ func makeBuySellStrategy(
 	ieif *IEIF,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
-	config *buySellConfig,
+	config *BuySellConfig,
 ) (api.Strategy, error) {
 	offsetSell := rateOffset{
 		percent:      config.RateOffsetPercent,

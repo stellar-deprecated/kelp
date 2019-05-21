@@ -5,6 +5,7 @@ import EmptyList from '../../molecules/EmptyList/EmptyList';
 import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import grid from '../../_styles/grid.module.scss';
 
+import autogenerate from '../../../kelp-ops-api/autogenerate';
 
 const placeaholderBots = [
   {
@@ -42,6 +43,13 @@ class Bots extends Component {
     this.autogenerateBot = this.autogenerateBot.bind(this);
     this.createBot = this.createBot.bind(this);
   }
+
+  componentWillUnmount() {
+    if (this._asyncRequest) {
+      this._asyncRequest.cancel();
+      this._asyncRequest = null;
+    }
+  }
   
   gotoForm() {
     this.props.history.push('/new')
@@ -52,11 +60,12 @@ class Bots extends Component {
   }
 
   autogenerateBot() {
-    let rand = Math.floor(Math.random() * placeaholderBots.length);
-    let newElement = placeaholderBots[rand];
-    this.setState(prevState => ({
-      bots: [...prevState.bots, newElement]
-    }))
+    this._asyncRequest = autogenerate(this.props.baseUrl).then(newBot => {
+      this._asyncRequest = null;
+      this.setState(prevState => ({
+        bots: [...prevState.bots, newBot]
+      }))
+    });
   }
   
   createBot() {
@@ -96,6 +105,7 @@ class Bots extends Component {
           warnings={bot.warnings}
           errors={bot.errors}
           showDetailsFn={this.gotoDetails}
+          baseUrl={this.props.baseUrl}
         />
       ));
 

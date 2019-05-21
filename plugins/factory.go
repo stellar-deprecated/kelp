@@ -40,7 +40,7 @@ var strategies = map[string]StrategyContainer{
 		NeedsConfig: true,
 		Complexity:  "Beginner",
 		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
-			var cfg buySellConfig
+			var cfg BuySellConfig
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)

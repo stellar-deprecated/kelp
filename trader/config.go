@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -37,30 +38,21 @@ type BotConfig struct {
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
 	// Deprecated: use CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE instead
-	MinCentralizedBaseVolumeDeprecated *float64 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true"`
-	CentralizedMinBaseVolumeOverride   *float64 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
-	CentralizedMinQuoteVolumeOverride  *float64 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE"`
-	AlertType                          string   `valid:"-" toml:"ALERT_TYPE"`
-	AlertAPIKey                        string   `valid:"-" toml:"ALERT_API_KEY"`
-	MonitoringPort                     uint16   `valid:"-" toml:"MONITORING_PORT"`
-	MonitoringTLSCert                  string   `valid:"-" toml:"MONITORING_TLS_CERT"`
-	MonitoringTLSKey                   string   `valid:"-" toml:"MONITORING_TLS_KEY"`
-	GoogleClientID                     string   `valid:"-" toml:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret                 string   `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
-	AcceptableEmails                   string   `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
-	TradingExchange                    string   `valid:"-" toml:"TRADING_EXCHANGE"`
-	ExchangeAPIKeys                    []struct {
-		Key    string `valid:"-" toml:"KEY"`
-		Secret string `valid:"-" toml:"SECRET"`
-	} `valid:"-" toml:"EXCHANGE_API_KEYS"`
-	ExchangeParams []struct {
-		Param string `valid:"-" toml:"PARAM"`
-		Value string `valid:"-" toml:"VALUE"`
-	} `valid:"-" toml:"EXCHANGE_PARAMS"`
-	ExchangeHeaders []struct {
-		Header string `valid:"-" toml:"HEADER"`
-		Value  string `valid:"-" toml:"VALUE"`
-	} `valid:"-" toml:"EXCHANGE_HEADERS"`
+	MinCentralizedBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true"`
+	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
+	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE"`
+	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE"`
+	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY"`
+	MonitoringPort                     uint16                   `valid:"-" toml:"MONITORING_PORT"`
+	MonitoringTLSCert                  string                   `valid:"-" toml:"MONITORING_TLS_CERT"`
+	MonitoringTLSKey                   string                   `valid:"-" toml:"MONITORING_TLS_KEY"`
+	GoogleClientID                     string                   `valid:"-" toml:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret                 string                   `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
+	AcceptableEmails                   string                   `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
+	TradingExchange                    string                   `valid:"-" toml:"TRADING_EXCHANGE"`
+	ExchangeAPIKeys                    toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	ExchangeParams                     toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
+	ExchangeHeaders                    toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 
 	// initialized later
 	tradingAccount *string
@@ -68,6 +60,51 @@ type BotConfig struct {
 	assetBase      horizon.Asset
 	assetQuote     horizon.Asset
 	isTradingSdex  bool
+}
+
+// MakeBotConfig factory method for BotConfig
+func MakeBotConfig(
+	sourceSecretSeed string,
+	tradingSecretSeed string,
+	assetCodeA string,
+	issuerA string,
+	assetCodeB string,
+	issuerB string,
+	tickIntervalSeconds int32,
+	maxTickDelayMillis int64,
+	deleteCyclesThreshold int64,
+	submitMode string,
+	fillTrackerSleepMillis uint32,
+	fillTrackerDeleteCyclesThreshold int64,
+	horizonURL string,
+	ccxtRestURL *string,
+	fee *FeeConfig,
+	centralizedPricePrecisionOverride *int8,
+	centralizedVolumePrecisionOverride *int8,
+	centralizedMinBaseVolumeOverride *float64,
+	centralizedMinQuoteVolumeOverride *float64,
+) *BotConfig {
+	return &BotConfig{
+		SourceSecretSeed:                 sourceSecretSeed,
+		TradingSecretSeed:                tradingSecretSeed,
+		AssetCodeA:                       assetCodeA,
+		IssuerA:                          issuerA,
+		AssetCodeB:                       assetCodeB,
+		IssuerB:                          issuerB,
+		TickIntervalSeconds:              tickIntervalSeconds,
+		MaxTickDelayMillis:               maxTickDelayMillis,
+		DeleteCyclesThreshold:            deleteCyclesThreshold,
+		SubmitMode:                       submitMode,
+		FillTrackerSleepMillis:           fillTrackerSleepMillis,
+		FillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
+		HorizonURL:                       horizonURL,
+		CcxtRestURL:                      ccxtRestURL,
+		Fee:                              fee,
+		CentralizedPricePrecisionOverride:  centralizedPricePrecisionOverride,
+		CentralizedVolumePrecisionOverride: centralizedVolumePrecisionOverride,
+		CentralizedMinBaseVolumeOverride:   centralizedMinBaseVolumeOverride,
+		CentralizedMinQuoteVolumeOverride:  centralizedMinQuoteVolumeOverride,
+	}
 }
 
 // String impl.

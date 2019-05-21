@@ -22,7 +22,7 @@ type sellConfig struct {
 	RateOffsetPercent      float64       `valid:"-" toml:"RATE_OFFSET_PERCENT"`
 	RateOffset             float64       `valid:"-" toml:"RATE_OFFSET"`
 	RateOffsetPercentFirst bool          `valid:"-" toml:"RATE_OFFSET_PERCENT_FIRST"`
-	Levels                 []staticLevel `valid:"-" toml:"LEVELS"`
+	Levels                 []StaticLevel `valid:"-" toml:"LEVELS"`
 }
 
 // String impl.

@@ -46,7 +46,9 @@ class App extends Component {
       <div>
       <Router>
         <Header version={this.state.version}/>
-        <Route exact path="/" component={Bots} />
+        <Route exact path="/"
+          render={(props) => <Bots {...props} baseUrl={baseUrl}/>}
+          />
         <Route path="/new" component={NewBot} />
         <Route path="/details" component={Details} />
       </Router>

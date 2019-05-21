@@ -198,14 +198,6 @@ func makeExchangeShimSdex(
 	var e error
 	var exchangeShim api.ExchangeShim
 	if !botConfig.IsTradingSdex() {
-		exchangeAPIKeys := []api.ExchangeAPIKey{}
-		for _, apiKey := range botConfig.ExchangeAPIKeys {
-			exchangeAPIKeys = append(exchangeAPIKeys, api.ExchangeAPIKey{
-				Key:    apiKey.Key,
-				Secret: apiKey.Secret,
-			})
-		}
-
 		exchangeParams := []api.ExchangeParam{}
 		for _, param := range botConfig.ExchangeParams {
 			exchangeParams = append(exchangeParams, api.ExchangeParam{
@@ -222,6 +214,7 @@ func makeExchangeShimSdex(
 			})
 		}
 
+		exchangeAPIKeys := botConfig.ExchangeAPIKeys.ToExchangeAPIKeys()
 		var exchangeAPI api.Exchange
 		exchangeAPI, e = plugins.MakeTradingExchange(botConfig.TradingExchange, exchangeAPIKeys, exchangeParams, exchangeHeaders, *options.simMode)
 		if e != nil {
