@@ -2,6 +2,8 @@ package backend
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,6 +38,12 @@ func MakeAPIServer(kos *kelpos.KelpOS) (*APIServer, error) {
 		logsDir:    logsDir,
 		kos:        kos,
 	}, nil
+}
+
+func (s *APIServer) writeError(w http.ResponseWriter, message string) {
+	log.Print(message)
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(message))
 }
 
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {

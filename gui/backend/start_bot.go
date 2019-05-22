@@ -15,22 +15,21 @@ import (
 func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 	botNameBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("error when reading request input: %s\n", e)))
+		s.writeError(w, fmt.Sprintf("error when reading request input: %s\n", e))
 		return
 	}
 
 	botName := string(botNameBytes)
 	e = s.doStartBot(botName, "buysell", nil, nil)
 	if e != nil {
-		log.Printf("error starting bot: %s", e)
-		w.WriteHeader(http.StatusInternalServerError)
+		s.writeError(w, fmt.Sprintf("error starting bot: %s\n", e))
+		return
 	}
 
 	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopped)
 	if e != nil {
-		log.Printf("error advancing bot state: %s\n", e)
-		w.WriteHeader(http.StatusInternalServerError)
+		s.writeError(w, fmt.Sprintf("error advancing bot state: %s\n", e))
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
