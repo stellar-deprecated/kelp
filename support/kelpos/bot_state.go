@@ -2,17 +2,17 @@ package kelpos
 
 import "fmt"
 
-type botState uint8
+type BotState uint8
 
 const (
-	botStateInitializing botState = iota
-	botStateStopped
-	botStateRunning
-	botStateStopping
+	BotStateInitializing BotState = iota
+	BotStateStopped
+	BotStateRunning
+	BotStateStopping
 )
 
 // String impl
-func (bs botState) String() string {
+func (bs BotState) String() string {
 	return []string{
 		"initializing",
 		"stopped",
@@ -22,22 +22,22 @@ func (bs botState) String() string {
 }
 
 // InitState is the first state of the bot
-func InitState() botState {
-	return botStateInitializing
+func InitState() BotState {
+	return BotStateInitializing
 }
 
 // nextState produces the next state of the bot
-func nextState(bs botState) (botState, error) {
+func nextState(bs BotState) (BotState, error) {
 	switch bs {
-	case botStateInitializing:
-		return botStateStopped, nil
-	case botStateStopped:
-		return botStateRunning, nil
-	case botStateRunning:
-		return botStateStopping, nil
-	case botStateStopping:
-		return botStateStopped, nil
+	case BotStateInitializing:
+		return BotStateStopped, nil
+	case BotStateStopped:
+		return BotStateRunning, nil
+	case BotStateRunning:
+		return BotStateStopping, nil
+	case BotStateStopping:
+		return BotStateStopped, nil
 	default:
-		return botStateInitializing, fmt.Errorf("botState does not have a nextState: %s", bs.String())
+		return BotStateInitializing, fmt.Errorf("botState does not have a nextState: %s", bs.String())
 	}
 }

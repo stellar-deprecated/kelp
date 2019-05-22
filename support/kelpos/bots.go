@@ -2,6 +2,7 @@ package kelpos
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/stellar/kelp/gui/model"
 )
@@ -23,7 +24,7 @@ func (kos *KelpOS) RegisterBot(bot *model.Bot) error {
 }
 
 // AdvanceBotState advances the state of the given bot atomically, ensuring the bot is currently at the expected state
-func (kos *KelpOS) AdvanceBotState(botName string, expectedCurrentState botState) error {
+func (kos *KelpOS) AdvanceBotState(botName string, expectedCurrentState BotState) error {
 	kos.botLock.Lock()
 	defer kos.botLock.Unlock()
 
@@ -40,7 +41,10 @@ func (kos *KelpOS) AdvanceBotState(botName string, expectedCurrentState botState
 	if e != nil {
 		return fmt.Errorf("error while advancing bot state for '%s': %s", botName, e)
 	}
+
 	b.state = ns
+	log.Printf("advanced bot state for bot '%s' to %s\n", botName, ns)
+
 	return nil
 }
 
