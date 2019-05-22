@@ -17,8 +17,8 @@ func (kos *KelpOS) RegisterBot(bot *model.Bot) error {
 	}
 
 	kos.bots[bot.Name] = &BotInstance{
-		bot:   bot,
-		state: InitState(),
+		Bot:   bot,
+		State: InitState(),
 	}
 	return nil
 }
@@ -33,25 +33,29 @@ func (kos *KelpOS) AdvanceBotState(botName string, expectedCurrentState BotState
 		return fmt.Errorf("bot '%s' is not registered", botName)
 	}
 
-	if b.state != expectedCurrentState {
-		return fmt.Errorf("state of bot '%s' was not as expected (%s): %s", botName, expectedCurrentState, b.state)
+	if b.State != expectedCurrentState {
+		return fmt.Errorf("state of bot '%s' was not as expected (%s): %s", botName, expectedCurrentState, b.State)
 	}
 
-	ns, e := nextState(b.state)
+	ns, e := nextState(b.State)
 	if e != nil {
 		return fmt.Errorf("error while advancing bot state for '%s': %s", botName, e)
 	}
 
-	b.state = ns
+	b.State = ns
 	log.Printf("advanced bot state for bot '%s' to %s\n", botName, ns)
 
 	return nil
 }
 
-func (kos *KelpOS) getBot(name string) (*BotInstance, bool) {
+// GetBot fetches the bot state for the given name
+func (kos *KelpOS) GetBot(botName string) (*BotInstance, error) {
 	kos.botLock.Lock()
 	defer kos.botLock.Unlock()
 
-	b, exists := kos.bots[name]
-	return b, exists
+	b, exists := kos.bots[botName]
+	if !exists {
+		return b, fmt.Errorf("bot '%s' does not exist", botName)
+	}
+	return b, nil
 }

@@ -29,8 +29,8 @@ func init() {
 
 // BotInstance is an instance of a given bot along with the metadata
 type BotInstance struct {
-	bot   *model.Bot
-	state BotState
+	Bot   *model.Bot
+	State BotState
 }
 
 // GetKelpOS gets the singleton instance
