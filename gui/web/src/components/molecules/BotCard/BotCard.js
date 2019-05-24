@@ -25,6 +25,10 @@ class BotCard extends Component {
       state: Constants.BotState.initializing,
     };
     this.toggleBot = this.toggleBot.bind(this);
+    this.checkState = this.checkState.bind(this);
+    this.startBot = this.startBot.bind(this);
+    this.stopBot = this.stopBot.bind(this);
+    this.tick = this.tick.bind(this);
     this._asyncRequests = {};
   }
 
@@ -61,15 +65,19 @@ class BotCard extends Component {
 
   componentDidMount() {
     this.checkState();
-    this._stateTimer = setInterval(() => this.checkState(), 1000);
+    this._stateTimer = setInterval(this.checkState, 1000);
   }
 
   componentWillUnmount() {
-    clearTimeout(this._stateTimer);
-    this._stateTimer = null;
+    if (this._stateTimer) {
+      clearTimeout(this._stateTimer);
+      this._stateTimer = null;
+    }
 
-    clearTimeout(this._tickTimer);
-    this._tickTimer = null;
+    if (this._tickTimer) {
+      clearTimeout(this._tickTimer);
+      this._tickTimer = null;
+    }
 
     if (this._asyncRequests["state"]) {
       this._asyncRequests["state"].cancel();
@@ -100,13 +108,13 @@ class BotCard extends Component {
     var _this = this;
     this._asyncRequests["start"] = start(this.props.baseUrl, this.props.name).then(resp => {
       _this._asyncRequests["start"] = null;
-      
+
       _this.setState({
         timeStarted: new Date(),
       }, () => {
         _this.checkState()
         _this.tick();
-        _this._tickTimer = setInterval(() => _this.tick(), 1000);
+        _this._tickTimer = setInterval(_this.tick, 1000);
       });
     });
   }
