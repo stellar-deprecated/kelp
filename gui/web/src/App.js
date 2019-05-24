@@ -28,9 +28,10 @@ class App extends Component {
   }
 
   componentDidMount() {
+    var _this = this
     this._asyncRequest = version(baseUrl).then(resp => {
-      this._asyncRequest = null;
-      this.setState({version: resp});
+      _this._asyncRequest = null;
+      _this.setState({version: resp});
     });
   }
 

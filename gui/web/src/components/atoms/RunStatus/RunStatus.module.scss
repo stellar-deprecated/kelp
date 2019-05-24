@@ -28,6 +28,17 @@
     }
 }
 
+.initializingWrapper, .stoppingWrapper {
+    composes: _wrapper;
+    display: flex;
+    align-items: center;
+    
+    svg {
+        margin-right: 6px;
+        fill: $color-warning;
+    }
+}
+
 .runningIcon {
     composes: _icon;
     display: inline-block;
@@ -83,3 +94,7 @@
     color: $color-danger;
 }
 
+.initializingLabel, .stoppingLabel {
+    composes: _label;
+    color: $color-warning;
+}

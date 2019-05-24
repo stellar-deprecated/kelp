@@ -1,30 +1,35 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Button from '../Button/Button';
-
+import Constants from '../../../Constants';
 
 class StartStop extends Component {
   static defaultProps = {
-    isRunning: false,
+    state: Constants.BotState.initializing,
     onClick: () => {},
   }
 
   static propTypes = {
-    isRunning: PropTypes.bool,
+    state: PropTypes.string,
     onClick: PropTypes.func,
   };
 
   render() {
-    if(this.props.isRunning){
-      return (
-        <Button icon="stop" size="small" variant="stop" onClick={this.props.onClick}>Stop</Button>
-      )  
+    let icon = "";
+    let variant = "";
+    let text = ""
+    if (this.props.state === Constants.BotState.running) {
+      icon = "stop";
+      variant = "stop";
+      text = "Stop";
+    } else {
+      icon = "start";
+      variant = "start";
+      text = "Start";
     }
-    else {
-      return (
-        <Button icon='start' size="small" variant="start" onClick={this.props.onClick}>Start</Button>
-      )
-    }
+    let disabled = this.props.state === Constants.BotState.initializing || this.props.state === Constants.BotState.stopping;
+
+    return (<Button icon={icon} size="small" variant={variant} onClick={this.props.onClick} disabled={disabled}>{text}</Button>);
   }
 }
 

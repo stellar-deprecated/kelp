@@ -60,9 +60,10 @@ class Bots extends Component {
   }
 
   autogenerateBot() {
+    var _this = this
     this._asyncRequest = autogenerate(this.props.baseUrl).then(newBot => {
-      this._asyncRequest = null;
-      this.setState(prevState => ({
+      _this._asyncRequest = null;
+      _this.setState(prevState => ({
         bots: [...prevState.bots, newBot]
       }))
     });
