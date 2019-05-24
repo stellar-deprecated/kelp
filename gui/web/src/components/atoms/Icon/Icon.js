@@ -76,7 +76,10 @@ class Icon extends Component {
   }
   
   render() {
-
+    if (this.props.symbol === null || this.props.symbol === "") {
+      return "";
+    }
+    
     return (
       <svg 
         className={this.props.className}

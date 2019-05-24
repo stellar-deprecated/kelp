@@ -10,9 +10,11 @@ import BotExchangeInfo from '../../atoms/BotExchangeInfo/BotExchangeInfo';
 import BotAssetsInfo from '../../atoms/BotAssetsInfo/BotAssetsInfo';
 import BotBidAskInfo from '../../atoms/BotBidAskInfo/BotBidAskInfo';
 import Button from '../../atoms/Button/Button';
+import Constants from '../../../Constants';
 
 import start from '../../../kelp-ops-api/start';
 import stop from '../../../kelp-ops-api/stop';
+import getState from '../../../kelp-ops-api/getState';
 
 class BotCard extends Component {
   constructor(props) {
@@ -20,9 +22,14 @@ class BotCard extends Component {
     this.state = {
       timeStarted: null,
       timeElapsed: null,
-      isRunning: false,
+      state: Constants.BotState.initializing,
     };
     this.toggleBot = this.toggleBot.bind(this);
+    this.checkState = this.checkState.bind(this);
+    this.startBot = this.startBot.bind(this);
+    this.stopBot = this.stopBot.bind(this);
+    this.tick = this.tick.bind(this);
+    this._asyncRequests = {};
   }
 
   static defaultProps = {
@@ -41,56 +48,93 @@ class BotCard extends Component {
     baseUrl: PropTypes.string, 
   };
 
+  checkState() {
+    if (this._asyncRequests["state"] == null) {
+      var _this = this;
+      this._asyncRequests["state"] = getState(this.props.baseUrl, this.props.name).then(resp => {
+        _this._asyncRequests["state"] = null;
+        let state = resp.trim();
+        if (_this.state.state !== state) {
+          _this.setState({
+            state: state,
+          });
+        }
+      });
+    }
+  }
+
+  componentDidMount() {
+    this.checkState();
+    this._stateTimer = setInterval(this.checkState, 1000);
+  }
+
   componentWillUnmount() {
-    if (this._asyncRequest) {
-      this._asyncRequest.cancel();
-      this._asyncRequest = null;
+    if (this._stateTimer) {
+      clearTimeout(this._stateTimer);
+      this._stateTimer = null;
+    }
+
+    if (this._tickTimer) {
+      clearTimeout(this._tickTimer);
+      this._tickTimer = null;
+    }
+
+    if (this._asyncRequests["state"]) {
+      this._asyncRequests["state"].cancel();
+      this._asyncRequests["state"] = null;
+    }
+
+    if (this._asyncRequests["start"]) {
+      this._asyncRequests["start"].cancel();
+      this._asyncRequests["start"] = null;
+    }
+    
+    if (this._asyncRequests["stop"]) {
+      this._asyncRequests["stop"].cancel();
+      this._asyncRequests["stop"] = null;
     }
   }
 
   toggleBot() {
-    if(this.state.isRunning){
+    if (this.state.state === Constants.BotState.running) {
       this.stopBot();
     } else {
       this.startBot();
     }
+    this.checkState();
   }
 
-  startBot(){
+  startBot() {
     var _this = this;
-    start(this.props.baseUrl, this.props.name).then(resp => {
+    this._asyncRequests["start"] = start(this.props.baseUrl, this.props.name).then(resp => {
+      _this._asyncRequests["start"] = null;
+
       _this.setState({
         timeStarted: new Date(),
-        isRunning: true,
       }, () => {
+        _this.checkState()
         _this.tick();
-      
-        _this.timer = setInterval(
-          () => _this.tick(),
-          1000
-        );
+        _this._tickTimer = setInterval(_this.tick, 1000);
       });
     });
   }
 
   stopBot() {
     var _this = this;
-    stop(this.props.baseUrl, this.props.name).then(resp => {
+    this._asyncRequests["stop"] = stop(this.props.baseUrl, this.props.name).then(resp => {
+      _this._asyncRequests["stop"] = null;
       _this.setState({
         timeStarted: null,
-        timeElapsed: null,
-        isRunning: false,
       });
-      clearTimeout(_this.timer);
+      clearTimeout(this._tickTimer);
+      this._tickTimer = null;
     });
   }
 
   tick() {
     let timeNow = new Date();
     let diffTime = timeNow - this.state.timeStarted;
-    
     let elapsed = new Date(diffTime);
-    
     this.setState({
       timeElapsed: elapsed,
     });
@@ -99,7 +143,7 @@ class BotCard extends Component {
   render() {
     return (
       <div className={styles.card}>
-        <span className={this.state.isRunning ? styles.statusRunning : styles.statusStopped}></span>
+        <span className={this.state.state === Constants.BotState.running ? styles.statusRunning : styles.statusStopped}/>
 
         <Button
             icon="options"
@@ -149,12 +193,13 @@ class BotCard extends Component {
 
         <div className={styles.fourthColumn}>
           <RunStatus 
-            className={styles.statusDetails} 
+            className={styles.statusDetails}
+            state={this.state.state}
             timeRunning={this.state.timeElapsed}
           />
-          <StartStop 
+          <StartStop
             onClick={this.toggleBot} 
-            isRunning={this.state.isRunning}
+            state={this.state.state}
           />
         </div>
 
