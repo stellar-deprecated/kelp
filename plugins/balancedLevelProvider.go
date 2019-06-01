@@ -29,6 +29,7 @@ type balancedLevelProvider struct {
 	virtualBalanceQuote           float64 // virtual balance to use so we can smoothen out the curve
 	orderConstraints              *model.OrderConstraints
 	shouldRefresh                 bool // boolean for whether to generate levels, starts true
+	spreadPad                     float64
 
 	// precomputed before construction
 	randGen *rand.Rand
@@ -57,6 +58,7 @@ func makeBalancedLevelProvider(
 	carryoverInclusionProbability float64,
 	virtualBalanceBase float64,
 	virtualBalanceQuote float64,
+	spreadPad float64,
 	orderConstraints *model.OrderConstraints,
 ) api.LevelProvider {
 	if minAmountSpread <= 0 {
@@ -80,7 +82,7 @@ func makeBalancedLevelProvider(
 	shouldRefresh := true
 
 	return &balancedLevelProvider{
-		spread: spread,
+		spread:                        spread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
 		minAmountSpread:               minAmountSpread,
 		maxAmountSpread:               maxAmountSpread,
@@ -92,6 +94,7 @@ func makeBalancedLevelProvider(
 		carryoverInclusionProbability: carryoverInclusionProbability,
 		virtualBalanceBase:            virtualBalanceBase,
 		virtualBalanceQuote:           virtualBalanceQuote,
+		spreadPad:                     spreadPad,
 		orderConstraints:              orderConstraints,
 		randGen:                       randGen,
 		shouldRefresh:                 shouldRefresh,
@@ -106,6 +109,7 @@ func validateSpread(spread float64) {
 
 // GetLevels impl.
 func (p *balancedLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+
 	if !p.shouldRefresh {
 		log.Println("no offers were taken, leave levels as they are")
 		return p.lastLevels, nil
@@ -183,7 +187,7 @@ func (p *balancedLevelProvider) getRandomSpread(minSpread float64, maxSpread flo
 }
 
 func (p *balancedLevelProvider) getLevel(maxAssetBase float64, maxAssetQuote float64) (api.Level, error) {
-	centerPrice := maxAssetQuote / maxAssetBase
+	centerPrice := (maxAssetQuote / maxAssetBase) * (1 + p.spreadPad)
 	// price always adds the spread
 	targetPrice := centerPrice * (1 + p.spread/2)
 
