@@ -2,24 +2,32 @@ package backend
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+
+	"github.com/stellar/kelp/support/kelpos"
 )
 
 func (s *APIServer) getBotState(w http.ResponseWriter, r *http.Request) {
-	botNameBytes, e := ioutil.ReadAll(r.Body)
+	botName, e := s.parseBotName(r)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when reading request input: %s\n", e))
+		s.writeError(w, fmt.Sprintf("error in getBotState: %s\n", e))
 		return
 	}
-	botName := string(botNameBytes)
 
-	b, e := s.kos.GetBot(botName)
+	state, e := s.doGetBotState(botName)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when getting bot state: %s\n", e))
+		s.writeError(w, fmt.Sprintf("error when getting bot state in getBotState: %s\n", e))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("%s\n", b.State)))
+	w.Write([]byte(fmt.Sprintf("%s\n", state)))
+}
+
+func (s *APIServer) doGetBotState(botName string) (kelpos.BotState, error) {
+	b, e := s.kos.GetBot(botName)
+	if e != nil {
+		return kelpos.InitState(), fmt.Errorf("error when getting bot state: %s", e)
+	}
+	return b.State, nil
 }

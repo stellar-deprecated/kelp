@@ -33,13 +33,13 @@ func (kos *KelpOS) StreamOutput(command *exec.Cmd) error {
 
 // SafeUnregister ignores erros when unregistering the command at the provided namespace
 func (kos *KelpOS) SafeUnregister(namespace string) {
-	kos.unregister(namespace)
+	kos.Unregister(namespace)
 }
 
 // Stop unregisters and stops the command at the provided namespace
 func (kos *KelpOS) Stop(namespace string) error {
 	if c, exists := kos.get(namespace); exists {
-		e := kos.unregister(namespace)
+		e := kos.Unregister(namespace)
 		if e != nil {
 			return fmt.Errorf("could not stop command because of an error when unregistering command for namespace '%s': %s", namespace, e)
 		}
@@ -64,7 +64,7 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 		return nil, fmt.Errorf("error waiting for bash command '%s': %s", cmd, e)
 	}
 
-	e = kos.unregister(namespace)
+	e = kos.Unregister(namespace)
 	if e != nil {
 		return nil, fmt.Errorf("error unregistering bash command '%s': %s", cmd, e)
 	}
@@ -105,7 +105,8 @@ func (kos *KelpOS) register(namespace string, c *exec.Cmd) error {
 	return nil
 }
 
-func (kos *KelpOS) unregister(namespace string) error {
+// Unregister unregisters the command at the provided namespace, returning an error if needed
+func (kos *KelpOS) Unregister(namespace string) error {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
