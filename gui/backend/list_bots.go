@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stellar/kelp/support/kelpos"
-
 	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/support/kelpos"
 )
 
 func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +32,8 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	for _, bot := range bots {
 		e := s.kos.RegisterBotWithState(&bot, kelpos.BotStateStopped)
 		if e != nil {
-			s.writeError(w, fmt.Sprintf("bot was alreaday registered (duplicate?): %s\n", e))
-			return
+			// if page is reloaded then bot would already be registered, which is ok
+			log.Printf("unable to register bot: %s\n", e)
 		}
 	}
 
