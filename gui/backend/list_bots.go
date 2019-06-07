@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/stellar/kelp/support/kelpos"
+
 	"github.com/stellar/kelp/gui/model"
 )
 
@@ -27,6 +29,14 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 		bots = append(bots, *bot)
 	}
 	log.Printf("bots available: %v", bots)
+
+	for _, bot := range bots {
+		e := s.kos.RegisterBotWithState(&bot, kelpos.BotStateStopped)
+		if e != nil {
+			s.writeError(w, fmt.Sprintf("bot was alreaday registered (duplicate?): %s\n", e))
+			return
+		}
+	}
 
 	// serialize and return
 	botsJson, e := json.Marshal(bots)
