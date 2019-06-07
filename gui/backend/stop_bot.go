@@ -40,7 +40,7 @@ func (s *APIServer) doStopBot(botName string) error {
 		s.deleteFinishCallback(botName)
 	})
 	if e != nil {
-		return fmt.Errorf("error when deleting bot ortders %s: %s\n", botName, e)
+		return fmt.Errorf("error when deleting bot orders %s: %s\n", botName, e)
 	}
 	return nil
 }
