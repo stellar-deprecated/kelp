@@ -9,6 +9,11 @@ import (
 
 // RegisterBot registers a new bot, returning an error if one already exists with the same name
 func (kos *KelpOS) RegisterBot(bot *model.Bot) error {
+	return kos.RegisterBotWithState(bot, InitState())
+}
+
+// RegisterBotWithState registers a new bot with a given state, returning an error if one already exists with the same name
+func (kos *KelpOS) RegisterBotWithState(bot *model.Bot, state BotState) error {
 	kos.botLock.Lock()
 	defer kos.botLock.Unlock()
 
@@ -18,7 +23,7 @@ func (kos *KelpOS) RegisterBot(bot *model.Bot) error {
 
 	kos.bots[bot.Name] = &BotInstance{
 		Bot:   bot,
-		State: InitState(),
+		State: state,
 	}
 	return nil
 }
