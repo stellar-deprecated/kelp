@@ -6,6 +6,7 @@ import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import grid from '../../_styles/grid.module.scss';
 
 import autogenerate from '../../../kelp-ops-api/autogenerate';
+import listBots from '../../../kelp-ops-api/listBots';
 
 const placeaholderBots = [
   {
@@ -38,6 +39,7 @@ class Bots extends Component {
       bots: [],
     };
  
+    this.fetchBots = this.fetchBots.bind(this);
     this.gotoForm = this.gotoForm.bind(this);
     this.gotoDetails = this.gotoDetails.bind(this);
     this.autogenerateBot = this.autogenerateBot.bind(this);
@@ -50,6 +52,10 @@ class Bots extends Component {
       this._asyncRequest = null;
     }
   }
+
+  componentDidMount() {
+    this.fetchBots()
+  }
   
   gotoForm() {
     this.props.history.push('/new')
@@ -57,6 +63,16 @@ class Bots extends Component {
 
   gotoDetails() {
     this.props.history.push('/details')
+  }
+
+  fetchBots() {
+    var _this = this
+    this._asyncRequest = listBots(this.props.baseUrl).then(bots => {
+      _this._asyncRequest = null;
+      _this.setState(prevState => ({
+        bots: bots
+      }))
+    });
   }
 
   autogenerateBot() {
