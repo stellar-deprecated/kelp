@@ -6,11 +6,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/stellar/kelp/support/networking"
+
 	"github.com/stellar/kelp/support/kelpos"
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/kelp/gui/model"
 	"github.com/stellar/kelp/plugins"
@@ -98,12 +99,12 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) setupAccount(address string, signer string, botName string) error {
-	hclient := horizonclient.DefaultTestNetClient
-	txSuccess, e := hclient.Fund(address)
+	var fundResponse interface{}
+	e := networking.JSONRequest(http.DefaultClient, "GET", "https://friendbot.stellar.org/?addr="+address, "", nil, &fundResponse, "")
 	if e != nil {
 		return fmt.Errorf("error funding address %s for bot '%s': %s\n", address, botName, e)
 	}
-	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, txSuccess.TransactionSuccessToString())
+	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
 
 	client := horizon.DefaultTestNetClient
 	txn, e := build.Transaction(
