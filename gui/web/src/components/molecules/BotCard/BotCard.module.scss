@@ -51,12 +51,26 @@ $small-spacing: 3px;
   background-color: $color-danger;
 }
 
-.optionsMenu {
+.optionsWrapper {
   position: absolute;
   right: 2px;
   top: 2px;
   border: 0;
   background-color: transparent;
+  z-index: 10;
+  text-align: right;
+}
+
+.optionsSpacer {
+  height: 4px;
+}
+
+.optionsTrigger {
+  display: inline-block;
+}
+
+.optionsMenu {
+  display: inline-block;
 }
 
 .sortingArrows {

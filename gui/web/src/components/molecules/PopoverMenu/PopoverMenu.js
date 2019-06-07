@@ -6,11 +6,11 @@ class PopoverMenu extends Component {
 
     return (
       <div className={styles.wrapper}>
-        <ul className={styles.list}>
-          <li className={styles.item}>Edit</li>
-          <li className={styles.item}>Copy</li>
-          <li className={styles.itemDanger}>Delete</li>
-        </ul>
+        <div className={styles.list}>
+          <div className={styles.item}>Edit</div>
+          <div className={styles.item}>Copy</div>
+          <div className={styles.itemDanger}>Delete</div>
+        </div>
       </div>
     );
   }

@@ -88,7 +88,7 @@ class Details extends Component {
               size="large"
               variant="transparent"
               hsize="round"
-              className={styles.optionsMenu} 
+              className={styles.optionsWrapper}
               onClick={this.close}
             />
           </ScreenHeader>
