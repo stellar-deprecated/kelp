@@ -123,6 +123,7 @@ class Bots extends Component {
           errors={bot.errors}
           showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
+          reload={this.fetchBots}
         />
       ));
 
