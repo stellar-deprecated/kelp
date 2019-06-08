@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -38,6 +39,14 @@ func MakeAPIServer(kos *kelpos.KelpOS) (*APIServer, error) {
 		logsDir:    logsDir,
 		kos:        kos,
 	}, nil
+}
+
+func (s *APIServer) parseBotName(r *http.Request) (string, error) {
+	botNameBytes, e := ioutil.ReadAll(r.Body)
+	if e != nil {
+		return "", fmt.Errorf("error when reading request input: %s\n", e)
+	}
+	return string(botNameBytes), nil
 }
 
 func (s *APIServer) writeError(w http.ResponseWriter, message string) {

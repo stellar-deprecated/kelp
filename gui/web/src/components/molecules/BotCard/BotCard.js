@@ -11,9 +11,11 @@ import BotAssetsInfo from '../../atoms/BotAssetsInfo/BotAssetsInfo';
 import BotBidAskInfo from '../../atoms/BotBidAskInfo/BotBidAskInfo';
 import Button from '../../atoms/Button/Button';
 import Constants from '../../../Constants';
+import PopoverMenu from '../PopoverMenu/PopoverMenu';
 
 import start from '../../../kelp-ops-api/start';
 import stop from '../../../kelp-ops-api/stop';
+import deleteBot from '../../../kelp-ops-api/deleteBot';
 import getState from '../../../kelp-ops-api/getState';
 
 class BotCard extends Component {
@@ -22,13 +24,18 @@ class BotCard extends Component {
     this.state = {
       timeStarted: null,
       timeElapsed: null,
+      popoverVisible: false,
       state: Constants.BotState.initializing,
     };
+
     this.toggleBot = this.toggleBot.bind(this);
     this.checkState = this.checkState.bind(this);
     this.startBot = this.startBot.bind(this);
     this.stopBot = this.stopBot.bind(this);
     this.tick = this.tick.bind(this);
+    this.toggleOptions = this.toggleOptions.bind(this);
+    this.callDeleteBot = this.callDeleteBot.bind(this);
+
     this._asyncRequests = {};
   }
 
@@ -126,8 +133,23 @@ class BotCard extends Component {
       _this.setState({
         timeStarted: null,
       });
-      clearTimeout(this._tickTimer);
-      this._tickTimer = null;
+      clearTimeout(_this._tickTimer);
+      _this._tickTimer = null;
+    });
+  }
+
+  callDeleteBot() {
+    var _this = this;
+    this._asyncRequests["delete"] = deleteBot(this.props.baseUrl, this.props.name).then(resp => {
+      _this._asyncRequests["delete"] = null;
+      clearTimeout(_this._tickTimer);
+      _this._tickTimer = null;
+      // reload parent view
+      _this.props.reload();
+    });
+    
+    this.setState({
+      popoverVisible: false,
     });
   }
 
@@ -140,19 +162,46 @@ class BotCard extends Component {
     });
   }
 
+  toggleOptions() {
+    this.setState({
+      popoverVisible: !this.state.popoverVisible,
+    })
+  }
+
   render() {
+    let popover = "";
+    if (this.state.popoverVisible) {
+      popover = (
+        <div>
+          <div className={styles.optionsSpacer}/>
+          <PopoverMenu
+            className={styles.optionsMenu}
+            enableEdit={false}
+            onEdit={this.toggleOptions}
+            enableCopy={false}
+            onCopy={this.toggleOptions}
+            enableDelete={true}
+            onDelete={this.callDeleteBot}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className={styles.card}>
         <span className={this.state.state === Constants.BotState.running ? styles.statusRunning : styles.statusStopped}/>
 
-        <Button
-            icon="options"
-            size="large"
-            variant="transparent"
-            hsize="round"
-            className={styles.optionsMenu} 
-            onClick={this.close}
-        />
+        <div className={styles.optionsWrapper}>
+          <Button
+              icon="options"
+              size="large"
+              variant="transparent"
+              hsize="round"
+              className={styles.optionsTrigger}
+              onClick={this.toggleOptions}
+          />
+          {popover}
+        </div>
 
         <div className={styles.sortingArrows}>
           <Button

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -10,23 +9,29 @@ import (
 )
 
 func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
-	botNameBytes, e := ioutil.ReadAll(r.Body)
+	botName, e := s.parseBotName(r)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when reading request input: %s\n", e))
+		s.writeError(w, fmt.Sprintf("error in stopBot: %s\n", e))
 		return
 	}
-	botName := string(botNameBytes)
 
-	e = s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
+	e = s.doStopBot(botName)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error advancing bot state: %s\n", e))
+		s.writeError(w, fmt.Sprintf("error stopping bot: %s\n", e))
 		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *APIServer) doStopBot(botName string) error {
+	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
+	if e != nil {
+		return fmt.Errorf("error advancing bot state: %s\n", e)
 	}
 
 	e = s.kos.Stop(botName)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when killing bot %s: %s\n", botName, e))
-		return
+		return fmt.Errorf("error when killing bot %s: %s\n", botName, e)
 	}
 	log.Printf("stopped bot '%s'\n", botName)
 
@@ -35,11 +40,9 @@ func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
 		s.deleteFinishCallback(botName)
 	})
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when deleting bot ortders %s: %s\n", botName, e))
-		return
+		return fmt.Errorf("error when deleting bot orders %s: %s\n", botName, e)
 	}
-
-	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
 func (s *APIServer) deleteFinishCallback(botName string) {

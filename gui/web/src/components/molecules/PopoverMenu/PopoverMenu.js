@@ -3,14 +3,13 @@ import styles from './PopoverMenu.module.scss';
 
 class PopoverMenu extends Component {
   render() {
-
     return (
       <div className={styles.wrapper}>
-        <ul className={styles.list}>
-          <li className={styles.item}>Edit</li>
-          <li className={styles.item}>Copy</li>
-          <li className={styles.itemDanger}>Delete</li>
-        </ul>
+        <div className={styles.list}>
+          {this.props.enableEdit ? <div className={styles.item} onClick={this.props.onEdit}>Edit</div> : <div className={[styles.item, styles.disabled].join(' ')}>Edit</div>}
+          {this.props.enableCopy ? <div className={styles.item} onClick={this.props.onCopy}>Copy</div> : <div className={[styles.item, styles.disabled].join(' ')}>Copy</div>}
+          {this.props.enableDelete ? <div className={styles.itemDanger} onClick={this.props.onDelete}>Delete</div> : <div className={[styles.item, styles.disabled].join(' ')}>Delete</div>}
+        </div>
       </div>
     );
   }

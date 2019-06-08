@@ -14,6 +14,7 @@ func SetRoutes(r *chi.Mux, s *APIServer) {
 		r.Get("/autogenerate", http.HandlerFunc(s.autogenerateBot))
 		r.Post("/start", http.HandlerFunc(s.startBot))
 		r.Post("/stop", http.HandlerFunc(s.stopBot))
+		r.Post("/deleteBot", http.HandlerFunc(s.deleteBot))
 		r.Post("/getState", http.HandlerFunc(s.getBotState))
 	})
 }

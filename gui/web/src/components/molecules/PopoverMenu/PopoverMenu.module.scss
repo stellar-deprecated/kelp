@@ -17,7 +17,7 @@ $arrow-size: 8px;
         border-bottom: $arrow-size solid $color-base-5;
         position: absolute;
         top: -$arrow-size*2;
-        left: 50%;
+        right: 0%;
         transform: translateX(-50%);
     }
 }
@@ -38,6 +38,11 @@ $arrow-size: 8px;
         color: $color-contrast-1;
         background-color: rgba($color-contrast-5, 0.3%);
     }
+}
+
+.item.disabled {
+    color: $color-contrast-3;
+    background-color: rgba($color-contrast-2, 0.3%);
 }
 
 

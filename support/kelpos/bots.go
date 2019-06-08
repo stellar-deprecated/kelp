@@ -12,6 +12,19 @@ func (kos *KelpOS) RegisterBot(bot *model.Bot) error {
 	return kos.RegisterBotWithState(bot, InitState())
 }
 
+// SafeUnregisterBot unregister a bot without any errors
+func (kos *KelpOS) SafeUnregisterBot(botName string) {
+	kos.botLock.Lock()
+	defer kos.botLock.Unlock()
+
+	if _, exists := kos.bots[botName]; exists {
+		delete(kos.bots, botName)
+		log.Printf("unregistered bot with name '%s'", botName)
+	} else {
+		log.Printf("no bot registered with name '%s'", botName)
+	}
+}
+
 // RegisterBotWithState registers a new bot with a given state, returning an error if one already exists with the same name
 func (kos *KelpOS) RegisterBotWithState(bot *model.Bot, state BotState) error {
 	kos.botLock.Lock()
