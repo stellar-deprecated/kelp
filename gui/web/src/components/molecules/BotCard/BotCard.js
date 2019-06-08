@@ -147,6 +147,10 @@ class BotCard extends Component {
       // reload parent view
       _this.props.reload();
     });
+    
+    this.setState({
+      popoverVisible: false,
+    });
   }
 
   tick() {
