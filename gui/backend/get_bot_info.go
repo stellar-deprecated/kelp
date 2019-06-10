@@ -13,34 +13,17 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd, exists := s.kos.GetProcess(botName)
+	p, exists := s.kos.GetProcess(botName)
 	if !exists {
 		s.writeError(w, fmt.Sprintf("bot with name '%s' does not exist\n", botName))
 		return
 	}
 
-	// send command
-	writer, e := cmd.StdinPipe()
+	// make request via IPC
+	p.Stdin.Write([]byte("getBotInfo\n"))
+	outputBytes, e := ioutil.ReadAll(p.Stdout)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("unable to open stdin pipe of child kelp bot process (pid=%d) for writing: %s\n", cmd.Process.Pid, e))
-		return
-	}
-	writer.Write([]byte("getBotInfo\n"))
-	e = writer.Close()
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("unable to close child kelp bot process's stdin writer (pid=%d): %s\n", cmd.Process.Pid, e))
-		return
-	}
-
-	// read result
-	reader, e := cmd.StdoutPipe()
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("unable to open stdout pipe of child kelp bot process (pid=%d) for reading: %s\n", cmd.Process.Pid, e))
-		return
-	}
-	outputBytes, e := ioutil.ReadAll(reader)
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("unable to read output from stdout pipe of child kelp bot process (pid=%d): %s\n", cmd.Process.Pid, e))
+		s.writeError(w, fmt.Sprintf("unable to read output from stdout pipe of child kelp bot process (pid=%d): %s\n", p.Cmd.Process.Pid, e))
 		return
 	}
 

@@ -38,14 +38,14 @@ func (kos *KelpOS) SafeUnregister(namespace string) {
 
 // Stop unregisters and stops the command at the provided namespace
 func (kos *KelpOS) Stop(namespace string) error {
-	if c, exists := kos.GetProcess(namespace); exists {
+	if p, exists := kos.GetProcess(namespace); exists {
 		e := kos.Unregister(namespace)
 		if e != nil {
 			return fmt.Errorf("could not stop command because of an error when unregistering command for namespace '%s': %s", namespace, e)
 		}
 
-		log.Printf("killing process %d\n", c.Process.Pid)
-		return c.Process.Kill()
+		log.Printf("killing process %d\n", p.Cmd.Process.Pid)
+		return p.Cmd.Process.Kill()
 	}
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)
 }
@@ -79,12 +79,21 @@ func (kos *KelpOS) Background(namespace string, cmd string, writer io.Writer) (*
 		c.Stdout = writer
 	}
 
-	e := c.Start()
+	stdinWriter, e := c.StdinPipe()
+	if e != nil {
+		return c, fmt.Errorf("could not get Stdin pipe for bash command '%s': %s", cmd, e)
+	}
+	stdoutReader, e := c.StdoutPipe()
+	if e != nil {
+		return c, fmt.Errorf("could not get Stdout pipe for bash command '%s': %s", cmd, e)
+	}
+
+	e = c.Start()
 	if e != nil {
 		return c, fmt.Errorf("could not start bash command '%s': %s", cmd, e)
 	}
 
-	e = kos.register(namespace, c)
+	e = kos.register(namespace, c, stdinWriter, stdoutReader)
 	if e != nil {
 		return nil, fmt.Errorf("error registering bash command '%s': %s", cmd, e)
 	}
@@ -92,7 +101,7 @@ func (kos *KelpOS) Background(namespace string, cmd string, writer io.Writer) (*
 	return c, nil
 }
 
-func (kos *KelpOS) register(namespace string, c *exec.Cmd) error {
+func (kos *KelpOS) register(namespace string, c *exec.Cmd, stdinWriter io.WriteCloser, stdoutReader io.ReadCloser) error {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
@@ -100,7 +109,11 @@ func (kos *KelpOS) register(namespace string, c *exec.Cmd) error {
 		return fmt.Errorf("process with namespace already exists: %s", namespace)
 	}
 
-	kos.processes[namespace] = c
+	kos.processes[namespace] = Process{
+		Cmd:    c,
+		Stdin:  stdinWriter,
+		Stdout: stdoutReader,
+	}
 	log.Printf("registered command under namespace '%s' with PID: %d", namespace, c.Process.Pid)
 	return nil
 }
@@ -110,19 +123,19 @@ func (kos *KelpOS) Unregister(namespace string) error {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
-	if c, exists := kos.processes[namespace]; exists {
+	if p, exists := kos.processes[namespace]; exists {
 		delete(kos.processes, namespace)
-		log.Printf("unregistered command under namespace '%s' with PID: %d", namespace, c.Process.Pid)
+		log.Printf("unregistered command under namespace '%s' with PID: %d", namespace, p.Cmd.Process.Pid)
 		return nil
 	}
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)
 }
 
 // GetProcess gets the process tied to the provided namespace
-func (kos *KelpOS) GetProcess(namespace string) (*exec.Cmd, bool) {
+func (kos *KelpOS) GetProcess(namespace string) (*Process, bool) {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
-	c, exists := kos.processes[namespace]
-	return c, exists
+	p, exists := kos.processes[namespace]
+	return &p, exists
 }
