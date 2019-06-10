@@ -38,7 +38,7 @@ func (kos *KelpOS) SafeUnregister(namespace string) {
 
 // Stop unregisters and stops the command at the provided namespace
 func (kos *KelpOS) Stop(namespace string) error {
-	if c, exists := kos.get(namespace); exists {
+	if c, exists := kos.GetProcess(namespace); exists {
 		e := kos.Unregister(namespace)
 		if e != nil {
 			return fmt.Errorf("could not stop command because of an error when unregistering command for namespace '%s': %s", namespace, e)
@@ -118,7 +118,8 @@ func (kos *KelpOS) Unregister(namespace string) error {
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)
 }
 
-func (kos *KelpOS) get(namespace string) (*exec.Cmd, bool) {
+// GetProcess gets the process tied to the provided namespace
+func (kos *KelpOS) GetProcess(namespace string) (*exec.Cmd, bool) {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
