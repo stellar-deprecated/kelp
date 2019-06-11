@@ -58,8 +58,10 @@ func (s *Server) StartIPC() error {
 	pipeWrite := os.NewFile(uintptr(4), "pipe_write")
 
 	scanner := bufio.NewScanner(pipeRead)
+	s.l.Infof("waiting for IPC command...\n")
 	for scanner.Scan() {
 		command := scanner.Text()
+		s.l.Infof("...received IPC command: %s\n", command)
 		output, e := s.executeCommandIPC(command)
 		if e != nil {
 			return fmt.Errorf("error while executing IPC Command ('%s'): %s", command, e)
@@ -69,10 +71,12 @@ func (s *Server) StartIPC() error {
 		}
 
 		output += utils.IPCBoundary + "\n"
+		s.l.Infof("responding to IPC command ('%s') with output: %s", command, output)
 		_, e = pipeWrite.WriteString(output)
 		if e != nil {
 			return fmt.Errorf("error while writing output to Stdout (name=%s): %s", os.Stdout.Name(), e)
 		}
+		s.l.Infof("waiting for next IPC command...\n")
 	}
 
 	if e := scanner.Err(); e != nil {
