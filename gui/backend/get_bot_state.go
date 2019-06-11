@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/stellar/kelp/support/kelpos"
@@ -29,5 +30,6 @@ func (s *APIServer) doGetBotState(botName string) (kelpos.BotState, error) {
 	if e != nil {
 		return kelpos.InitState(), fmt.Errorf("error when getting bot state: %s", e)
 	}
+	log.Printf("bots available: %v", s.kos.RegisteredBots())
 	return b.State, nil
 }

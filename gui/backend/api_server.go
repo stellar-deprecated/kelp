@@ -1,12 +1,12 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/stellar/kelp/support/kelpos"
@@ -55,12 +55,30 @@ func (s *APIServer) writeError(w http.ResponseWriter, message string) {
 	w.Write([]byte(message))
 }
 
+// ErrorResponse represents an error
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
+	log.Print(message)
+	w.WriteHeader(http.StatusInternalServerError)
+
+	marshalledJson, e := json.MarshalIndent(ErrorResponse{Error: message}, "", "    ")
+	if e != nil {
+		log.Printf("unable to marshal json with indentation: %s\n", e)
+		w.Write([]byte(fmt.Sprintf("unable to marshal json with indentation: %s\n", e)))
+		return
+	}
+	w.Write(marshalledJson)
+}
+
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {
 	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
 	return s.kos.Blocking(namespace, cmdString)
 }
 
-func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*exec.Cmd, error) {
+func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kelpos.Process, error) {
 	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
-	return s.kos.Background(namespace, cmdString, nil)
+	return s.kos.Background(namespace, cmdString)
 }

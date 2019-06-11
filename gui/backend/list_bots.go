@@ -8,14 +8,13 @@ import (
 	"strings"
 
 	"github.com/stellar/kelp/gui/model"
-	"github.com/stellar/kelp/support/kelpos"
 )
 
 func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	log.Printf("listing bots\n")
 	resultBytes, e := s.kos.Blocking("ls", fmt.Sprintf("ls %s | sort", s.configsDir))
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when listing bots: %s\n", e))
+		s.writeErrorJson(w, fmt.Sprintf("error when listing bots: %s\n", e))
 		return
 	}
 	configFiles := string(resultBytes)
@@ -30,17 +29,20 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	log.Printf("bots available: %v", bots)
 
 	for _, bot := range bots {
-		e := s.kos.RegisterBotWithState(&bot, kelpos.BotStateStopped)
+		botState, e := s.kos.QueryBotState(bot.Name)
 		if e != nil {
-			// if page is reloaded then bot would already be registered, which is ok
-			log.Printf("unable to register bot: %s\n", e)
+			s.writeErrorJson(w, fmt.Sprintf("unable to query bot state for bot '%s': %s\n", bot.Name, e))
+			return
 		}
+
+		// if page is reloaded then bot would already be registered, which is ok -- but we upsert here so it doesn't matter
+		s.kos.RegisterBotWithStateUpsert(&bot, botState)
 	}
 
 	// serialize and return
 	botsJson, e := json.Marshal(bots)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("unable to serialize bots: %s\n", e))
+		s.writeErrorJson(w, fmt.Sprintf("unable to serialize bots: %s\n", e))
 		return
 	}
 	w.WriteHeader(http.StatusOK)

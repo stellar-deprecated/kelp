@@ -69,9 +69,13 @@ class Bots extends Component {
     var _this = this
     this._asyncRequest = listBots(this.props.baseUrl).then(bots => {
       _this._asyncRequest = null;
-      _this.setState(prevState => ({
-        bots: bots
-      }))
+      if (bots.hasOwnProperty('error')) {
+        console.log("error in listBots: " + bots.error);
+      } else {
+        _this.setState(prevState => ({
+          bots: bots
+        }))
+      }
     });
   }
 

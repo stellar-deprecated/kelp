@@ -19,6 +19,7 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/query"
 	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
@@ -491,6 +492,17 @@ func runTradeCmd(options inputs) {
 		tradingPair,
 		threadTracker,
 	)
+	startQueryServer(
+		l,
+		*options.strategy,
+		strategy,
+		botConfig,
+		client,
+		sdex,
+		exchangeShim,
+		tradingPair,
+		threadTracker,
+	)
 	// --- end initialization of services ---
 
 	l.Info("Starting the trader bot...")
@@ -581,6 +593,39 @@ func startFillTracking(
 		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
+}
+
+func startQueryServer(
+	l logger.Logger,
+	strategyName string,
+	strategy api.Strategy,
+	botConfig trader.BotConfig,
+	client *horizon.Client,
+	sdex *plugins.SDEX,
+	exchangeShim api.ExchangeShim,
+	tradingPair *model.TradingPair,
+	threadTracker *multithreading.ThreadTracker,
+) {
+	qs := query.MakeServer(
+		l,
+		strategyName,
+		strategy,
+		botConfig,
+		client,
+		sdex,
+		exchangeShim,
+		tradingPair,
+	)
+
+	go func() {
+		e := qs.StartIPC()
+		if e != nil {
+			l.Info("")
+			l.Errorf("problem encountered while running the query server: %s", e)
+			// we want to delete all the offers and exit here because we don't want the bot to run if the query server isn't working
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+	}()
 }
 
 func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {

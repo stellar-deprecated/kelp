@@ -2,10 +2,10 @@ package kelpos
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 )
 
@@ -38,61 +38,90 @@ func (kos *KelpOS) SafeUnregister(namespace string) {
 
 // Stop unregisters and stops the command at the provided namespace
 func (kos *KelpOS) Stop(namespace string) error {
-	if c, exists := kos.get(namespace); exists {
+	if p, exists := kos.GetProcess(namespace); exists {
 		e := kos.Unregister(namespace)
 		if e != nil {
 			return fmt.Errorf("could not stop command because of an error when unregistering command for namespace '%s': %s", namespace, e)
 		}
 
-		log.Printf("killing process %d\n", c.Process.Pid)
-		return c.Process.Kill()
+		log.Printf("killing process %d\n", p.Cmd.Process.Pid)
+		return p.Cmd.Process.Kill()
 	}
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)
 }
 
 // Blocking runs a bash command and blocks
 func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
-	var buf bytes.Buffer
-	writer := bufio.NewWriter(&buf)
-	c, e := kos.Background(namespace, cmd, writer)
+	p, e := kos.Background(namespace, cmd)
 	if e != nil {
 		return nil, fmt.Errorf("could not run bash command in background '%s': %s", cmd, e)
 	}
 
-	e = c.Wait()
+	var outputBytes []byte
+	var err error
+	go func() {
+		outputBytes, err = ioutil.ReadAll(p.Stdout)
+	}()
+
+	defer func() {
+		eInner := kos.Unregister(namespace)
+		if eInner != nil {
+			log.Fatalf("error unregistering bash command '%s': %s", cmd, eInner)
+		}
+	}()
+	e = p.Cmd.Wait()
 	if e != nil {
-		return nil, fmt.Errorf("error waiting for bash command '%s': %s", cmd, e)
+		return nil, fmt.Errorf("error waiting for bash command '%s': %s (outputBytes=%s, err=%v)", cmd, e, string(outputBytes), err)
 	}
 
-	e = kos.Unregister(namespace)
-	if e != nil {
-		return nil, fmt.Errorf("error unregistering bash command '%s': %s", cmd, e)
-	}
-
-	return buf.Bytes(), nil
+	return outputBytes, err
 }
 
 // Background runs the provided bash command in the background and registers the command
-func (kos *KelpOS) Background(namespace string, cmd string, writer io.Writer) (*exec.Cmd, error) {
+func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 	c := exec.Command("bash", "-c", cmd)
-	if writer != nil {
-		c.Stdout = writer
-	}
 
-	e := c.Start()
+	stdinWriter, e := c.StdinPipe()
 	if e != nil {
-		return c, fmt.Errorf("could not start bash command '%s': %s", cmd, e)
+		return nil, fmt.Errorf("could not get Stdin pipe for bash command '%s': %s", cmd, e)
+	}
+	stdoutReader, e := c.StdoutPipe()
+	if e != nil {
+		return nil, fmt.Errorf("could not get Stdout pipe for bash command '%s': %s", cmd, e)
 	}
 
-	e = kos.register(namespace, c)
+	// create two pipes (unidirectional), pass one end of both pipes to child process, save the other on Process
+	childInputReader, childInputWriter, e := os.Pipe()
+	if e != nil {
+		return nil, fmt.Errorf("could not create input pipe for child bash command '%s': %s", cmd, e)
+	}
+	childOutputReader, childOutputWriter, e := os.Pipe()
+	if e != nil {
+		return nil, fmt.Errorf("could not create output pipe for child bash command '%s': %s", cmd, e)
+	}
+	c.ExtraFiles = []*os.File{childInputReader, childOutputWriter}
+
+	e = c.Start()
+	if e != nil {
+		return nil, fmt.Errorf("could not start bash command '%s': %s", cmd, e)
+	}
+
+	p := &Process{
+		Cmd:     c,
+		Stdin:   stdinWriter,
+		Stdout:  stdoutReader,
+		PipeIn:  childInputWriter,
+		PipeOut: childOutputReader,
+	}
+	e = kos.register(namespace, p)
 	if e != nil {
 		return nil, fmt.Errorf("error registering bash command '%s': %s", cmd, e)
 	}
 
-	return c, nil
+	return p, nil
 }
 
-func (kos *KelpOS) register(namespace string, c *exec.Cmd) error {
+func (kos *KelpOS) register(namespace string, p *Process) error {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
@@ -100,8 +129,8 @@ func (kos *KelpOS) register(namespace string, c *exec.Cmd) error {
 		return fmt.Errorf("process with namespace already exists: %s", namespace)
 	}
 
-	kos.processes[namespace] = c
-	log.Printf("registered command under namespace '%s' with PID: %d", namespace, c.Process.Pid)
+	kos.processes[namespace] = *p
+	log.Printf("registered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
 	return nil
 }
 
@@ -110,18 +139,28 @@ func (kos *KelpOS) Unregister(namespace string) error {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
-	if c, exists := kos.processes[namespace]; exists {
+	if p, exists := kos.processes[namespace]; exists {
 		delete(kos.processes, namespace)
-		log.Printf("unregistered command under namespace '%s' with PID: %d", namespace, c.Process.Pid)
+		log.Printf("unregistered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
 		return nil
 	}
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)
 }
 
-func (kos *KelpOS) get(namespace string) (*exec.Cmd, bool) {
+// GetProcess gets the process tied to the provided namespace
+func (kos *KelpOS) GetProcess(namespace string) (*Process, bool) {
 	kos.processLock.Lock()
 	defer kos.processLock.Unlock()
 
-	c, exists := kos.processes[namespace]
-	return c, exists
+	p, exists := kos.processes[namespace]
+	return &p, exists
+}
+
+// RegisteredProcesses returns the list of registered processes
+func (kos *KelpOS) RegisteredProcesses() []string {
+	list := []string{}
+	for k, _ := range kos.processes {
+		list = append(list, k)
+	}
+	return list
 }
