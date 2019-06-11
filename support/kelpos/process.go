@@ -2,9 +2,9 @@ package kelpos
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os/exec"
 )
@@ -52,12 +52,16 @@ func (kos *KelpOS) Stop(namespace string) error {
 
 // Blocking runs a bash command and blocks
 func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
-	var buf bytes.Buffer
-	writer := bufio.NewWriter(&buf)
-	p, e := kos.Background(namespace, cmd, writer)
+	p, e := kos.Background(namespace, cmd)
 	if e != nil {
 		return nil, fmt.Errorf("could not run bash command in background '%s': %s", cmd, e)
 	}
+
+	var outputBytes []byte
+	var err error
+	go func() {
+		outputBytes, err = ioutil.ReadAll(p.Stdout)
+	}()
 
 	e = p.Cmd.Wait()
 	if e != nil {
@@ -69,15 +73,12 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 		return nil, fmt.Errorf("error unregistering bash command '%s': %s", cmd, e)
 	}
 
-	return buf.Bytes(), nil
+	return outputBytes, err
 }
 
 // Background runs the provided bash command in the background and registers the command
-func (kos *KelpOS) Background(namespace string, cmd string, writer io.Writer) (*Process, error) {
+func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 	c := exec.Command("bash", "-c", cmd)
-	if writer != nil {
-		c.Stdout = writer
-	}
 
 	stdinWriter, e := c.StdinPipe()
 	if e != nil {
