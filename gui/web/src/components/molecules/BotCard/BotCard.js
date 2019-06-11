@@ -17,6 +17,29 @@ import start from '../../../kelp-ops-api/start';
 import stop from '../../../kelp-ops-api/stop';
 import deleteBot from '../../../kelp-ops-api/deleteBot';
 import getState from '../../../kelp-ops-api/getState';
+import getBotInfo from '../../../kelp-ops-api/getBotInfo';
+
+let defaultBotInfo = {
+  "strategy": "buysell",
+  "trading_pair": {
+    "Base": "?",
+    "Quote": "?"
+  },
+  "asset_base": {
+    "asset_type": "credit_alphanum4",
+    "asset_code": "?",
+    "asset_issuer": "?"
+  },
+  "asset_quote": {
+    "asset_type": "credit_alphanum4",
+    "asset_code": "?",
+    "asset_issuer": "?"
+  },
+  "balance_base": 0,
+  "balance_quote": 0,
+  "num_bids": 0,
+  "num_asks": 0
+}
 
 class BotCard extends Component {
   constructor(props) {
@@ -26,10 +49,12 @@ class BotCard extends Component {
       timeElapsed: null,
       popoverVisible: false,
       state: Constants.BotState.initializing,
+      botInfo: defaultBotInfo,
     };
 
     this.toggleBot = this.toggleBot.bind(this);
     this.checkState = this.checkState.bind(this);
+    this.checkBotInfo = this.checkBotInfo.bind(this);
     this.startBot = this.startBot.bind(this);
     this.stopBot = this.stopBot.bind(this);
     this.tick = this.tick.bind(this);
@@ -70,9 +95,29 @@ class BotCard extends Component {
     }
   }
 
+  checkBotInfo() {
+    if (this._asyncRequests["botInfo"] == null) {
+      var _this = this;
+      this._asyncRequests["botInfo"] = getBotInfo(this.props.baseUrl, this.props.name).then(resp => {
+        _this._asyncRequests["botInfo"] = null;
+        if (JSON.stringify(resp) !== "{}") {
+          _this.setState({
+            botInfo: resp,
+          });
+        } else {
+          _this.setState({
+            botInfo: defaultBotInfo,
+          });
+        }
+      });
+    }
+  }
+
   componentDidMount() {
     this.checkState();
+    this.checkBotInfo();
     this._stateTimer = setInterval(this.checkState, 1000);
+    this._stateTimer = setInterval(this.checkBotInfo, 5000);
   }
 
   componentWillUnmount() {
@@ -109,6 +154,7 @@ class BotCard extends Component {
       this.startBot();
     }
     this.checkState();
+    this.checkBotInfo();
   }
 
   startBot() {
@@ -119,7 +165,8 @@ class BotCard extends Component {
       _this.setState({
         timeStarted: new Date(),
       }, () => {
-        _this.checkState()
+        _this.checkState();
+        _this.checkBotInfo();
         _this.tick();
         _this._tickTimer = setInterval(_this.tick, 1000);
       });
@@ -219,10 +266,15 @@ class BotCard extends Component {
         <div className={styles.firstColumn}>
           <h2 className={styles.title} onClick={this.props.showDetailsFn}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
-            <BotExchangeInfo/>
+            <BotExchangeInfo strategy={this.state.botInfo.strategy}/>
           </div>
           <div>
-            <BotAssetsInfo/>
+            <BotAssetsInfo
+              assetBaseCode={this.state.botInfo.trading_pair.Base}
+              assetBaseBalance={this.state.botInfo.balance_base}
+              assetQuoteCode={this.state.botInfo.trading_pair.Quote}
+              assetQuoteBalance={this.state.botInfo.balance_quote}
+            />
           </div>
         </div>
 
@@ -233,7 +285,10 @@ class BotCard extends Component {
               <Pill number={this.props.errors} type={'error'}/>
             </PillGroup>
           </div>
-          <BotBidAskInfo/>
+          <BotBidAskInfo
+            num_bids={this.state.botInfo.num_bids}
+            num_asks={this.state.botInfo.num_asks}
+          />
         </div>
 
         <div className={styles.thirdColumn}>

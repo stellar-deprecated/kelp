@@ -21,7 +21,9 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 
 	p, exists := s.kos.GetProcess(botName)
 	if !exists {
-		s.writeError(w, fmt.Sprintf("kelp bot process with name '%s' does not exist\nprocesses available: %v", botName, s.kos.RegisteredProcesses()))
+		log.Printf("kelp bot process with name '%s' does not exist; processes available: %v\n", botName, s.kos.RegisteredProcesses())
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("{}"))
 		return
 	}
 
@@ -39,7 +41,9 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	e = json.Indent(&buf, []byte(output), "", "  ")
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("cannot indent json response (error=%s), json_response: %s\n", e, output))
+		log.Printf("cannot indent json response (error=%s), json_response: %s\n", e, output)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("{}"))
 		return
 	}
 	log.Printf("getBotInfo returned IPC response for botName '%s': %s\n", botName, buf.String())

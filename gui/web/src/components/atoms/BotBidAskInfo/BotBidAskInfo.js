@@ -11,11 +11,13 @@ class BotBidAskInfo extends Component {
           <span className={styles.spreadValue}> $0.0014 (0.32%)</span>
         </div>
         <div className={styles.bidsLine}>
-          <span className={styles.quoteNumber}>5 </span>
+          <span className={styles.quoteNumber}>{this.props.num_bids}</span>
+          <span className={styles.quoteNumber}> </span>
           <span className={styles.quotelabel}> bids</span>
         </div>
         <div className={styles.asksLine}>
-          <span className={styles.quoteNumber}>3 </span>
+          <span className={styles.quoteNumber}>{this.props.num_asks}</span>
+          <span className={styles.quoteNumber}> </span>
           <span className={styles.quotelabel}> asks</span>
         </div>
       </div>
