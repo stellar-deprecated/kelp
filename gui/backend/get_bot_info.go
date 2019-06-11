@@ -2,6 +2,8 @@ package backend
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -34,8 +36,14 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 		}
 		output += text
 	}
-	log.Printf("getBotInfo returned IPC response for botName '%s': %s\n", botName, output)
+	var buf bytes.Buffer
+	e = json.Indent(&buf, []byte(output), "", "  ")
+	if e != nil {
+		s.writeError(w, fmt.Sprintf("cannot indent json response (error=%s), json_response: %s\n", e, output))
+		return
+	}
+	log.Printf("getBotInfo returned IPC response for botName '%s': %s\n", botName, buf.String())
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(output))
+	w.Write(buf.Bytes())
 }
