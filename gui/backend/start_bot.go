@@ -44,7 +44,7 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	}
 	log.Printf("run command for bot '%s': %s\n", botName, command)
 
-	c, e := s.runKelpCommandBackground(botName, command)
+	p, e := s.runKelpCommandBackground(botName, command)
 	if e != nil {
 		return fmt.Errorf("could not start bot %s: %s", botName, e)
 	}
@@ -71,7 +71,7 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 		if maybeFinishCallback != nil {
 			maybeFinishCallback()
 		}
-	}(c, botName)
+	}(p.Cmd, botName)
 
 	return nil
 }

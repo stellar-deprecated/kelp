@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/stellar/kelp/support/kelpos"
@@ -60,7 +59,7 @@ func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte
 	return s.kos.Blocking(namespace, cmdString)
 }
 
-func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*exec.Cmd, error) {
+func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kelpos.Process, error) {
 	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
 	return s.kos.Background(namespace, cmdString, nil)
 }
