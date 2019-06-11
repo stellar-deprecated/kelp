@@ -35,10 +35,10 @@ let defaultBotInfo = {
     "asset_code": "?",
     "asset_issuer": "?"
   },
-  "balance_base": 0,
-  "balance_quote": 0,
-  "num_bids": 0,
-  "num_asks": 0
+  "balance_base": -1,
+  "balance_quote": -1,
+  "num_bids": -1,
+  "num_asks": -1
 }
 
 class BotCard extends Component {
