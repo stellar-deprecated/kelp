@@ -38,7 +38,9 @@ let defaultBotInfo = {
   "balance_base": -1,
   "balance_quote": -1,
   "num_bids": -1,
-  "num_asks": -1
+  "num_asks": -1,
+  "spread_value": "?",
+  "spread_pct": "?",
 }
 
 class BotCard extends Component {
@@ -301,6 +303,8 @@ class BotCard extends Component {
             </PillGroup>
           </div>
           <BotBidAskInfo
+            spread_value={this.state.botInfo.spread_value}
+            spread_pct={this.state.botInfo.spread_pct}
             num_bids={this.state.botInfo.num_bids}
             num_asks={this.state.botInfo.num_asks}
           />
