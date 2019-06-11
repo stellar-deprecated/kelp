@@ -52,7 +52,8 @@ class RunStatus extends Component {
           <div className={styles.runningIcon}>
             <Icon symbol="wave" width="22px" height="4px"/>
           </div>
-          <span className={styles.runningLabel}>Running {this.props.timeRunning.toISOString().slice(14, -5)}</span>
+          {/* <span className={styles.runningLabel}>Running {this.props.timeRunning.toISOString().slice(14, -5)}</span> */}
+          <span className={styles.runningLabel}>Running...</span>
         </div>
       );
     } else if (this.props.state === Constants.BotState.stopping) {
