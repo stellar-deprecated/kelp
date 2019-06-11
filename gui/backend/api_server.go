@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -52,6 +53,24 @@ func (s *APIServer) writeError(w http.ResponseWriter, message string) {
 	log.Print(message)
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte(message))
+}
+
+// ErrorResponse represents an error
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
+	log.Print(message)
+	w.WriteHeader(http.StatusInternalServerError)
+
+	marshalledJson, e := json.MarshalIndent(ErrorResponse{Error: message}, "", "    ")
+	if e != nil {
+		log.Printf("unable to marshal json with indentation: %s\n", e)
+		w.Write([]byte(fmt.Sprintf("unable to marshal json with indentation: %s\n", e)))
+		return
+	}
+	w.Write(marshalledJson)
 }
 
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {

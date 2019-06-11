@@ -63,14 +63,15 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 		outputBytes, err = ioutil.ReadAll(p.Stdout)
 	}()
 
+	defer func() {
+		eInner := kos.Unregister(namespace)
+		if eInner != nil {
+			log.Fatalf("error unregistering bash command '%s': %s", cmd, eInner)
+		}
+	}()
 	e = p.Cmd.Wait()
 	if e != nil {
-		return nil, fmt.Errorf("error waiting for bash command '%s': %s", cmd, e)
-	}
-
-	e = kos.Unregister(namespace)
-	if e != nil {
-		return nil, fmt.Errorf("error unregistering bash command '%s': %s", cmd, e)
+		return nil, fmt.Errorf("error waiting for bash command '%s': %s (outputBytes=%s, err=%v)", cmd, e, string(outputBytes), err)
 	}
 
 	return outputBytes, err
@@ -129,7 +130,7 @@ func (kos *KelpOS) register(namespace string, p *Process) error {
 	}
 
 	kos.processes[namespace] = *p
-	log.Printf("registered command under namespace '%s' with PID: %d", namespace, p.Cmd.Process.Pid)
+	log.Printf("registered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
 	return nil
 }
 
@@ -140,7 +141,7 @@ func (kos *KelpOS) Unregister(namespace string) error {
 
 	if p, exists := kos.processes[namespace]; exists {
 		delete(kos.processes, namespace)
-		log.Printf("unregistered command under namespace '%s' with PID: %d", namespace, p.Cmd.Process.Pid)
+		log.Printf("unregistered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
 		return nil
 	}
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)

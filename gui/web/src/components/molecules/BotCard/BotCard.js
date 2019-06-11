@@ -145,6 +145,16 @@ class BotCard extends Component {
       this._asyncRequests["stop"].cancel();
       this._asyncRequests["stop"] = null;
     }
+
+    if (this._asyncRequests["delete"]) {
+      this._asyncRequests["delete"].cancel();
+      this._asyncRequests["delete"] = null;
+    }
+
+    if (this._asyncRequests["botInfo"]) {
+      this._asyncRequests["botInfo"].cancel();
+      this._asyncRequests["botInfo"] = null;
+    }
   }
 
   toggleBot() {
