@@ -117,13 +117,18 @@ class BotCard extends Component {
     this.checkState();
     this.checkBotInfo();
     this._stateTimer = setInterval(this.checkState, 1000);
-    this._stateTimer = setInterval(this.checkBotInfo, 5000);
+    this._infoTimer = setInterval(this.checkBotInfo, 5000);
   }
 
   componentWillUnmount() {
     if (this._stateTimer) {
       clearTimeout(this._stateTimer);
       this._stateTimer = null;
+    }
+
+    if (this._infoTimer) {
+      clearTimeout(this._infoTimer);
+      this._infoTimer = null;
     }
 
     if (this._tickTimer) {
