@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
+
+	"github.com/stellar/kelp/support/utils"
 
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/kelp/api"
@@ -53,34 +54,31 @@ func MakeServer(
 
 // StartIPC kicks off the Server which reads from Stdin and writes to Stdout, this should be run in a new goroutine
 func (s *Server) StartIPC() error {
-	var e error
-	for {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			command := scanner.Text()
-			output, e := s.executeCommandIPC(command)
-			if e != nil {
-				return fmt.Errorf("error while executing IPC Command ('%s'): %s", command, e)
-			}
+	pipeRead := os.NewFile(uintptr(3), "pipe_read")
+	pipeWrite := os.NewFile(uintptr(4), "pipe_write")
 
-			if len(output) > 0 {
-				if !strings.HasSuffix(output, "\n") {
-					output += "\n"
-				}
-
-				_, e = os.Stdout.WriteString(output)
-				if e != nil {
-					return fmt.Errorf("error while writing output to Stdout (name=%s): %s", os.Stdout.Name(), e)
-				}
-			}
+	scanner := bufio.NewScanner(pipeRead)
+	for scanner.Scan() {
+		command := scanner.Text()
+		output, e := s.executeCommandIPC(command)
+		if e != nil {
+			return fmt.Errorf("error while executing IPC Command ('%s'): %s", command, e)
+		}
+		if !strings.HasSuffix(output, "\n") {
+			output += "\n"
 		}
 
-		if e = scanner.Err(); e != nil {
-			return fmt.Errorf("error while reading commands in query server: %s", e)
+		output += utils.IPCBoundary + "\n"
+		_, e = pipeWrite.WriteString(output)
+		if e != nil {
+			return fmt.Errorf("error while writing output to Stdout (name=%s): %s", os.Stdout.Name(), e)
 		}
-
-		time.Sleep(5 * time.Second)
 	}
+
+	if e := scanner.Err(); e != nil {
+		return fmt.Errorf("error while reading commands in query server: %s", e)
+	}
+	return nil
 }
 
 func (s *Server) executeCommandIPC(cmd string) (string, error) {

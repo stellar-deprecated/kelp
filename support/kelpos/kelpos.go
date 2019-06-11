@@ -2,6 +2,7 @@ package kelpos
 
 import (
 	"io"
+	"os"
 	"os/exec"
 	"sync"
 
@@ -18,9 +19,11 @@ type KelpOS struct {
 
 // Process contains all the pieces that can be used to control a given process
 type Process struct {
-	Cmd    *exec.Cmd
-	Stdin  io.WriteCloser
-	Stdout io.ReadCloser
+	Cmd     *exec.Cmd
+	Stdin   io.WriteCloser
+	Stdout  io.ReadCloser
+	PipeIn  *os.File
+	PipeOut *os.File
 }
 
 // singleton is the singleton instance of KelpOS

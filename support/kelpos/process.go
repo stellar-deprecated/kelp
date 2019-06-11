@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 )
 
@@ -88,15 +89,28 @@ func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 		return nil, fmt.Errorf("could not get Stdout pipe for bash command '%s': %s", cmd, e)
 	}
 
+	// create two pipes (unidirectional), pass one end of both pipes to child process, save the other on Process
+	childInputReader, childInputWriter, e := os.Pipe()
+	if e != nil {
+		return nil, fmt.Errorf("could not create input pipe for child bash command '%s': %s", cmd, e)
+	}
+	childOutputReader, childOutputWriter, e := os.Pipe()
+	if e != nil {
+		return nil, fmt.Errorf("could not create output pipe for child bash command '%s': %s", cmd, e)
+	}
+	c.ExtraFiles = []*os.File{childInputReader, childOutputWriter}
+
 	e = c.Start()
 	if e != nil {
 		return nil, fmt.Errorf("could not start bash command '%s': %s", cmd, e)
 	}
 
 	p := &Process{
-		Cmd:    c,
-		Stdin:  stdinWriter,
-		Stdout: stdoutReader,
+		Cmd:     c,
+		Stdin:   stdinWriter,
+		Stdout:  stdoutReader,
+		PipeIn:  childInputWriter,
+		PipeOut: childOutputReader,
 	}
 	e = kos.register(namespace, p)
 	if e != nil {
@@ -139,4 +153,13 @@ func (kos *KelpOS) GetProcess(namespace string) (*Process, bool) {
 
 	p, exists := kos.processes[namespace]
 	return &p, exists
+}
+
+// RegisteredProcesses returns the list of registered processes
+func (kos *KelpOS) RegisteredProcesses() []string {
+	list := []string{}
+	for k, _ := range kos.processes {
+		list = append(list, k)
+	}
+	return list
 }
