@@ -26,13 +26,20 @@ class Form extends Component {
     this.state = {
       isLoading: false,
     };
-    this.onClickSimulation = this.onClickSimulation.bind(this);
+    this.save = this.save.bind(this);
   }
 
-  onClickSimulation() {
+  save() {
     this.setState({
       isLoading: true,
     })
+    let errorFields = this.props.saveFn();
+    if (errorFields) {
+      // TODO mark errors
+      return
+    }
+
+    this.props.router.goBack();
   }
 
   render() {
@@ -330,8 +337,8 @@ class Form extends Component {
               icon="add" 
               size="large" 
               loading={this.state.isLoading} 
-              onClick={this.onClickSimulation}>
-              Create Bot
+              onClick={this.save}>
+              {this.props.saveText}
             </Button>
           </div>
         </div>

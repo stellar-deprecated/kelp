@@ -6,10 +6,13 @@ class NewBot extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      newBotName: null
+      newBotName: null,
+      configData: {},
     };
 
     this.loadBotName = this.loadBotName.bind(this);
+    this.saveNew = this.saveNew.bind(this);
+    this.saveEdit = this.saveEdit.bind(this);
 
     this._asyncRequests = {};
   }
@@ -34,6 +37,14 @@ class NewBot extends Component {
     }
   }
 
+  saveNew() {
+    return null;
+  }
+
+  saveEdit() {
+    return null;
+  }
+
   render() {
     if (this.props.location.pathname === "/new") {
       this.loadBotName();
@@ -41,6 +52,9 @@ class NewBot extends Component {
         router={this.props.history}
         title="New Bot"
         botName={this.state.newBotName}
+        configData={this.state.configData}
+        saveFn={this.saveNew}
+        saveText="Create Bot"
         />);
     } else if (this.props.location.pathname !== "/edit") {
       console.log("invalid path: " + this.props.location.pathname);
@@ -64,6 +78,9 @@ class NewBot extends Component {
       router={this.props.history}
       title="Edit Bot"
       botName={botName}
+      configData={this.state.configData}
+      saveFn={this.saveEdit}
+      saveText="Save Bot Updates"
       />);
   }
 }
