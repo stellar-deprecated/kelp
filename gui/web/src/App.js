@@ -51,6 +51,7 @@ class App extends Component {
           render={(props) => <Bots {...props} baseUrl={baseUrl}/>}
           />
         <Route path="/new" component={NewBot} />
+        <Route path="/edit" component={NewBot} />
         <Route path="/details" component={Details} />
       </Router>
       {/* <Modal 
