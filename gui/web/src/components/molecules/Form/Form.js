@@ -39,12 +39,13 @@ class Form extends Component {
     return (
       <div>
         <div className={grid.container}>
-          <ScreenHeader title="New Bot" backButtonFn={this.props.router.goBack}>
-            <Switch></Switch>
-            <Label>Helper Fields</Label>
-          </ScreenHeader>
+            <ScreenHeader title={this.props.title} backButtonFn={this.props.router.goBack}>
+              <Switch/>
+              <Label>Helper Fields</Label>
+            </ScreenHeader>
+
             <FormSection>
-              <Input size="large" value={'Harry the Green Plankton'}/>
+              <Input size="large" value={this.props.botName}/>
 
               {/* Trader Settings */}
               <SectionTitle>

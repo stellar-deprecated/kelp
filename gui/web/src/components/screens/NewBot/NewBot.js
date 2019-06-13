@@ -1,10 +1,47 @@
 import React, { Component } from 'react';
 import Form from '../../molecules/Form/Form';
+import genBotName from '../../../kelp-ops-api/genBotName';
 
 class NewBot extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      newBotName: null
+    };
+
+    this.loadBotName = this.loadBotName.bind(this);
+
+    this._asyncRequests = {};
+  }
+
+  loadBotName() {
+    if (this.state.newBotName) {
+      return
+    }
+    var _this = this;
+    this._asyncRequests["botName"] = genBotName(this.props.baseUrl).then(resp => {
+      _this._asyncRequests["botName"] = null;
+      _this.setState({
+        newBotName: resp,
+      });
+    });
+  }
+
+  componentWillUnmount() {
+    if (this._asyncRequests["botName"]) {
+      this._asyncRequests["botName"].cancel();
+      this._asyncRequests["botName"] = null;
+    }
+  }
+
   render() {
     if (this.props.location.pathname === "/new") {
-      return (<Form router={this.props.history}/>);
+      this.loadBotName();
+      return (<Form
+        router={this.props.history}
+        title="New Bot"
+        botName={this.state.newBotName}
+        />);
     } else if (this.props.location.pathname !== "/edit") {
       console.log("invalid path: " + this.props.location.pathname);
       return "";
@@ -23,9 +60,11 @@ class NewBot extends Component {
     }
 
     let botName = decodeURIComponent(botNameEncoded);
-    return (
-      <Form router={this.props.history}/>
-    );
+    return (<Form 
+      router={this.props.history}
+      title="Edit Bot"
+      botName={botName}
+      />);
   }
 }
 
