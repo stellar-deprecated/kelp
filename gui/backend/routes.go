@@ -19,5 +19,6 @@ func SetRoutes(r *chi.Mux, s *APIServer) {
 		r.Post("/deleteBot", http.HandlerFunc(s.deleteBot))
 		r.Post("/getState", http.HandlerFunc(s.getBotState))
 		r.Post("/getBotInfo", http.HandlerFunc(s.getBotInfo))
+		r.Post("/getBotConfig", http.HandlerFunc(s.getBotConfig))
 	})
 }
