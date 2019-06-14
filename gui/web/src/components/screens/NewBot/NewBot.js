@@ -1,18 +1,21 @@
 import React, { Component } from 'react';
 import Form from '../../molecules/Form/Form';
 import genBotName from '../../../kelp-ops-api/genBotName';
+import getBotConfig from '../../../kelp-ops-api/getBotConfig';
 
 class NewBot extends Component {
   constructor(props) {
     super(props);
     this.state = {
       newBotName: null,
-      configData: {},
+      configData: null,
     };
 
     this.loadBotName = this.loadBotName.bind(this);
     this.saveNew = this.saveNew.bind(this);
     this.saveEdit = this.saveEdit.bind(this);
+    this.loadSampleConfigData = this.loadSampleConfigData.bind(this);
+    this.loadBotConfigData = this.loadBotConfigData.bind(this);
 
     this._asyncRequests = {};
   }
@@ -21,6 +24,7 @@ class NewBot extends Component {
     if (this.state.newBotName) {
       return
     }
+
     var _this = this;
     this._asyncRequests["botName"] = genBotName(this.props.baseUrl).then(resp => {
       _this._asyncRequests["botName"] = null;
@@ -35,19 +39,42 @@ class NewBot extends Component {
       this._asyncRequests["botName"].cancel();
       this._asyncRequests["botName"] = null;
     }
+
+    if (this._asyncRequests["botConfig"]) {
+      this._asyncRequests["botConfig"].cancel();
+      this._asyncRequests["botConfig"] = null;
+    }
   }
 
-  saveNew() {
+  saveNew(configData) {
     return null;
   }
 
-  saveEdit() {
+  saveEdit(configData) {
     return null;
+  }
+
+  loadSampleConfigData() {
+
+  }
+
+  loadBotConfigData(botName) {
+    var _this = this;
+    this._asyncRequests["botConfig"] = getBotConfig(this.props.baseUrl, botName).then(resp => {
+      _this._asyncRequests["botConfig"] = null;
+      _this.setState({
+        configData: resp,
+      });
+    });
   }
 
   render() {
     if (this.props.location.pathname === "/new") {
       this.loadBotName();
+      if (!this.state.configData) {
+        this.loadSampleConfigData();
+        return (<div>Fetching sample config file</div>);
+      }
       return (<Form
         router={this.props.history}
         title="New Bot"
@@ -74,6 +101,10 @@ class NewBot extends Component {
     }
 
     let botName = decodeURIComponent(botNameEncoded);
+    if (!this.state.configData) {
+      this.loadBotConfigData(botName);
+      return (<div>Fetching config file for bot: {botName}</div>);
+    }
     return (<Form 
       router={this.props.history}
       title="Edit Bot"

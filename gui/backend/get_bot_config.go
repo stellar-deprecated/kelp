@@ -13,6 +13,7 @@ import (
 )
 
 type botConfigResponse struct {
+	Name           string                `json:"name"`
 	Strategy       string                `json:"strategy"`
 	TraderConfig   trader.BotConfig      `json:"trader_config"`
 	StrategyConfig plugins.BuySellConfig `json:"strategy_config"`
@@ -42,6 +43,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := botConfigResponse{
+		Name:           botName,
 		Strategy:       "buysell",
 		TraderConfig:   botConfig,
 		StrategyConfig: buysellConfig,

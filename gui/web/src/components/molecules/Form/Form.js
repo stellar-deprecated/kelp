@@ -27,13 +27,19 @@ class Form extends Component {
       isLoading: false,
     };
     this.save = this.save.bind(this);
+    this.collectConfigData = this.collectConfigData.bind(this);
+  }
+
+  collectConfigData() {
+    // TODO collect config data from UI elements
+    return this.props.configData;
   }
 
   save() {
     this.setState({
       isLoading: true,
     })
-    let errorFields = this.props.saveFn();
+    let errorFields = this.props.saveFn(this.collectConfigData());
     if (errorFields) {
       // TODO mark errors
       return
@@ -52,7 +58,7 @@ class Form extends Component {
             </ScreenHeader>
 
             <FormSection>
-              <Input size="large" value={this.props.botName}/>
+              <Input size="large" value={this.props.configData.name}/>
 
               {/* Trader Settings */}
               <SectionTitle>
