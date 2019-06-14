@@ -49,6 +49,11 @@ class Form extends Component {
   }
 
   render() {
+    let tradingPlatform = "sdex";
+    if (this.props.configData.trader_config.TradingExchange && this.props.configData.trader_config.TradingExchange !== "") {
+      tradingPlatform = this.props.configData.trader_config.TradingExchange;
+    }
+
     return (
       <div>
         <div className={grid.container}>
@@ -76,7 +81,13 @@ class Form extends Component {
             <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
               <FieldItem>
                 <Label>Trading Platform</Label>
-                <Select/>
+                <Select
+                  options={[
+                      {value: "sdex", text: "SDEX"},
+                      {value: "kraken", text: "Kraken"},
+                    ]}
+                  selected={tradingPlatform}
+                  />
               </FieldItem>
             </FormSection>
               
