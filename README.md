@@ -317,7 +317,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [kraken]: https://www.kraken.com/
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
-[cla]: https://goo.gl/forms/lkjJbvkPOO4zZFDp2
+[cla]: https://forms.gle/9FBgjDnNYv1abnKD7
 [announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
 [discussions-group]: https://groups.google.com/forum/#!forum/kelp-talk
 [github-bug-report]: https://github.com/stellar/kelp/issues/new?template=bug_report.md
