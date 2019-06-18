@@ -17,11 +17,12 @@ class Input extends Component {
     value: PropTypes.string,
     error: PropTypes.string,
     size: PropTypes.string,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    showError: PropTypes.bool
   };
 
   render() {
-    const errorActive = this.props.error ? styles.inputError : null;
+    const errorActive = this.props.showError ? styles.inputError : null;
 
     const inputClassList = classNames(
       styles.input, 
@@ -31,12 +32,17 @@ class Input extends Component {
 
     return (
       <div className={styles.wrapper}>
-        <input className={inputClassList} defaultValue={this.props.value} type="text"/>
+        <input
+          className={inputClassList}
+          defaultValue={this.props.value}
+          type="text"
+          disabled={this.props.disabled}
+          />
         { this.props.suffix && (
         <p className={styles.suffix}>{this.props.suffix}</p>
         )}
 
-        { this.props.error && (
+        { this.props.showError && (
         <p className={styles.errorMessage}>{this.props.error}</p>
         )}
 

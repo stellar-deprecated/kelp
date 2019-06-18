@@ -50,8 +50,13 @@ class Form extends Component {
 
   render() {
     let tradingPlatform = "sdex";
-    if (this.props.configData.trader_config.TradingExchange && this.props.configData.trader_config.TradingExchange !== "") {
-      tradingPlatform = this.props.configData.trader_config.TradingExchange;
+    if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
+      tradingPlatform = this.props.configData.trader_config.trading_exchange;
+    }
+
+    let network = "TestNet";
+    if (!this.props.configData.trader_config.horizon_url.includes("test")) {
+      network = "PubNet";
     }
 
     return (
@@ -73,12 +78,14 @@ class Form extends Component {
             
             <FormSection>
               <SectionDescription>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
+                These settings refer to the operations of the bot, trading platform, and runtime parameters, but not the chosen trading strategy.
+                <br/>
+                <br/>
+                Scroll below to see the strategy settings.
               </SectionDescription>
             </FormSection>
 
-            <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
+            <FormSection tip="Where do you want to trade: Stellar Decentralized Exchange (SDEX) or Kraken?">
               <FieldItem>
                 <Label>Trading Platform</Label>
                 <Select
@@ -94,14 +101,24 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label padding>Network</Label>
-                <SegmentedControl/>
+                <SegmentedControl
+                  segments={[
+                    "TestNet",
+                    "PubNet",
+                  ]}
+                  selected={network}
+                  />
               </FieldItem>
             </FormSection>
             
             <FormSection>
               <FieldItem>
                 <Label>Trader account secret key</Label>
-                <Input error="Please enter a valid trader account secret key"/>
+                <Input
+                  value={this.props.configData.trader_config.trading_secret_seed}
+                  error="Please enter a valid trader account secret key"
+                  showError={false}
+                  />
               </FieldItem>
             </FormSection>
 
@@ -110,14 +127,17 @@ class Form extends Component {
                 <div className={grid.col4}>
                   <FieldItem>
                     <Label>Base asset code</Label>
-                    <Input/>
+                    <Input value={this.props.configData.trader_config.asset_code_a}/>
                   </FieldItem>
                 </div>
 
                 <div className={grid.col8}>
                   <FieldItem>
                     <Label>Base asset issuer</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.trader_config.issuer_a}
+                      disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
+                      />
                   </FieldItem>
                 </div>
               </div>
@@ -126,14 +146,17 @@ class Form extends Component {
                 <div className={grid.col4}>
                   <FieldItem>
                     <Label>Quote asset code</Label>
-                    <Input/>
+                    <Input value={this.props.configData.trader_config.asset_code_b}/>
                   </FieldItem>
                 </div>
 
                 <div className={grid.col8}>
                   <FieldItem>
                     <Label>Quote asset issuer</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.trader_config.issuer_b}
+                      disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
+                      />
                   </FieldItem>
                 </div>
               </div>
@@ -145,7 +168,7 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label optional>Source account secret key</Label>
-                <Input/>
+                <Input value={this.props.configData.trader_config.source_secret_seed}/>
               </FieldItem>
 
               <FieldItem>
