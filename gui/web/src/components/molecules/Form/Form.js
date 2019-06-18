@@ -68,7 +68,11 @@ class Form extends Component {
             </ScreenHeader>
 
             <FormSection>
-              <Input size="large" value={this.props.configData.name}/>
+              <Input
+                size="large"
+                value={this.props.configData.name}
+                onChange={(event) => { this.props.onChange("name", event) }}
+                />
 
               {/* Trader Settings */}
               <SectionTitle>
@@ -116,6 +120,7 @@ class Form extends Component {
                 <Label>Trader account secret key</Label>
                 <Input
                   value={this.props.configData.trader_config.trading_secret_seed}
+                  onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
                   error="Please enter a valid trader account secret key"
                   showError={false}
                   />
@@ -139,6 +144,7 @@ class Form extends Component {
                     <Label>Base asset issuer</Label>
                     <Input
                       value={this.props.configData.trader_config.issuer_a}
+                      onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
                       />
                   </FieldItem>
@@ -149,7 +155,10 @@ class Form extends Component {
                 <div className={grid.col4}>
                   <FieldItem>
                     <Label>Quote asset code</Label>
-                    <Input value={this.props.configData.trader_config.asset_code_b}/>
+                    <Input
+                      value={this.props.configData.trader_config.asset_code_b}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
+                      />
                   </FieldItem>
                 </div>
 
@@ -158,6 +167,7 @@ class Form extends Component {
                     <Label>Quote asset issuer</Label>
                     <Input
                       value={this.props.configData.trader_config.issuer_b}
+                      onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
                       />
                   </FieldItem>
@@ -171,7 +181,10 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label optional>Source account secret key</Label>
-                <Input value={this.props.configData.trader_config.source_secret_seed}/>
+                <Input
+                  value={this.props.configData.trader_config.source_secret_seed}
+                  onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+                  />
               </FieldItem>
 
               <FieldItem>

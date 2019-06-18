@@ -17,6 +17,7 @@ class NewBot extends Component {
     this.loadSampleConfigData = this.loadSampleConfigData.bind(this);
     this.loadBotConfigData = this.loadBotConfigData.bind(this);
     this.onChangeForm = this.onChangeForm.bind(this);
+    this.updateUsingDotNotation = this.updateUsingDotNotation.bind(this);
 
     this._asyncRequests = {};
   }
@@ -69,18 +70,27 @@ class NewBot extends Component {
     });
   }
 
+  updateUsingDotNotation(obj, path, newValue) {
+    // update correct value by converting from dot notation string
+    let parts = path.split('.');
+
+    // maintain reference to original object by creating copy
+    let current = obj;
+
+    // fetch the object that contains the field we want to update
+    for (let i = 0; i < parts.length - 1; i++) {
+      current = current[parts[i]];
+    }
+
+    // update the field
+    current[parts[parts.length-1]] = newValue;
+  }
+
   onChangeForm(statePath, event) {
     // make copy of current state
     let updateJSON = Object.assign({}, this.state);
 
-    // update correct value by converting from dot notation string
-    let parts = statePath.split('.');
-    // start off with only the configData since that's what the form can update
-    let current = updateJSON.configData;
-    for (let i = 0; i < parts.length - 1; i++) {
-      current = current[parts[i]];
-    }
-    current[parts[parts.length-1]] = event.target.value;
+    this.updateUsingDotNotation(updateJSON.configData, statePath, event.target.value);
 
     // set state for the full state object
     this.setState(updateJSON);
