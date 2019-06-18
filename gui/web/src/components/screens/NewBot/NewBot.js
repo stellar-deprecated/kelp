@@ -86,11 +86,24 @@ class NewBot extends Component {
     current[parts[parts.length-1]] = newValue;
   }
 
-  onChangeForm(statePath, event) {
+  onChangeForm(statePath, event, mergeUpdateInstructions) {
     // make copy of current state
     let updateJSON = Object.assign({}, this.state);
 
     this.updateUsingDotNotation(updateJSON.configData, statePath, event.target.value);
+
+    // merge in any additional updates
+    if (mergeUpdateInstructions) {
+      let keys = Object.keys(mergeUpdateInstructions)
+      for (let i = 0; i < keys.length; i++) {
+        let dotNotationKey = keys[i];
+        let fn = mergeUpdateInstructions[dotNotationKey];
+        let newValue = fn(event.target.value);
+        if (newValue != null) {
+          this.updateUsingDotNotation(updateJSON.configData, dotNotationKey, newValue);
+        }
+      }
+    }
 
     // set state for the full state object
     this.setState(updateJSON);

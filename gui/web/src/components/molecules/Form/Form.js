@@ -59,6 +59,13 @@ class Form extends Component {
       network = "PubNet";
     }
 
+    let emptyStringIfXLM = (updatedCode) => {
+      if (updatedCode === "XLM") {
+        return "";
+      }
+      return null;
+    };
+
     return (
       <div>
         <div className={grid.container}>
@@ -134,7 +141,7 @@ class Form extends Component {
                     <Label>Base asset code</Label>
                     <Input
                       value={this.props.configData.trader_config.asset_code_a}
-                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event, { "trader_config.issuer_a": emptyStringIfXLM }) }}
                       />
                   </FieldItem>
                 </div>
@@ -157,7 +164,7 @@ class Form extends Component {
                     <Label>Quote asset code</Label>
                     <Input
                       value={this.props.configData.trader_config.asset_code_b}
-                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event, { "trader_config.issuer_b": emptyStringIfXLM }) }}
                       />
                   </FieldItem>
                 </div>

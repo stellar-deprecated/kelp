@@ -34,7 +34,7 @@ class Input extends Component {
       <div className={styles.wrapper}>
         <input
           className={inputClassList}
-          defaultValue={this.props.value}
+          value={this.props.value}
           type="text"
           onChange={this.props.onChange}
           disabled={this.props.disabled}
