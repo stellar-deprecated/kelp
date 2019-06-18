@@ -61,6 +61,7 @@ class BotCard extends Component {
     this.stopBot = this.stopBot.bind(this);
     this.tick = this.tick.bind(this);
     this.toggleOptions = this.toggleOptions.bind(this);
+    this.editBot = this.editBot.bind(this);
     this.callDeleteBot = this.callDeleteBot.bind(this);
 
     this._asyncRequests = {};
@@ -232,6 +233,10 @@ class BotCard extends Component {
     })
   }
 
+  editBot() {
+    this.props.history.push('/edit?bot_name=' + encodeURIComponent(this.props.name))
+  }
+
   render() {
     let popover = "";
     if (this.state.popoverVisible) {
@@ -240,8 +245,8 @@ class BotCard extends Component {
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
-            enableEdit={false}
-            onEdit={this.toggleOptions}
+            enableEdit={true}
+            onEdit={this.editBot}
             enableCopy={false}
             onCopy={this.toggleOptions}
             enableDelete={true}

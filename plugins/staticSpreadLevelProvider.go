@@ -10,8 +10,8 @@ import (
 // StaticLevel represents a layer in the orderbook defined statically
 // extracted here because it's shared by strategy and sideStrategy where strategy depeneds on sideStrategy
 type StaticLevel struct {
-	SPREAD float64 `valid:"-"`
-	AMOUNT float64 `valid:"-"`
+	SPREAD float64 `valid:"-" json:"spread"`
+	AMOUNT float64 `valid:"-" json:"amount"`
 }
 
 // how much to offset your rates by. Can use percent and offset together.

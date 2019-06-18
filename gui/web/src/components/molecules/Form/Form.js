@@ -26,25 +26,60 @@ class Form extends Component {
     this.state = {
       isLoading: false,
     };
-    this.onClickSimulation = this.onClickSimulation.bind(this);
+    this.save = this.save.bind(this);
+    this.collectConfigData = this.collectConfigData.bind(this);
   }
 
-  onClickSimulation() {
+  collectConfigData() {
+    // TODO collect config data from UI elements
+    return this.props.configData;
+  }
+
+  save() {
     this.setState({
       isLoading: true,
     })
+    let errorFields = this.props.saveFn(this.collectConfigData());
+    if (errorFields) {
+      // TODO mark errors
+      return
+    }
+
+    this.props.router.goBack();
   }
 
   render() {
+    let tradingPlatform = "sdex";
+    if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
+      tradingPlatform = this.props.configData.trader_config.trading_exchange;
+    }
+
+    let network = "TestNet";
+    if (!this.props.configData.trader_config.horizon_url.includes("test")) {
+      network = "PubNet";
+    }
+
+    let emptyStringIfXLM = (updatedCode) => {
+      if (updatedCode === "XLM") {
+        return "";
+      }
+      return null;
+    };
+
     return (
       <div>
         <div className={grid.container}>
-          <ScreenHeader title="New Bot" backButtonFn={this.props.router.goBack}>
-            <Switch></Switch>
-            <Label>Helper Fields</Label>
-          </ScreenHeader>
+            <ScreenHeader title={this.props.title} backButtonFn={this.props.router.goBack}>
+              <Switch/>
+              <Label>Helper Fields</Label>
+            </ScreenHeader>
+
             <FormSection>
-              <Input size="large" value={'Harry the Green Plankton'}/>
+              <Input
+                size="large"
+                value={this.props.configData.name}
+                onChange={(event) => { this.props.onChange("name", event) }}
+                />
 
               {/* Trader Settings */}
               <SectionTitle>
@@ -54,29 +89,48 @@ class Form extends Component {
             
             <FormSection>
               <SectionDescription>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
+                These settings refer to the operations of the bot, trading platform, and runtime parameters, but not the chosen trading strategy.
+                <br/>
+                <br/>
+                Scroll below to see the strategy settings.
               </SectionDescription>
             </FormSection>
 
-            <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
+            <FormSection tip="Where do you want to trade: Stellar Decentralized Exchange (SDEX) or Kraken?">
               <FieldItem>
                 <Label>Trading Platform</Label>
-                <Select/>
+                <Select
+                  options={[
+                      {value: "sdex", text: "SDEX"},
+                      {value: "kraken", text: "Kraken"},
+                    ]}
+                  selected={tradingPlatform}
+                  />
               </FieldItem>
             </FormSection>
               
             <FormSection>
               <FieldItem>
                 <Label padding>Network</Label>
-                <SegmentedControl/>
+                <SegmentedControl
+                  segments={[
+                    "TestNet",
+                    "PubNet",
+                  ]}
+                  selected={network}
+                  />
               </FieldItem>
             </FormSection>
             
             <FormSection>
               <FieldItem>
                 <Label>Trader account secret key</Label>
-                <Input error="Please enter a valid trader account secret key"/>
+                <Input
+                  value={this.props.configData.trader_config.trading_secret_seed}
+                  onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
+                  error="Please enter a valid trader account secret key"
+                  showError={false}
+                  />
               </FieldItem>
             </FormSection>
 
@@ -85,14 +139,22 @@ class Form extends Component {
                 <div className={grid.col4}>
                   <FieldItem>
                     <Label>Base asset code</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.trader_config.asset_code_a}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
+                      />
                   </FieldItem>
                 </div>
 
                 <div className={grid.col8}>
                   <FieldItem>
                     <Label>Base asset issuer</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.trader_config.issuer_a}
+                      onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
+                      disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
+                      strikethrough={this.props.configData.trader_config.asset_code_a === "XLM"}
+                      />
                   </FieldItem>
                 </div>
               </div>
@@ -101,14 +163,22 @@ class Form extends Component {
                 <div className={grid.col4}>
                   <FieldItem>
                     <Label>Quote asset code</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.trader_config.asset_code_b}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
+                      />
                   </FieldItem>
                 </div>
 
                 <div className={grid.col8}>
                   <FieldItem>
                     <Label>Quote asset issuer</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.trader_config.issuer_b}
+                      onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
+                      disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
+                      strikethrough={this.props.configData.trader_config.asset_code_b === "XLM"}
+                      />
                   </FieldItem>
                 </div>
               </div>
@@ -120,7 +190,10 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label optional>Source account secret key</Label>
-                <Input/>
+                <Input
+                  value={this.props.configData.trader_config.source_secret_seed}
+                  onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+                  />
               </FieldItem>
 
               <FieldItem>
@@ -329,8 +402,8 @@ class Form extends Component {
               icon="add" 
               size="large" 
               loading={this.state.isLoading} 
-              onClick={this.onClickSimulation}>
-              Create Bot
+              onClick={this.save}>
+              {this.props.saveText}
             </Button>
           </div>
         </div>

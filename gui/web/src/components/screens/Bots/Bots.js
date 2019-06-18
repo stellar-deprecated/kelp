@@ -121,6 +121,7 @@ class Bots extends Component {
         <BotCard
           key={index} 
           name={bot.name}
+          history={this.props.history}
           running={bot.running}
           test={bot.test}
           warnings={bot.warnings}

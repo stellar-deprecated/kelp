@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -308,4 +310,13 @@ func IsSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asse
 	}
 
 	return false, fmt.Errorf("invalid assets, there are more than 2 distinct assets: sdexBase=%s, sdexQuote=%s, selling=%s, buying=%s", sdexBase, sdexQuote, selling, buying)
+}
+
+// Shuffle any string slice
+func Shuffle(slice []string) {
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	for n := len(slice); n > 0; n-- {
+		randIndex := r.Intn(n)
+		slice[n-1], slice[randIndex] = slice[randIndex], slice[n-1]
+	}
 }

@@ -17,26 +17,35 @@ class Input extends Component {
     value: PropTypes.string,
     error: PropTypes.string,
     size: PropTypes.string,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    showError: PropTypes.bool
   };
 
   render() {
-    const errorActive = this.props.error ? styles.inputError : null;
+    const errorActive = this.props.showError ? styles.inputError : null;
+    const strikethrough = this.props.strikethrough ? styles.strikethrough : null;
 
     const inputClassList = classNames(
       styles.input, 
       styles[this.props.size],
       errorActive,
+      strikethrough,
     );
 
     return (
       <div className={styles.wrapper}>
-        <input className={inputClassList} defaultValue={this.props.value} type="text"/>
+        <input
+          className={inputClassList}
+          value={this.props.value}
+          type="text"
+          onChange={this.props.onChange}
+          disabled={this.props.disabled}
+          />
         { this.props.suffix && (
         <p className={styles.suffix}>{this.props.suffix}</p>
         )}
 
-        { this.props.error && (
+        { this.props.showError && (
         <p className={styles.errorMessage}>{this.props.error}</p>
         )}
 
