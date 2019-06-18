@@ -13,46 +13,46 @@ const XLM = "XLM"
 
 // FeeConfig represents input data for how to deal with network fees
 type FeeConfig struct {
-	CapacityTrigger float64 `valid:"-" toml:"CAPACITY_TRIGGER"`   // trigger when "ledger_capacity_usage" in /fee_stats is >= this value
-	Percentile      uint8   `valid:"-" toml:"PERCENTILE"`         // percentile computation to use from /fee_stats (10, 20, ..., 90, 95, 99)
-	MaxOpFeeStroops uint64  `valid:"-" toml:"MAX_OP_FEE_STROOPS"` // max fee in stroops per operation to use
+	CapacityTrigger float64 `valid:"-" toml:"CAPACITY_TRIGGER" json:"capacity_trigger"`     // trigger when "ledger_capacity_usage" in /fee_stats is >= this value
+	Percentile      uint8   `valid:"-" toml:"PERCENTILE" json:"percentile"`                 // percentile computation to use from /fee_stats (10, 20, ..., 90, 95, 99)
+	MaxOpFeeStroops uint64  `valid:"-" toml:"MAX_OP_FEE_STROOPS" json:"max_op_fee_stroops"` // max fee in stroops per operation to use
 }
 
 // BotConfig represents the configuration params for the bot
 type BotConfig struct {
-	SourceSecretSeed                   string     `valid:"-" toml:"SOURCE_SECRET_SEED"`
-	TradingSecretSeed                  string     `valid:"-" toml:"TRADING_SECRET_SEED"`
-	AssetCodeA                         string     `valid:"-" toml:"ASSET_CODE_A"`
-	IssuerA                            string     `valid:"-" toml:"ISSUER_A"`
-	AssetCodeB                         string     `valid:"-" toml:"ASSET_CODE_B"`
-	IssuerB                            string     `valid:"-" toml:"ISSUER_B"`
-	TickIntervalSeconds                int32      `valid:"-" toml:"TICK_INTERVAL_SECONDS"`
-	MaxTickDelayMillis                 int64      `valid:"-" toml:"MAX_TICK_DELAY_MILLIS"`
-	DeleteCyclesThreshold              int64      `valid:"-" toml:"DELETE_CYCLES_THRESHOLD"`
-	SubmitMode                         string     `valid:"-" toml:"SUBMIT_MODE"`
-	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS"`
-	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD"`
-	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL"`
-	CcxtRestURL                        *string    `valid:"-" toml:"CCXT_REST_URL"`
-	Fee                                *FeeConfig `valid:"-" toml:"FEE"`
-	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE"`
-	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE"`
+	SourceSecretSeed                   string     `valid:"-" toml:"SOURCE_SECRET_SEED" json:"source_secret_seed"`
+	TradingSecretSeed                  string     `valid:"-" toml:"TRADING_SECRET_SEED" json:"trading_secret_seed"`
+	AssetCodeA                         string     `valid:"-" toml:"ASSET_CODE_A" json:"asset_code_a"`
+	IssuerA                            string     `valid:"-" toml:"ISSUER_A" json:"issuer_a"`
+	AssetCodeB                         string     `valid:"-" toml:"ASSET_CODE_B" json:"asset_code_b"`
+	IssuerB                            string     `valid:"-" toml:"ISSUER_B" json:"issuer_b"`
+	TickIntervalSeconds                int32      `valid:"-" toml:"TICK_INTERVAL_SECONDS" json:"tick_interval_seconds"`
+	MaxTickDelayMillis                 int64      `valid:"-" toml:"MAX_TICK_DELAY_MILLIS" json:"max_tick_delay_millis"`
+	DeleteCyclesThreshold              int64      `valid:"-" toml:"DELETE_CYCLES_THRESHOLD" json:"delete_cycles_threshold"`
+	SubmitMode                         string     `valid:"-" toml:"SUBMIT_MODE" json:"submit_mode"`
+	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS" json:"fill_tracker_sleep_millis"`
+	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD" json:"fill_tracker_delete_cycles_threshold"`
+	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL" json:"horizon_url"`
+	CcxtRestURL                        *string    `valid:"-" toml:"CCXT_REST_URL" json:"ccxt_rest_url"`
+	Fee                                *FeeConfig `valid:"-" toml:"FEE" json:"fee"`
+	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE" json:"centralized_price_precision_override"`
+	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE" json:"centralized_volume_precision_override"`
 	// Deprecated: use CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE instead
-	MinCentralizedBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true"`
-	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE"`
-	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE"`
-	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE"`
-	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY"`
-	MonitoringPort                     uint16                   `valid:"-" toml:"MONITORING_PORT"`
-	MonitoringTLSCert                  string                   `valid:"-" toml:"MONITORING_TLS_CERT"`
-	MonitoringTLSKey                   string                   `valid:"-" toml:"MONITORING_TLS_KEY"`
-	GoogleClientID                     string                   `valid:"-" toml:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret                 string                   `valid:"-" toml:"GOOGLE_CLIENT_SECRET"`
-	AcceptableEmails                   string                   `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS"`
-	TradingExchange                    string                   `valid:"-" toml:"TRADING_EXCHANGE"`
-	ExchangeAPIKeys                    toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
-	ExchangeParams                     toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
-	ExchangeHeaders                    toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
+	MinCentralizedBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true" json:"min_centralized_base_volume"`
+	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE" json:"centralized_min_base_volume_override"`
+	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE" json:"centralized_min_quote_volume_override"`
+	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
+	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
+	MonitoringPort                     uint16                   `valid:"-" toml:"MONITORING_PORT" json:"monitoring_port"`
+	MonitoringTLSCert                  string                   `valid:"-" toml:"MONITORING_TLS_CERT" json:"monitoring_tls_cert"`
+	MonitoringTLSKey                   string                   `valid:"-" toml:"MONITORING_TLS_KEY" json:"monitoring_tls_key"`
+	GoogleClientID                     string                   `valid:"-" toml:"GOOGLE_CLIENT_ID" json:"google_client_id"`
+	GoogleClientSecret                 string                   `valid:"-" toml:"GOOGLE_CLIENT_SECRET" json:"google_client_secret"`
+	AcceptableEmails                   string                   `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS" json:"acceptable_google_emails"`
+	TradingExchange                    string                   `valid:"-" toml:"TRADING_EXCHANGE" json:"trading_exchange"`
+	ExchangeAPIKeys                    toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS" json:"exchange_api_keys"`
+	ExchangeParams                     toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS" json:"exchange_params"`
+	ExchangeHeaders                    toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS" json:"exchange_headers"`
 
 	// initialized later
 	tradingAccount *string

@@ -11,17 +11,17 @@ import (
 
 // BuySellConfig contains the configuration params for this strategy
 type BuySellConfig struct {
-	PriceTolerance         float64       `valid:"-" toml:"PRICE_TOLERANCE"`
-	AmountTolerance        float64       `valid:"-" toml:"AMOUNT_TOLERANCE"`
-	RateOffsetPercent      float64       `valid:"-" toml:"RATE_OFFSET_PERCENT"`
-	RateOffset             float64       `valid:"-" toml:"RATE_OFFSET"`
-	RateOffsetPercentFirst bool          `valid:"-" toml:"RATE_OFFSET_PERCENT_FIRST"`
-	AmountOfABase          float64       `valid:"-" toml:"AMOUNT_OF_A_BASE"` // the size of order to keep on either side
-	DataTypeA              string        `valid:"-" toml:"DATA_TYPE_A"`
-	DataFeedAURL           string        `valid:"-" toml:"DATA_FEED_A_URL"`
-	DataTypeB              string        `valid:"-" toml:"DATA_TYPE_B"`
-	DataFeedBURL           string        `valid:"-" toml:"DATA_FEED_B_URL"`
-	Levels                 []StaticLevel `valid:"-" toml:"LEVELS"`
+	PriceTolerance         float64       `valid:"-" toml:"PRICE_TOLERANCE" json:"price_tolerance"`
+	AmountTolerance        float64       `valid:"-" toml:"AMOUNT_TOLERANCE" json:"amount_tolerance"`
+	RateOffsetPercent      float64       `valid:"-" toml:"RATE_OFFSET_PERCENT" json:"rate_offset_percent"`
+	RateOffset             float64       `valid:"-" toml:"RATE_OFFSET" json:"rate_offset"`
+	RateOffsetPercentFirst bool          `valid:"-" toml:"RATE_OFFSET_PERCENT_FIRST" json:"rate_offset_percent_first"`
+	AmountOfABase          float64       `valid:"-" toml:"AMOUNT_OF_A_BASE" json:"amount_of_a_base"` // the size of order to keep on either side
+	DataTypeA              string        `valid:"-" toml:"DATA_TYPE_A" json:"data_type_a"`
+	DataFeedAURL           string        `valid:"-" toml:"DATA_FEED_A_URL" json:"data_feed_a_url"`
+	DataTypeB              string        `valid:"-" toml:"DATA_TYPE_B" json:"data_type_b"`
+	DataFeedBURL           string        `valid:"-" toml:"DATA_FEED_B_URL" json:"data_feed_b_url"`
+	Levels                 []StaticLevel `valid:"-" toml:"LEVELS" json:"levels"`
 }
 
 // MakeBuysellConfig factory method

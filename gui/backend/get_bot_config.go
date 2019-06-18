@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/stellar/kelp/plugins"
@@ -53,6 +54,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorJson(w, fmt.Sprintf("cannot marshal botConfigResponse: %s\n", e))
 		return
 	}
+	log.Printf("getBotConfig response for botName '%s': %s\n", botName, string(jsonBytes))
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
