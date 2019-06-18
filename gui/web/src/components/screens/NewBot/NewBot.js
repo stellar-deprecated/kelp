@@ -16,6 +16,7 @@ class NewBot extends Component {
     this.saveEdit = this.saveEdit.bind(this);
     this.loadSampleConfigData = this.loadSampleConfigData.bind(this);
     this.loadBotConfigData = this.loadBotConfigData.bind(this);
+    this.onChangeForm = this.onChangeForm.bind(this);
 
     this._asyncRequests = {};
   }
@@ -68,6 +69,23 @@ class NewBot extends Component {
     });
   }
 
+  onChangeForm(statePath, event) {
+    // make copy of current state
+    let updateJSON = Object.assign({}, this.state);
+
+    // update correct value by converting from dot notation string
+    let parts = statePath.split('.');
+    // start off with only the configData since that's what the form can update
+    let current = updateJSON.configData;
+    for (let i = 0; i < parts.length - 1; i++) {
+      current = current[parts[i]];
+    }
+    current[parts[parts.length-1]] = event.target.value;
+
+    // set state for the full state object
+    this.setState(updateJSON);
+  }
+
   render() {
     if (this.props.location.pathname === "/new") {
       this.loadBotName();
@@ -78,6 +96,7 @@ class NewBot extends Component {
       return (<Form
         router={this.props.history}
         title="New Bot"
+        onChange={this.onChangeForm}
         botName={this.state.newBotName}
         configData={this.state.configData}
         saveFn={this.saveNew}
@@ -108,6 +127,7 @@ class NewBot extends Component {
     return (<Form 
       router={this.props.history}
       title="Edit Bot"
+      onChange={this.onChangeForm}
       botName={botName}
       configData={this.state.configData}
       saveFn={this.saveEdit}

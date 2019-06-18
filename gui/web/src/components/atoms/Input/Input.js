@@ -36,6 +36,7 @@ class Input extends Component {
           className={inputClassList}
           defaultValue={this.props.value}
           type="text"
+          onChange={this.props.onChange}
           disabled={this.props.disabled}
           />
         { this.props.suffix && (

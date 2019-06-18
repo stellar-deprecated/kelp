@@ -127,7 +127,10 @@ class Form extends Component {
                 <div className={grid.col4}>
                   <FieldItem>
                     <Label>Base asset code</Label>
-                    <Input value={this.props.configData.trader_config.asset_code_a}/>
+                    <Input
+                      value={this.props.configData.trader_config.asset_code_a}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
+                      />
                   </FieldItem>
                 </div>
 
