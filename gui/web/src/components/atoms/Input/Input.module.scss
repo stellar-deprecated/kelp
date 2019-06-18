@@ -39,6 +39,10 @@
     border-color: $color-danger;
 }
 
+.strikethrough {
+    text-decoration: line-through;
+}
+
 .medium {
     font-size: 13/16+rem;
     padding: 7/16+rem 5/16+rem 4/16+rem 5/16+rem; 

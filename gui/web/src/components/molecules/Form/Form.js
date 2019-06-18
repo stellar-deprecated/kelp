@@ -141,7 +141,7 @@ class Form extends Component {
                     <Label>Base asset code</Label>
                     <Input
                       value={this.props.configData.trader_config.asset_code_a}
-                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event, { "trader_config.issuer_a": emptyStringIfXLM }) }}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
                       />
                   </FieldItem>
                 </div>
@@ -153,6 +153,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.issuer_a}
                       onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
+                      strikethrough={this.props.configData.trader_config.asset_code_a === "XLM"}
                       />
                   </FieldItem>
                 </div>
@@ -164,7 +165,7 @@ class Form extends Component {
                     <Label>Quote asset code</Label>
                     <Input
                       value={this.props.configData.trader_config.asset_code_b}
-                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event, { "trader_config.issuer_b": emptyStringIfXLM }) }}
+                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
                       />
                   </FieldItem>
                 </div>
@@ -176,6 +177,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.issuer_b}
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
+                      strikethrough={this.props.configData.trader_config.asset_code_b === "XLM"}
                       />
                   </FieldItem>
                 </div>

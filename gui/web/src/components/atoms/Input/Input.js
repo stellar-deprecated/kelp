@@ -23,11 +23,13 @@ class Input extends Component {
 
   render() {
     const errorActive = this.props.showError ? styles.inputError : null;
+    const strikethrough = this.props.strikethrough ? styles.strikethrough : null;
 
     const inputClassList = classNames(
       styles.input, 
       styles[this.props.size],
       errorActive,
+      strikethrough,
     );
 
     return (
