@@ -74,7 +74,7 @@ func (s *Server) StartIPC() error {
 		s.l.Infof("responding to IPC command ('%s') with output: %s", command, output)
 		_, e = pipeWrite.WriteString(output)
 		if e != nil {
-			return fmt.Errorf("error while writing output to Stdout (name=%s): %s", os.Stdout.Name(), e)
+			return fmt.Errorf("error while writing output to pipeWrite (name=%s; fd=%v): %s", pipeWrite.Name(), pipeWrite.Fd(), e)
 		}
 		s.l.Infof("waiting for next IPC command...\n")
 	}
