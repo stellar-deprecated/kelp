@@ -59,13 +59,6 @@ class Form extends Component {
       network = "PubNet";
     }
 
-    let emptyStringIfXLM = (updatedCode) => {
-      if (updatedCode === "XLM") {
-        return "";
-      }
-      return null;
-    };
-
     return (
       <div>
         <div className={grid.container}>
