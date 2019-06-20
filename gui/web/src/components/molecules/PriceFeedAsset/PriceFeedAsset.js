@@ -32,16 +32,17 @@ class PriceFeedAsset extends Component {
       return
     }
     
+    this.setState({
+      isLoading: true,
+    });
     var _this = this;
     this._asyncRequests["price"] = fetchPrice(this.props.baseUrl, this.props.type, this.props.feed_url).then(resp => {
       _this._asyncRequests["price"] = null;
-      _this.setState({
-        isLoading: false,
-        price: resp.price,
-      });
-    });
-    this.setState({
-      isLoading: true,
+      let updateStateObj = { isLoading: false };
+      if (!resp.error) {
+        updateStateObj.price = resp.price
+      }
+      _this.setState(updateStateObj);
     });
   }
 
@@ -53,7 +54,7 @@ class PriceFeedAsset extends Component {
   }
 
   render() {
-    if (!this.state.price || this.state.isLoading) {
+    if (this.state.isLoading) {
       return (
         <div>
           <PriceFeedTitle

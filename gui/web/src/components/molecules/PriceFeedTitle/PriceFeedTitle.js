@@ -26,7 +26,7 @@ class PriceFeedTitle extends Component {
         <Label>{this.props.label}</Label>
         <span className={styles.equals}>=</span>
         <div className={styles.valueWrapper}>
-          <span className={valueClasses}>{this.props.price}</span>
+          <span className={valueClasses}>{this.props.price === null ? "<missing>" : this.props.price }</span>
           { this.props.loading && (
             <div className={styles.loaderWrapper}>
               <LoadingAnimation/>

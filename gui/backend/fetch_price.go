@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+
+	"github.com/stellar/kelp/plugins"
 )
 
 type fetchPriceInput struct {
@@ -19,18 +22,29 @@ type fetchPriceOutput struct {
 func (s *APIServer) fetchPrice(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error reading request input: %s\n", e))
+		s.writeErrorJson(w, fmt.Sprintf("error reading request input: %s", e))
 		return
 	}
+	log.Printf("requestJson: %s\n", string(bodyBytes))
 
 	var input fetchPriceInput
 	e = json.Unmarshal(bodyBytes, &input)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s\n", e, string(bodyBytes)))
+		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
 		return
 	}
 
+	pf, e := plugins.MakePriceFeed(input.Type, input.FeedURL)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("unable to make price feed: %s", e))
+		return
+	}
+	price, e := pf.GetPrice()
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("unable to fetch price: %s", e))
+		return
+	}
 	s.writeJson(w, fetchPriceOutput{
-		Price: 0.12,
+		Price: price,
 	})
 }

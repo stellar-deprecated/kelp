@@ -71,7 +71,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		}
 		return sdex, nil
 	}
-	return nil, nil
+	return nil, fmt.Errorf("unable to make price feed for feedType=%s and url=%s", feedType, url)
 }
 
 // MakeFeedPair is the factory method that we expose
