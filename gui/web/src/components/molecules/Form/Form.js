@@ -379,6 +379,7 @@ class Form extends Component {
             <FieldGroup groupTitle="Price Feed">
               <FieldItem>
                 <PriceFeedAsset
+                  baseUrl={this.props.baseUrl}
                   title="Current numerator price"
                   type=""
                   feed_url=""
@@ -386,6 +387,7 @@ class Form extends Component {
               </FieldItem>
               <FieldItem>
                 <PriceFeedAsset
+                  baseUrl={this.props.baseUrl}
                   title="Current denominator price"
                   type=""
                   feed_url=""

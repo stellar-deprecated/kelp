@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import PriceFeedTitle from '../PriceFeedTitle/PriceFeedTitle';
 import PriceFeedSelector from '../PriceFeedSelector/PriceFeedSelector';
+import fetchPrice from '../../../kelp-ops-api/fetchPrice';
 
 class PriceFeedAsset extends Component {
   constructor(props) {
@@ -10,52 +11,46 @@ class PriceFeedAsset extends Component {
       isLoading: true,
       price: null
     };
-    this.fetchPrice = this.fetchPrice.bind(this);
+    this.queryPrice = this.queryPrice.bind(this);
 
     this._asyncRequests = {};
   }
 
   static propTypes = {
+    baseUrl: PropTypes.string,
     title: PropTypes.string,
     type: PropTypes.string,
     feed_url: PropTypes.string,
   };
 
   componentDidMount() {
-    this.fetchPrice();
+    this.queryPrice();
   }
 
-  fetchPrice() {
-    // if (this._asyncRequests["price"]) {
-    //   return
-    // }
-    // 
-    // var _this = this;
-    // this._asyncRequests["price"] = getPrice(this.props.baseUrl, this.props.type, this.props.feed_url).then(resp => {
-    //   _this._asyncRequests["price"] = null;
-    //   _this.setState({
-    //     price: resp.price,
-    //   });
-    // });
+  queryPrice() {
+    if (this._asyncRequests["price"]) {
+      return
+    }
+    
+    var _this = this;
+    this._asyncRequests["price"] = fetchPrice(this.props.baseUrl, this.props.type, this.props.feed_url).then(resp => {
+      _this._asyncRequests["price"] = null;
+      _this.setState({
+        isLoading: false,
+        price: resp.price,
+      });
+    });
     this.setState({
       isLoading: true,
     });
-
-    // temp
-    setTimeout(() => {
-      this.setState({
-        isLoading: false,
-        price: 0.115,
-      });
-    }, 5000);
   }
 
-  // componentWillUnmount() {
-  //   if (this._asyncRequests["price"]) {
-  //     this._asyncRequests["price"].cancel();
-  //     this._asyncRequests["price"] = null;
-  //   }
-  // }
+  componentWillUnmount() {
+    if (this._asyncRequests["price"]) {
+      this._asyncRequests["price"].cancel();
+      this._asyncRequests["price"] = null;
+    }
+  }
 
   render() {
     if (!this.state.price || this.state.isLoading) {
@@ -64,7 +59,7 @@ class PriceFeedAsset extends Component {
           <PriceFeedTitle
             label={this.props.title}
             loading={true}
-            fetchPrice={this.fetchPrice}
+            fetchPrice={this.queryPrice}
             />
           <PriceFeedSelector/>
         </div>
@@ -77,7 +72,7 @@ class PriceFeedAsset extends Component {
           label={this.props.title}
           loading={false}
           price={this.state.price}
-          fetchPrice={this.fetchPrice}
+          fetchPrice={this.queryPrice}
           />
         <PriceFeedSelector/>
       </div>
