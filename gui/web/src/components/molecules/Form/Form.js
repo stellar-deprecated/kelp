@@ -14,8 +14,7 @@ import ScreenHeader from '../ScreenHeader/ScreenHeader';
 import AdvancedWrapper from '../AdvancedWrapper/AdvancedWrapper';
 import FormSection from '../FormSection/FormSection';
 import FieldGroup from '../FieldGroup/FieldGroup';
-import PriceFeedSelector from '../PriceFeedSelector/PriceFeedSelector';
-import PriceFeedTitle from '../PriceFeedTitle/PriceFeedTitle';
+import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import RepeaterField from '../RepeaterField/RepeaterField';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
@@ -369,24 +368,28 @@ class Form extends Component {
         <div className={grid.container}>
           <FormSection>
             <SectionTitle>
-              Strategy Settings (buysell)
+              Strategy Settings <i>(buysell)</i>
             </SectionTitle>
             
             <SectionDescription>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-              Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.
+              These settings refer to the strategy settings for the <i>buysell</i> strategy.
             </SectionDescription>
             
 
             <FieldGroup groupTitle="Price Feed">
               <FieldItem>
-                <PriceFeedTitle label="Current numerator price"/>
-                <PriceFeedSelector />
+                <PriceFeedAsset
+                  title="Current numerator price"
+                  type=""
+                  feed_url=""
+                  />
               </FieldItem>
-
               <FieldItem>
-                <PriceFeedTitle label="Current denominator price"/>
-                <PriceFeedSelector />
+                <PriceFeedAsset
+                  title="Current denominator price"
+                  type=""
+                  feed_url=""
+                  />
               </FieldItem>
               <PriceFeedFormula/>
             </FieldGroup>
