@@ -90,7 +90,9 @@ class NewBot extends Component {
     // make copy of current state
     let updateJSON = Object.assign({}, this.state);
 
-    this.updateUsingDotNotation(updateJSON.configData, statePath, event.target.value);
+    if (statePath) {
+      this.updateUsingDotNotation(updateJSON.configData, statePath, event.target.value);
+    }
 
     // merge in any additional updates
     if (mergeUpdateInstructions) {

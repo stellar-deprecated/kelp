@@ -28,6 +28,7 @@ class Form extends Component {
     };
     this.save = this.save.bind(this);
     this.collectConfigData = this.collectConfigData.bind(this);
+    this._last_fill_tracker_sleep_millis = 1000;
   }
 
   collectConfigData() {
@@ -191,53 +192,115 @@ class Form extends Component {
 
               <FieldItem>
                 <Label>Tick interval</Label>
-                <Input value="300" suffix="seconds"/>
+                <Input
+                  suffix="seconds"
+                  value={this.props.configData.trader_config.tick_interval_seconds}
+                  onChange={(event) => { this.props.onChange("trader_config.tick_interval_seconds", event) }}
+                  />
               </FieldItem>
 
               <FieldItem>
-                <Label>Randomized interval delay</Label>
-                <Input value="0" suffix="miliseconds"/>
+                <Label>Maximum Randomized Tick Interval Delay</Label>
+                <Input
+                  suffix="miliseconds"
+                  value={this.props.configData.trader_config.max_tick_delay_millis}
+                  onChange={(event) => { this.props.onChange("trader_config.max_tick_delay_millis", event) }}
+                  />
               </FieldItem>
 
               <FieldItem inline>
-                <Switch></Switch>
-                <Label>Maker only mode</Label>
+                <Switch
+                  value={this.props.configData.trader_config.submit_mode === "maker_only"}
+                  onChange={(event) => {
+                      let newValue = "maker_only"
+                      if (this.props.configData.trader_config.submit_mode === "maker_only") {
+                        newValue = "both"
+                      }
+                      this.props.onChange("trader_config.submit_mode", {target: {value: newValue}});
+                    }
+                  }
+                  />
+                <Label>Maker only mode</Label>  
               </FieldItem>
 
               <FieldItem>
                 <Label>Delete cycles treshold</Label>
-                <Input value="0"/>
+                <Input
+                  value={this.props.configData.trader_config.delete_cycles_threshold}
+                  onChange={(event) => { this.props.onChange("trader_config.delete_cycles_threshold", event) }}
+                  />
               </FieldItem>
 
               <FieldItem inline>
-                <Switch></Switch>
+                <Switch
+                  value={this.props.configData.trader_config.fill_tracker_sleep_millis !== 0}
+                  onChange={(event) => {
+                      let newValue = 0;
+                      if (this.props.configData.trader_config.fill_tracker_sleep_millis === 0) {
+                        newValue = this._last_fill_tracker_sleep_millis;
+                      }
+                      this.props.onChange("trader_config.fill_tracker_sleep_millis", {target: {value: newValue}});
+                    }
+                  }
+                  />
                 <Label>Fill tracker</Label>
               </FieldItem>
 
               <FieldItem>
                 <Label>Fill tracker duration</Label>
-                <Input value="0" suffix="miliseconds"/>
+                <Input
+                  suffix="miliseconds"
+                  value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
+                  disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  strikethrough={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  onChange={(event) => {
+                      this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
+                        "trader_config.fill_tracker_sleep_millis": (value) => {
+                          // cannot set value to 0 or empty
+                          if (value.trim() === "0" || value.trim() === "") {
+                            return this._last_fill_tracker_sleep_millis;
+                          }
+
+                          // just save the last value here and don't update the state in this function
+                          this._last_fill_tracker_sleep_millis = value;
+                          return null;
+                        }
+                      })
+                    }
+                  }
+                  />
               </FieldItem>
 
               <FieldItem>
                 <Label>Fill tracker delete cycles threshold</Label>
-                <Input value="0"/>
+                <Input
+                  value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
+                  disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  strikethrough={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}/>
               </FieldItem>
 
               <FieldGroup groupTitle="Fee">
                 <div className={grid.row}>
                   <div className={grid.col5}>
                     <FieldItem>
-                      <Label>Fee capacity trigger</Label>
-                      <Input value="0.8"/>
+                      <Label>Network capacity trigger</Label>
+                      <Input
+                        value={this.props.configData.trader_config.fee.capacity_trigger}
+                        onChange={(event) => { this.props.onChange("trader_config.fee.capacity_trigger", event) }}
+                        />
                     </FieldItem>
                   </div>
                 </div>
                 <div className={grid.row}>
                   <div className={grid.col5}>
                     <FieldItem>
-                      <Label>Fee capacity computation</Label>
-                      <Input value="90" suffix="%"/>
+                      <Label>Use fee percentile value</Label>
+                      <Input
+                        suffix="%"
+                        value={this.props.configData.trader_config.fee.percentile}
+                        onChange={(event) => { this.props.onChange("trader_config.fee.percentile", event) }}
+                        />
                     </FieldItem>
                     </div>
                 </div>
@@ -245,7 +308,11 @@ class Form extends Component {
                   <div className={grid.col5}>
                     <FieldItem>
                       <Label>Maximum fee per operation</Label>
-                      <Input value="5000" suffix="miliseconds"/>
+                      <Input
+                        suffix="stroops"
+                        value={this.props.configData.trader_config.fee.max_op_fee_stroops}
+                        onChange={(event) => { this.props.onChange("trader_config.fee.max_op_fee_stroops", event) }}
+                        />
                     </FieldItem>
                     </div>
                 </div>
@@ -254,14 +321,22 @@ class Form extends Component {
               <div className={grid.row}>
                 <div className={grid.col5}>
                   <FieldItem>
-                    <Label>Decimal units for price</Label>
-                    <Input value="6" />
+                    <Label>Precision units for price</Label>
+                    <Input
+                        suffix="decimals"
+                        value={this.props.configData.trader_config.centralized_price_precision_override}
+                        onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
+                        />
                   </FieldItem>
                 </div>
                 <div className={grid.col5}>
                   <FieldItem>
-                    <Label>Decimal units for volume</Label>
-                    <Input value="1" />
+                    <Label>Precision units for volume</Label>
+                    <Input
+                        suffix="decimals"
+                        value={this.props.configData.trader_config.centralized_volume_precision_override}
+                        onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
+                        />
                   </FieldItem>
                 </div>
               </div>
@@ -269,14 +344,22 @@ class Form extends Component {
               <div className={grid.row}>
                 <div className={grid.col5}>
                   <FieldItem>
-                    <Label>Min. volume of base units</Label>
-                    <Input value="30.0" />
+                    <Label>Min. order size (volume) of base units</Label>
+                    <Input
+                        suffix="units"
+                        value={this.props.configData.trader_config.centralized_min_base_volume_override}
+                        onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
+                        />
                   </FieldItem>
                 </div>
                 <div className={grid.col5}>
                   <FieldItem>
-                    <Label>Min. volume of quote units</Label>
-                    <Input value="10.0" />
+                    <Label>Min. order size (volume) of quote units</Label>
+                    <Input
+                        suffix="units"
+                        value={this.props.configData.trader_config.centralized_min_quote_volume_override}
+                        onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
+                        />
                   </FieldItem>
                 </div>
               </div>  

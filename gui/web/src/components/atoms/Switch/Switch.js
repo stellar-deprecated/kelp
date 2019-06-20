@@ -5,7 +5,12 @@ class Switch extends Component {
   render() {
     return (
       <div>
-        <input className={styles.switch} type="checkbox" value={this.props.value}/>
+        <input
+          className={styles.switch}
+          type="checkbox"
+          checked={this.props.value}
+          onChange={this.props.onChange}
+          />
       </div>
     );
   }
