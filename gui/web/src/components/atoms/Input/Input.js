@@ -23,13 +23,16 @@ class Input extends Component {
 
   render() {
     const errorActive = this.props.showError ? styles.inputError : null;
-    const strikethrough = this.props.strikethrough ? styles.strikethrough : null;
-
     const inputClassList = classNames(
       styles.input, 
       styles[this.props.size],
       errorActive,
-      strikethrough,
+    );
+
+    const suffixDisabled = this.props.disabled ? styles.disabled : null;
+    const suffixClassList = classNames(
+      styles.suffix, 
+      suffixDisabled,
     );
 
     return (
@@ -42,7 +45,7 @@ class Input extends Component {
           disabled={this.props.disabled}
           />
         { this.props.suffix && (
-        <p className={styles.suffix}>{this.props.suffix}</p>
+        <p className={suffixClassList}>{this.props.suffix}</p>
         )}
 
         { this.props.showError && (

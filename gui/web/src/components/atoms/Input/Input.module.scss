@@ -39,8 +39,9 @@
     border-color: $color-danger;
 }
 
-.strikethrough {
-    text-decoration: line-through;
+:disabled, .suffix.disabled {
+    opacity: 0.25;
+    cursor: default;
 }
 
 .medium {

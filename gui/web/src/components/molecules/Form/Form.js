@@ -147,7 +147,6 @@ class Form extends Component {
                       value={this.props.configData.trader_config.issuer_a}
                       onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
-                      strikethrough={this.props.configData.trader_config.asset_code_a === "XLM"}
                       />
                   </FieldItem>
                 </div>
@@ -171,7 +170,6 @@ class Form extends Component {
                       value={this.props.configData.trader_config.issuer_b}
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
-                      strikethrough={this.props.configData.trader_config.asset_code_b === "XLM"}
                       />
                   </FieldItem>
                 </div>
@@ -252,7 +250,6 @@ class Form extends Component {
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
-                  strikethrough={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
                   onChange={(event) => {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
                         "trader_config.fill_tracker_sleep_millis": (value) => {
@@ -276,7 +273,6 @@ class Form extends Component {
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
-                  strikethrough={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
                   onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}/>
               </FieldItem>
 
