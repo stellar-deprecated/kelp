@@ -8,7 +8,7 @@ import Switch from '../../atoms/Switch/Switch';
 import SegmentedControl from '../../atoms/SegmentedControl/SegmentedControl';
 import SectionDescription from '../../atoms/SectionDescription/SectionDescription';
 import Button from '../../atoms/Button/Button';
-import Select from '../../atoms/Select/Select';
+// import Select from '../../atoms/Select/Select';
 import FieldItem from '../FieldItem/FieldItem';
 import ScreenHeader from '../ScreenHeader/ScreenHeader';
 import AdvancedWrapper from '../AdvancedWrapper/AdvancedWrapper';
@@ -90,10 +90,10 @@ class Form extends Component {
   }
 
   render() {
-    let tradingPlatform = "sdex";
-    if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
-      tradingPlatform = this.props.configData.trader_config.trading_exchange;
-    }
+    // let tradingPlatform = "sdex";
+    // if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
+    //   tradingPlatform = this.props.configData.trader_config.trading_exchange;
+    // }
 
     let network = "TestNet";
     if (!this.props.configData.trader_config.horizon_url.includes("test")) {
@@ -130,7 +130,7 @@ class Form extends Component {
               </SectionDescription>
             </FormSection>
 
-            <FormSection tip="Where do you want to trade: Stellar Decentralized Exchange (SDEX) or Kraken?">
+            {/* <FormSection tip="Where do you want to trade: Stellar Decentralized Exchange (SDEX) or Kraken?">
               <FieldItem>
                 <Label>Trading Platform</Label>
                 <Select
@@ -141,7 +141,7 @@ class Form extends Component {
                   selected={tradingPlatform}
                   />
               </FieldItem>
-            </FormSection>
+            </FormSection> */}
               
             <FormSection>
               <FieldItem>
