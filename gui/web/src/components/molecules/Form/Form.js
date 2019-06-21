@@ -24,7 +24,12 @@ class Form extends Component {
     super(props);
     this.state = {
       isLoading: false,
+      isLoadingFormula: true,
+      numerator: null,
+      denominator: null,
     };
+    this.setLoadingFormula = this.setLoadingFormula.bind(this);
+    this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
     this.save = this.save.bind(this);
     this.collectConfigData = this.collectConfigData.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
@@ -34,6 +39,26 @@ class Form extends Component {
   collectConfigData() {
     // TODO collect config data from UI elements
     return this.props.configData;
+  }
+
+  setLoadingFormula() {
+    this.setState({
+      isLoadingFormula: true
+    })
+  }
+
+  updateFormulaPrice(ator, price) {
+    if (ator === "numerator") {
+      this.setState({
+        isLoadingFormula: false,
+        numerator: price
+      })
+    } else {
+      this.setState({
+        isLoadingFormula: false,
+        denominator: price
+      })
+    }
   }
 
   save() {
@@ -400,6 +425,8 @@ class Form extends Component {
                   title="Current numerator price"
                   type={this.props.configData.strategy_config.data_type_a}
                   feed_url={this.props.configData.strategy_config.data_feed_a_url}
+                  onLoadingPrice={() => this.setLoadingFormula()}
+                  onNewPrice={(newPrice) => this.updateFormulaPrice("numerator", newPrice)}
                   />
               </FieldItem>
               <FieldItem>
@@ -409,9 +436,15 @@ class Form extends Component {
                   title="Current denominator price"
                   type={this.props.configData.strategy_config.data_type_b}
                   feed_url={this.props.configData.strategy_config.data_feed_b_url}
+                  onLoadingPrice={() => this.setLoadingFormula()}
+                  onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
                   />
               </FieldItem>
-              <PriceFeedFormula/>
+              <PriceFeedFormula
+                isLoading={this.state.isLoadingFormula}
+                numerator={this.state.numerator}
+                denominator={this.state.denominator}
+                />
             </FieldGroup>
             
             

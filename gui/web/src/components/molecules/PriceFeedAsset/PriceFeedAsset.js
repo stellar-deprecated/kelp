@@ -159,11 +159,23 @@ class PriceFeedAsset extends Component {
     title: PropTypes.string,
     type: PropTypes.string,
     feed_url: PropTypes.string,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    onLoadingPrice: PropTypes.func,
+    onNewPrice: PropTypes.func,
   };
 
   componentDidMount() {
     this.queryPrice();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (
+      prevProps.baseUrl !== this.props.baseUrl ||
+      prevProps.type !== this.props.type ||
+      prevProps.feed_url !== this.props.feed_url
+    ) {
+      this.queryPrice();
+    }
   }
 
   queryPrice() {
@@ -174,13 +186,17 @@ class PriceFeedAsset extends Component {
     this.setState({
       isLoading: true,
     });
+    this.props.onLoadingPrice();
+
     var _this = this;
     this._asyncRequests["price"] = fetchPrice(this.props.baseUrl, this.props.type, this.props.feed_url).then(resp => {
       _this._asyncRequests["price"] = null;
       let updateStateObj = { isLoading: false };
       if (!resp.error) {
         updateStateObj.price = resp.price
+        this.props.onNewPrice(resp.price);
       }
+
       _this.setState(updateStateObj);
     });
   }

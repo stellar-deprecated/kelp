@@ -18,7 +18,8 @@ class PriceFeedSelector extends Component {
 
   static propTypes = {
     optionsMetadata: PropTypes.object,
-    values: PropTypes.arrayOf(PropTypes.string)
+    values: PropTypes.arrayOf(PropTypes.string),
+    onChange: PropTypes.func
   };
 
   getOptionItems(optionsObj) {
@@ -112,7 +113,6 @@ class PriceFeedSelector extends Component {
     let firstComponent = firstComponentWrapper.componentFn();
     let selectedOption = firstComponentWrapper.selectedOption;
 
-    console.log("values.length = " + values.length + ", values = " + JSON.stringify(values) + "; selectedOption for idx=" + idx + " and value=" + values[0] + ": " + JSON.stringify(selectedOption));
     let secondComponent = "";
     if (values.length > 1) {
       let innerValues = [];
@@ -135,7 +135,6 @@ class PriceFeedSelector extends Component {
   }
 
   render() {
-    console.log("rendering for values: " + JSON.stringify(this.props.values));
     return (
       <div className={styles.wrapper}>
         {this.renderComponentRecursive(0, this.props.optionsMetadata, this.props.values)}
