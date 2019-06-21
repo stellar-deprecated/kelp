@@ -27,6 +27,7 @@ class Form extends Component {
     };
     this.save = this.save.bind(this);
     this.collectConfigData = this.collectConfigData.bind(this);
+    this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
   }
 
@@ -46,6 +47,21 @@ class Form extends Component {
     }
 
     this.props.router.goBack();
+  }
+
+  priceFeedAssetChangeHandler(ab, newValues) {
+    let dataTypeFieldName = "strategy_config.data_type_" + ab;
+    let dataTypeValue = newValues[0];
+    let feedUrlFieldName = "strategy_config.data_feed_" + ab + "_url";
+    // special handling for feedUrlValue
+    let feedUrlValue = newValues[1];
+    if (newValues.length > 2) {
+      feedUrlValue = feedUrlValue + "/" + newValues[2];
+    }
+
+    let mergeUpdateInstructions = {};
+    mergeUpdateInstructions[feedUrlFieldName] = () => { return feedUrlValue };
+    this.props.onChange(dataTypeFieldName, {target: {value: dataTypeValue}}, mergeUpdateInstructions);
   }
 
   render() {
@@ -380,17 +396,19 @@ class Form extends Component {
               <FieldItem>
                 <PriceFeedAsset
                   baseUrl={this.props.baseUrl}
+                  onChange={(newValues) => this.priceFeedAssetChangeHandler("a", newValues)}
                   title="Current numerator price"
-                  type=""
-                  feed_url=""
+                  type={this.props.configData.strategy_config.data_type_a}
+                  feed_url={this.props.configData.strategy_config.data_feed_a_url}
                   />
               </FieldItem>
               <FieldItem>
                 <PriceFeedAsset
                   baseUrl={this.props.baseUrl}
+                  onChange={(newValues) => this.priceFeedAssetChangeHandler("b", newValues)}
                   title="Current denominator price"
-                  type=""
-                  feed_url=""
+                  type={this.props.configData.strategy_config.data_type_b}
+                  feed_url={this.props.configData.strategy_config.data_feed_b_url}
                   />
               </FieldItem>
               <PriceFeedFormula/>

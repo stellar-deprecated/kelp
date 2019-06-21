@@ -10,7 +10,11 @@ class Select extends Component {
     }
 
     return (  
-      <select className={styles.select} defaultValue={this.props.selected}>
+      <select
+        className={styles.select}
+        value={this.props.selected}
+        onChange={this.props.onChange}
+        >
         {options}
       </select>
     );
