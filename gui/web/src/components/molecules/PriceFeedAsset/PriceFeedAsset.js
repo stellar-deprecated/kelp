@@ -85,6 +85,7 @@ const optionsMetadata = {
       text: "Fixed value",
       subtype: {
         type: "text",
+        defaultValue: "1.0",
         subtype: null,
       }
     },
@@ -136,6 +137,7 @@ const optionsMetadata = {
       text: "Stellar DEX",
       subtype: {
         type: "text",
+        defaultValue: "USD:GDUKMGUGDZQK6YHYA5Z6AY2G4XDSZPSZ3SW5UN3ARVMO6QSRDWP5YLEX/XLM:",
         subtype: null,
       }
     }

@@ -56,7 +56,7 @@ class PriceFeedSelector extends Component {
         if (i < abridgedValues.length) {
           curValue = abridgedValues[i];
         } else {
-          curValue = "";
+          curValue = selectedOption.subtype.defaultValue;
         }
         selectedOption = selectedOption.subtype;
       }
