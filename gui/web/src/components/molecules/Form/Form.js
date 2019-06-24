@@ -16,7 +16,7 @@ import FormSection from '../FormSection/FormSection';
 import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
-import RepeaterField from '../RepeaterField/RepeaterField';
+import Levels from '../Levels/Levels';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Form extends Component {
@@ -33,6 +33,12 @@ class Form extends Component {
     this.save = this.save.bind(this);
     this.collectConfigData = this.collectConfigData.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
+    this.updateLevel = this.updateLevel.bind(this);
+    this.newLevel = this.newLevel.bind(this);
+    this.hasNewLevel = this.hasNewLevel.bind(this);
+    this.removeLevel = this.removeLevel.bind(this);
+    this._emptyLevel = this._emptyLevel.bind(this);
+    this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
   }
 
@@ -87,6 +93,68 @@ class Form extends Component {
     let mergeUpdateInstructions = {};
     mergeUpdateInstructions[feedUrlFieldName] = () => { return feedUrlValue };
     this.props.onChange(dataTypeFieldName, {target: {value: dataTypeValue}}, mergeUpdateInstructions);
+  }
+
+  updateLevel(levelIdx, fieldAmtSpread, value) {
+    let newLevels = this.props.configData.strategy_config.levels;
+    newLevels[levelIdx][fieldAmtSpread] = value;
+    this._triggerUpdateLevels(newLevels);
+  }
+
+  hasNewLevel() {
+    let levels = this.props.configData.strategy_config.levels;
+    if (levels.length === 0) {
+      return false;
+    }
+
+    let lastLevel = levels[levels.length - 1];
+    if (lastLevel["spread"] === "" || lastLevel["amount"] === "") {
+      return true;
+    }
+
+    return false;
+  }
+
+  newLevel() {
+    if (this.hasNewLevel()) {
+      return
+    }
+
+    let newLevels = this.props.configData.strategy_config.levels;
+
+    // push default values for new level
+    newLevels.push(this._emptyLevel());
+
+    this._triggerUpdateLevels(newLevels);
+  }
+
+  removeLevel(levelIdx) {
+    let newLevels = this.props.configData.strategy_config.levels;
+    if (levelIdx >= newLevels.length) {
+      return;
+    }
+
+    newLevels.splice(levelIdx, 1);
+    if (newLevels.length === 0) {
+      newLevels.push(this._emptyLevel());
+    }
+
+    this._triggerUpdateLevels(newLevels);
+  }
+
+  _emptyLevel() {
+    return {
+      amount: "",
+      spread: "",
+    };
+  }
+
+  _triggerUpdateLevels(newLevels) {
+    // update levels and always set amount_of_a_base to 1.0
+    this.props.onChange(
+      "strategy_config.levels", {target: {value: newLevels}},
+      { "strategy_config.amount_of_a_base": (value) => { return "1.0"; } }
+    )
   }
 
   render() {
@@ -447,22 +515,17 @@ class Form extends Component {
                 />
             </FieldGroup>
             
-            
             <div className={grid.row}>
-              <div className={grid.col4}>
-                <FieldItem>
-                  <Label>Order size</Label>
-                  <Input/>
-                </FieldItem>
-              </div>
-            </div>
-            
-            <div className={grid.row}>
-              <div className={grid.col4}>
-                <FieldItem>
-                  <Label>Spread of a market</Label>
-                  <Input suffix="%"/>
-                </FieldItem>
+              <div className={grid.col8}>
+                <FieldGroup groupTitle="Levels">
+                  <Levels
+                    levels={this.props.configData.strategy_config.levels}
+                    updateLevel={(levelIdx, fieldAmtSpread, value) => { this.updateLevel(levelIdx, fieldAmtSpread, value) }}
+                    newLevel={this.newLevel}
+                    hasNewLevel={this.hasNewLevel}
+                    onRemove={(levelIdx) => { this.removeLevel(levelIdx) }}
+                    />
+                </FieldGroup>
               </div>
             </div>
           </FormSection>
@@ -470,25 +533,6 @@ class Form extends Component {
 
         <AdvancedWrapper headerClass={grid.container}>
           <div className={grid.container}>
-            <FormSection>
-              <div className={grid.row}>
-                <div className={grid.col8}>
-                  <FieldGroup groupTitle="Levels">
-                    <RepeaterField>
-                          <FieldItem>
-                            <Label>Spread</Label>
-                            <Input suffix="%"/>
-                          </FieldItem>
-                          <FieldItem>
-                            <Label>Amount</Label>
-                            <Input/>
-                          </FieldItem>
-                    </RepeaterField>
-                  </FieldGroup>
-                </div>
-              </div>
-            </FormSection>
-
             <FormSection>
               <div className={grid.row}>
                 <div className={grid.col5}>
