@@ -50,12 +50,6 @@
     max-width: 33.333%;
 }
 
-.col8 {
-    composes: _col;
-    flex-basis: 66.667%;
-    max-width: 66.667%;
-}
-
 .col5 {
     composes: _col;
     flex-basis: 41.667%;
@@ -74,3 +68,16 @@
     max-width: 58.333%;
 }
 
+.col8 {
+    composes: _col;
+    flex-basis: 66.667%;
+    max-width: 66.667%;
+}
+
+.colPriceSelector {
+    composes: _col;
+    flex-basis: 90%;
+    max-width: 90%;
+    flex: 1 0 auto;
+    -ms-flex: 1 0 auto;
+}

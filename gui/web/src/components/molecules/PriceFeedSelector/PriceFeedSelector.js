@@ -69,9 +69,9 @@ class PriceFeedSelector extends Component {
   }
 
   renderComponentSingle(idx, metadata, value) {
-    let className = grid.col3;
-    if (idx !== 8) {
-      className = grid.col6;
+    let className = grid.colPriceSelector;
+    if (idx === 0) {
+      className = grid.col5;
     }
 
     let selectedOption = {};
