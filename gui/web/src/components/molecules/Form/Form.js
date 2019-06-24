@@ -538,13 +538,21 @@ class Form extends Component {
                 <div className={grid.col5}>
                   <FieldItem>
                     <Label>Price tolerance</Label>
-                    <Input/>
+                    <Input
+                      suffix="%"
+                      value={this.props.configData.strategy_config.price_tolerance}
+                      onChange={(event) => { this.props.onChange("strategy_config.price_tolerance", event) }}
+                      />
                   </FieldItem>
                 </div>
                 <div className={grid.col5}>
                   <FieldItem>
                     <Label>Amount tolerance</Label>
-                    <Input/>
+                    <Input
+                      suffix="%"
+                      value={this.props.configData.strategy_config.amount_tolerance}
+                      onChange={(event) => { this.props.onChange("strategy_config.amount_tolerance", event) }}
+                      />
                   </FieldItem>
                 </div>
               </div>
@@ -553,16 +561,37 @@ class Form extends Component {
                 <div className={grid.col5}>
                   <FieldItem>
                     <Label>Rate offset percentage</Label>
-                    <Input/>
+                    <Input
+                      suffix="%"
+                      value={this.props.configData.strategy_config.rate_offset_percent}
+                      onChange={(event) => { this.props.onChange("strategy_config.rate_offset_percent", event) }}
+                      />
                   </FieldItem>
                 </div>
                 <div className={grid.col5}>
                   <FieldItem>
                     <Label>Rate offset</Label>
-                    <Input/>
+                    <Input
+                      value={this.props.configData.strategy_config.rate_offset}
+                      onChange={(event) => { this.props.onChange("strategy_config.rate_offset", event) }}
+                      />
                   </FieldItem>
                 </div>
               </div>
+              <FieldItem inline>
+                <Switch
+                  value={this.props.configData.strategy_config.rate_offset_percent_first}
+                  onChange={(event) => {
+                      let newValue = true;
+                      if (this.props.configData.strategy_config.rate_offset_percent_first) {
+                        newValue = false;
+                      }
+                      this.props.onChange("strategy_config.rate_offset_percent_first", {target: {value: newValue}});
+                    }
+                  }
+                  />
+                <Label>Rate Offset Percent first</Label>
+              </FieldItem>
             </FormSection>
           </div>
         </AdvancedWrapper>
