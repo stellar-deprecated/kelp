@@ -427,20 +427,20 @@ class Form extends Component {
                   <FieldItem>
                     <Label>Precision units for price</Label>
                     <Input
-                        suffix="decimals"
-                        value={this.props.configData.trader_config.centralized_price_precision_override}
-                        onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
-                        />
+                      suffix="decimals"
+                      value={this.props.configData.trader_config.centralized_price_precision_override}
+                      onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
+                      />
                   </FieldItem>
                 </div>
                 <div className={grid.col5}>
                   <FieldItem>
                     <Label>Precision units for volume</Label>
                     <Input
-                        suffix="decimals"
-                        value={this.props.configData.trader_config.centralized_volume_precision_override}
-                        onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
-                        />
+                      suffix="decimals"
+                      value={this.props.configData.trader_config.centralized_volume_precision_override}
+                      onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
+                      />
                   </FieldItem>
                 </div>
               </div>
@@ -450,20 +450,20 @@ class Form extends Component {
                   <FieldItem>
                     <Label>Min. order size (volume) of base units</Label>
                     <Input
-                        suffix="units"
-                        value={this.props.configData.trader_config.centralized_min_base_volume_override}
-                        onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
-                        />
+                      suffix="units"
+                      value={this.props.configData.trader_config.centralized_min_base_volume_override}
+                      onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
+                      />
                   </FieldItem>
                 </div>
                 <div className={grid.col5}>
                   <FieldItem>
                     <Label>Min. order size (volume) of quote units</Label>
                     <Input
-                        suffix="units"
-                        value={this.props.configData.trader_config.centralized_min_quote_volume_override}
-                        onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
-                        />
+                      suffix="units"
+                      value={this.props.configData.trader_config.centralized_min_quote_volume_override}
+                      onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
+                      />
                   </FieldItem>
                 </div>
               </div>  
