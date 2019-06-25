@@ -66,7 +66,7 @@ class Form extends Component {
       isSaving: true,
     })
     this.props.saveFn();
-    this.props.router.goBack();
+    // save fn will call router.goBack();
   }
 
   priceFeedAssetChangeHandler(ab, newValues) {
@@ -142,7 +142,7 @@ class Form extends Component {
     // update levels and always set amount_of_a_base to 1.0
     this.props.onChange(
       "strategy_config.levels", {target: {value: newLevels}},
-      { "strategy_config.amount_of_a_base": (value) => { return "1.0"; } }
+      { "strategy_config.amount_of_a_base": (value) => { return 1.0; } }
     )
   }
 

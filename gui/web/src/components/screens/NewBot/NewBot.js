@@ -2,11 +2,14 @@ import React, { Component } from 'react';
 import Form from '../../molecules/Form/Form';
 import genBotName from '../../../kelp-ops-api/genBotName';
 import getBotConfig from '../../../kelp-ops-api/getBotConfig';
+import updateBotConfig from '../../../kelp-ops-api/updateBotConfig';
+import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
 class NewBot extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isSaving: false,
       newBotName: null,
       configData: null,
     };
@@ -53,7 +56,18 @@ class NewBot extends Component {
   }
 
   saveEdit() {
-    return null;
+    this.setState({
+      isSaving: true,
+    });
+
+    var _this = this;
+    this._asyncRequests["botConfig"] = updateBotConfig(this.props.baseUrl, JSON.stringify(this.state.configData)).then(resp => {
+      _this._asyncRequests["botConfig"] = null;
+      _this.setState({
+        isSaving: false,
+      });
+      _this.props.history.goBack();
+    });
   }
 
   loadSampleConfigData() {
@@ -112,6 +126,10 @@ class NewBot extends Component {
   }
 
   render() {
+    if (this.state.isSaving) {
+      return (<LoadingAnimation/>);
+    }
+
     if (this.props.location.pathname === "/new") {
       this.loadBotName();
       if (!this.state.configData) {
