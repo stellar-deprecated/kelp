@@ -182,6 +182,7 @@ class Form extends Component {
                 value={this.props.configData.name}
                 type="string"
                 onChange={(event) => { this.props.onChange("name", event) }}
+                disabled={!this.props.isNew}
                 />
 
               {/* Trader Settings */}

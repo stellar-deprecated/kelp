@@ -120,6 +120,7 @@ class NewBot extends Component {
       }
       return (<Form
         router={this.props.history}
+        isNew={true}
         baseUrl={this.props.baseUrl}
         title="New Bot"
         onChange={this.onChangeForm}
@@ -152,6 +153,7 @@ class NewBot extends Component {
     }
     return (<Form 
       router={this.props.history}
+      isNew={false}
       baseUrl={this.props.baseUrl}
       title="Edit Bot"
       onChange={this.onChangeForm}
