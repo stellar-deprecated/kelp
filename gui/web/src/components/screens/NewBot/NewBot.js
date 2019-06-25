@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import Form from '../../molecules/Form/Form';
-import genBotName from '../../../kelp-ops-api/genBotName';
 import getBotConfig from '../../../kelp-ops-api/getBotConfig';
+import getNewBotConfig from '../../../kelp-ops-api/getNewBotConfig';
 import updateBotConfig from '../../../kelp-ops-api/updateBotConfig';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
@@ -10,14 +10,12 @@ class NewBot extends Component {
     super(props);
     this.state = {
       isSaving: false,
-      newBotName: null,
       configData: null,
     };
 
-    this.loadBotName = this.loadBotName.bind(this);
     this.saveNew = this.saveNew.bind(this);
     this.saveEdit = this.saveEdit.bind(this);
-    this.loadSampleConfigData = this.loadSampleConfigData.bind(this);
+    this.loadNewConfigData = this.loadNewConfigData.bind(this);
     this.loadBotConfigData = this.loadBotConfigData.bind(this);
     this.onChangeForm = this.onChangeForm.bind(this);
     this.updateUsingDotNotation = this.updateUsingDotNotation.bind(this);
@@ -25,30 +23,7 @@ class NewBot extends Component {
     this._asyncRequests = {};
   }
 
-  loadBotName() {
-    if (this.state.newBotName) {
-      return
-    }
-
-    var _this = this;
-    this._asyncRequests["botName"] = genBotName(this.props.baseUrl).then(resp => {
-      if (!_this._asyncRequests["botName"]) {
-        // if it has been deleted it means we don't want to process the result
-        return
-      }
-
-      delete _this._asyncRequests["botName"];
-      _this.setState({
-        newBotName: resp,
-      });
-    });
-  }
-
   componentWillUnmount() {
-    if (this._asyncRequests["botName"]) {
-      delete this._asyncRequests["botName"];
-    }
-
     if (this._asyncRequests["botConfig"]) {
       delete this._asyncRequests["botConfig"];
     }
@@ -78,8 +53,19 @@ class NewBot extends Component {
     });
   }
 
-  loadSampleConfigData() {
-
+  loadNewConfigData() {
+    var _this = this;
+    this._asyncRequests["botConfig"] = getNewBotConfig(this.props.baseUrl).then(resp => {
+      if (!_this._asyncRequests["botConfig"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+      
+      delete _this._asyncRequests["botConfig"];
+      _this.setState({
+        configData: resp,
+      });
+    });
   }
 
   loadBotConfigData(botName) {
@@ -144,9 +130,8 @@ class NewBot extends Component {
     }
 
     if (this.props.location.pathname === "/new") {
-      this.loadBotName();
       if (!this.state.configData) {
-        this.loadSampleConfigData();
+        this.loadNewConfigData();
         return (<div>Fetching sample config file</div>);
       }
       return (<Form
@@ -155,7 +140,6 @@ class NewBot extends Component {
         baseUrl={this.props.baseUrl}
         title="New Bot"
         onChange={this.onChangeForm}
-        botName={this.state.newBotName}
         configData={this.state.configData}
         saveFn={this.saveNew}
         saveText="Create Bot"
@@ -188,7 +172,6 @@ class NewBot extends Component {
       baseUrl={this.props.baseUrl}
       title="Edit Bot"
       onChange={this.onChangeForm}
-      botName={botName}
       configData={this.state.configData}
       saveFn={this.saveEdit}
       saveText="Save Bot Updates"

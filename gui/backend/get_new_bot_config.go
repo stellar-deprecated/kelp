@@ -1,0 +1,34 @@
+package backend
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func (s *APIServer) getNewBotConfig(w http.ResponseWriter, r *http.Request) {
+	botName, e := s.doGenerateBotName()
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("cannot generate a new bot name: %s", e))
+		return
+	}
+	sampleTrader := makeSampleTrader("")
+	strategy := "buysell"
+	sampleBuysell := makeSampleBuysell()
+
+	response := botConfigResponse{
+		Name:           botName,
+		Strategy:       strategy,
+		TraderConfig:   *sampleTrader,
+		StrategyConfig: *sampleBuysell,
+	}
+	jsonBytes, e := json.MarshalIndent(response, "", "  ")
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("cannot marshal botConfigResponse: %s\n", e))
+		return
+	}
+	log.Printf("getNewBotConfig response: %s\n", string(jsonBytes))
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonBytes)
+}
