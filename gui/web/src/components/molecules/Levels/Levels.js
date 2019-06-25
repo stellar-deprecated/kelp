@@ -29,6 +29,7 @@ class Levels extends Component {
               <Input
                 suffix="%"
                 value={this.props.levels[i].spread}
+                type="percent"
                 onChange={(event) => { this.props.updateLevel(i, "spread", event.target.value) }}
                 />
             </FieldItem>
@@ -36,6 +37,7 @@ class Levels extends Component {
               <Label>Amount</Label>
               <Input
                 value={this.props.levels[i].amount}
+                type="float"
                 onChange={(event) => { this.props.updateLevel(i, "amount", event.target.value) }}
                 />
             </FieldItem>

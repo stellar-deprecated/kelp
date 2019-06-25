@@ -180,6 +180,7 @@ class Form extends Component {
               <Input
                 size="large"
                 value={this.props.configData.name}
+                type="string"
                 onChange={(event) => { this.props.onChange("name", event) }}
                 />
 
@@ -229,6 +230,7 @@ class Form extends Component {
                 <Label>Trader account secret key</Label>
                 <Input
                   value={this.props.configData.trader_config.trading_secret_seed}
+                  type="string"
                   onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
                   error="Please enter a valid trader account secret key"
                   showError={false}
@@ -243,6 +245,7 @@ class Form extends Component {
                     <Label>Base asset code</Label>
                     <Input
                       value={this.props.configData.trader_config.asset_code_a}
+                      type="string"
                       onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
                       />
                   </FieldItem>
@@ -253,6 +256,7 @@ class Form extends Component {
                     <Label>Base asset issuer</Label>
                     <Input
                       value={this.props.configData.trader_config.issuer_a}
+                      type="string"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
                       />
@@ -266,6 +270,7 @@ class Form extends Component {
                     <Label>Quote asset code</Label>
                     <Input
                       value={this.props.configData.trader_config.asset_code_b}
+                      type="string"
                       onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
                       />
                   </FieldItem>
@@ -276,6 +281,7 @@ class Form extends Component {
                     <Label>Quote asset issuer</Label>
                     <Input
                       value={this.props.configData.trader_config.issuer_b}
+                      type="string"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
                       />
@@ -292,6 +298,7 @@ class Form extends Component {
                 <Label optional>Source account secret key</Label>
                 <Input
                   value={this.props.configData.trader_config.source_secret_seed}
+                  type="string"
                   onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
                   />
               </FieldItem>
@@ -301,6 +308,7 @@ class Form extends Component {
                 <Input
                   suffix="seconds"
                   value={this.props.configData.trader_config.tick_interval_seconds}
+                  type="int"
                   onChange={(event) => { this.props.onChange("trader_config.tick_interval_seconds", event) }}
                   />
               </FieldItem>
@@ -310,6 +318,7 @@ class Form extends Component {
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.max_tick_delay_millis}
+                  type="int"
                   onChange={(event) => { this.props.onChange("trader_config.max_tick_delay_millis", event) }}
                   />
               </FieldItem>
@@ -333,6 +342,7 @@ class Form extends Component {
                 <Label>Delete cycles treshold</Label>
                 <Input
                   value={this.props.configData.trader_config.delete_cycles_threshold}
+                  type="int"
                   onChange={(event) => { this.props.onChange("trader_config.delete_cycles_threshold", event) }}
                   />
               </FieldItem>
@@ -357,6 +367,7 @@ class Form extends Component {
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
+                  type="int"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
                   onChange={(event) => {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
@@ -380,6 +391,7 @@ class Form extends Component {
                 <Label>Fill tracker delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
+                  type="int"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
                   onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}/>
               </FieldItem>
@@ -391,6 +403,7 @@ class Form extends Component {
                       <Label>Network capacity trigger</Label>
                       <Input
                         value={this.props.configData.trader_config.fee.capacity_trigger}
+                        type="float"
                         onChange={(event) => { this.props.onChange("trader_config.fee.capacity_trigger", event) }}
                         />
                     </FieldItem>
@@ -403,6 +416,7 @@ class Form extends Component {
                       <Input
                         suffix="%"
                         value={this.props.configData.trader_config.fee.percentile}
+                        type="int"  // this is a selection from the fee stats endpoint
                         onChange={(event) => { this.props.onChange("trader_config.fee.percentile", event) }}
                         />
                     </FieldItem>
@@ -415,6 +429,7 @@ class Form extends Component {
                       <Input
                         suffix="stroops"
                         value={this.props.configData.trader_config.fee.max_op_fee_stroops}
+                        type="int"
                         onChange={(event) => { this.props.onChange("trader_config.fee.max_op_fee_stroops", event) }}
                         />
                     </FieldItem>
@@ -429,6 +444,7 @@ class Form extends Component {
                     <Input
                       suffix="decimals"
                       value={this.props.configData.trader_config.centralized_price_precision_override}
+                      type="int"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
                       />
                   </FieldItem>
@@ -439,6 +455,7 @@ class Form extends Component {
                     <Input
                       suffix="decimals"
                       value={this.props.configData.trader_config.centralized_volume_precision_override}
+                      type="int"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
                       />
                   </FieldItem>
@@ -452,6 +469,7 @@ class Form extends Component {
                     <Input
                       suffix="units"
                       value={this.props.configData.trader_config.centralized_min_base_volume_override}
+                      type="float"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
                       />
                   </FieldItem>
@@ -462,6 +480,7 @@ class Form extends Component {
                     <Input
                       suffix="units"
                       value={this.props.configData.trader_config.centralized_min_quote_volume_override}
+                      type="float"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
                       />
                   </FieldItem>
@@ -541,6 +560,7 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.price_tolerance}
+                      type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.price_tolerance", event) }}
                       />
                   </FieldItem>
@@ -551,6 +571,7 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.amount_tolerance}
+                      type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.amount_tolerance", event) }}
                       />
                   </FieldItem>
@@ -564,6 +585,7 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.rate_offset_percent}
+                      type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset_percent", event) }}
                       />
                   </FieldItem>
@@ -573,6 +595,7 @@ class Form extends Component {
                     <Label>Rate offset</Label>
                     <Input
                       value={this.props.configData.strategy_config.rate_offset}
+                      type="float"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset", event) }}
                       />
                   </FieldItem>

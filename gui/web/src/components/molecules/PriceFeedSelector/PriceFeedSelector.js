@@ -82,6 +82,7 @@ class PriceFeedSelector extends Component {
         <div className={className}>
           <Input
             value={value}
+            type="string"
             onChange={(event) => this.changeHandler(idx, event)}
             />
         </div>
