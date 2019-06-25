@@ -245,7 +245,7 @@ class BotCard extends Component {
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
-            enableEdit={true}
+            enableEdit={this.state.state === Constants.BotState.stopped}
             onEdit={this.editBot}
             enableCopy={false}
             onCopy={this.toggleOptions}
