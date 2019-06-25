@@ -23,7 +23,7 @@ class Form extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isLoading: false,
+      isSaving: false,
       isLoadingFormula: true,
       numerator: null,
       denominator: null,
@@ -31,7 +31,6 @@ class Form extends Component {
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
     this.save = this.save.bind(this);
-    this.collectConfigData = this.collectConfigData.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
     this.updateLevel = this.updateLevel.bind(this);
     this.newLevel = this.newLevel.bind(this);
@@ -40,11 +39,6 @@ class Form extends Component {
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
-  }
-
-  collectConfigData() {
-    // TODO collect config data from UI elements
-    return this.props.configData;
   }
 
   setLoadingFormula() {
@@ -69,14 +63,9 @@ class Form extends Component {
 
   save() {
     this.setState({
-      isLoading: true,
+      isSaving: true,
     })
-    let errorFields = this.props.saveFn(this.collectConfigData());
-    if (errorFields) {
-      // TODO mark errors
-      return
-    }
-
+    this.props.saveFn();
     this.props.router.goBack();
   }
 
@@ -627,7 +616,7 @@ class Form extends Component {
             <Button 
               icon="add" 
               size="large" 
-              loading={this.state.isLoading} 
+              loading={this.state.isSaving}
               onClick={this.save}
               >
               {this.props.saveText}

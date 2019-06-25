@@ -48,11 +48,11 @@ class NewBot extends Component {
     }
   }
 
-  saveNew(configData) {
+  saveNew() {
     return null;
   }
 
-  saveEdit(configData) {
+  saveEdit() {
     return null;
   }
 
