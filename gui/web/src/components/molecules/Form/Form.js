@@ -17,7 +17,7 @@ import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
-import ErrorMessage from '../ErrorMessage/ErrorMessage';
+// import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Form extends Component {
   constructor(props) {
@@ -619,14 +619,16 @@ class Form extends Component {
           </div>
         </AdvancedWrapper>
 
+        {/* <ErrorMessage/> */}
+
         <div className={grid.container}>
-          <ErrorMessage/>
           <div className={styles.formFooter}>
             <Button 
               icon="add" 
               size="large" 
               loading={this.state.isLoading} 
-              onClick={this.save}>
+              onClick={this.save}
+              >
               {this.props.saveText}
             </Button>
           </div>
