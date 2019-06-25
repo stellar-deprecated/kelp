@@ -25,20 +25,26 @@ class App extends Component {
     this.state = {
       version: ""
     };
+
+    this._asyncRequests = {};
   }
 
   componentDidMount() {
     var _this = this
-    this._asyncRequest = version(baseUrl).then(resp => {
-      _this._asyncRequest = null;
+    this._asyncRequests["version"] = version(baseUrl).then(resp => {
+      if (!_this._asyncRequests["version"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["version"];
       _this.setState({version: resp});
     });
   }
 
   componentWillUnmount() {
-    if (this._asyncRequest) {
-      this._asyncRequest.cancel();
-      this._asyncRequest = null;
+    if (this._asyncRequests["version"]) {
+      delete this._asyncRequests["version"];
     }
   }
 

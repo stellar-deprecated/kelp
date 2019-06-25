@@ -44,12 +44,17 @@ class Bots extends Component {
     this.gotoDetails = this.gotoDetails.bind(this);
     this.autogenerateBot = this.autogenerateBot.bind(this);
     this.createBot = this.createBot.bind(this);
+    
+    this._asyncRequests = {};
   }
 
   componentWillUnmount() {
-    if (this._asyncRequest) {
-      this._asyncRequest.cancel();
-      this._asyncRequest = null;
+    if (this._asyncRequests["listBots"]) {
+      delete this._asyncRequests["listBots"];
+    }
+
+    if (this._asyncRequests["autogenerate"]) {
+      delete this._asyncRequests["autogenerate"];
     }
   }
 
@@ -67,8 +72,13 @@ class Bots extends Component {
 
   fetchBots() {
     var _this = this
-    this._asyncRequest = listBots(this.props.baseUrl).then(bots => {
-      _this._asyncRequest = null;
+    this._asyncRequests["listBots"] = listBots(this.props.baseUrl).then(bots => {
+      if (!_this._asyncRequests["listBots"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["listBots"];
       if (bots.hasOwnProperty('error')) {
         console.log("error in listBots: " + bots.error);
       } else {
@@ -81,8 +91,13 @@ class Bots extends Component {
 
   autogenerateBot() {
     var _this = this
-    this._asyncRequest = autogenerate(this.props.baseUrl).then(newBot => {
-      _this._asyncRequest = null;
+    this._asyncRequests["autogenerate"] = autogenerate(this.props.baseUrl).then(newBot => {
+      if (!_this._asyncRequests["autogenerate"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["autogenerate"];
       _this.setState(prevState => ({
         bots: [...prevState.bots, newBot]
       }))

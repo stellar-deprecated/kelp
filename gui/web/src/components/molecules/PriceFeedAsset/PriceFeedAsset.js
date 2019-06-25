@@ -192,7 +192,12 @@ class PriceFeedAsset extends Component {
 
     var _this = this;
     this._asyncRequests["price"] = fetchPrice(this.props.baseUrl, this.props.type, this.props.feed_url).then(resp => {
-      _this._asyncRequests["price"] = null;
+      if (!_this._asyncRequests["price"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["price"];
       let updateStateObj = { isLoading: false };
       if (!resp.error) {
         updateStateObj.price = resp.price
@@ -205,8 +210,7 @@ class PriceFeedAsset extends Component {
 
   componentWillUnmount() {
     if (this._asyncRequests["price"]) {
-      this._asyncRequests["price"].cancel();
-      this._asyncRequests["price"] = null;
+      delete this._asyncRequests["price"];
     }
   }
 

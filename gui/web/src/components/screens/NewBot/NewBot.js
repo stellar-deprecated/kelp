@@ -32,7 +32,12 @@ class NewBot extends Component {
 
     var _this = this;
     this._asyncRequests["botName"] = genBotName(this.props.baseUrl).then(resp => {
-      _this._asyncRequests["botName"] = null;
+      if (!_this._asyncRequests["botName"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["botName"];
       _this.setState({
         newBotName: resp,
       });
@@ -41,13 +46,11 @@ class NewBot extends Component {
 
   componentWillUnmount() {
     if (this._asyncRequests["botName"]) {
-      this._asyncRequests["botName"].cancel();
-      this._asyncRequests["botName"] = null;
+      delete this._asyncRequests["botName"];
     }
 
     if (this._asyncRequests["botConfig"]) {
-      this._asyncRequests["botConfig"].cancel();
-      this._asyncRequests["botConfig"] = null;
+      delete this._asyncRequests["botConfig"];
     }
   }
 
@@ -62,7 +65,12 @@ class NewBot extends Component {
 
     var _this = this;
     this._asyncRequests["botConfig"] = updateBotConfig(this.props.baseUrl, JSON.stringify(this.state.configData)).then(resp => {
-      _this._asyncRequests["botConfig"] = null;
+      if (!_this._asyncRequests["botConfig"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["botConfig"];
       _this.setState({
         isSaving: false,
       });
@@ -77,7 +85,12 @@ class NewBot extends Component {
   loadBotConfigData(botName) {
     var _this = this;
     this._asyncRequests["botConfig"] = getBotConfig(this.props.baseUrl, botName).then(resp => {
-      _this._asyncRequests["botConfig"] = null;
+      if (!_this._asyncRequests["botConfig"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+      
+      delete _this._asyncRequests["botConfig"];
       _this.setState({
         configData: resp,
       });
