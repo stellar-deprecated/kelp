@@ -14,26 +14,26 @@ import (
 	"github.com/stellar/kelp/trader"
 )
 
-type updateBotConfigRequest struct {
+type upsertBotConfigRequest struct {
 	Name           string                `json:"name"`
 	Strategy       string                `json:"strategy"`
 	TraderConfig   trader.BotConfig      `json:"trader_config"`
 	StrategyConfig plugins.BuySellConfig `json:"strategy_config"`
 }
 
-type updateBotConfigResponse struct {
+type upsertBotConfigResponse struct {
 	Success bool `json:"success"`
 }
 
-func (s *APIServer) updateBotConfig(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error reading request input: %s", e))
 		return
 	}
-	log.Printf("updateBotConfig requestJson: %s\n", string(bodyBytes))
+	log.Printf("upsertBotConfig requestJson: %s\n", string(bodyBytes))
 
-	var req updateBotConfigRequest
+	var req upsertBotConfigRequest
 	e = json.Unmarshal(bodyBytes, &req)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
@@ -46,14 +46,14 @@ func (s *APIServer) updateBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if botState != kelpos.BotStateStopped {
-		s.writeErrorJson(w, fmt.Sprintf("bot state needs to be '%s' when updating bot config, but was '%s'\n", kelpos.BotStateStopped, botState))
+		s.writeErrorJson(w, fmt.Sprintf("bot state needs to be '%s' when upserting bot config, but was '%s'\n", kelpos.BotStateStopped, botState))
 		return
 	}
 
 	filenamePair := model.GetBotFilenames(req.Name, req.Strategy)
 	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
 	botConfig := req.TraderConfig
-	log.Printf("updating bot config to file: %s\n", traderFilePath)
+	log.Printf("upsert bot config to file: %s\n", traderFilePath)
 	e = toml.WriteFile(traderFilePath, &botConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error writing trader botConfig toml file for bot '%s': %s", req.Name, e))
@@ -62,12 +62,12 @@ func (s *APIServer) updateBotConfig(w http.ResponseWriter, r *http.Request) {
 
 	strategyFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Strategy)
 	strategyConfig := req.StrategyConfig
-	log.Printf("updating strategy config to file: %s\n", strategyFilePath)
+	log.Printf("upsert strategy config to file: %s\n", strategyFilePath)
 	e = toml.WriteFile(strategyFilePath, &strategyConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error writing strategy toml file for bot '%s': %s", req.Name, e))
 		return
 	}
 
-	s.writeJson(w, updateBotConfigResponse{Success: true})
+	s.writeJson(w, upsertBotConfigResponse{Success: true})
 }

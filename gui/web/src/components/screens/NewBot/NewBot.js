@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import Form from '../../molecules/Form/Form';
 import getBotConfig from '../../../kelp-ops-api/getBotConfig';
 import getNewBotConfig from '../../../kelp-ops-api/getNewBotConfig';
-import updateBotConfig from '../../../kelp-ops-api/updateBotConfig';
+import upsertBotConfig from '../../../kelp-ops-api/upsertBotConfig';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
 class NewBot extends Component {
@@ -30,7 +30,8 @@ class NewBot extends Component {
   }
 
   saveNew() {
-    return null;
+    // same behavior for now. this will diverge when we allow for editing the name of a bot
+    this.saveEdit();
   }
 
   saveEdit() {
@@ -39,7 +40,7 @@ class NewBot extends Component {
     });
 
     var _this = this;
-    this._asyncRequests["botConfig"] = updateBotConfig(this.props.baseUrl, JSON.stringify(this.state.configData)).then(resp => {
+    this._asyncRequests["botConfig"] = upsertBotConfig(this.props.baseUrl, JSON.stringify(this.state.configData)).then(resp => {
       if (!_this._asyncRequests["botConfig"]) {
         // if it has been deleted it means we don't want to process the result
         return
