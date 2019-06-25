@@ -108,7 +108,7 @@ class Form extends Component {
     }
 
     let lastLevel = levels[levels.length - 1];
-    if (lastLevel["spread"] === "" || lastLevel["amount"] === "") {
+    if (+lastLevel["spread"] === 0 || +lastLevel["amount"] === "0") {
       return true;
     }
 
@@ -144,8 +144,8 @@ class Form extends Component {
 
   _emptyLevel() {
     return {
-      amount: "",
-      spread: "",
+      amount: "0.00",
+      spread: "0.00",
     };
   }
 

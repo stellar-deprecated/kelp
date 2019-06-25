@@ -43,7 +43,8 @@ class Input extends Component {
       newEvent = { target: { value: +checked } };
     } else if (this.props.type === "percent") {
       // convert back to representation passed in to complete the abstraction of a % value input
-      newEvent = { target: { value: +checked / 100 } };
+      // use event.target.value instead of checked here, because checked modified the value which is itself already modified
+      newEvent = { target: { value: +event.target.value / 100 } };
     }
     this.props.onChange(newEvent);
   }
