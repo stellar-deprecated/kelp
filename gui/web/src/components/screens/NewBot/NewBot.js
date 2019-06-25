@@ -2,11 +2,14 @@ import React, { Component } from 'react';
 import Form from '../../molecules/Form/Form';
 import genBotName from '../../../kelp-ops-api/genBotName';
 import getBotConfig from '../../../kelp-ops-api/getBotConfig';
+import updateBotConfig from '../../../kelp-ops-api/updateBotConfig';
+import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
 class NewBot extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isSaving: false,
       newBotName: null,
       configData: null,
     };
@@ -29,7 +32,12 @@ class NewBot extends Component {
 
     var _this = this;
     this._asyncRequests["botName"] = genBotName(this.props.baseUrl).then(resp => {
-      _this._asyncRequests["botName"] = null;
+      if (!_this._asyncRequests["botName"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["botName"];
       _this.setState({
         newBotName: resp,
       });
@@ -38,22 +46,36 @@ class NewBot extends Component {
 
   componentWillUnmount() {
     if (this._asyncRequests["botName"]) {
-      this._asyncRequests["botName"].cancel();
-      this._asyncRequests["botName"] = null;
+      delete this._asyncRequests["botName"];
     }
 
     if (this._asyncRequests["botConfig"]) {
-      this._asyncRequests["botConfig"].cancel();
-      this._asyncRequests["botConfig"] = null;
+      delete this._asyncRequests["botConfig"];
     }
   }
 
-  saveNew(configData) {
+  saveNew() {
     return null;
   }
 
-  saveEdit(configData) {
-    return null;
+  saveEdit() {
+    this.setState({
+      isSaving: true,
+    });
+
+    var _this = this;
+    this._asyncRequests["botConfig"] = updateBotConfig(this.props.baseUrl, JSON.stringify(this.state.configData)).then(resp => {
+      if (!_this._asyncRequests["botConfig"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["botConfig"];
+      _this.setState({
+        isSaving: false,
+      });
+      _this.props.history.goBack();
+    });
   }
 
   loadSampleConfigData() {
@@ -63,7 +85,12 @@ class NewBot extends Component {
   loadBotConfigData(botName) {
     var _this = this;
     this._asyncRequests["botConfig"] = getBotConfig(this.props.baseUrl, botName).then(resp => {
-      _this._asyncRequests["botConfig"] = null;
+      if (!_this._asyncRequests["botConfig"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+      
+      delete _this._asyncRequests["botConfig"];
       _this.setState({
         configData: resp,
       });
@@ -112,6 +139,10 @@ class NewBot extends Component {
   }
 
   render() {
+    if (this.state.isSaving) {
+      return (<LoadingAnimation/>);
+    }
+
     if (this.props.location.pathname === "/new") {
       this.loadBotName();
       if (!this.state.configData) {
@@ -120,6 +151,7 @@ class NewBot extends Component {
       }
       return (<Form
         router={this.props.history}
+        isNew={true}
         baseUrl={this.props.baseUrl}
         title="New Bot"
         onChange={this.onChangeForm}
@@ -152,6 +184,7 @@ class NewBot extends Component {
     }
     return (<Form 
       router={this.props.history}
+      isNew={false}
       baseUrl={this.props.baseUrl}
       title="Edit Bot"
       onChange={this.onChangeForm}

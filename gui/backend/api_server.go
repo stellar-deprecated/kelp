@@ -61,7 +61,7 @@ type ErrorResponse struct {
 }
 
 func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
-	log.Print(message)
+	log.Println(message)
 	w.WriteHeader(http.StatusInternalServerError)
 
 	marshalledJson, e := json.MarshalIndent(ErrorResponse{Error: message}, "", "    ")

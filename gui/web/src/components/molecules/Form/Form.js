@@ -17,13 +17,13 @@ import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
-import ErrorMessage from '../ErrorMessage/ErrorMessage';
+// import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Form extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isLoading: false,
+      isSaving: false,
       isLoadingFormula: true,
       numerator: null,
       denominator: null,
@@ -31,7 +31,6 @@ class Form extends Component {
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
     this.save = this.save.bind(this);
-    this.collectConfigData = this.collectConfigData.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
     this.updateLevel = this.updateLevel.bind(this);
     this.newLevel = this.newLevel.bind(this);
@@ -40,11 +39,6 @@ class Form extends Component {
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
-  }
-
-  collectConfigData() {
-    // TODO collect config data from UI elements
-    return this.props.configData;
   }
 
   setLoadingFormula() {
@@ -69,15 +63,10 @@ class Form extends Component {
 
   save() {
     this.setState({
-      isLoading: true,
+      isSaving: true,
     })
-    let errorFields = this.props.saveFn(this.collectConfigData());
-    if (errorFields) {
-      // TODO mark errors
-      return
-    }
-
-    this.props.router.goBack();
+    this.props.saveFn();
+    // save fn will call router.goBack();
   }
 
   priceFeedAssetChangeHandler(ab, newValues) {
@@ -153,7 +142,7 @@ class Form extends Component {
     // update levels and always set amount_of_a_base to 1.0
     this.props.onChange(
       "strategy_config.levels", {target: {value: newLevels}},
-      { "strategy_config.amount_of_a_base": (value) => { return "1.0"; } }
+      { "strategy_config.amount_of_a_base": (value) => { return 1.0; } }
     )
   }
 
@@ -182,6 +171,7 @@ class Form extends Component {
                 value={this.props.configData.name}
                 type="string"
                 onChange={(event) => { this.props.onChange("name", event) }}
+                disabled={!this.props.isNew}
                 />
 
               {/* Trader Settings */}
@@ -619,14 +609,16 @@ class Form extends Component {
           </div>
         </AdvancedWrapper>
 
+        {/* <ErrorMessage/> */}
+
         <div className={grid.container}>
-          <ErrorMessage/>
           <div className={styles.formFooter}>
             <Button 
               icon="add" 
               size="large" 
-              loading={this.state.isLoading} 
-              onClick={this.save}>
+              loading={this.state.isSaving}
+              onClick={this.save}
+              >
               {this.props.saveText}
             </Button>
           </div>

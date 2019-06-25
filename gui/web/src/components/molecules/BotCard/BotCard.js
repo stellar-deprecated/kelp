@@ -84,10 +84,15 @@ class BotCard extends Component {
   };
 
   checkState() {
-    if (this._asyncRequests["state"] == null) {
+    if (!this._asyncRequests["state"]) {
       var _this = this;
       this._asyncRequests["state"] = getState(this.props.baseUrl, this.props.name).then(resp => {
-        _this._asyncRequests["state"] = null;
+        if (!_this._asyncRequests["state"]) {
+          // if it has been deleted it means we don't want to process the result
+          return
+        }
+
+        delete _this._asyncRequests["state"];
         let state = resp.trim();
         if (_this.state.state !== state) {
           _this.setState({
@@ -99,10 +104,15 @@ class BotCard extends Component {
   }
 
   checkBotInfo() {
-    if (this._asyncRequests["botInfo"] == null) {
+    if (!this._asyncRequests["botInfo"]) {
       var _this = this;
       this._asyncRequests["botInfo"] = getBotInfo(this.props.baseUrl, this.props.name).then(resp => {
-        _this._asyncRequests["botInfo"] = null;
+        if (!_this._asyncRequests["botInfo"]) {
+          // if it has been deleted it means we don't want to process the result
+          return
+        }
+
+        delete _this._asyncRequests["botInfo"];
         if (JSON.stringify(resp) !== "{}") {
           _this.setState({
             botInfo: resp,
@@ -140,28 +150,23 @@ class BotCard extends Component {
     }
 
     if (this._asyncRequests["state"]) {
-      this._asyncRequests["state"].cancel();
-      this._asyncRequests["state"] = null;
+      delete this._asyncRequests["state"];
     }
 
     if (this._asyncRequests["start"]) {
-      this._asyncRequests["start"].cancel();
-      this._asyncRequests["start"] = null;
+      delete this._asyncRequests["start"];
     }
     
     if (this._asyncRequests["stop"]) {
-      this._asyncRequests["stop"].cancel();
-      this._asyncRequests["stop"] = null;
+      delete this._asyncRequests["stop"];
     }
 
     if (this._asyncRequests["delete"]) {
-      this._asyncRequests["delete"].cancel();
-      this._asyncRequests["delete"] = null;
+      delete this._asyncRequests["delete"];
     }
 
     if (this._asyncRequests["botInfo"]) {
-      this._asyncRequests["botInfo"].cancel();
-      this._asyncRequests["botInfo"] = null;
+      delete this._asyncRequests["botInfo"];
     }
   }
 
@@ -178,7 +183,12 @@ class BotCard extends Component {
   startBot() {
     var _this = this;
     this._asyncRequests["start"] = start(this.props.baseUrl, this.props.name).then(resp => {
-      _this._asyncRequests["start"] = null;
+      if (!_this._asyncRequests["start"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["start"];
 
       _this.setState({
         timeStarted: new Date(),
@@ -194,7 +204,12 @@ class BotCard extends Component {
   stopBot() {
     var _this = this;
     this._asyncRequests["stop"] = stop(this.props.baseUrl, this.props.name).then(resp => {
-      _this._asyncRequests["stop"] = null;
+      if (!_this._asyncRequests["stop"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["stop"];
       _this.setState({
         timeStarted: null,
       });
@@ -206,7 +221,12 @@ class BotCard extends Component {
   callDeleteBot() {
     var _this = this;
     this._asyncRequests["delete"] = deleteBot(this.props.baseUrl, this.props.name).then(resp => {
-      _this._asyncRequests["delete"] = null;
+      if (!_this._asyncRequests["delete"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["delete"];
       clearTimeout(_this._tickTimer);
       _this._tickTimer = null;
       // reload parent view
@@ -245,7 +265,7 @@ class BotCard extends Component {
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
-            enableEdit={true}
+            enableEdit={this.state.state === Constants.BotState.stopped}
             onEdit={this.editBot}
             enableCopy={false}
             onCopy={this.toggleOptions}
