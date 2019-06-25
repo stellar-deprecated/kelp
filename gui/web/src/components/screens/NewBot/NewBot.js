@@ -90,7 +90,9 @@ class NewBot extends Component {
     // make copy of current state
     let updateJSON = Object.assign({}, this.state);
 
-    this.updateUsingDotNotation(updateJSON.configData, statePath, event.target.value);
+    if (statePath) {
+      this.updateUsingDotNotation(updateJSON.configData, statePath, event.target.value);
+    }
 
     // merge in any additional updates
     if (mergeUpdateInstructions) {
@@ -118,6 +120,7 @@ class NewBot extends Component {
       }
       return (<Form
         router={this.props.history}
+        baseUrl={this.props.baseUrl}
         title="New Bot"
         onChange={this.onChangeForm}
         botName={this.state.newBotName}
@@ -149,6 +152,7 @@ class NewBot extends Component {
     }
     return (<Form 
       router={this.props.history}
+      baseUrl={this.props.baseUrl}
       title="Edit Bot"
       onChange={this.onChangeForm}
       botName={botName}

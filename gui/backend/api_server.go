@@ -73,6 +73,18 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 	w.Write(marshalledJson)
 }
 
+func (s *APIServer) writeJson(w http.ResponseWriter, v interface{}) {
+	marshalledJson, e := json.MarshalIndent(v, "", "    ")
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("unable to marshal json with indentation: %s", e))
+		return
+	}
+
+	log.Printf("responseJson: %s\n", string(marshalledJson))
+	w.WriteHeader(http.StatusOK)
+	w.Write(marshalledJson)
+}
+
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {
 	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
 	return s.kos.Blocking(namespace, cmdString)
