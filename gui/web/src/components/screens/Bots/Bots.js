@@ -118,17 +118,13 @@ class Bots extends Component {
       let screenHeader = (
         <ScreenHeader title={'My Bots'}>
           <Button 
-            variant="faded"
-            icon="download"
-            hsize="short"
-            onClick={this.autogenerateBot}
-          />
-          <Button 
             variant="faded" 
             hsize="short"
             icon="add" 
             onClick={this.gotoForm}
-            children="New Bots"/>
+            >
+              New Bot
+            </Button>
         </ScreenHeader>
       );
 

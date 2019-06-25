@@ -19,6 +19,17 @@ func init() {
 }
 
 func (s *APIServer) generateBotName(w http.ResponseWriter, r *http.Request) {
+	botName, e := s.doGenerateBotName()
+	if e != nil {
+		s.writeError(w, fmt.Sprintf("error encountered while generating new bot name: %s", e))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(botName))
+}
+
+func (s *APIServer) doGenerateBotName() (string, error) {
 	var botName string
 	startingIdxName := idx_name
 	for {
@@ -31,8 +42,7 @@ func (s *APIServer) generateBotName(w http.ResponseWriter, r *http.Request) {
 		// only check name so we use unique first names for convenience
 		prefixExists, e := s.prefixExists(strings.ToLower(name))
 		if e != nil {
-			s.writeError(w, fmt.Sprintf("error encountered while checking for new bot name prefix: %s", e))
-			return
+			return "", fmt.Errorf("error encountered while checking for new bot name prefix: %s", e)
 		}
 		if !prefixExists {
 			break
@@ -40,12 +50,10 @@ func (s *APIServer) generateBotName(w http.ResponseWriter, r *http.Request) {
 
 		// if prefix exists and we have reached back to the starting index then we have exhausted all options
 		if idx_name == startingIdxName {
-			s.writeError(w, "cannot generate name because we ran out of first name combinations...")
-			return
+			return "", fmt.Errorf("cannot generate name because we ran out of first name combinations...")
 		}
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(botName))
+	return botName, nil
 }
 
 func (s *APIServer) prefixExists(prefix string) (bool, error) {
