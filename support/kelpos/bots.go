@@ -96,7 +96,7 @@ func (kos *KelpOS) GetBot(botName string) (*BotInstance, error) {
 // QueryBotState checks to see if the bot is actually running and returns the state accordingly
 func (kos *KelpOS) QueryBotState(botName string) (BotState, error) {
 	prefix := getBotNamePrefix(botName)
-	command := fmt.Sprintf("ps aux | grep %s | grep -v grep", prefix)
+	command := fmt.Sprintf("ps aux | grep trade | grep %s | grep -v grep", prefix)
 	outputBytes, e := kos.Blocking("query_bot_state", command)
 	if e != nil {
 		if strings.Contains(e.Error(), "exit status 1") {
