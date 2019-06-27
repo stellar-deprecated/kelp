@@ -43,6 +43,10 @@ let defaultBotInfo = {
   "spread_pct": "?",
 }
 
+const botStateIntervalMillis = 2000;
+const botInfoIntervalMillis = 5000;
+const botInfoTimeoutMillis = 3000;  // should be less than interval
+
 class BotCard extends Component {
   constructor(props) {
     super(props);
@@ -104,9 +108,10 @@ class BotCard extends Component {
   }
 
   checkBotInfo() {
+    const controller = new AbortController();
     if (!this._asyncRequests["botInfo"]) {
       var _this = this;
-      this._asyncRequests["botInfo"] = getBotInfo(this.props.baseUrl, this.props.name).then(resp => {
+      this._asyncRequests["botInfo"] = getBotInfo(this.props.baseUrl, this.props.name, controller.signal).then(resp => {
         if (!_this._asyncRequests["botInfo"]) {
           // if it has been deleted it means we don't want to process the result
           return
@@ -122,15 +127,23 @@ class BotCard extends Component {
             botInfo: defaultBotInfo,
           });
         }
+      }).catch(function(error) {
+        delete _this._asyncRequests["botInfo"];
+        console.error(error);
       });
+
+      // set a timeout on the fetch request
+      if (this._asyncRequests["botInfo"]) {
+        setTimeout(controller.abort.bind(controller), botInfoTimeoutMillis);
+      }
     }
   }
 
   componentDidMount() {
     this.checkState();
     this.checkBotInfo();
-    this._stateTimer = setInterval(this.checkState, 1000);
-    this._infoTimer = setInterval(this.checkBotInfo, 5000);
+    this._stateTimer = setInterval(this.checkState, botStateIntervalMillis);
+    this._infoTimer = setInterval(this.checkBotInfo, botInfoIntervalMillis);
   }
 
   componentWillUnmount() {
