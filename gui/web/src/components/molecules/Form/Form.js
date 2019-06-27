@@ -211,6 +211,13 @@ class Form extends Component {
                     "PubNet",
                   ]}
                   selected={network}
+                  onSelect={(selected) => {
+                    let newValue = "https://horizon-testnet.stellar.org";
+                    if (selected === "PubNet") {
+                      newValue = "https://horizon.stellar.org";
+                    }
+                    this.props.onChange("trader_config.horizon_url", {target: {value: newValue}});
+                  }}
                   />
               </FieldItem>
             </FormSection>
