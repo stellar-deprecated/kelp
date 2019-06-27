@@ -22,7 +22,7 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 	p, exists := s.kos.GetProcess(botName)
 	if !exists {
 		log.Printf("kelp bot process with name '%s' does not exist; processes available: %v\n", botName, s.kos.RegisteredProcesses())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("{}"))
 		return
 	}
