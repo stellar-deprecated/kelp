@@ -54,10 +54,13 @@ func hiddenFlag(flag string) {
 	}
 }
 
-func logPanic(l logger.Logger) {
+func logPanic(l logger.Logger, fatalOnError bool) {
 	if r := recover(); r != nil {
 		st := debug.Stack()
 		l.Errorf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st))
+		if fatalOnError {
+			logger.Fatal(l, fmt.Errorf("PANIC!! recovered to log it in the file\npanic: %v\n\n%s\n", r, string(st)))
+		}
 	}
 }
 
@@ -628,6 +631,7 @@ func startQueryServer(
 	)
 
 	go func() {
+		defer logPanic(l, true)
 		e := qs.StartIPC()
 		if e != nil {
 			l.Info("")
@@ -739,5 +743,5 @@ func setLogFile(l logger.Logger, options inputs, botConfig trader.BotConfig) {
 
 	l.Infof("logging to file: %s\n", fileName)
 	// we want to create a deferred recovery function here that will log panics to the log file and then exit
-	defer logPanic(l)
+	defer logPanic(l, false)
 }
