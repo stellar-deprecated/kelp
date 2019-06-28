@@ -1,5 +1,5 @@
-hash: 2dedca773f0db7201129d0a87d9fe4401b7d5df746c30f1e1142a2f8c81d0f00
-updated: 2019-10-01T16:52:25.833636371-07:00
+hash: f7d14db6586842859cb908e9f23a121907016a830394b7a07404340846fcc62e
+updated: 2019-11-21T17:05:53.975206859+05:30
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
@@ -94,6 +94,8 @@ imports:
   version: 388941e3ea99c461d2bc2747eaf27741b6dda096
 - name: github.com/mattn/go-isatty
   version: bf9a1dea1961e1d831824fb135332bfb8c10e8b8
+- name: github.com/mattn/go-sqlite3
+  version: c7c4067b79cc51e6dfdcef5c702e74b1e0fa7c75
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nikhilsaraf/go-tools

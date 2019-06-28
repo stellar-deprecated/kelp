@@ -575,6 +575,15 @@ func startFillTracking(
 		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
+		if botConfig.SqlDbPath != "" {
+			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.SqlDbPath)
+			if e != nil {
+				l.Info("")
+				l.Errorf("problem encountered while making the FillDBWriter: %s", e)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			}
+			fillTracker.RegisterHandler(fillDBWriter)
+		}
 		if strategyFillHandlers != nil {
 			for _, h := range strategyFillHandlers {
 				fillTracker.RegisterHandler(h)

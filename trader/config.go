@@ -41,6 +41,7 @@ type BotConfig struct {
 	MinCentralizedBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true" json:"min_centralized_base_volume"`
 	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE" json:"centralized_min_base_volume_override"`
 	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE" json:"centralized_min_quote_volume_override"`
+	SqlDbPath                          string                   `valid:"-" toml:"SQL_DB_PATH"`
 	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
 	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
 	MonitoringPort                     uint16                   `valid:"-" toml:"MONITORING_PORT" json:"monitoring_port"`
