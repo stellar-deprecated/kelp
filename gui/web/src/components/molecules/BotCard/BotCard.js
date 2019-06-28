@@ -273,12 +273,13 @@ class BotCard extends Component {
   render() {
     let popover = "";
     if (this.state.popoverVisible) {
+      let enableEdit = this.state.state === Constants.BotState.stopped || this.state.state === Constants.BotState.stopping;
       popover = (
         <div>
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
-            enableEdit={this.state.state === Constants.BotState.stopped}
+            enableEdit={enableEdit}
             onEdit={this.editBot}
             enableCopy={false}
             onCopy={this.toggleOptions}
