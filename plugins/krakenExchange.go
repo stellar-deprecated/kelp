@@ -434,8 +434,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 
 // GetLatestTradeCursor impl.
 func (k *krakenExchange) GetLatestTradeCursor() (interface{}, error) {
-	timeNowSecs := time.Now().Unix()
-	latestTradeCursor := fmt.Sprintf("%d", timeNowSecs)
+	timeNowMillis := time.Now().Unix() * 1000
+	latestTradeCursor := fmt.Sprintf("%d", timeNowMillis)
 	return latestTradeCursor, nil
 }
 
