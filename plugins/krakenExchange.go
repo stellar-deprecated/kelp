@@ -378,7 +378,7 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	for _txid, v := range krakenTrades {
 		m := v.(map[string]interface{})
 		_time := m["time"].(float64)
-		ts := model.MakeTimestamp(int64(_time))
+		ts := model.MakeTimestamp(int64(_time) * 1000)
 		_type := m["type"].(string)
 		_ordertype := m["ordertype"].(string)
 		_price := m["price"].(string)
