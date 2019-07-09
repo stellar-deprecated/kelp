@@ -27,7 +27,8 @@ class Input extends Component {
     error: PropTypes.string,
     size: PropTypes.string,
     disabled: PropTypes.bool,
-    showError: PropTypes.bool
+    showError: PropTypes.bool,
+    onChange: PropTypes.func
   };
 
   handleChange(event) {

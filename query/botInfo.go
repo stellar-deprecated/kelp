@@ -49,9 +49,16 @@ func (s *Server) getBotInfo() (*botInfo, error) {
 	if e != nil {
 		return nil, fmt.Errorf("error loading orderbook (maxCount=20): %s", e)
 	}
-	spreadValue := ob.TopAsk().Price.Subtract(*ob.TopBid().Price)
-	midPrice := ob.TopAsk().Price.Add(*ob.TopBid().Price).Scale(0.5)
-	spreadPct := spreadValue.Divide(*midPrice)
+	topAsk := ob.TopAsk()
+	topBid := ob.TopBid()
+	spreadValue := model.NumberFromFloat(-1.0, 16)
+	midPrice := model.NumberFromFloat(-1.0, 16)
+	spreadPct := model.NumberFromFloat(-1.0, 16)
+	if topBid != nil && topAsk != nil {
+		spreadValue = topAsk.Price.Subtract(*topBid.Price)
+		midPrice = topAsk.Price.Add(*topBid.Price).Scale(0.5)
+		spreadPct = spreadValue.Divide(*midPrice)
+	}
 
 	return &botInfo{
 		Strategy:      s.strategyName,

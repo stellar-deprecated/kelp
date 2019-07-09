@@ -82,8 +82,7 @@ class BotCard extends Component {
     name: PropTypes.string,
     test: PropTypes.bool,
     warnings: PropTypes.number,
-    errors: PropTypes.number, 
-    showDetailsFn: PropTypes.func, 
+    errors: PropTypes.number,
     baseUrl: PropTypes.string, 
   };
 
@@ -273,12 +272,13 @@ class BotCard extends Component {
   render() {
     let popover = "";
     if (this.state.popoverVisible) {
+      let enableEdit = this.state.state === Constants.BotState.stopped || this.state.state === Constants.BotState.stopping;
       popover = (
         <div>
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
-            enableEdit={this.state.state === Constants.BotState.stopped}
+            enableEdit={enableEdit}
             onEdit={this.editBot}
             enableCopy={false}
             onCopy={this.toggleOptions}
@@ -305,7 +305,7 @@ class BotCard extends Component {
           {popover}
         </div>
 
-        <div className={styles.sortingArrows}>
+        {/* <div className={styles.sortingArrows}>
           <Button
               icon="chevronUp"
               variant="transparent"
@@ -316,10 +316,10 @@ class BotCard extends Component {
               variant="transparent"
               hsize="round"
           />
-        </div>
+        </div> */}
 
         <div className={styles.firstColumn}>
-          <h2 className={styles.title} onClick={this.props.showDetailsFn}>{this.props.name}</h2>
+          <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
             <BotExchangeInfo strategy={this.state.botInfo.strategy}/>
           </div>
@@ -348,9 +348,9 @@ class BotCard extends Component {
           />
         </div>
 
-        <div className={styles.thirdColumn}>
+        {/* <div className={styles.thirdColumn}>
           <img className={styles.chartThumb} src={chartThumb} alt="chartThumb"/>
-        </div>
+        </div> */}
 
         <div className={styles.fourthColumn}>
           <RunStatus 

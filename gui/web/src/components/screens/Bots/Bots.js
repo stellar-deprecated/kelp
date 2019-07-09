@@ -66,8 +66,8 @@ class Bots extends Component {
     this.props.history.push('/new')
   }
 
-  gotoDetails() {
-    this.props.history.push('/details')
+  gotoDetails(botName) {
+    this.props.history.push('/details?bot_name=' + encodeURIComponent(botName))
   }
 
   fetchBots() {
@@ -137,7 +137,7 @@ class Bots extends Component {
           test={bot.test}
           warnings={bot.warnings}
           errors={bot.errors}
-          showDetailsFn={this.gotoDetails}
+          // showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
           reload={this.fetchBots}
         />

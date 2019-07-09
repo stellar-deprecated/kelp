@@ -172,7 +172,6 @@ func (t *Trader) update() {
 	// TODO 2 streamline the request data instead of caching
 	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
 	t.sdex.IEIF().ResetCachedBalances()
-	log.Printf("reset cached balances\n")
 	// reset and recompute cached liabilities for this update cycle
 	e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
 	log.Printf("liabilities after resetting\n")

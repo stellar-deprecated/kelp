@@ -161,8 +161,8 @@ class Form extends Component {
       <div>
         <div className={grid.container}>
             <ScreenHeader title={this.props.title} backButtonFn={this.props.router.goBack}>
-              <Switch/>
-              <Label>Helper Fields</Label>
+              {/* <Switch/>
+              <Label>Helper Fields</Label> */}
             </ScreenHeader>
 
             <FormSection>
@@ -211,6 +211,13 @@ class Form extends Component {
                     "PubNet",
                   ]}
                   selected={network}
+                  onSelect={(selected) => {
+                    let newValue = "https://horizon-testnet.stellar.org";
+                    if (selected === "PubNet") {
+                      newValue = "https://horizon.stellar.org";
+                    }
+                    this.props.onChange("trader_config.horizon_url", {target: {value: newValue}});
+                  }}
                   />
               </FieldItem>
             </FormSection>
@@ -228,7 +235,8 @@ class Form extends Component {
               </FieldItem>
             </FormSection>
 
-            <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl.">
+            {/* <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl."> */}
+            <FormSection>
               <div className={grid.row}>
                 <div className={grid.col4}>
                   <FieldItem>
