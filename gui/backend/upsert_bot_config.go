@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/stellar/go/strkey"
 	"github.com/stellar/kelp/gui/model"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
@@ -23,6 +24,18 @@ type upsertBotConfigRequest struct {
 
 type upsertBotConfigResponse struct {
 	Success bool `json:"success"`
+}
+
+type upsertBotConfigResponseErrors struct {
+	Error  string                 `json:"error"`
+	Fields upsertBotConfigRequest `json:"fields"`
+}
+
+func makeUpsertError(fields upsertBotConfigRequest) upsertBotConfigResponseErrors {
+	return upsertBotConfigResponseErrors{
+		Error:  "There are some errors marked in red inline",
+		Fields: fields,
+	}
 }
 
 func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +60,15 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	if botState != kelpos.BotStateStopped {
 		s.writeErrorJson(w, fmt.Sprintf("bot state needs to be '%s' when upserting bot config, but was '%s'\n", kelpos.BotStateStopped, botState))
+		return
+	}
+
+	if _, e = strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.TradingSecretSeed); e != nil {
+		s.writeJson(w, makeUpsertError(upsertBotConfigRequest{
+			TraderConfig: trader.BotConfig{
+				TradingSecretSeed: "invalid Trader Secret Key",
+			},
+		}))
 		return
 	}
 

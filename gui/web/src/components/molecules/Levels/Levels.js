@@ -5,6 +5,7 @@ import Button from '../../atoms/Button/Button';
 import FieldItem from '../FieldItem/FieldItem';
 import Label from '../../atoms/Label/Label';
 import Input from '../../atoms/Input/Input';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Levels extends Component {
   static defaultProps = {
@@ -55,9 +56,15 @@ class Levels extends Component {
       ));
     }
 
+    let error = "";
+    if (this.props.error) {
+      error = (<ErrorMessage error={this.props.error}/>);
+    }
+
     return (
       <div className={styles.wrapper}>
         {levels}
+        {error}
         <Button
           className={styles.add}
           icon="add"

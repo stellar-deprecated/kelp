@@ -38,8 +38,10 @@ class Form extends Component {
     this.hasNewLevel = this.hasNewLevel.bind(this);
     this.removeLevel = this.removeLevel.bind(this);
     this.newSecret = this.newSecret.bind(this);
+    this.getError = this.getError.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
+    this._fetchDotNotation = this._fetchDotNotation.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
 
     this._asyncRequests = {};
@@ -69,6 +71,27 @@ class Form extends Component {
         denominator: price
       })
     }
+  }
+
+  _fetchDotNotation(obj, path) {
+    let parts = path.split('.');
+    for (let i = 0; i < parts.length; i++) {
+      obj = obj[parts[i]];
+
+      if (obj === undefined || obj === null || obj === "") {
+        return null;
+      }
+    }
+
+    return obj
+  }
+
+  getError(fieldKey) {
+    if (!this.props.errorResp) {
+      return null;
+    }
+
+    return this._fetchDotNotation(this.props.errorResp.fields, fieldKey);
   }
 
   save() {
@@ -180,8 +203,7 @@ class Form extends Component {
         value={this.props.configData.trader_config.trading_secret_seed}
         type="string"
         onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
-        error="Please enter a valid trader account secret key"
-        showError={false}
+        error={this.getError("trader_config.trading_secret_seed")}
         />
     );
     let sourceSecretKeyInput = (
@@ -189,6 +211,7 @@ class Form extends Component {
         value={this.props.configData.trader_config.source_secret_seed}
         type="string"
         onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+        error={this.getError("trader_config.source_secret_seed")}
         />
     );
     let network = "PubNet";
@@ -231,8 +254,8 @@ class Form extends Component {
     }
 
     let error = "";
-    if (this.props.error) {
-      error = (<ErrorMessage error={this.props.error}/>);
+    if (this.props.errorResp) {
+      error = (<ErrorMessage error={this.props.errorResp.error}/>);
     }
 
     return (
@@ -252,6 +275,7 @@ class Form extends Component {
                 type="string"
                 onChange={(event) => { this.props.onChange("name", event) }}
                 disabled={!this.props.isNew}
+                error={this.getError("name")}
                 />
 
               {/* Trader Settings */}
@@ -319,6 +343,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.asset_code_a}
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
+                      error={this.getError("trader_config.asset_code_a")}
                       />
                   </FieldItem>
                 </div>
@@ -331,6 +356,7 @@ class Form extends Component {
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
+                      error={this.getError("trader_config.issuer_a")}
                       />
                   </FieldItem>
                 </div>
@@ -344,6 +370,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.asset_code_b}
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
+                      error={this.getError("trader_config.asset_code_b")}
                       />
                   </FieldItem>
                 </div>
@@ -356,6 +383,7 @@ class Form extends Component {
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
+                      error={this.getError("trader_config.issuer_b")}
                       />
                   </FieldItem>
                 </div>
@@ -378,6 +406,7 @@ class Form extends Component {
                   value={this.props.configData.trader_config.tick_interval_seconds}
                   type="int"
                   onChange={(event) => { this.props.onChange("trader_config.tick_interval_seconds", event) }}
+                  error={this.getError("trader_config.tick_interval_seconds")}
                   />
               </FieldItem>
 
@@ -388,6 +417,7 @@ class Form extends Component {
                   value={this.props.configData.trader_config.max_tick_delay_millis}
                   type="int"
                   onChange={(event) => { this.props.onChange("trader_config.max_tick_delay_millis", event) }}
+                  error={this.getError("trader_config.max_tick_delay_millis")}
                   />
               </FieldItem>
 
@@ -412,6 +442,7 @@ class Form extends Component {
                   value={this.props.configData.trader_config.delete_cycles_threshold}
                   type="int"
                   onChange={(event) => { this.props.onChange("trader_config.delete_cycles_threshold", event) }}
+                  error={this.getError("trader_config.delete_cycles_threshold")}
                   />
               </FieldItem>
 
@@ -437,6 +468,7 @@ class Form extends Component {
                   value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
                   type="int"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  error={this.getError("trader_config.fill_tracker_sleep_millis")}
                   onChange={(event) => {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
                         "trader_config.fill_tracker_sleep_millis": (value) => {
@@ -461,7 +493,9 @@ class Form extends Component {
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
                   type="int"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
-                  onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}/>
+                  onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}
+                  error={this.getError("trader_config.fill_tracker_delete_cycles_threshold")}
+                  />
               </FieldItem>
 
               <FieldGroup groupTitle="Fee">
@@ -473,6 +507,7 @@ class Form extends Component {
                         value={this.props.configData.trader_config.fee.capacity_trigger}
                         type="float"
                         onChange={(event) => { this.props.onChange("trader_config.fee.capacity_trigger", event) }}
+                        error={this.getError("trader_config.fee.capacity_trigger")}
                         />
                     </FieldItem>
                   </div>
@@ -486,6 +521,7 @@ class Form extends Component {
                         value={this.props.configData.trader_config.fee.percentile}
                         type="int"  // this is a selection from the fee stats endpoint
                         onChange={(event) => { this.props.onChange("trader_config.fee.percentile", event) }}
+                        error={this.getError("trader_config.fee.percentile")}
                         />
                     </FieldItem>
                     </div>
@@ -499,6 +535,7 @@ class Form extends Component {
                         value={this.props.configData.trader_config.fee.max_op_fee_stroops}
                         type="int"
                         onChange={(event) => { this.props.onChange("trader_config.fee.max_op_fee_stroops", event) }}
+                        error={this.getError("trader_config.fee.max_op_fee_stroops")}
                         />
                     </FieldItem>
                     </div>
@@ -514,6 +551,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.centralized_price_precision_override}
                       type="int"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
+                      error={this.getError("trader_config.centralized_price_precision_override")}
                       />
                   </FieldItem>
                 </div>
@@ -525,6 +563,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.centralized_volume_precision_override}
                       type="int"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
+                      error={this.getError("trader_config.centralized_volume_precision_override")}
                       />
                   </FieldItem>
                 </div>
@@ -539,6 +578,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.centralized_min_base_volume_override}
                       type="float"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
+                      error={this.getError("trader_config.centralized_min_base_volume_override")}
                       />
                   </FieldItem>
                 </div>
@@ -550,6 +590,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.centralized_min_quote_volume_override}
                       type="float"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
+                      error={this.getError("trader_config.centralized_min_quote_volume_override")}
                       />
                   </FieldItem>
                 </div>
@@ -611,6 +652,7 @@ class Form extends Component {
                     newLevel={this.newLevel}
                     hasNewLevel={this.hasNewLevel}
                     onRemove={(levelIdx) => { this.removeLevel(levelIdx) }}
+                    error={this.getError("strategy_config.levels")}
                     />
                 </FieldGroup>
               </div>
@@ -630,6 +672,7 @@ class Form extends Component {
                       value={this.props.configData.strategy_config.price_tolerance}
                       type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.price_tolerance", event) }}
+                      error={this.getError("strategy_config.price_tolerance")}
                       />
                   </FieldItem>
                 </div>
@@ -641,6 +684,7 @@ class Form extends Component {
                       value={this.props.configData.strategy_config.amount_tolerance}
                       type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.amount_tolerance", event) }}
+                      error={this.getError("strategy_config.amount_tolerance")}
                       />
                   </FieldItem>
                 </div>
@@ -655,6 +699,7 @@ class Form extends Component {
                       value={this.props.configData.strategy_config.rate_offset_percent}
                       type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset_percent", event) }}
+                      error={this.getError("strategy_config.rate_offset_percent")}
                       />
                   </FieldItem>
                 </div>
@@ -665,6 +710,7 @@ class Form extends Component {
                       value={this.props.configData.strategy_config.rate_offset}
                       type="float"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset", event) }}
+                      error={this.getError("strategy_config.rate_offset")}
                       />
                   </FieldItem>
                 </div>

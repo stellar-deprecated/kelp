@@ -27,7 +27,6 @@ class Input extends Component {
     error: PropTypes.string,
     size: PropTypes.string,
     disabled: PropTypes.bool,
-    showError: PropTypes.bool,
     onChange: PropTypes.func
   };
 
@@ -129,7 +128,7 @@ class Input extends Component {
   }
 
   render() {
-    const errorActive = this.props.showError ? styles.inputError : null;
+    const errorActive = this.props.error !== null ? styles.inputError : null;
     const inputClassList = classNames(
       styles.input, 
       styles[this.props.size],
@@ -161,7 +160,7 @@ class Input extends Component {
         <p className={suffixClassList}>{this.props.suffix}</p>
         )}
 
-        { this.props.showError && (
+        { this.props.error !== null && (
         <p className={styles.errorMessage}>{this.props.error}</p>
         )}
       </div>
