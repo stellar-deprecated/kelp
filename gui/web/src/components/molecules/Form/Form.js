@@ -17,7 +17,7 @@ import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
-// import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import newSecretKey from '../../../kelp-ops-api/newSecretKey';
 
 class Form extends Component {
@@ -230,6 +230,11 @@ class Form extends Component {
       );
     }
 
+    let error = "";
+    if (this.props.error) {
+      error = (<ErrorMessage error={this.props.error}/>);
+    }
+
     return (
       <div>
         <div className={grid.container}>
@@ -237,6 +242,8 @@ class Form extends Component {
               {/* <Switch/>
               <Label>Helper Fields</Label> */}
             </ScreenHeader>
+
+            {error}
 
             <FormSection>
               <Input
@@ -680,9 +687,8 @@ class Form extends Component {
           </div>
         </AdvancedWrapper>
 
-        {/* <ErrorMessage/> */}
-
         <div className={grid.container}>
+          {error}
           <div className={styles.formFooter}>
             <Button 
               icon="add" 
