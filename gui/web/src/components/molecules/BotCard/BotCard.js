@@ -82,8 +82,7 @@ class BotCard extends Component {
     name: PropTypes.string,
     test: PropTypes.bool,
     warnings: PropTypes.number,
-    errors: PropTypes.number, 
-    showDetailsFn: PropTypes.func, 
+    errors: PropTypes.number,
     baseUrl: PropTypes.string, 
   };
 
@@ -320,7 +319,7 @@ class BotCard extends Component {
         </div> */}
 
         <div className={styles.firstColumn}>
-          <h2 className={styles.title} onClick={this.props.showDetailsFn}>{this.props.name}</h2>
+          <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
             <BotExchangeInfo strategy={this.state.botInfo.strategy}/>
           </div>
