@@ -156,7 +156,7 @@ class Form extends Component {
     )
   }
 
-  newSecret() {
+  newSecret(field) {
     var _this = this;
     this._asyncRequests["secretKey"] = newSecretKey(this.props.baseUrl).then(resp => {
       if (!_this._asyncRequests["secretKey"]) {
@@ -165,7 +165,7 @@ class Form extends Component {
       }
 
       delete _this._asyncRequests["secretKey"];
-      this.props.onChange("trader_config.trading_secret_seed", {target: {value: resp}});
+      this.props.onChange(field, {target: {value: resp}});
     });
   }
 
@@ -175,7 +175,7 @@ class Form extends Component {
     //   tradingPlatform = this.props.configData.trader_config.trading_exchange;
     // }
 
-    let secretKeyInput = (
+    let traderSecretKeyInput = (
       <Input
         value={this.props.configData.trader_config.trading_secret_seed}
         type="string"
@@ -184,14 +184,22 @@ class Form extends Component {
         showError={false}
         />
     );
+    let sourceSecretKeyInput = (
+      <Input
+        value={this.props.configData.trader_config.source_secret_seed}
+        type="string"
+        onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+        />
+    );
     let network = "PubNet";
-    let secretKey = secretKeyInput;
+    let traderSecretKey = traderSecretKeyInput;
+    let sourceSecretKey = sourceSecretKeyInput;
     if (this.props.configData.trader_config.horizon_url.includes("test")) {
       network = "TestNet";
-      secretKey = (
+      traderSecretKey = (
         <div className={grid.row}>
           <div className={grid.col90p}>
-            {secretKeyInput}
+            {traderSecretKeyInput}
           </div>
           <div className={grid.col10p}>
             <Button 
@@ -199,7 +207,23 @@ class Form extends Component {
               size="small"
               hsize="round"
               loading={false}
-              onClick={this.newSecret}
+              onClick={() => this.newSecret("trader_config.trading_secret_seed")}
+              />
+          </div>
+        </div>
+      );
+      sourceSecretKey = (
+        <div className={grid.row}>
+          <div className={grid.col90p}>
+            {sourceSecretKeyInput}
+          </div>
+          <div className={grid.col10p}>
+            <Button 
+              icon="refresh"
+              size="small"
+              hsize="round"
+              loading={false}
+              onClick={() => this.newSecret("trader_config.source_secret_seed")}
               />
           </div>
         </div>
@@ -274,7 +298,7 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label>Trader account secret key</Label>
-                {secretKey}
+                {traderSecretKey}
               </FieldItem>
             </FormSection>
 
@@ -337,11 +361,7 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label optional>Source account secret key</Label>
-                <Input
-                  value={this.props.configData.trader_config.source_secret_seed}
-                  type="string"
-                  onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
-                  />
+                {sourceSecretKey}
               </FieldItem>
 
               <FieldItem>
