@@ -349,9 +349,9 @@ class BotCard extends Component {
           />
         </div>
 
-        <div className={styles.thirdColumn}>
+        {/* <div className={styles.thirdColumn}>
           <img className={styles.chartThumb} src={chartThumb} alt="chartThumb"/>
-        </div>
+        </div> */}
 
         <div className={styles.fourthColumn}>
           <RunStatus 
