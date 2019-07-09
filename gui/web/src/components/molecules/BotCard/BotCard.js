@@ -306,7 +306,7 @@ class BotCard extends Component {
           {popover}
         </div>
 
-        <div className={styles.sortingArrows}>
+        {/* <div className={styles.sortingArrows}>
           <Button
               icon="chevronUp"
               variant="transparent"
@@ -317,7 +317,7 @@ class BotCard extends Component {
               variant="transparent"
               hsize="round"
           />
-        </div>
+        </div> */}
 
         <div className={styles.firstColumn}>
           <h2 className={styles.title} onClick={this.props.showDetailsFn}>{this.props.name}</h2>
