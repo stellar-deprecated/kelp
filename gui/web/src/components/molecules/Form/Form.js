@@ -18,6 +18,7 @@ import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
 // import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import newSecretKey from '../../../kelp-ops-api/newSecretKey';
 
 class Form extends Component {
   constructor(props) {
@@ -36,9 +37,18 @@ class Form extends Component {
     this.newLevel = this.newLevel.bind(this);
     this.hasNewLevel = this.hasNewLevel.bind(this);
     this.removeLevel = this.removeLevel.bind(this);
+    this.newSecret = this.newSecret.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
+
+    this._asyncRequests = {};
+  }
+
+  componentWillUnmount() {
+    if (this._asyncRequests["secretKey"]) {
+      delete this._asyncRequests["secretKey"];
+    }
   }
 
   setLoadingFormula() {
@@ -146,15 +156,54 @@ class Form extends Component {
     )
   }
 
+  newSecret() {
+    var _this = this;
+    this._asyncRequests["secretKey"] = newSecretKey(this.props.baseUrl).then(resp => {
+      if (!_this._asyncRequests["secretKey"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["secretKey"];
+      this.props.onChange("trader_config.trading_secret_seed", {target: {value: resp}});
+    });
+  }
+
   render() {
     // let tradingPlatform = "sdex";
     // if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
     //   tradingPlatform = this.props.configData.trader_config.trading_exchange;
     // }
 
-    let network = "TestNet";
-    if (!this.props.configData.trader_config.horizon_url.includes("test")) {
-      network = "PubNet";
+    let secretKeyInput = (
+      <Input
+        value={this.props.configData.trader_config.trading_secret_seed}
+        type="string"
+        onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
+        error="Please enter a valid trader account secret key"
+        showError={false}
+        />
+    );
+    let network = "PubNet";
+    let secretKey = secretKeyInput;
+    if (this.props.configData.trader_config.horizon_url.includes("test")) {
+      network = "TestNet";
+      secretKey = (
+        <div className={grid.row}>
+          <div className={grid.col90p}>
+            {secretKeyInput}
+          </div>
+          <div className={grid.col10p}>
+            <Button 
+              icon="refresh"
+              size="small"
+              hsize="round"
+              loading={false}
+              onClick={this.newSecret}
+              />
+          </div>
+        </div>
+      );
     }
 
     return (
@@ -225,13 +274,7 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label>Trader account secret key</Label>
-                <Input
-                  value={this.props.configData.trader_config.trading_secret_seed}
-                  type="string"
-                  onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
-                  error="Please enter a valid trader account secret key"
-                  showError={false}
-                  />
+                {secretKey}
               </FieldItem>
             </FormSection>
 
