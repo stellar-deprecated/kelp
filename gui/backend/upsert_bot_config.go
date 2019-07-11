@@ -31,8 +31,8 @@ type upsertBotConfigResponseErrors struct {
 	Fields upsertBotConfigRequest `json:"fields"`
 }
 
-func makeUpsertError(fields upsertBotConfigRequest) upsertBotConfigResponseErrors {
-	return upsertBotConfigResponseErrors{
+func makeUpsertError(fields upsertBotConfigRequest) *upsertBotConfigResponseErrors {
+	return &upsertBotConfigResponseErrors{
 		Error:  "There are some errors marked in red inline",
 		Fields: fields,
 	}
@@ -63,12 +63,8 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, e = strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.TradingSecretSeed); e != nil {
-		s.writeJson(w, makeUpsertError(upsertBotConfigRequest{
-			TraderConfig: trader.BotConfig{
-				TradingSecretSeed: "invalid Trader Secret Key",
-			},
-		}))
+	if errResp := s.validateConfigs(req); errResp != nil {
+		s.writeJson(w, errResp)
 		return
 	}
 
@@ -92,4 +88,37 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.writeJson(w, upsertBotConfigResponse{Success: true})
+}
+
+func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfigResponseErrors {
+	hasError := false
+	errResp := upsertBotConfigRequest{
+		TraderConfig:   trader.BotConfig{},
+		StrategyConfig: plugins.BuySellConfig{},
+	}
+
+	if _, e := strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.TradingSecretSeed); e != nil {
+		errResp.TraderConfig.TradingSecretSeed = "invalid Trader Secret Key"
+		hasError = true
+	}
+
+	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
+		errResp.TraderConfig.AssetCodeA = "length must be between 0 - 12 characters"
+		hasError = true
+	}
+
+	if req.TraderConfig.AssetCodeB == "" || len(req.TraderConfig.AssetCodeB) > 12 {
+		errResp.TraderConfig.AssetCodeB = "length must be between 0 - 12 characters"
+		hasError = true
+	}
+
+	if _, e := strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.SourceSecretSeed); req.TraderConfig.SourceSecretSeed != "" && e != nil {
+		errResp.TraderConfig.SourceSecretSeed = "invalid Source Secret Key"
+		hasError = true
+	}
+
+	if hasError {
+		return makeUpsertError(errResp)
+	}
+	return nil
 }
