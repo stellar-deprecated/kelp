@@ -27,7 +27,6 @@ class Input extends Component {
     error: PropTypes.string,
     size: PropTypes.string,
     disabled: PropTypes.bool,
-    showError: PropTypes.bool,
     onChange: PropTypes.func
   };
 
@@ -42,10 +41,32 @@ class Input extends Component {
     if (this.props.type === "int" || this.props.type === "float") {
       // convert back to number so it is set correctly in the state
       newEvent = { target: { value: +checked } };
+    } else if (this.props.type === "int_positive" || this.props.type === "float_positive") {
+      // ensure it is positive
+      let val = +checked
+      if (val === 0) {
+        // don't allow an update if it's zero
+        return
+      } else if (val < 0) {
+        val = -val
+      }
+      newEvent = { target: { value: val } };
     } else if (this.props.type === "percent") {
       // convert back to representation passed in to complete the abstraction of a % value input
       // use event.target.value instead of checked here, because checked modified the value which is itself already modified
       newEvent = { target: { value: +event.target.value / 100 } };
+    } else if (this.props.type === "percent_positive") {
+      // ensure it is positive
+      // use event.target.value instead of checked here, because checked modified the value which is itself already modified
+      let val = +event.target.value
+      if (val === 0) {
+        // don't allow an update if it's zero
+        return
+      } else if (val < 0) {
+        val = -val
+      }
+      // convert back to representation passed in to complete the abstraction of a % value input
+      newEvent = { target: { value: val / 100 } };
     }
     this.props.onChange(newEvent);
   }
@@ -54,11 +75,11 @@ class Input extends Component {
   checkType(input) {
     if (this.props.type === "string") {
       return this.isString(input);
-    } else if (this.props.type === "int") {
+    } else if (this.props.type === "int" || this.props.type === "int_positive") {
       return this.isInt(input);
-    } else if (this.props.type === "float") {
+    } else if (this.props.type === "float" || this.props.type === "float_positive") {
       return this.isFloat(input);
-    } else if (this.props.type === "percent") {
+    } else if (this.props.type === "percent" || this.props.type === "percent_positive") {
       return this.isPercent(input);
     }
   }
@@ -129,7 +150,7 @@ class Input extends Component {
   }
 
   render() {
-    const errorActive = this.props.showError ? styles.inputError : null;
+    const errorActive = this.props.error !== null ? styles.inputError : null;
     const inputClassList = classNames(
       styles.input, 
       styles[this.props.size],
@@ -161,7 +182,7 @@ class Input extends Component {
         <p className={suffixClassList}>{this.props.suffix}</p>
         )}
 
-        { this.props.showError && (
+        { this.props.error !== null && (
         <p className={styles.errorMessage}>{this.props.error}</p>
         )}
       </div>

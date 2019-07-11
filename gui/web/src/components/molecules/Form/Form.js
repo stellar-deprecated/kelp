@@ -17,7 +17,8 @@ import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
-// import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import newSecretKey from '../../../kelp-ops-api/newSecretKey';
 
 class Form extends Component {
   constructor(props) {
@@ -36,9 +37,20 @@ class Form extends Component {
     this.newLevel = this.newLevel.bind(this);
     this.hasNewLevel = this.hasNewLevel.bind(this);
     this.removeLevel = this.removeLevel.bind(this);
+    this.newSecret = this.newSecret.bind(this);
+    this.getError = this.getError.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
+    this._fetchDotNotation = this._fetchDotNotation.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
+
+    this._asyncRequests = {};
+  }
+
+  componentWillUnmount() {
+    if (this._asyncRequests["secretKey"]) {
+      delete this._asyncRequests["secretKey"];
+    }
   }
 
   setLoadingFormula() {
@@ -59,6 +71,27 @@ class Form extends Component {
         denominator: price
       })
     }
+  }
+
+  _fetchDotNotation(obj, path) {
+    let parts = path.split('.');
+    for (let i = 0; i < parts.length; i++) {
+      obj = obj[parts[i]];
+
+      if (obj === undefined || obj === null || obj === "" || obj === 0) {
+        return null;
+      }
+    }
+
+    return obj
+  }
+
+  getError(fieldKey) {
+    if (!this.props.errorResp) {
+      return null;
+    }
+
+    return this._fetchDotNotation(this.props.errorResp.fields, fieldKey);
   }
 
   save() {
@@ -133,8 +166,8 @@ class Form extends Component {
 
   _emptyLevel() {
     return {
-      amount: "0.00",
-      spread: "0.00",
+      amount: 0.00,
+      spread: 0.00,
     };
   }
 
@@ -146,15 +179,83 @@ class Form extends Component {
     )
   }
 
+  newSecret(field) {
+    var _this = this;
+    this._asyncRequests["secretKey"] = newSecretKey(this.props.baseUrl).then(resp => {
+      if (!_this._asyncRequests["secretKey"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["secretKey"];
+      this.props.onChange(field, {target: {value: resp}});
+    });
+  }
+
   render() {
     // let tradingPlatform = "sdex";
     // if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
     //   tradingPlatform = this.props.configData.trader_config.trading_exchange;
     // }
 
-    let network = "TestNet";
-    if (!this.props.configData.trader_config.horizon_url.includes("test")) {
-      network = "PubNet";
+    let traderSecretKeyInput = (
+      <Input
+        value={this.props.configData.trader_config.trading_secret_seed}
+        type="string"
+        onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
+        error={this.getError("trader_config.trading_secret_seed")}
+        />
+    );
+    let sourceSecretKeyInput = (
+      <Input
+        value={this.props.configData.trader_config.source_secret_seed}
+        type="string"
+        onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+        error={this.getError("trader_config.source_secret_seed")}
+        />
+    );
+    let network = "PubNet";
+    let traderSecretKey = traderSecretKeyInput;
+    let sourceSecretKey = sourceSecretKeyInput;
+    if (this.props.configData.trader_config.horizon_url.includes("test")) {
+      network = "TestNet";
+      traderSecretKey = (
+        <div className={grid.row}>
+          <div className={grid.col90p}>
+            {traderSecretKeyInput}
+          </div>
+          <div className={grid.col10p}>
+            <Button 
+              icon="refresh"
+              size="small"
+              hsize="round"
+              loading={false}
+              onClick={() => this.newSecret("trader_config.trading_secret_seed")}
+              />
+          </div>
+        </div>
+      );
+      sourceSecretKey = (
+        <div className={grid.row}>
+          <div className={grid.col90p}>
+            {sourceSecretKeyInput}
+          </div>
+          <div className={grid.col10p}>
+            <Button 
+              icon="refresh"
+              size="small"
+              hsize="round"
+              loading={false}
+              onClick={() => this.newSecret("trader_config.source_secret_seed")}
+              />
+          </div>
+        </div>
+      );
+    }
+
+    let error = "";
+    if (this.props.errorResp) {
+      error = (<ErrorMessage error={this.props.errorResp.error}/>);
     }
 
     return (
@@ -165,6 +266,8 @@ class Form extends Component {
               <Label>Helper Fields</Label> */}
             </ScreenHeader>
 
+            {error}
+
             <FormSection>
               <Input
                 size="large"
@@ -172,6 +275,7 @@ class Form extends Component {
                 type="string"
                 onChange={(event) => { this.props.onChange("name", event) }}
                 disabled={!this.props.isNew}
+                error={this.getError("name")}
                 />
 
               {/* Trader Settings */}
@@ -225,13 +329,7 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label>Trader account secret key</Label>
-                <Input
-                  value={this.props.configData.trader_config.trading_secret_seed}
-                  type="string"
-                  onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
-                  error="Please enter a valid trader account secret key"
-                  showError={false}
-                  />
+                {traderSecretKey}
               </FieldItem>
             </FormSection>
 
@@ -245,6 +343,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.asset_code_a}
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
+                      error={this.getError("trader_config.asset_code_a")}
                       />
                   </FieldItem>
                 </div>
@@ -257,6 +356,7 @@ class Form extends Component {
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
+                      error={this.getError("trader_config.issuer_a")}
                       />
                   </FieldItem>
                 </div>
@@ -270,6 +370,7 @@ class Form extends Component {
                       value={this.props.configData.trader_config.asset_code_b}
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
+                      error={this.getError("trader_config.asset_code_b")}
                       />
                   </FieldItem>
                 </div>
@@ -282,6 +383,7 @@ class Form extends Component {
                       type="string"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
+                      error={this.getError("trader_config.issuer_b")}
                       />
                   </FieldItem>
                 </div>
@@ -294,11 +396,7 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label optional>Source account secret key</Label>
-                <Input
-                  value={this.props.configData.trader_config.source_secret_seed}
-                  type="string"
-                  onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
-                  />
+                {sourceSecretKey}
               </FieldItem>
 
               <FieldItem>
@@ -306,8 +404,9 @@ class Form extends Component {
                 <Input
                   suffix="seconds"
                   value={this.props.configData.trader_config.tick_interval_seconds}
-                  type="int"
+                  type="int_positive"
                   onChange={(event) => { this.props.onChange("trader_config.tick_interval_seconds", event) }}
+                  error={this.getError("trader_config.tick_interval_seconds")}
                   />
               </FieldItem>
 
@@ -316,8 +415,9 @@ class Form extends Component {
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.max_tick_delay_millis}
-                  type="int"
+                  type="int_positive"
                   onChange={(event) => { this.props.onChange("trader_config.max_tick_delay_millis", event) }}
+                  error={this.getError("trader_config.max_tick_delay_millis")}
                   />
               </FieldItem>
 
@@ -340,8 +440,9 @@ class Form extends Component {
                 <Label>Delete cycles treshold</Label>
                 <Input
                   value={this.props.configData.trader_config.delete_cycles_threshold}
-                  type="int"
+                  type="int_positive"
                   onChange={(event) => { this.props.onChange("trader_config.delete_cycles_threshold", event) }}
+                  error={this.getError("trader_config.delete_cycles_threshold")}
                   />
               </FieldItem>
 
@@ -365,8 +466,9 @@ class Form extends Component {
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
-                  type="int"
+                  type="int_positive"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  error={this.getError("trader_config.fill_tracker_sleep_millis")}
                   onChange={(event) => {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
                         "trader_config.fill_tracker_sleep_millis": (value) => {
@@ -389,9 +491,11 @@ class Form extends Component {
                 <Label>Fill tracker delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
-                  type="int"
+                  type="int_positive"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
-                  onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}/>
+                  onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}
+                  error={this.getError("trader_config.fill_tracker_delete_cycles_threshold")}
+                  />
               </FieldItem>
 
               <FieldGroup groupTitle="Fee">
@@ -401,8 +505,9 @@ class Form extends Component {
                       <Label>Network capacity trigger</Label>
                       <Input
                         value={this.props.configData.trader_config.fee.capacity_trigger}
-                        type="float"
+                        type="float_positive"
                         onChange={(event) => { this.props.onChange("trader_config.fee.capacity_trigger", event) }}
+                        error={this.getError("trader_config.fee.capacity_trigger")}
                         />
                     </FieldItem>
                   </div>
@@ -414,8 +519,9 @@ class Form extends Component {
                       <Input
                         suffix="%"
                         value={this.props.configData.trader_config.fee.percentile}
-                        type="int"  // this is a selection from the fee stats endpoint
+                        type="int_positive"  // this is a selection from the fee stats endpoint
                         onChange={(event) => { this.props.onChange("trader_config.fee.percentile", event) }}
+                        error={this.getError("trader_config.fee.percentile")}
                         />
                     </FieldItem>
                     </div>
@@ -427,8 +533,9 @@ class Form extends Component {
                       <Input
                         suffix="stroops"
                         value={this.props.configData.trader_config.fee.max_op_fee_stroops}
-                        type="int"
+                        type="int_positive"
                         onChange={(event) => { this.props.onChange("trader_config.fee.max_op_fee_stroops", event) }}
+                        error={this.getError("trader_config.fee.max_op_fee_stroops")}
                         />
                     </FieldItem>
                     </div>
@@ -442,8 +549,9 @@ class Form extends Component {
                     <Input
                       suffix="decimals"
                       value={this.props.configData.trader_config.centralized_price_precision_override}
-                      type="int"
+                      type="int_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
+                      error={this.getError("trader_config.centralized_price_precision_override")}
                       />
                   </FieldItem>
                 </div>
@@ -453,8 +561,9 @@ class Form extends Component {
                     <Input
                       suffix="decimals"
                       value={this.props.configData.trader_config.centralized_volume_precision_override}
-                      type="int"
+                      type="int_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
+                      error={this.getError("trader_config.centralized_volume_precision_override")}
                       />
                   </FieldItem>
                 </div>
@@ -467,8 +576,9 @@ class Form extends Component {
                     <Input
                       suffix="units"
                       value={this.props.configData.trader_config.centralized_min_base_volume_override}
-                      type="float"
+                      type="float_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
+                      error={this.getError("trader_config.centralized_min_base_volume_override")}
                       />
                   </FieldItem>
                 </div>
@@ -478,8 +588,9 @@ class Form extends Component {
                     <Input
                       suffix="units"
                       value={this.props.configData.trader_config.centralized_min_quote_volume_override}
-                      type="float"
+                      type="float_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
+                      error={this.getError("trader_config.centralized_min_quote_volume_override")}
                       />
                   </FieldItem>
                 </div>
@@ -541,6 +652,7 @@ class Form extends Component {
                     newLevel={this.newLevel}
                     hasNewLevel={this.hasNewLevel}
                     onRemove={(levelIdx) => { this.removeLevel(levelIdx) }}
+                    error={this.getError("strategy_config.levels")}
                     />
                 </FieldGroup>
               </div>
@@ -558,8 +670,9 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.price_tolerance}
-                      type="percent"
+                      type="percent_positive"
                       onChange={(event) => { this.props.onChange("strategy_config.price_tolerance", event) }}
+                      error={this.getError("strategy_config.price_tolerance")}
                       />
                   </FieldItem>
                 </div>
@@ -569,8 +682,9 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.amount_tolerance}
-                      type="percent"
+                      type="percent_positive"
                       onChange={(event) => { this.props.onChange("strategy_config.amount_tolerance", event) }}
+                      error={this.getError("strategy_config.amount_tolerance")}
                       />
                   </FieldItem>
                 </div>
@@ -583,8 +697,9 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.rate_offset_percent}
-                      type="percent"
+                      type="percent_positive"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset_percent", event) }}
+                      error={this.getError("strategy_config.rate_offset_percent")}
                       />
                   </FieldItem>
                 </div>
@@ -593,8 +708,9 @@ class Form extends Component {
                     <Label>Rate offset</Label>
                     <Input
                       value={this.props.configData.strategy_config.rate_offset}
-                      type="float"
+                      type="float_positive"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset", event) }}
+                      error={this.getError("strategy_config.rate_offset")}
                       />
                   </FieldItem>
                 </div>
@@ -617,9 +733,8 @@ class Form extends Component {
           </div>
         </AdvancedWrapper>
 
-        {/* <ErrorMessage/> */}
-
         <div className={grid.container}>
+          {error}
           <div className={styles.formFooter}>
             <Button 
               icon="add" 
