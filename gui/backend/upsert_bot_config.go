@@ -117,8 +117,22 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		hasError = true
 	}
 
+	if len(req.StrategyConfig.Levels) == 0 || hasNewLevel(req.StrategyConfig.Levels) {
+		errResp.StrategyConfig.Levels = []plugins.StaticLevel{}
+		hasError = true
+	}
+
 	if hasError {
 		return makeUpsertError(errResp)
 	}
 	return nil
+}
+
+func hasNewLevel(levels []plugins.StaticLevel) bool {
+	for _, l := range levels {
+		if l.AMOUNT == 0 || l.SPREAD == 0 {
+			return true
+		}
+	}
+	return false
 }

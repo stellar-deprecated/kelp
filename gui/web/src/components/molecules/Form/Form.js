@@ -166,8 +166,8 @@ class Form extends Component {
 
   _emptyLevel() {
     return {
-      amount: "0.00",
-      spread: "0.00",
+      amount: 0.00,
+      spread: 0.00,
     };
   }
 
