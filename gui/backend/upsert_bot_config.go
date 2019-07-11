@@ -103,12 +103,12 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 	}
 
 	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
-		errResp.TraderConfig.AssetCodeA = "length must be between 0 - 12 characters"
+		errResp.TraderConfig.AssetCodeA = "1 - 12 characters"
 		hasError = true
 	}
 
 	if req.TraderConfig.AssetCodeB == "" || len(req.TraderConfig.AssetCodeB) > 12 {
-		errResp.TraderConfig.AssetCodeB = "length must be between 0 - 12 characters"
+		errResp.TraderConfig.AssetCodeB = "1 - 12 characters"
 		hasError = true
 	}
 
