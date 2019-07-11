@@ -78,7 +78,7 @@ class Form extends Component {
     for (let i = 0; i < parts.length; i++) {
       obj = obj[parts[i]];
 
-      if (obj === undefined || obj === null || obj === "") {
+      if (obj === undefined || obj === null || obj === "" || obj === 0) {
         return null;
       }
     }
