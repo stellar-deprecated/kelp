@@ -7,15 +7,15 @@ import (
 	"github.com/stellar/kelp/model"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/kelp/support/utils"
 )
 
 // composeStrategy is a strategy that is composed of two sub-strategies
 type composeStrategy struct {
-	assetBase  *horizon.Asset
-	assetQuote *horizon.Asset
+	assetBase  *hProtocol.Asset
+	assetQuote *hProtocol.Asset
 	buyStrat   api.SideStrategy
 	sellStrat  api.SideStrategy
 }
@@ -25,8 +25,8 @@ var _ api.Strategy = &composeStrategy{}
 
 // makeComposeStrategy is a factory method for composeStrategy
 func makeComposeStrategy(
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 	buyStrat api.SideStrategy,
 	sellStrat api.SideStrategy,
 ) api.Strategy {
@@ -39,7 +39,7 @@ func makeComposeStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *composeStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+func (s *composeStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, sellingAOffers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer, []hProtocol.Offer) {
 	pruneOps1, newBuyingAOffers := s.buyStrat.PruneExistingOffers(buyingAOffers)
 	pruneOps2, newSellingAOffers := s.sellStrat.PruneExistingOffers(sellingAOffers)
 	pruneOps1 = append(pruneOps1, pruneOps2...)
@@ -69,8 +69,8 @@ func (s *composeStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64,
 
 // UpdateWithOps impl
 func (s *composeStrategy) UpdateWithOps(
-	buyingAOffers []horizon.Offer,
-	sellingAOffers []horizon.Offer,
+	buyingAOffers []hProtocol.Offer,
+	sellingAOffers []hProtocol.Offer,
 ) ([]build.TransactionMutator, error) {
 	// buy side, flip newTopBuyPrice because it will be inverted from this parent strategy's context of base/quote
 	buyOps, newTopBuyPriceInverted, e1 := s.buyStrat.UpdateWithOps(buyingAOffers)

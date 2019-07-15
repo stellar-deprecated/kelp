@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
@@ -12,8 +12,8 @@ import (
 // deleteSideStrategy is a sideStrategy to delete the orders for a given currency pair on one side of the orderbook
 type deleteSideStrategy struct {
 	sdex       *SDEX
-	assetBase  *horizon.Asset
-	assetQuote *horizon.Asset
+	assetBase  *hProtocol.Asset
+	assetQuote *hProtocol.Asset
 }
 
 // ensure it implements SideStrategy
@@ -22,8 +22,8 @@ var _ api.SideStrategy = &deleteSideStrategy{}
 // makeDeleteSideStrategy is a factory method for deleteSideStrategy
 func makeDeleteSideStrategy(
 	sdex *SDEX,
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 ) api.SideStrategy {
 	return &deleteSideStrategy{
 		sdex:       sdex,
@@ -33,14 +33,14 @@ func makeDeleteSideStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *deleteSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
+func (s *deleteSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer) {
 	log.Printf("deleteSideStrategy: deleting %d offers\n", len(offers))
 	pruneOps := []build.TransactionMutator{}
 	for i := 0; i < len(offers); i++ {
 		pOp := s.sdex.DeleteOffer(offers[i])
 		pruneOps = append(pruneOps, &pOp)
 	}
-	return pruneOps, []horizon.Offer{}
+	return pruneOps, []hProtocol.Offer{}
 }
 
 // PreUpdate impl
@@ -49,7 +49,7 @@ func (s *deleteSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float
 }
 
 // UpdateWithOps impl
-func (s *deleteSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
+func (s *deleteSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	return []build.TransactionMutator{}, nil, nil
 }
 

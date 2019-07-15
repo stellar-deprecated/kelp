@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -173,7 +173,7 @@ var KrakenAssetConverterOpenOrders = makeAssetConverter(map[Asset]string{
 })
 
 // FromHorizonAsset is a factory method
-func FromHorizonAsset(hAsset horizon.Asset) Asset {
+func FromHorizonAsset(hAsset hProtocol.Asset) Asset {
 	if hAsset.Type == utils.Native {
 		return XLM
 	}

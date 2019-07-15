@@ -9,6 +9,7 @@ import (
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/utils"
@@ -123,7 +124,7 @@ func (t *Terminator) run() {
 	}
 }
 
-func convertToAsset(code string, issuer string) horizon.Asset {
+func convertToAsset(code string, issuer string) hProtocol.Asset {
 	if code == utils.Native {
 		return utils.Asset2Asset2(build.NativeAsset())
 	}
@@ -131,7 +132,7 @@ func convertToAsset(code string, issuer string) horizon.Asset {
 }
 
 // deleteOffers deletes passed in offers along with the data for the passed in hash
-func (t *Terminator) deleteOffers(sellOffers []horizon.Offer, buyOffers []horizon.Offer, botKey model.BotKey, tsMillis int64) {
+func (t *Terminator) deleteOffers(sellOffers []hProtocol.Offer, buyOffers []hProtocol.Offer, botKey model.BotKey, tsMillis int64) {
 	ops := []build.TransactionMutator{}
 	ops = append(ops, t.sdex.DeleteAllOffers(sellOffers)...)
 	ops = append(ops, t.sdex.DeleteAllOffers(buyOffers)...)

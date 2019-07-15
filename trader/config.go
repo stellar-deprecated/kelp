@@ -3,7 +3,7 @@ package trader
 import (
 	"fmt"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -57,8 +57,8 @@ type BotConfig struct {
 	// initialized later
 	tradingAccount *string
 	sourceAccount  *string // can be nil
-	assetBase      horizon.Asset
-	assetQuote     horizon.Asset
+	assetBase      hProtocol.Asset
+	assetQuote     hProtocol.Asset
 	isTradingSdex  bool
 }
 
@@ -85,21 +85,21 @@ func MakeBotConfig(
 	centralizedMinQuoteVolumeOverride *float64,
 ) *BotConfig {
 	return &BotConfig{
-		SourceSecretSeed:                 sourceSecretSeed,
-		TradingSecretSeed:                tradingSecretSeed,
-		AssetCodeA:                       assetCodeA,
-		IssuerA:                          issuerA,
-		AssetCodeB:                       assetCodeB,
-		IssuerB:                          issuerB,
-		TickIntervalSeconds:              tickIntervalSeconds,
-		MaxTickDelayMillis:               maxTickDelayMillis,
-		DeleteCyclesThreshold:            deleteCyclesThreshold,
-		SubmitMode:                       submitMode,
-		FillTrackerSleepMillis:           fillTrackerSleepMillis,
-		FillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
-		HorizonURL:                       horizonURL,
-		CcxtRestURL:                      ccxtRestURL,
-		Fee:                              fee,
+		SourceSecretSeed:                   sourceSecretSeed,
+		TradingSecretSeed:                  tradingSecretSeed,
+		AssetCodeA:                         assetCodeA,
+		IssuerA:                            issuerA,
+		AssetCodeB:                         assetCodeB,
+		IssuerB:                            issuerB,
+		TickIntervalSeconds:                tickIntervalSeconds,
+		MaxTickDelayMillis:                 maxTickDelayMillis,
+		DeleteCyclesThreshold:              deleteCyclesThreshold,
+		SubmitMode:                         submitMode,
+		FillTrackerSleepMillis:             fillTrackerSleepMillis,
+		FillTrackerDeleteCyclesThreshold:   fillTrackerDeleteCyclesThreshold,
+		HorizonURL:                         horizonURL,
+		CcxtRestURL:                        ccxtRestURL,
+		Fee:                                fee,
 		CentralizedPricePrecisionOverride:  centralizedPricePrecisionOverride,
 		CentralizedVolumePrecisionOverride: centralizedVolumePrecisionOverride,
 		CentralizedMinBaseVolumeOverride:   centralizedMinBaseVolumeOverride,
@@ -141,12 +141,12 @@ func (b *BotConfig) SourceAccount() string {
 }
 
 // AssetBase returns the config's assetBase
-func (b *BotConfig) AssetBase() horizon.Asset {
+func (b *BotConfig) AssetBase() hProtocol.Asset {
 	return b.assetBase
 }
 
 // AssetQuote returns the config's assetQuote
-func (b *BotConfig) AssetQuote() horizon.Asset {
+func (b *BotConfig) AssetQuote() hProtocol.Asset {
 	return b.assetQuote
 }
 

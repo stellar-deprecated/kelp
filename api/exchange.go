@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 )
 
@@ -224,8 +224,8 @@ type Balance struct {
 type ExchangeShim interface {
 	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
 	SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
-	GetBalanceHack(asset horizon.Asset) (*Balance, error)
-	LoadOffersHack() ([]horizon.Offer, error)
+	GetBalanceHack(asset hProtocol.Asset) (*Balance, error)
+	LoadOffersHack() ([]hProtocol.Offer, error)
 	Constrainable
 	OrderbookFetcher
 	FillTrackable
