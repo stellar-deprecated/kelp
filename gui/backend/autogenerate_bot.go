@@ -6,15 +6,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/stellar/kelp/support/networking"
-
-	"github.com/stellar/kelp/support/kelpos"
-
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/kelp/gui/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/trader"
 )
@@ -99,12 +98,10 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) setupAccount(address string, signer string, botName string) error {
-	var fundResponse interface{}
-	e := networking.JSONRequest(http.DefaultClient, "GET", "https://friendbot.stellar.org/?addr="+address, "", nil, &fundResponse, "")
+	_, e := s.checkFundAccount(address, botName)
 	if e != nil {
-		return fmt.Errorf("error funding address %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("error checking and funding account: %s\n", e)
 	}
-	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
 
 	client := horizon.DefaultTestNetClient
 	txn, e := build.Transaction(
@@ -139,6 +136,37 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 
 	log.Printf("successfully added trustline for address %s for bot '%s': %v\n", address, botName, resp)
 	return nil
+}
+
+func (s *APIServer) checkFundAccount(address string, botName string) (*horizon.Account, error) {
+	account, e := horizonclient.DefaultTestNetClient.AccountDetail(horizonclient.AccountRequest{AccountID: address})
+	if e == nil {
+		log.Printf("account already exists %s for bot '%s', no need to fund via friendbot\n", address, botName)
+		return &account, nil
+	} else if e != nil {
+		var herr *horizonclient.Error
+		switch t := e.(type) {
+		case *horizonclient.Error:
+			herr = t
+		case horizonclient.Error:
+			herr = &t
+		default:
+			return nil, fmt.Errorf("unexpected error when checking for existence of account %s for bot '%s': %s", address, botName, e)
+		}
+
+		if herr.Problem.Status != 404 {
+			return nil, fmt.Errorf("unexpected horizon error code when checking for existence of account %s for bot '%s': %d (%v)", address, botName, herr.Problem.Status, *herr)
+		}
+	}
+
+	// since it's a 404 we want to continue funding below
+	var fundResponse interface{}
+	e = networking.JSONRequest(http.DefaultClient, "GET", "https://friendbot.stellar.org/?addr="+address, "", nil, &fundResponse, "")
+	if e != nil {
+		return nil, fmt.Errorf("error funding address %s for bot '%s': %s\n", address, botName, e)
+	}
+	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
+	return &account, nil
 }
 
 func makeSampleTrader(seed string) *trader.BotConfig {
