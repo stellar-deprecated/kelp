@@ -95,6 +95,13 @@ func (kos *KelpOS) GetBot(botName string) (*BotInstance, error) {
 
 // QueryBotState checks to see if the bot is actually running and returns the state accordingly
 func (kos *KelpOS) QueryBotState(botName string) (BotState, error) {
+	if bi, e := kos.GetBot(botName); e == nil {
+		// read initializing state from memory because it's hard to figure that out from the logic below
+		if bi.State == BotStateInitializing {
+			return bi.State, nil
+		}
+	}
+
 	prefix := getBotNamePrefix(botName)
 	command := fmt.Sprintf("ps aux | grep trade | grep %s | grep -v grep", prefix)
 	outputBytes, e := kos.Blocking("query_bot_state", command)

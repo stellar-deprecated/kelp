@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/support/kelpos"
 )
 
 func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
@@ -35,9 +36,11 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("found bot '%s' with state '%s'", bot.Name, botState)
+		log.Printf("found bot '%s' with state '%s'\n", bot.Name, botState)
 		// if page is reloaded then bot would already be registered, which is ok -- but we upsert here so it doesn't matter
-		s.kos.RegisterBotWithStateUpsert(&bot, botState)
+		if botState != kelpos.InitState() {
+			s.kos.RegisterBotWithStateUpsert(&bot, botState)
+		}
 	}
 
 	// serialize and return
