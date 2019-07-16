@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from "react-router-dom";
 
+import styles from './App.module.scss';
 import Header from './components/molecules/Header/Header';
 import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
@@ -49,28 +50,31 @@ class App extends Component {
   }
 
   render() {
+    let banner = (<div className={styles.banner}>Kelp UI is only available on the Stellar Test Network</div>);
+
     return (
       <div>
-      <Router>
-        <Header version={this.state.version}/>
-        <Route exact path="/"
-          render={(props) => <Bots {...props} baseUrl={baseUrl}/>}
-          />
-        <Route exact path="/new"
-          render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
-          />
-        <Route exact path="/edit"
-          render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
-          />
-        <Route path="/details" component={Details} />
-      </Router>
-      {/* <Modal 
-        type="error"
-        title="Harry the Green Plankton has two warnings:"
-        actionLabel="Go to bot settings"
-        bullets={['Funds are low', 'Another warning example']}
-      />
-      <Welcome/> */}
+        <div>{banner}</div>
+        <Router>
+          <Header version={this.state.version}/>
+          <Route exact path="/"
+            render={(props) => <Bots {...props} baseUrl={baseUrl}/>}
+            />
+          <Route exact path="/new"
+            render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
+            />
+          <Route exact path="/edit"
+            render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
+            />
+          <Route path="/details" component={Details} />
+        </Router>
+        {/* <Modal 
+          type="error"
+          title="Harry the Green Plankton has two warnings:"
+          actionLabel="Go to bot settings"
+          bullets={['Funds are low', 'Another warning example']}
+        />
+        <Welcome/> */}
       </div>
     );
   }

@@ -5,7 +5,7 @@ import Input from '../../atoms/Input/Input';
 import Label from '../../atoms/Label/Label';
 import SectionTitle from '../../atoms/SectionTitle/SectionTitle';
 import Switch from '../../atoms/Switch/Switch';
-import SegmentedControl from '../../atoms/SegmentedControl/SegmentedControl';
+// import SegmentedControl from '../../atoms/SegmentedControl/SegmentedControl';
 import SectionDescription from '../../atoms/SectionDescription/SectionDescription';
 import Button from '../../atoms/Button/Button';
 // import Select from '../../atoms/Select/Select';
@@ -214,11 +214,11 @@ class Form extends Component {
         error={this.getError("trader_config.source_secret_seed")}
         />
     );
-    let network = "PubNet";
+    // let network = "PubNet";
     let traderSecretKey = traderSecretKeyInput;
     let sourceSecretKey = sourceSecretKeyInput;
     if (this.props.configData.trader_config.horizon_url.includes("test")) {
-      network = "TestNet";
+      // network = "TestNet";
       traderSecretKey = (
         <div className={grid.row}>
           <div className={grid.col90p}>
@@ -309,7 +309,8 @@ class Form extends Component {
             <FormSection>
               <FieldItem>
                 <Label padding>Network</Label>
-                <SegmentedControl
+                <Label padding>TestNet</Label>
+                {/* <SegmentedControl
                   segments={[
                     "TestNet",
                     "PubNet",
@@ -322,7 +323,7 @@ class Form extends Component {
                     }
                     this.props.onChange("trader_config.horizon_url", {target: {value: newValue}});
                   }}
-                  />
+                  /> */}
               </FieldItem>
             </FormSection>
             
