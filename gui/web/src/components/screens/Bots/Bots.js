@@ -4,33 +4,8 @@ import Button from '../../atoms/Button/Button';
 import EmptyList from '../../molecules/EmptyList/EmptyList';
 import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import grid from '../../_styles/grid.module.scss';
-
 import autogenerate from '../../../kelp-ops-api/autogenerate';
 import listBots from '../../../kelp-ops-api/listBots';
-
-const placeaholderBots = [
-  {
-    name: 'Harry the Green Plankton',
-    running: true,
-    test: false,
-    warnings: 2,
-    errors: 1,
-  },
-  {
-    name: 'Sally the Blue Eel',
-    running: false,
-    test: true,
-    warnings: 2,
-    errors: 1,
-  },
-  {
-    name: 'Bruno the Yellow Seaweed',
-    running: false,
-    test: true,
-    warnings: 0,
-    errors: 0,
-  }
-]
 
 class Bots extends Component {
   constructor(props) {
@@ -40,7 +15,6 @@ class Bots extends Component {
     };
  
     this.fetchBots = this.fetchBots.bind(this);
-    this.gotoForm = this.gotoForm.bind(this);
     this.gotoDetails = this.gotoDetails.bind(this);
     this.autogenerateBot = this.autogenerateBot.bind(this);
     this.createBot = this.createBot.bind(this);
@@ -60,10 +34,6 @@ class Bots extends Component {
 
   componentDidMount() {
     this.fetchBots()
-  }
-  
-  gotoForm() {
-    this.props.history.push('/new')
   }
 
   gotoDetails(botName) {
@@ -105,11 +75,7 @@ class Bots extends Component {
   }
   
   createBot() {
-    let rand = Math.floor(Math.random() * placeaholderBots.length);
-    let newElement = placeaholderBots[rand];
-    this.setState(prevState => ({
-      bots: [...prevState.bots, newElement]
-    }))
+    this.props.history.push('/new')
   }
 
   render() {
@@ -121,7 +87,7 @@ class Bots extends Component {
             variant="faded" 
             hsize="short"
             icon="add" 
-            onClick={this.gotoForm}
+            onClick={this.createBot}
             >
               New Bot
             </Button>
