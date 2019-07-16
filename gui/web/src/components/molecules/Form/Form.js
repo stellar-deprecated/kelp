@@ -697,7 +697,7 @@ class Form extends Component {
                     <Input
                       suffix="%"
                       value={this.props.configData.strategy_config.rate_offset_percent}
-                      type="percent_positive"
+                      type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset_percent", event) }}
                       error={this.getError("strategy_config.rate_offset_percent")}
                       />
@@ -708,7 +708,7 @@ class Form extends Component {
                     <Label>Rate offset</Label>
                     <Input
                       value={this.props.configData.strategy_config.rate_offset}
-                      type="float_positive"
+                      type="float"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset", event) }}
                       error={this.getError("strategy_config.rate_offset")}
                       />
