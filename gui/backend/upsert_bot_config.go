@@ -56,11 +56,6 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
 		return
 	}
-	e = req.TraderConfig.Init()
-	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error running Init() for TraderConfig: %s", e))
-		return
-	}
 
 	botState, e := s.kos.QueryBotState(req.Name)
 	if e != nil {
@@ -74,6 +69,12 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 
 	if errResp := s.validateConfigs(req); errResp != nil {
 		s.writeJson(w, errResp)
+		return
+	}
+
+	e = req.TraderConfig.Init()
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error running Init() for TraderConfig: %s", e))
 		return
 	}
 
