@@ -9,7 +9,7 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -21,7 +21,7 @@ const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
-	api                   *horizon.Client
+	api                   *horizonclient.Client
 	ieif                  *plugins.IEIF
 	assetBase             hProtocol.Asset
 	assetQuote            hProtocol.Asset
@@ -51,7 +51,7 @@ type Trader struct {
 
 // MakeBot is the factory method for the Trader struct
 func MakeBot(
-	api *horizon.Client,
+	api *horizonclient.Client,
 	ieif *plugins.IEIF,
 	assetBase hProtocol.Asset,
 	assetQuote hProtocol.Asset,

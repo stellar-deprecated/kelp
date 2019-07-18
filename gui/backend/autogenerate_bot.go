@@ -11,7 +11,7 @@ import (
 	"github.com/stellar/kelp/support/kelpos"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/kelp/gui/model"
 	"github.com/stellar/kelp/plugins"
@@ -106,10 +106,11 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 	}
 	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
 
-	client := horizon.DefaultTestNetClient
+	client := horizonclient.DefaultTestNetClient
 	txn, e := build.Transaction(
 		build.SourceAccount{AddressOrSeed: address},
-		build.AutoSequence{SequenceProvider: client},
+		// to do fix with the new txnbuild
+		// build.AutoSequence{SequenceProvider: client},
 		build.TestNetwork,
 		build.Trust("COUPON", "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"),
 		build.Payment(
@@ -132,7 +133,7 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	resp, e := client.SubmitTransaction(txn64)
+	resp, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
 		return fmt.Errorf("error submitting change trust transaction for address %s for bot '%s': %s\n", address, botName, e)
 	}

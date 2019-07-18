@@ -12,7 +12,7 @@ import (
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -31,7 +31,7 @@ const fetchTradesResolution = 300000
 
 // SDEX helps with building and submitting transactions to the Stellar network
 type SDEX struct {
-	API                           *horizon.Client
+	API                           *horizonclient.Client
 	SourceAccount                 string
 	TradingAccount                string
 	SourceSeed                    string
@@ -68,7 +68,7 @@ type Balance struct {
 
 // MakeSDEX is a factory method for SDEX
 func MakeSDEX(
-	api *horizon.Client,
+	api *horizonclient.Client,
 	ieif *IEIF,
 	exchangeShim api.ExchangeShim,
 	sourceSeed string,
@@ -155,7 +155,14 @@ func (sdex *SDEX) GetAssetConverter() *model.AssetConverter {
 func (sdex *SDEX) incrementSeqNum() {
 	if sdex.reloadSeqNum {
 		log.Println("reloading sequence number")
-		seqNum, err := sdex.API.SequenceForAccount(sdex.SourceAccount)
+
+		accountReq := horizonclient.AccountRequest{AccountID: sdex.SourceAccount}
+		accountDetail, err := sdex.API.AccountDetail(accountReq)
+		if err != nil {
+			log.Printf("error loading account details: %s\n", err)
+			return
+		}
+		seqNum, err := accountDetail.GetSequenceNumber()
 		if err != nil {
 			log.Printf("error getting seq num: %s\n", err)
 			return
@@ -221,7 +228,8 @@ func (sdex *SDEX) minReserve(subentries int32) float64 {
 
 // assetBalance returns asset balance, asset trust limit, reserve balance (zero for non-XLM), error
 func (sdex *SDEX) _assetBalance(asset hProtocol.Asset) (*api.Balance, error) {
-	account, err := sdex.API.LoadAccount(sdex.TradingAccount)
+	accountReq := horizonclient.AccountRequest{AccountID: sdex.TradingAccount}
+	account, err := sdex.API.AccountDetail(accountReq)
 	if err != nil {
 		return nil, fmt.Errorf("error: unable to load account to fetch balance: %s", err)
 	}
@@ -431,10 +439,10 @@ func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
 }
 
 func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error), asyncMode bool) {
-	resp, err := sdex.API.SubmitTransaction(txeB64)
+	resp, err := sdex.API.SubmitTransactionXDR(txeB64)
 	if err != nil {
-		if herr, ok := errors.Cause(err).(*horizon.Error); ok {
-			var rcs *horizon.TransactionResultCodes
+		if herr, ok := errors.Cause(err).(*horizonclient.Error); ok {
+			var rcs *hProtocol.TransactionResultCodes
 			rcs, err = herr.ResultCodes()
 			if err != nil {
 				log.Printf("(async) error: no result codes from horizon: %s\n", err)
@@ -528,7 +536,18 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 
 	trades := []model.Trade{}
 	for {
-		tradesPage, e := sdex.API.LoadTrades(baseAsset, quoteAsset, 0, fetchTradesResolution, horizon.Cursor(cursorStart), horizon.Order(horizon.OrderAsc), horizon.Limit(maxPageLimit))
+		tradesReq := horizonclient.TradeRequest{
+			BaseAssetType:      horizonclient.AssetType(baseAsset.Type),
+			BaseAssetCode:      baseAsset.Code,
+			BaseAssetIssuer:    baseAsset.Issuer,
+			CounterAssetType:   horizonclient.AssetType(quoteAsset.Type),
+			CounterAssetCode:   quoteAsset.Code,
+			CounterAssetIssuer: quoteAsset.Issuer,
+			Order:              horizonclient.OrderAsc,
+			Cursor:             cursorStart,
+			Limit:              maxPageLimit}
+
+		tradesPage, e := sdex.API.Trades(tradesReq)
 		if e != nil {
 			if strings.Contains(e.Error(), "Rate limit exceeded") {
 				// return normally, we will continue loading trades in the next call from where we left off
@@ -652,8 +671,17 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 	if e != nil {
 		return nil, fmt.Errorf("error while convertig pair to base and quote asset: %s", e)
 	}
+	tradesReq := horizonclient.TradeRequest{
+		BaseAssetType:      horizonclient.AssetType(baseAsset.Type),
+		BaseAssetCode:      baseAsset.Code,
+		BaseAssetIssuer:    baseAsset.Issuer,
+		CounterAssetType:   horizonclient.AssetType(quoteAsset.Type),
+		CounterAssetCode:   quoteAsset.Code,
+		CounterAssetIssuer: quoteAsset.Issuer,
+		Order:              horizonclient.OrderDesc,
+		Limit:              1}
 
-	tradesPage, e := sdex.API.LoadTrades(baseAsset, quoteAsset, 0, fetchTradesResolution, horizon.Order(horizon.OrderDesc), horizon.Limit(1))
+	tradesPage, e := sdex.API.Trades(tradesReq)
 	if e != nil {
 		return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s", e)
 	}
@@ -677,8 +705,16 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.
 	if e != nil {
 		return nil, fmt.Errorf("cannot get SDEX orderbook: %s", e)
 	}
+	obReq := horizonclient.OrderBookRequest{
+		SellingAssetType:   horizonclient.AssetType(baseAsset.Type),
+		SellingAssetCode:   baseAsset.Code,
+		SellingAssetIssuer: baseAsset.Issuer,
+		BuyingAssetType:    horizonclient.AssetType(quoteAsset.Type),
+		BuyingAssetCode:    quoteAsset.Code,
+		BuyingAssetIssuer:  quoteAsset.Issuer}
 
-	ob, e := sdex.API.LoadOrderBook(baseAsset, quoteAsset)
+	ob, e := sdex.API.OrderBook(obReq)
+	// ob, e := sdex.API.LoadOrderBook(baseAsset, quoteAsset)
 	if e != nil {
 		return nil, fmt.Errorf("cannot get SDEX orderbook: %s", e)
 	}

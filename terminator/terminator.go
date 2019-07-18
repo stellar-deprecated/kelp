@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -19,7 +19,7 @@ const terminatorKey = "term"
 
 // Terminator contains the logic to terminate offers
 type Terminator struct {
-	api                  *horizon.Client
+	api                  *horizonclient.Client
 	sdex                 *plugins.SDEX
 	tradingAccount       string
 	tickIntervalSeconds  int32
@@ -28,7 +28,7 @@ type Terminator struct {
 
 // MakeTerminator is a factory method to make a Terminator
 func MakeTerminator(
-	api *horizon.Client,
+	api *horizonclient.Client,
 	sdex *plugins.SDEX,
 	tradingAccount string,
 	tickIntervalSeconds int32,
@@ -69,8 +69,8 @@ func (t *Terminator) run() {
 	if 1 < 2 {
 		panic("need to add db-based support, manage-data based support is invalid since we don't write it from trader anymore.")
 	}
-
-	account, e := t.api.LoadAccount(t.tradingAccount)
+	accountReq := horizonclient.AccountRequest{AccountID: t.tradingAccount}
+	account, e := t.api.AccountDetail(accountReq)
 	if e != nil {
 		log.Println(e)
 		return
