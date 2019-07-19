@@ -11,6 +11,7 @@ class NewBot extends Component {
     this.state = {
       isSaving: false,
       configData: null,
+      errorResp: null,
     };
 
     this.saveNew = this.saveNew.bind(this);
@@ -50,7 +51,18 @@ class NewBot extends Component {
       _this.setState({
         isSaving: false,
       });
-      _this.props.history.goBack();
+
+      if (resp["success"]) {
+        _this.props.history.goBack();
+      } else if (resp["error"]) {
+        _this.setState({
+          errorResp: resp,
+        });
+      } else {
+        _this.setState({
+          errorResp: { error: "Unknown error while attempting to save bot config" },
+        });
+      }
     });
   }
 
@@ -144,6 +156,7 @@ class NewBot extends Component {
         configData={this.state.configData}
         saveFn={this.saveNew}
         saveText="Create Bot"
+        errorResp={this.state.errorResp}
         />);
     } else if (this.props.location.pathname !== "/edit") {
       console.log("invalid path: " + this.props.location.pathname);
@@ -176,6 +189,7 @@ class NewBot extends Component {
       configData={this.state.configData}
       saveFn={this.saveEdit}
       saveText="Save Bot Updates"
+      errorResp={this.state.errorResp}
       />);
   }
 }

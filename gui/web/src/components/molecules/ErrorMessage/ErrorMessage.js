@@ -8,8 +8,7 @@ class ErrorMessage extends Component {
       <div className={styles.wrapper}>
         <p className={styles.title}>Oops, something is not right.
         </p>
-        <p className={styles.text}>Please, review the fields marked in red and try again.
-        </p>
+        <p className={styles.text}>{this.props.error}</p>
       </div>
     );
   }

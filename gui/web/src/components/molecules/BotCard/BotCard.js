@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Pill from '../../atoms/Pill/Pill';
 import RunStatus from '../../atoms/RunStatus/RunStatus';
-import chartThumb from '../../../assets/images/chart-thumb.png';
+// import chartThumb from '../../../assets/images/chart-thumb.png';
 import styles from './BotCard.module.scss';
 import PillGroup from '../PillGroup/PillGroup';
 import StartStop from '../../atoms/StartStop/StartStop';

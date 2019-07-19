@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Security
 
+## [v1.7.1] - 2019-07-18
+
+### Fixed
+
+- Fill tracker order action now correctly reflects direction of trade ([5392d3e89787cf39993abaa02f5eea69be6e8c59](https://github.com/stellar/kelp/commit/5392d3e89787cf39993abaa02f5eea69be6e8c59))
 
 ## [v1.7.0] - 2019-05-05
 
@@ -174,7 +179,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.7.1...HEAD
+[v1.7.1]: https://github.com/stellar/kelp/compare/v1.7.0...v1.7.1
 [v1.7.0]: https://github.com/stellar/kelp/compare/v1.6.1...v1.7.0
 [v1.6.1]: https://github.com/stellar/kelp/compare/v1.6.0...v1.6.1
 [v1.6.0]: https://github.com/stellar/kelp/compare/v1.5.0...v1.6.0

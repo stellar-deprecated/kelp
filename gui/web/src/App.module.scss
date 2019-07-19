@@ -1,0 +1,9 @@
+@import 'components/_styles/variables.module.scss';
+
+.banner {
+    height: 20px;
+    background-color: $color-primary;
+    text-align: center;
+    vertical-align: middle;
+    color: $color-contrast-2;
+}

@@ -15,7 +15,7 @@ class Header extends Component {
               <img src={logo} className={styles.logo} alt="Kelp logo" />
               <span className={styles.version}>{this.props.version}</span>
             </div>
-            <div className={styles.iconMenu}>
+            {/* <div className={styles.iconMenu}>
               <Button
                 icon="day"
                 size="large"
@@ -28,7 +28,7 @@ class Header extends Component {
                 variant="transparent"
                 hsize="round"
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </header>

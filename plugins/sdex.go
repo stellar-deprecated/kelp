@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -563,9 +565,10 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 	}
 }
 
+
 func (sdex *SDEX) getOrderAction(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, trade hProtocol.Trade) *model.OrderAction {
 	if trade.BaseAccount != sdex.TradingAccount && trade.CounterAccount != sdex.TradingAccount {
-		return nil
+		return nil, nil
 	}
 
 	tradeBaseAsset := utils.Native
@@ -578,23 +581,53 @@ func (sdex *SDEX) getOrderAction(baseAsset hProtocol.Asset, quoteAsset hProtocol
 	}
 	sdexBaseAsset := utils.Asset2String(baseAsset)
 	sdexQuoteAsset := utils.Asset2String(quoteAsset)
+	if !(sdexBaseAsset == tradeBaseAsset && sdexQuoteAsset == tradeQuoteAsset) && !(sdexBaseAsset == tradeQuoteAsset && sdexQuoteAsset == tradeBaseAsset) {
+		return nil, nil
+	}
+
+	var output map[string]interface{}
+	e := networking.JSONRequest(http.DefaultClient, "GET", trade.Links.Operation.Href, "", map[string]string{}, &output, "error")
+	if e != nil {
+		return nil, fmt.Errorf("could not get operation related to trade to fetch orderAction (URL=%s): %s", trade.Links.Operation.Href, e)
+	}
+	sourceAccount, ok := output["source_account"].(string)
+	if !ok {
+		return nil, fmt.Errorf("could not cast 'source_account' to a string in the operation json result: %s (type=%T)", output["source_account"], output["source_account"])
+	}
+	sourceSellingAsset := utils.Native
+	sourceSellingAssetType, ok := output["selling_asset_type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("could not cast 'selling_asset_type' to a string in the operation json result: %s (type=%T)", output["selling_asset_type"], output["selling_asset_type"])
+	}
+	if sourceSellingAssetType != utils.Native {
+		sourceSellingAssetCode, ok := output["selling_asset_code"].(string)
+		if !ok {
+			return nil, fmt.Errorf("could not cast 'selling_asset_code' to a string in the operation json result: %s (type=%T)", output["selling_asset_code"], output["selling_asset_code"])
+		}
+		sourceSellingAssetIssuer, ok := output["selling_asset_issuer"].(string)
+		if !ok {
+			return nil, fmt.Errorf("could not cast 'selling_asset_issuer' to a string in the operation json result: %s (type=%T)", output["selling_asset_issuer"], output["selling_asset_issuer"])
+		}
+		sourceSellingAsset = sourceSellingAssetCode + ":" + sourceSellingAssetIssuer
+	}
 
 	// compare the base and quote asset on the trade to what we are using as our base and quote
 	// then compare whether it was the base or the quote that was the seller
 	actionSell := model.OrderActionSell
 	actionBuy := model.OrderActionBuy
-	if sdexBaseAsset == tradeBaseAsset && sdexQuoteAsset == tradeQuoteAsset {
-		if trade.BaseIsSeller {
-			return &actionSell
+	if sourceAccount == sdex.TradingAccount {
+		if sdexBaseAsset == sourceSellingAsset {
+			return &actionSell, nil
+		} else {
+			return &actionBuy, nil
 		}
-		return &actionBuy
-	} else if sdexBaseAsset == tradeQuoteAsset && sdexQuoteAsset == tradeBaseAsset {
-		if trade.BaseIsSeller {
-			return &actionBuy
-		}
-		return &actionSell
+	}
+
+	// else
+	if sdexBaseAsset == sourceSellingAsset {
+		return &actionBuy, nil
 	} else {
-		return nil
+		return &actionSell, nil
 	}
 }
 
@@ -604,7 +637,10 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 	trades := []model.Trade{}
 
 	for _, t := range tradesPage.Embedded.Records {
-		orderAction := sdex.getOrderAction(baseAsset, quoteAsset, t)
+		orderAction, e := sdex.getOrderAction(baseAsset, quoteAsset, t)
+		if e != nil {
+			return nil, false, fmt.Errorf("could not load orderAction: %s", e)
+		}
 		if orderAction == nil {
 			// we have encountered a trade that is different from the base and quote asset for our trading account
 			continue
