@@ -9,7 +9,7 @@ import:
 - package: github.com/spf13/pflag
   version: v1.0.0
 - package: github.com/stellar/go
-  version: horizonclient-v1.1.0
+  version: a599ed95b928a7bdcee21cee4999efd05e43c2df
   subpackages:
   - build
   - clients/horizon

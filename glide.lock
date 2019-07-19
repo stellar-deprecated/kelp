@@ -1,5 +1,5 @@
-hash: dcf7e7c6884927442b6d33832e78bf8389a6abae608287c5ee21bcec91166f35
-updated: 2019-05-08T14:55:34.286101693-07:00
+hash: 6221ecb513f011696bf06ccf89b7f15cd77ac17a5b075beb8562a74ee10e1f34
+updated: 2019-07-19T12:33:12.198828562-07:00
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
@@ -103,7 +103,7 @@ imports:
 - name: github.com/spf13/viper
   version: 7a605a50e69cd1ea431c4a1e6eebe9b287ef6de4
 - name: github.com/stellar/go
-  version: 0f63acf3a20e4b76aa0c2d6b1ecaaa0657208cb7
+  version: a599ed95b928a7bdcee21cee4999efd05e43c2df
   subpackages:
   - amount
   - build
@@ -122,9 +122,9 @@ imports:
   - support/app
   - support/config
   - support/errors
-  - support/http/mutil
   - support/log
   - support/render/hal
+  - support/render/httpjson
   - support/render/problem
   - support/strutils
   - support/url
