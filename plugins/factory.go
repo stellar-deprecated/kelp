@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -17,8 +17,8 @@ type strategyFactoryData struct {
 	sdex            *SDEX
 	ieif            *IEIF
 	tradingPair     *model.TradingPair
-	assetBase       *horizon.Asset
-	assetQuote      *horizon.Asset
+	assetBase       *hProtocol.Asset
+	assetQuote      *hProtocol.Asset
 	stratConfigPath string
 	simMode         bool
 }
@@ -114,8 +114,8 @@ func MakeStrategy(
 	sdex *SDEX,
 	ieif *IEIF,
 	tradingPair *model.TradingPair,
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 	strategy string,
 	stratConfigPath string,
 	simMode bool,

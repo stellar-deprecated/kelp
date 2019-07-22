@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -19,11 +19,11 @@ type Liabilities struct {
 // IEIF is the module that allows us to ensure that orders are always "Immediately Executable In Full"
 type IEIF struct {
 	// explicitly calculate liabilities here for now, we can switch over to using the values from Horizon once the protocol change has taken effect
-	cachedLiabilities map[horizon.Asset]Liabilities
+	cachedLiabilities map[hProtocol.Asset]Liabilities
 
 	// TODO 2 streamline requests instead of caching
 	// cache balances to avoid redundant requests
-	cachedBalances map[horizon.Asset]api.Balance
+	cachedBalances map[hProtocol.Asset]api.Balance
 
 	isTradingSdex bool
 
@@ -41,14 +41,14 @@ func (ieif *IEIF) SetExchangeShim(exchangeShim api.ExchangeShim) {
 // MakeIEIF factory method
 func MakeIEIF(isTradingSdex bool) *IEIF {
 	return &IEIF{
-		cachedLiabilities: map[horizon.Asset]Liabilities{},
-		cachedBalances:    map[horizon.Asset]api.Balance{},
+		cachedLiabilities: map[hProtocol.Asset]Liabilities{},
+		cachedBalances:    map[hProtocol.Asset]api.Balance{},
 		isTradingSdex:     isTradingSdex,
 	}
 }
 
 // AddLiabilities updates the cached liabilities, units are in their respective assets
-func (ieif *IEIF) AddLiabilities(selling horizon.Asset, buying horizon.Asset, incrementalSell float64, incrementalBuy float64, incrementalNativeAmountRaw float64) {
+func (ieif *IEIF) AddLiabilities(selling hProtocol.Asset, buying hProtocol.Asset, incrementalSell float64, incrementalBuy float64, incrementalNativeAmountRaw float64) {
 	ieif.cachedLiabilities[selling] = Liabilities{
 		Selling: ieif.cachedLiabilities[selling].Selling + incrementalSell,
 		Buying:  ieif.cachedLiabilities[selling].Buying,
@@ -64,17 +64,17 @@ func (ieif *IEIF) AddLiabilities(selling horizon.Asset, buying horizon.Asset, in
 }
 
 // RecomputeAndLogCachedLiabilities clears the cached liabilities and recomputes from the network before logging
-func (ieif *IEIF) RecomputeAndLogCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) {
-	ieif.cachedLiabilities = map[horizon.Asset]Liabilities{}
+func (ieif *IEIF) RecomputeAndLogCachedLiabilities(assetBase hProtocol.Asset, assetQuote hProtocol.Asset) {
+	ieif.cachedLiabilities = map[hProtocol.Asset]Liabilities{}
 	// reset cached balances too so we fetch fresh balances
 	ieif.ResetCachedBalances()
 	ieif.LogAllLiabilities(assetBase, assetQuote)
 }
 
 // ResetCachedLiabilities resets the cache to include only the two assets passed in
-func (ieif *IEIF) ResetCachedLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) error {
+func (ieif *IEIF) ResetCachedLiabilities(assetBase hProtocol.Asset, assetQuote hProtocol.Asset) error {
 	// re-compute the liabilities
-	ieif.cachedLiabilities = map[horizon.Asset]Liabilities{}
+	ieif.cachedLiabilities = map[hProtocol.Asset]Liabilities{}
 	baseLiabilities, basePairLiabilities, e := ieif.pairLiabilities(assetBase, assetQuote)
 	if e != nil {
 		return e
@@ -118,7 +118,7 @@ func (ieif *IEIF) willOversellNative(incrementalNativeAmount float64) (bool, err
 }
 
 // willOversell returns willOversell, error
-func (ieif *IEIF) willOversell(asset horizon.Asset, amountSelling float64) (bool, error) {
+func (ieif *IEIF) willOversell(asset hProtocol.Asset, amountSelling float64) (bool, error) {
 	balance, e := ieif.assetBalance(asset)
 	if e != nil {
 		return false, e
@@ -139,7 +139,7 @@ func (ieif *IEIF) willOversell(asset horizon.Asset, amountSelling float64) (bool
 }
 
 // willOverbuy returns willOverbuy, error
-func (ieif *IEIF) willOverbuy(asset horizon.Asset, amountBuying float64) (bool, error) {
+func (ieif *IEIF) willOverbuy(asset hProtocol.Asset, amountBuying float64) (bool, error) {
 	if asset.Type == utils.Native {
 		// you can never overbuy the native asset
 		return false, nil
@@ -159,7 +159,7 @@ func (ieif *IEIF) willOverbuy(asset horizon.Asset, amountBuying float64) (bool, 
 }
 
 // LogAllLiabilities logs the liabilities for the two assets along with the native asset
-func (ieif *IEIF) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.Asset) {
+func (ieif *IEIF) LogAllLiabilities(assetBase hProtocol.Asset, assetQuote hProtocol.Asset) {
 	ieif.logLiabilities(assetBase, "base  ")
 	ieif.logLiabilities(assetQuote, "quote ")
 
@@ -168,7 +168,7 @@ func (ieif *IEIF) LogAllLiabilities(assetBase horizon.Asset, assetQuote horizon.
 	}
 }
 
-func (ieif *IEIF) logLiabilities(asset horizon.Asset, assetStr string) {
+func (ieif *IEIF) logLiabilities(asset hProtocol.Asset, assetStr string) {
 	trimmedAssetStr := strings.TrimSpace(assetStr)
 	l, e := ieif.assetLiabilities(asset)
 	if e != nil {
@@ -193,7 +193,7 @@ func (ieif *IEIF) logLiabilities(asset horizon.Asset, assetStr string) {
 }
 
 // AvailableCapacity returns the buying and selling amounts available for a given asset
-func (ieif *IEIF) AvailableCapacity(asset horizon.Asset, incrementalNativeAmountRaw float64) (*Liabilities, error) {
+func (ieif *IEIF) AvailableCapacity(asset hProtocol.Asset, incrementalNativeAmountRaw float64) (*Liabilities, error) {
 	l, e := ieif.assetLiabilities(asset)
 	if e != nil {
 		return nil, e
@@ -219,7 +219,7 @@ func (ieif *IEIF) AvailableCapacity(asset horizon.Asset, incrementalNativeAmount
 }
 
 // assetLiabilities returns the liabilities for the asset
-func (ieif *IEIF) assetLiabilities(asset horizon.Asset) (*Liabilities, error) {
+func (ieif *IEIF) assetLiabilities(asset hProtocol.Asset) (*Liabilities, error) {
 	if v, ok := ieif.cachedLiabilities[asset]; ok {
 		return &v, nil
 	}
@@ -229,13 +229,13 @@ func (ieif *IEIF) assetLiabilities(asset horizon.Asset) (*Liabilities, error) {
 }
 
 // pairLiabilities returns the liabilities for the asset along with the pairLiabilities
-func (ieif *IEIF) pairLiabilities(asset horizon.Asset, otherAsset horizon.Asset) (*Liabilities, *Liabilities, error) {
+func (ieif *IEIF) pairLiabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
 	assetLiabilities, pairLiabilities, e := ieif._liabilities(asset, otherAsset)
 	return assetLiabilities, pairLiabilities, e
 }
 
 // liabilities returns the asset liabilities and pairLiabilities (non-nil only if the other asset is specified)
-func (ieif *IEIF) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*Liabilities, *Liabilities, error) {
+func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
 	// uses all offers for this trading account to accommodate sharing by other bots
 	offers, err := ieif.exchangeShim.LoadOffersHack()
 	if err != nil {
@@ -283,16 +283,16 @@ func (ieif *IEIF) _liabilities(asset horizon.Asset, otherAsset horizon.Asset) (*
 
 // ResetCachedBalances resets the cached balances map
 func (ieif *IEIF) ResetCachedBalances() {
-	ieif.cachedBalances = map[horizon.Asset]api.Balance{}
+	ieif.cachedBalances = map[hProtocol.Asset]api.Balance{}
 }
 
 // GetAssetBalance is the exported version of assetBalance
-func (ieif *IEIF) GetAssetBalance(asset horizon.Asset) (*api.Balance, error) {
+func (ieif *IEIF) GetAssetBalance(asset hProtocol.Asset) (*api.Balance, error) {
 	return ieif.assetBalance(asset)
 }
 
 // assetBalance is a memoized version of submitX.
-func (ieif *IEIF) assetBalance(asset horizon.Asset) (*api.Balance, error) {
+func (ieif *IEIF) assetBalance(asset hProtocol.Asset) (*api.Balance, error) {
 	if v, ok := ieif.cachedBalances[asset]; ok {
 		return &v, nil
 	}

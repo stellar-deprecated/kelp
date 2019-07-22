@@ -3,7 +3,7 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -63,8 +63,8 @@ func makeBuySellStrategy(
 	sdex *SDEX,
 	pair *model.TradingPair,
 	ieif *IEIF,
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 	config *BuySellConfig,
 ) (api.Strategy, error) {
 	offsetSell := rateOffset{

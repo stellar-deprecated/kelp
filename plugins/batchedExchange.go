@@ -10,7 +10,6 @@ import (
 	"math/rand"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/api"
@@ -26,8 +25,8 @@ type BatchedExchange struct {
 	commands        []Command
 	inner           api.Exchange
 	simMode         bool
-	baseAsset       horizon.Asset
-	quoteAsset      horizon.Asset
+	baseAsset       hProtocol.Asset
+	quoteAsset      hProtocol.Asset
 	tradingAccount  string
 	orderID2OfferID map[string]int64
 	offerID2OrderID map[int64]string
@@ -39,8 +38,8 @@ var _ api.ExchangeShim = BatchedExchange{}
 func MakeBatchedExchange(
 	inner api.Exchange,
 	simMode bool,
-	baseAsset horizon.Asset,
-	quoteAsset horizon.Asset,
+	baseAsset hProtocol.Asset,
+	quoteAsset hProtocol.Asset,
 	tradingAccount string,
 ) *BatchedExchange {
 	return &BatchedExchange{
@@ -109,7 +108,7 @@ func MakeCommandCancel(openOrder *model.OpenOrder) Command {
 }
 
 // GetBalanceHack impl
-func (b BatchedExchange) GetBalanceHack(asset horizon.Asset) (*api.Balance, error) {
+func (b BatchedExchange) GetBalanceHack(asset hProtocol.Asset) (*api.Balance, error) {
 	modelAsset := model.FromHorizonAsset(asset)
 	balances, e := b.GetAccountBalances([]interface{}{modelAsset})
 	if e != nil {
@@ -127,7 +126,7 @@ func (b BatchedExchange) GetBalanceHack(asset horizon.Asset) (*api.Balance, erro
 }
 
 // LoadOffersHack impl
-func (b BatchedExchange) LoadOffersHack() ([]horizon.Offer, error) {
+func (b BatchedExchange) LoadOffersHack() ([]hProtocol.Offer, error) {
 	pair := &model.TradingPair{
 		Base:  model.FromHorizonAsset(b.baseAsset),
 		Quote: model.FromHorizonAsset(b.quoteAsset),
@@ -137,9 +136,9 @@ func (b BatchedExchange) LoadOffersHack() ([]horizon.Offer, error) {
 		return nil, fmt.Errorf("error fetching open orders in LoadOffersHack: %s", e)
 	}
 
-	offers := []horizon.Offer{}
+	offers := []hProtocol.Offer{}
 	for i, v := range openOrders {
-		var offers1 []horizon.Offer
+		var offers1 []hProtocol.Offer
 		offers1, e = b.OpenOrders2Offers(v, b.baseAsset, b.quoteAsset, b.tradingAccount)
 		if e != nil {
 			return nil, fmt.Errorf("error converting open orders to offers in iteration %v in LoadOffersHack: %s", i, e)
@@ -298,7 +297,7 @@ func (b BatchedExchange) genUniqueID() int64 {
 }
 
 // OpenOrders2Offers converts...
-func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset horizon.Asset, quoteAsset horizon.Asset, tradingAccount string) ([]hProtocol.Offer, error) {
+func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradingAccount string) ([]hProtocol.Offer, error) {
 	offers := []hProtocol.Offer{}
 	for _, order := range orders {
 		sellingAsset := baseAsset
@@ -316,7 +315,7 @@ func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset h
 			amount = fmt.Sprintf("%.8f", order.Volume.AsFloat()*order.Price.AsFloat())
 			invertedPrice := model.InvertNumber(order.Price)
 			// invert price ratio here instead of using convert2Price again since it has an overflow for XLM/BTC
-			price = horizon.Price{
+			price = hProtocol.Price{
 				N: price.D,
 				D: price.N,
 			}
@@ -353,18 +352,18 @@ func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset h
 	return offers, nil
 }
 
-func convert2Price(number *model.Number) (horizon.Price, error) {
+func convert2Price(number *model.Number) (hProtocol.Price, error) {
 	n, d, e := number.AsRatio()
 	if e != nil {
-		return horizon.Price{}, fmt.Errorf("unable to convert2Price: %s", e)
+		return hProtocol.Price{}, fmt.Errorf("unable to convert2Price: %s", e)
 	}
-	return horizon.Price{
+	return hProtocol.Price{
 		N: n,
 		D: d,
 	}, nil
 }
 
-func assetsEqual(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
+func assetsEqual(hAsset hProtocol.Asset, xAsset xdr.Asset) (bool, error) {
 	if xAsset.Type == xdr.AssetTypeAssetTypeNative {
 		return hAsset.Type == utils.Native, nil
 	} else if hAsset.Type == utils.Native {
@@ -380,7 +379,7 @@ func assetsEqual(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
 }
 
 // manageOffer2Order converts a manage offer operation to a model.Order
-func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset horizon.Asset, quoteAsset horizon.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
+func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
 	orderAction := model.OrderActionSell
 	price := model.NumberFromFloat(float64(mob.MO.Price.N)/float64(mob.MO.Price.D), largePrecision)
 	volume := model.NumberFromFloat(float64(mob.MO.Amount)/math.Pow(10, 7), largePrecision)
@@ -423,7 +422,7 @@ func order2OpenOrder(order *model.Order, txID *model.TransactionID) *model.OpenO
 }
 
 // Ops2Commands converts...
-func (b BatchedExchange) Ops2Commands(ops []build.TransactionMutator, baseAsset horizon.Asset, quoteAsset horizon.Asset) ([]Command, error) {
+func (b BatchedExchange) Ops2Commands(ops []build.TransactionMutator, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) ([]Command, error) {
 	pair := &model.TradingPair{
 		Base:  model.FromHorizonAsset(baseAsset),
 		Quote: model.FromHorizonAsset(quoteAsset),
@@ -434,8 +433,8 @@ func (b BatchedExchange) Ops2Commands(ops []build.TransactionMutator, baseAsset 
 // Ops2CommandsHack converts...
 func Ops2CommandsHack(
 	ops []build.TransactionMutator,
-	baseAsset horizon.Asset,
-	quoteAsset horizon.Asset,
+	baseAsset hProtocol.Asset,
+	quoteAsset hProtocol.Asset,
 	offerID2OrderID map[int64]string, // if map is nil then we ignore ID errors
 	orderConstraints *model.OrderConstraints,
 ) ([]Command, error) {
@@ -464,8 +463,8 @@ func Ops2CommandsHack(
 // op2CommandsHack converts one op to possibly many Commands
 func op2CommandsHack(
 	manageOffer *build.ManageOfferBuilder,
-	baseAsset horizon.Asset,
-	quoteAsset horizon.Asset,
+	baseAsset hProtocol.Asset,
+	quoteAsset hProtocol.Asset,
 	offerID2OrderID map[int64]string, // if map is nil then we ignore ID errors
 	orderConstraints *model.OrderConstraints,
 ) ([]Command, error) {

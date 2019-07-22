@@ -1,15 +1,15 @@
 package plugins
 
 import (
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 )
 
 // makeDeleteStrategy is a factory method
 func makeDeleteStrategy(
 	sdex *SDEX,
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 ) api.Strategy {
 	return makeComposeStrategy(
 		assetBase,

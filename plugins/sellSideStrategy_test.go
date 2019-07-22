@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stretchr/testify/assert"
@@ -85,13 +85,13 @@ func TestComputeOffersToPrune(t *testing.T) {
 				return
 			}
 
-			offers := []horizon.Offer{}
+			offers := []hProtocol.Offer{}
 			for _, p := range kase.offerPrices {
 				num, den, e := model.NumberFromFloat(p, 8).AsRatio()
 				if !assert.NoError(t, e) {
 					return
 				}
-				offer := horizon.Offer{}
+				offer := hProtocol.Offer{}
 				offer.PriceR.N = num
 				offer.PriceR.D = den
 				offers = append(offers, offer)
