@@ -10,6 +10,7 @@ import (
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -22,8 +23,8 @@ const maxLumenTrust float64 = math.MaxFloat64
 type Trader struct {
 	api                   *horizon.Client
 	ieif                  *plugins.IEIF
-	assetBase             horizon.Asset
-	assetQuote            horizon.Asset
+	assetBase             hProtocol.Asset
+	assetQuote            hProtocol.Asset
 	tradingAccount        string
 	sdex                  *plugins.SDEX
 	exchangeShim          api.ExchangeShim
@@ -44,16 +45,16 @@ type Trader struct {
 	maxAssetB      float64
 	trustAssetA    float64
 	trustAssetB    float64
-	buyingAOffers  []horizon.Offer // quoted A/B
-	sellingAOffers []horizon.Offer // quoted B/A
+	buyingAOffers  []hProtocol.Offer // quoted A/B
+	sellingAOffers []hProtocol.Offer // quoted B/A
 }
 
 // MakeBot is the factory method for the Trader struct
 func MakeBot(
 	api *horizon.Client,
 	ieif *plugins.IEIF,
-	assetBase horizon.Asset,
-	assetQuote horizon.Asset,
+	assetBase hProtocol.Asset,
+	assetQuote hProtocol.Asset,
 	tradingPair *model.TradingPair,
 	tradingAccount string,
 	sdex *plugins.SDEX,
@@ -143,9 +144,9 @@ func (t *Trader) deleteAllOffers() {
 	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d; (deleteCyclesThreshold to be exceeded=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
 	dOps := []build.TransactionMutator{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
-	t.sellingAOffers = []horizon.Offer{}
+	t.sellingAOffers = []hProtocol.Offer{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
-	t.buyingAOffers = []horizon.Offer{}
+	t.buyingAOffers = []hProtocol.Offer{}
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {

@@ -7,6 +7,7 @@ import (
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -57,7 +58,7 @@ func init() {
 			-1, // not needed here
 			false,
 			nil, // not needed here
-			map[model.Asset]horizon.Asset{},
+			map[model.Asset]hProtocol.Asset{},
 			plugins.SdexFixedFeeFn(0),
 		)
 		terminator := terminator.MakeTerminator(client, sdex, *configFile.TradingAccount, configFile.TickIntervalSeconds, configFile.AllowInactiveMinutes)

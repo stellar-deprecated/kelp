@@ -96,12 +96,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:            simMode,
-		pair:               pair,
-		assetMap:           assetMap,
-		opFeeStroopsFn:     opFeeStroopsFn,
-		tradingOnSdex:      exchangeShim == nil,
-		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
+		opFeeStroopsFn:                opFeeStroopsFn,
+		tradingOnSdex:                 exchangeShim == nil,
+		ocOverridesHandler:            MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
