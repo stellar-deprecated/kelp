@@ -125,8 +125,15 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		}
 	}
 
-	numBids := 9
-	numAsks := 90
+	offers, e := utils.LoadAllOffers(account.AccountID, horizon.DefaultTestNetClient)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error getting offers for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+		return
+	}
+	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, assetBase, assetQuote)
+	numBids := len(buyingAOffers)
+	numAsks := len(sellingAOffers)
+
 	spread := 0.01
 	spreadPct := 0.05
 	bi := query.BotInfo{
