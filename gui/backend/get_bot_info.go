@@ -17,6 +17,7 @@ import (
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/query"
+	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
 )
@@ -71,10 +72,22 @@ func (s *APIServer) runGetBotInfoViaIPC(w http.ResponseWriter, botName string) {
 func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	log.Printf("getBotInfo is invoking logic directly for botName: %s\n", botName)
 
+	botState, e := s.doGetBotState(botName)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("cannot read bot state for bot '%s': %s\n", botName, e))
+		return
+	}
+	if botState == kelpos.BotStateInitializing {
+		log.Printf("bot state is initializing for bot '%s'\n", botName)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
+		return
+	}
+
 	filenamePair := model2.GetBotFilenames(botName, buysell)
 	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
 	var botConfig trader.BotConfig
-	e := config.Read(traderFilePath, &botConfig)
+	e = config.Read(traderFilePath, &botConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath, e))
 		return
