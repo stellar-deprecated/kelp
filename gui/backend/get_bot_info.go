@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -27,6 +28,10 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.runGetBotInfoViaIPC(w, botName, p)
+}
+
+func (s *APIServer) runGetBotInfoViaIPC(w http.ResponseWriter, botName string, p *kelpos.Process) {
 	log.Printf("getBotInfo is making IPC request for botName: %s\n", botName)
 	p.PipeIn.Write([]byte("getBotInfo\n"))
 	scanner := bufio.NewScanner(p.PipeOut)
@@ -39,7 +44,7 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 		output += text
 	}
 	var buf bytes.Buffer
-	e = json.Indent(&buf, []byte(output), "", "  ")
+	e := json.Indent(&buf, []byte(output), "", "  ")
 	if e != nil {
 		log.Printf("cannot indent json response (error=%s), json_response: %s\n", e, output)
 		w.WriteHeader(http.StatusInternalServerError)
