@@ -134,8 +134,30 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	numBids := len(buyingAOffers)
 	numAsks := len(sellingAOffers)
 
-	spread := 0.01
-	spreadPct := 0.05
+	obs, e := s.apiTestNet.OrderBook(horizonclient.OrderBookRequest{
+		SellingAssetType:   horizonclient.AssetType(assetBase.Type),
+		SellingAssetCode:   assetBase.Code,
+		SellingAssetIssuer: assetBase.Issuer,
+		BuyingAssetType:    horizonclient.AssetType(assetQuote.Type),
+		BuyingAssetCode:    assetQuote.Code,
+		BuyingAssetIssuer:  assetQuote.Issuer,
+		Limit:              1,
+	})
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error getting orderbook for assets (base=%v, quote=%v) for botName '%s': %s\n", assetBase, assetQuote, botName, e))
+		return
+	}
+	spread := -1.0
+	spreadPct := -1.0
+	if len(obs.Asks) > 0 && len(obs.Bids) > 0 {
+		topAsk := float64(obs.Asks[0].PriceR.N) / float64(obs.Asks[0].PriceR.D)
+		topBid := float64(obs.Bids[0].PriceR.N) / float64(obs.Bids[0].PriceR.D)
+
+		spread = topAsk - topBid
+		midPrice := (topAsk + topBid) / 2
+		spreadPct = spread / midPrice
+	}
+
 	bi := query.BotInfo{
 		Strategy:      buysell,
 		TradingPair:   tradingPair,
@@ -145,8 +167,8 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		BalanceQuote:  balanceQuote,
 		NumBids:       numBids,
 		NumAsks:       numAsks,
-		SpreadValue:   spread,
-		SpreadPercent: spreadPct,
+		SpreadValue:   model.NumberFromFloat(spread, 8).AsFloat(),
+		SpreadPercent: model.NumberFromFloat(spreadPct, 8).AsFloat(),
 	}
 
 	marshalledJson, e := json.MarshalIndent(bi, "", "  ")
