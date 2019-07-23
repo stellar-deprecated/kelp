@@ -402,8 +402,8 @@ func runTradeCmd(options inputs) {
 	if !*options.noHeaders {
 		client.AppName = "kelp"
 		client.AppVersion = version
-		newClient.AppName = "kelp"
-		newClient.AppVersion = version
+		client.AppName = "kelp"
+		client.AppVersion = version
 
 		p := prefs.Make(prefsFilename)
 		if p.FirstTime() {
@@ -432,7 +432,6 @@ func runTradeCmd(options inputs) {
 		botConfig,
 		options,
 		client,
-		newClient,
 		ieif,
 		network,
 		threadTracker,
@@ -643,7 +642,8 @@ func validateTrustlines(l logger.Logger, client *horizonclient.Client, botConfig
 	}
 
 	log.Printf("validating trustlines...\n")
-	account, e := client.LoadAccount(botConfig.TradingAccount())
+	acctReq := horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()}
+	account, e := client.AccountDetail(acctReq)
 	if e != nil {
 		logger.Fatal(l, e)
 	}

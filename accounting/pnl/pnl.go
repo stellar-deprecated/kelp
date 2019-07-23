@@ -16,7 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/plugins"
 )
@@ -51,7 +52,7 @@ func main() {
 }
 
 func getTotalNativeValue(address string, cmcRef string) float64 {
-	client := horizon.DefaultPublicNetClient
+	client := horizonclient.DefaultPublicNetClient
 	account := loadAccount(client, address)
 
 	nativeBal := 0.0
@@ -95,11 +96,11 @@ func getTotalNativeValue(address string, cmcRef string) float64 {
 	return totalNativeValue
 }
 
-func loadAccount(client *horizon.Client, address string) horizon.Account {
+func loadAccount(client *horizonclient.Client, address string) hProtocol.Account {
 	account, e := client.LoadAccount(address)
 	if e != nil {
 		switch t := e.(type) {
-		case *horizon.Error:
+		case *horizonclient.Error:
 			log.Fatal(t.Problem)
 		default:
 			log.Fatal(e)

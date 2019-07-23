@@ -6,7 +6,7 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/model"
@@ -38,8 +38,8 @@ func init() {
 		log.Println("Started Terminator for account: ", *configFile.TradingAccount)
 
 		// --- start initialization of objects ----
-		client := &horizon.Client{
-			URL:        configFile.HorizonURL,
+		client := &horizonclient.Client{
+			HorizonURL: configFile.HorizonURL,
 			HTTP:       http.DefaultClient,
 			AppName:    "kelp",
 			AppVersion: version,
