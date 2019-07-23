@@ -97,7 +97,8 @@ func getTotalNativeValue(address string, cmcRef string) float64 {
 }
 
 func loadAccount(client *horizonclient.Client, address string) hProtocol.Account {
-	account, e := client.LoadAccount(address)
+	acctReq := horizonclient.AccountRequest{AccountID: address}
+	account, e := client.AccountDetail(acctReq)
 	if e != nil {
 		switch t := e.(type) {
 		case *horizonclient.Error:
