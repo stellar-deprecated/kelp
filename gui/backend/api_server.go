@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
 )
 
@@ -19,6 +20,8 @@ type APIServer struct {
 	configsDir string
 	logsDir    string
 	kos        *kelpos.KelpOS
+	apiTestNet *horizonclient.Client
+	apiPubNet  *horizonclient.Client
 }
 
 // MakeAPIServer is a factory method
@@ -32,12 +35,17 @@ func MakeAPIServer(kos *kelpos.KelpOS) (*APIServer, error) {
 	configsDir := dirPath + "/ops/configs"
 	logsDir := dirPath + "/ops/logs"
 
+	apiTestNet := horizonclient.DefaultTestNetClient
+	apiPubNet := horizonclient.DefaultPublicNetClient
+
 	return &APIServer{
 		dirPath:    dirPath,
 		binPath:    binPath,
 		configsDir: configsDir,
 		logsDir:    logsDir,
 		kos:        kos,
+		apiTestNet: apiTestNet,
+		apiPubNet:  apiPubNet,
 	}, nil
 }
 

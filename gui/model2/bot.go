@@ -1,4 +1,4 @@
-package model
+package model2
 
 import (
 	"fmt"

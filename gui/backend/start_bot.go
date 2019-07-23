@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/support/kelpos"
 )
 
@@ -36,8 +36,8 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
-	filenamePair := model.GetBotFilenames(botName, strategy)
-	logPrefix := model.GetLogPrefix(botName, strategy)
+	filenamePair := model2.GetBotFilenames(botName, strategy)
+	logPrefix := model2.GetLogPrefix(botName, strategy)
 	command := fmt.Sprintf("trade -c %s/%s -s %s -f %s/%s -l %s/%s --with-ipc", s.configsDir, filenamePair.Trader, strategy, s.configsDir, filenamePair.Strategy, s.logsDir, logPrefix)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)

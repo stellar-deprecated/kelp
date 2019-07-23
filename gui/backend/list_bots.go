@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/support/kelpos"
 )
 
@@ -21,10 +21,10 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	configFiles := string(resultBytes)
 	files := strings.Split(configFiles, "\n")
 
-	bots := []model.Bot{}
+	bots := []model2.Bot{}
 	// run till one less than length of files because the last name will end in a newline
 	for i := 0; i < len(files)-1; i += 2 {
-		bot := model.FromFilenames(files[i+1], files[i])
+		bot := model2.FromFilenames(files[i+1], files[i])
 		bots = append(bots, *bot)
 	}
 	log.Printf("bots available: %v", bots)

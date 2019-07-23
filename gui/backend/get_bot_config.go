@@ -6,10 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/stellar/kelp/plugins"
-
 	"github.com/stellar/go/support/config"
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
+	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/trader"
 )
 
@@ -27,7 +26,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filenamePair := model.GetBotFilenames(botName, "buysell")
+	filenamePair := model2.GetBotFilenames(botName, "buysell")
 	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath, &botConfig)

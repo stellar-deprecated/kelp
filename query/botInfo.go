@@ -8,7 +8,8 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-type botInfo struct {
+// BotInfo is the response from the getBotInfo IPC request
+type BotInfo struct {
 	Strategy      string             `json:"strategy"`
 	TradingPair   *model.TradingPair `json:"trading_pair"`
 	AssetBase     horizon.Asset      `json:"asset_base"`
@@ -21,7 +22,7 @@ type botInfo struct {
 	SpreadPercent float64            `json:"spread_pct"`
 }
 
-func (s *Server) getBotInfo() (*botInfo, error) {
+func (s *Server) getBotInfo() (*BotInfo, error) {
 	assetBase, assetQuote, e := s.sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("error getting assets from sdex: %s", e)
@@ -60,7 +61,7 @@ func (s *Server) getBotInfo() (*botInfo, error) {
 		spreadPct = spreadValue.Divide(*midPrice)
 	}
 
-	return &botInfo{
+	return &BotInfo{
 		Strategy:      s.strategyName,
 		TradingPair:   s.tradingPair,
 		AssetBase:     assetBase,
