@@ -11,6 +11,7 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/strkey"
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/plugins"
@@ -184,7 +185,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		}
 
 		// add trustline for trader account if needed
-		assets := []horizon.Asset{
+		assets := []hProtocol.Asset{
 			req.TraderConfig.AssetBase(),
 			req.TraderConfig.AssetQuote(),
 		}
@@ -217,7 +218,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 	}()
 }
 
-func (s *APIServer) checkAddTrustline(account horizon.Account, kp keypair.KP, traderSeed string, botName string, isTestnet bool, assets []horizon.Asset) error {
+func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, traderSeed string, botName string, isTestnet bool, assets []hProtocol.Asset) error {
 	network := build.PublicNetwork
 	client := horizon.DefaultPublicNetClient
 	if isTestnet {
@@ -226,7 +227,7 @@ func (s *APIServer) checkAddTrustline(account horizon.Account, kp keypair.KP, tr
 	}
 
 	// find trustlines to be added
-	trustlines := []horizon.Asset{}
+	trustlines := []hProtocol.Asset{}
 	for _, a := range assets {
 		if a.Type == "native" {
 			log.Printf("not adding a trustline for the native asset\n")

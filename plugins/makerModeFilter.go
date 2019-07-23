@@ -6,7 +6,7 @@ import (
 	"math"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -32,7 +32,7 @@ func MakeFilterMakerMode(submitMode api.SubmitMode, exchangeShim api.ExchangeShi
 
 var _ SubmitFilter = &makerModeFilter{}
 
-func (f *makerModeFilter) Apply(ops []build.TransactionMutator, sellingOffers []horizon.Offer, buyingOffers []horizon.Offer) ([]build.TransactionMutator, error) {
+func (f *makerModeFilter) Apply(ops []build.TransactionMutator, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]build.TransactionMutator, error) {
 	ob, e := f.exchangeShim.GetOrderBook(f.tradingPair, 50)
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch orderbook: %s", e)
@@ -56,7 +56,7 @@ func isNewLevel(lastPrice *model.Number, priceNumber *model.Number, isSell bool)
 	return false
 }
 
-func (f *makerModeFilter) collateOffers(traderOffers []horizon.Offer, isSell bool) ([]api.Level, error) {
+func (f *makerModeFilter) collateOffers(traderOffers []hProtocol.Offer, isSell bool) ([]api.Level, error) {
 	oc := f.exchangeShim.GetOrderConstraints(f.tradingPair)
 
 	levels := []api.Level{}
@@ -86,7 +86,7 @@ func (f *makerModeFilter) collateOffers(traderOffers []horizon.Offer, isSell boo
 	return levels, nil
 }
 
-func (f *makerModeFilter) topOrderPriceExcludingTrader(obSide []model.Order, traderOffers []horizon.Offer, isSell bool) (*model.Number, error) {
+func (f *makerModeFilter) topOrderPriceExcludingTrader(obSide []model.Order, traderOffers []hProtocol.Offer, isSell bool) (*model.Number, error) {
 	traderLevels, e := f.collateOffers(traderOffers, isSell)
 	if e != nil {
 		return nil, fmt.Errorf("unable to collate offers: %s", e)
@@ -112,8 +112,8 @@ func (f *makerModeFilter) topOrderPriceExcludingTrader(obSide []model.Order, tra
 func (f *makerModeFilter) filterOps(
 	ops []build.TransactionMutator,
 	ob *model.OrderBook,
-	sellingOffers []horizon.Offer,
-	buyingOffers []horizon.Offer,
+	sellingOffers []hProtocol.Offer,
+	buyingOffers []hProtocol.Offer,
 ) ([]build.TransactionMutator, error) {
 	baseAsset, quoteAsset, e := f.sdex.Assets()
 	if e != nil {
@@ -174,8 +174,8 @@ func (f *makerModeFilter) filterOps(
 }
 
 func (f *makerModeFilter) transformOfferMakerMode(
-	baseAsset horizon.Asset,
-	quoteAsset horizon.Asset,
+	baseAsset hProtocol.Asset,
+	quoteAsset hProtocol.Asset,
 	topBidPrice *model.Number,
 	topAskPrice *model.Number,
 	op *build.ManageOfferBuilder,

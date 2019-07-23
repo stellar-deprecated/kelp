@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/toml"
@@ -66,8 +66,8 @@ func makeAssetSurplus() *assetSurplus {
 type mirrorStrategy struct {
 	sdex               *SDEX
 	ieif               *IEIF
-	baseAsset          *horizon.Asset
-	quoteAsset         *horizon.Asset
+	baseAsset          *hProtocol.Asset
+	quoteAsset         *hProtocol.Asset
 	primaryConstraints *model.OrderConstraints
 	backingPair        *model.TradingPair
 	backingConstraints *model.OrderConstraints
@@ -102,7 +102,7 @@ func convertDeprecatedMirrorConfigValues(config *mirrorConfig) {
 }
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAsset *horizon.Asset, quoteAsset *horizon.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAsset *hProtocol.Asset, quoteAsset *hProtocol.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
 	convertDeprecatedMirrorConfigValues(config)
 	var exchange api.Exchange
 	var e error
@@ -192,7 +192,7 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 }
 
 // PruneExistingOffers deletes any extra offers
-func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []horizon.Offer, sellingAOffers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer, []horizon.Offer) {
+func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, sellingAOffers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer, []hProtocol.Offer) {
 	return []build.TransactionMutator{}, buyingAOffers, sellingAOffers
 }
 
@@ -228,8 +228,8 @@ func (s *mirrorStrategy) recordBalances() error {
 
 // UpdateWithOps builds the operations we want performed on the account
 func (s *mirrorStrategy) UpdateWithOps(
-	buyingAOffers []horizon.Offer,
-	sellingAOffers []horizon.Offer,
+	buyingAOffers []hProtocol.Offer,
+	sellingAOffers []hProtocol.Offer,
 ) ([]build.TransactionMutator, error) {
 	ob, e := s.exchange.GetOrderBook(s.backingPair, s.orderbookDepth)
 	if e != nil {
@@ -299,10 +299,10 @@ func (s *mirrorStrategy) UpdateWithOps(
 }
 
 func (s *mirrorStrategy) updateLevels(
-	oldOffers []horizon.Offer,
+	oldOffers []hProtocol.Offer,
 	newOrders []model.Order,
-	modifyOffer func(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
-	createOffer func(baseAsset horizon.Asset, quoteAsset horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
+	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
+	createOffer func(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 	bc balanceCoordinator,
@@ -388,10 +388,10 @@ func (s *mirrorStrategy) updateLevels(
 
 // doModifyOffer returns a new modifyOp, deleteOp, error
 func (s *mirrorStrategy) doModifyOffer(
-	oldOffer horizon.Offer,
+	oldOffer hProtocol.Offer,
 	newOrder model.Order,
 	priceMultiplier float64,
-	modifyOffer func(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
+	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) (build.TransactionMutator, build.TransactionMutator, error) {
 	price := newOrder.Price.Scale(priceMultiplier)

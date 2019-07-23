@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -34,8 +34,8 @@ func makeBalancedStrategy(
 	sdex *SDEX,
 	pair *model.TradingPair,
 	ieif *IEIF,
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 	config *balancedConfig,
 ) api.Strategy {
 	orderConstraints := sdex.GetOrderConstraints(pair)

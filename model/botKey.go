@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 )
 
 const botDataKeyPrefix = "b/"
@@ -30,7 +30,7 @@ func (b BotKey) String() string {
 }
 
 // MakeSortedBotKey makes a BotKey by sorting the passed in assets
-func MakeSortedBotKey(assetA horizon.Asset, assetB horizon.Asset) *BotKey {
+func MakeSortedBotKey(assetA hProtocol.Asset, assetB hProtocol.Asset) *BotKey {
 	var assetBaseCode, assetBaseIssuer, assetQuoteCode, assetQuoteIssuer string
 	if assetA.Type == native && assetB.Type == native {
 		log.Fatal("invalid asset types, both cannot be native")

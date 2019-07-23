@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -19,8 +19,8 @@ type sellSideStrategy struct {
 	sdex                *SDEX
 	orderConstraints    *model.OrderConstraints
 	ieif                *IEIF
-	assetBase           *horizon.Asset
-	assetQuote          *horizon.Asset
+	assetBase           *hProtocol.Asset
+	assetQuote          *hProtocol.Asset
 	levelsProvider      api.LevelProvider
 	priceTolerance      float64
 	amountTolerance     float64
@@ -41,8 +41,8 @@ func makeSellSideStrategy(
 	sdex *SDEX,
 	orderConstraints *model.OrderConstraints,
 	ieif *IEIF,
-	assetBase *horizon.Asset,
-	assetQuote *horizon.Asset,
+	assetBase *hProtocol.Asset,
+	assetQuote *hProtocol.Asset,
 	levelsProvider api.LevelProvider,
 	priceTolerance float64,
 	amountTolerance float64,
@@ -67,12 +67,12 @@ func makeSellSideStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.TransactionMutator, []horizon.Offer) {
+func (s *sellSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer) {
 	// figure out which offers we want to prune
 	shouldPrune := computeOffersToPrune(offers, s.currentLevels)
 
 	pruneOps := []build.TransactionMutator{}
-	updatedOffers := []horizon.Offer{}
+	updatedOffers := []hProtocol.Offer{}
 	for i, offer := range offers {
 		isPruning := shouldPrune[i]
 		if isPruning {
@@ -95,7 +95,7 @@ func (s *sellSideStrategy) PruneExistingOffers(offers []horizon.Offer) ([]build.
 }
 
 // computeOffersToPrune returns a list of bools representing whether we should prune the offer at that position or not
-func computeOffersToPrune(offers []horizon.Offer, levels []api.Level) []bool {
+func computeOffersToPrune(offers []hProtocol.Offer, levels []api.Level) []bool {
 	numToPrune := len(offers) - len(levels)
 	if numToPrune <= 0 {
 		return make([]bool, len(offers))
@@ -155,7 +155,7 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 }
 
 // computePrecedingLevels returns the levels priced better than the lowest existing offer, up to the max preceding levels allowed
-func computePrecedingLevels(offers []horizon.Offer, levels []api.Level) []api.Level {
+func computePrecedingLevels(offers []hProtocol.Offer, levels []api.Level) []api.Level {
 	if len(offers) == 0 {
 		// we want to place all levels as create offers
 		return levels
@@ -251,7 +251,7 @@ func (s *sellSideStrategy) createPrecedingOffers(
 }
 
 // UpdateWithOps impl
-func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
+func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
 	deleteOps := []build.TransactionMutator{}
 
 	// first we want to re-create any offers that precede our existing offers and are additions to the existing offers that we have
@@ -265,7 +265,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []horizon.Offer) (ops []build.Tr
 	// pad the offers so it lines up correctly with numLevelsConsumed.
 	// alternatively we could chop off the beginning of s.currentLevels but then that affects the logging of levels downstream
 	for i := 0; i < numLevelsConsumed; i++ {
-		offers = append([]horizon.Offer{{}}, offers...)
+		offers = append([]hProtocol.Offer{{}}, offers...)
 	}
 
 	// next we want to adjust our remaining offers to be in line with what is desired, creating new offers that may not exist at the end of our existing offers
@@ -392,7 +392,7 @@ func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, 
 }
 
 // modifySellLevel returns offerPrice, hitCapacityLimit, op, error.
-func (s *sellSideStrategy) modifySellLevel(offers []horizon.Offer, index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
+func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
 	highestPrice := targetPrice.AsFloat() + targetPrice.AsFloat()*s.priceTolerance
 	lowestPrice := targetPrice.AsFloat() - targetPrice.AsFloat()*s.priceTolerance
 	minAmount := targetAmount.AsFloat() - targetAmount.AsFloat()*s.amountTolerance
@@ -455,8 +455,8 @@ func (s *sellSideStrategy) placeOrderWithRetry(
 	targetAmount float64,
 	incrementalNativeAmountRaw float64,
 	placeOffer func(price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
-	assetBase horizon.Asset,
-	assetQuote horizon.Asset,
+	assetBase hProtocol.Asset,
+	assetQuote hProtocol.Asset,
 ) (bool, *build.ManageOfferBuilder, error) {
 	op, e := placeOffer(targetPrice, targetAmount, incrementalNativeAmountRaw)
 	if e != nil {

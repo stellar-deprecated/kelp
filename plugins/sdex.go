@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/networking"
@@ -43,7 +44,7 @@ type SDEX struct {
 	operationalBufferNonNativePct float64
 	simMode                       bool
 	pair                          *model.TradingPair
-	assetMap                      map[model.Asset]horizon.Asset // this is needed until we fully address putting SDEX behind the Exchange interface
+	assetMap                      map[model.Asset]hProtocol.Asset // this is needed until we fully address putting SDEX behind the Exchange interface
 	opFeeStroopsFn                OpFeeStroops
 	tradingOnSdex                 bool
 
@@ -82,7 +83,7 @@ func MakeSDEX(
 	operationalBufferNonNativePct float64,
 	simMode bool,
 	pair *model.TradingPair,
-	assetMap map[model.Asset]horizon.Asset,
+	assetMap map[model.Asset]hProtocol.Asset,
 	opFeeStroopsFn OpFeeStroops,
 ) *SDEX {
 	sdex := &SDEX{
@@ -96,12 +97,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:            simMode,
-		pair:               pair,
-		assetMap:           assetMap,
-		opFeeStroopsFn:     opFeeStroopsFn,
-		tradingOnSdex:      exchangeShim == nil,
-		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
+		opFeeStroopsFn:                opFeeStroopsFn,
+		tradingOnSdex:                 exchangeShim == nil,
+		ocOverridesHandler:            MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
@@ -131,8 +132,8 @@ func (sdex *SDEX) IEIF() *IEIF {
 func (sdex *SDEX) GetAccountBalances(assetList []interface{}) (map[interface{}]model.Number, error) {
 	m := map[interface{}]model.Number{}
 	for _, elem := range assetList {
-		var a horizon.Asset
-		if v, ok := elem.(horizon.Asset); ok {
+		var a hProtocol.Asset
+		if v, ok := elem.(hProtocol.Asset); ok {
 			a = v
 		} else {
 			return nil, fmt.Errorf("invalid type of asset passed in, only horizon.Asset accepted")
@@ -178,7 +179,7 @@ func (sdex *SDEX) OverrideOrderConstraints(pair *model.TradingPair, override *mo
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
-func (sdex *SDEX) DeleteAllOffers(offers []horizon.Offer) []build.TransactionMutator {
+func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []build.TransactionMutator {
 	ops := []build.TransactionMutator{}
 	for _, offer := range offers {
 		op := sdex.DeleteOffer(offer)
@@ -188,7 +189,7 @@ func (sdex *SDEX) DeleteAllOffers(offers []horizon.Offer) []build.TransactionMut
 }
 
 // DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
-func (sdex *SDEX) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
+func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) build.ManageOfferBuilder {
 	rate := build.Rate{
 		Selling: utils.Asset2Asset(offer.Selling),
 		Buying:  utils.Asset2Asset(offer.Buying),
@@ -202,17 +203,17 @@ func (sdex *SDEX) DeleteOffer(offer horizon.Offer) build.ManageOfferBuilder {
 }
 
 // ModifyBuyOffer modifies a buy offer
-func (sdex *SDEX) ModifyBuyOffer(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) ModifyBuyOffer(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	return sdex.ModifySellOffer(offer, 1/price, amount*price, incrementalNativeAmountRaw)
 }
 
 // ModifySellOffer modifies a sell offer
-func (sdex *SDEX) ModifySellOffer(offer horizon.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) ModifySellOffer(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	return sdex.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount, incrementalNativeAmountRaw)
 }
 
 // CreateSellOffer creates a sell offer
-func (sdex *SDEX) CreateSellOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) CreateSellOffer(base hProtocol.Asset, counter hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	return sdex.createModifySellOffer(nil, base, counter, price, amount, incrementalNativeAmountRaw)
 }
 
@@ -221,7 +222,7 @@ func (sdex *SDEX) minReserve(subentries int32) float64 {
 }
 
 // assetBalance returns asset balance, asset trust limit, reserve balance (zero for non-XLM), error
-func (sdex *SDEX) _assetBalance(asset horizon.Asset) (*api.Balance, error) {
+func (sdex *SDEX) _assetBalance(asset hProtocol.Asset) (*api.Balance, error) {
 	account, err := sdex.API.LoadAccount(sdex.TradingAccount)
 	if err != nil {
 		return nil, fmt.Errorf("error: unable to load account to fetch balance: %s", err)
@@ -257,17 +258,17 @@ func (sdex *SDEX) _assetBalance(asset horizon.Asset) (*api.Balance, error) {
 }
 
 // GetBalanceHack impl
-func (sdex *SDEX) GetBalanceHack(asset horizon.Asset) (*api.Balance, error) {
+func (sdex *SDEX) GetBalanceHack(asset hProtocol.Asset) (*api.Balance, error) {
 	b, e := sdex._assetBalance(asset)
 	return b, e
 }
 
 // LoadOffersHack impl
-func (sdex *SDEX) LoadOffersHack() ([]horizon.Offer, error) {
+func (sdex *SDEX) LoadOffersHack() ([]hProtocol.Offer, error) {
 	return sdex._loadOffers()
 }
 
-func (sdex *SDEX) _loadOffers() ([]horizon.Offer, error) {
+func (sdex *SDEX) _loadOffers() ([]hProtocol.Offer, error) {
 	return utils.LoadAllOffers(sdex.TradingAccount, sdex.API)
 }
 
@@ -286,7 +287,7 @@ func (sdex *SDEX) ComputeIncrementalNativeAmountRaw(isNewOffer bool) float64 {
 }
 
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
-func (sdex *SDEX) createModifySellOffer(offer *horizon.Offer, selling horizon.Asset, buying horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtocol.Asset, buying hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	if price <= 0 {
 		return nil, fmt.Errorf("error: cannot create or modify offer, invalid price: %.8f", price)
 	}
@@ -411,7 +412,7 @@ func (sdex *SDEX) submitOps(ops []build.TransactionMutator, asyncCallback func(h
 }
 
 // CreateBuyOffer creates a buy offer
-func (sdex *SDEX) CreateBuyOffer(base horizon.Asset, counter horizon.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) CreateBuyOffer(base hProtocol.Asset, counter hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
 	return sdex.CreateSellOffer(counter, base, 1/price, amount*price, incrementalNativeAmountRaw)
 }
 
@@ -481,16 +482,16 @@ func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, err error)
 }
 
 // Assets returns the base and quote asset used by sdex
-func (sdex *SDEX) Assets() (baseAsset horizon.Asset, quoteAsset horizon.Asset, e error) {
+func (sdex *SDEX) Assets() (baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, e error) {
 	var ok bool
 	baseAsset, ok = sdex.assetMap[sdex.pair.Base]
 	if !ok {
-		return horizon.Asset{}, horizon.Asset{}, fmt.Errorf("unexpected error, base asset was not found in sdex.assetMap")
+		return hProtocol.Asset{}, hProtocol.Asset{}, fmt.Errorf("unexpected error, base asset was not found in sdex.assetMap")
 	}
 
 	quoteAsset, ok = sdex.assetMap[sdex.pair.Quote]
 	if !ok {
-		return horizon.Asset{}, horizon.Asset{}, fmt.Errorf("unexpected error, quote asset was not found in sdex.assetMap")
+		return hProtocol.Asset{}, hProtocol.Asset{}, fmt.Errorf("unexpected error, quote asset was not found in sdex.assetMap")
 	}
 
 	return baseAsset, quoteAsset, nil
@@ -564,7 +565,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 	}
 }
 
-func (sdex *SDEX) getOrderAction(baseAsset horizon.Asset, quoteAsset horizon.Asset, trade horizon.Trade) (*model.OrderAction, error) {
+func (sdex *SDEX) getOrderAction(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, trade hProtocol.Trade) (*model.OrderAction, error) {
 	if trade.BaseAccount != sdex.TradingAccount && trade.CounterAccount != sdex.TradingAccount {
 		return nil, nil
 	}
@@ -630,7 +631,7 @@ func (sdex *SDEX) getOrderAction(baseAsset horizon.Asset, quoteAsset horizon.Ass
 }
 
 // returns tradeHistoryResult, hitCursorEnd, and any error
-func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset horizon.Asset, quoteAsset horizon.Asset, tradesPage horizon.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
+func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradesPage horizon.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
 	var cursor string
 	trades := []model.Trade{}
 
@@ -737,7 +738,7 @@ func (sdex *SDEX) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.
 
 func (sdex *SDEX) transformHorizonOrders(
 	pair *model.TradingPair,
-	side []horizon.PriceLevel,
+	side []hProtocol.PriceLevel,
 	orderAction model.OrderAction,
 	ts *model.Timestamp,
 	maxCount int32,

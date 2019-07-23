@@ -14,6 +14,7 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/protocols/horizon/base"
 	"github.com/stellar/go/xdr"
 )
@@ -24,13 +25,13 @@ import (
 const Native = "native"
 
 // NativeAsset represents the native asset
-var NativeAsset = horizon.Asset{Type: Native}
+var NativeAsset = hProtocol.Asset{Type: Native}
 
 // SdexPrecision defines the number of decimals used in SDEX
 const SdexPrecision int8 = 7
 
 // ByPrice implements sort.Interface for []horizon.Offer based on the price
-type ByPrice []horizon.Offer
+type ByPrice []hProtocol.Offer
 
 func (a ByPrice) Len() int      { return len(a) }
 func (a ByPrice) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -72,7 +73,7 @@ func ParseOfferAmount(amt string) (float64, error) {
 }
 
 // GetPrice gets the price from an offer
-func GetPrice(offer horizon.Offer) float64 {
+func GetPrice(offer hProtocol.Offer) float64 {
 	if int64(offer.PriceR.D) == 0 {
 		return 0.0
 	}
@@ -80,7 +81,7 @@ func GetPrice(offer horizon.Offer) float64 {
 }
 
 // GetInvertedPrice gets the inverted price from an offer
-func GetInvertedPrice(offer horizon.Offer) float64 {
+func GetInvertedPrice(offer hProtocol.Offer) float64 {
 	if int64(offer.PriceR.N) == 0 {
 		return 0.0
 	}
@@ -88,7 +89,7 @@ func GetInvertedPrice(offer horizon.Offer) float64 {
 }
 
 // Asset2Asset is a Boyz2Men cover band on the blockchain
-func Asset2Asset(Asset horizon.Asset) build.Asset {
+func Asset2Asset(Asset hProtocol.Asset) build.Asset {
 	a := build.Asset{}
 
 	a.Code = Asset.Code
@@ -100,8 +101,8 @@ func Asset2Asset(Asset horizon.Asset) build.Asset {
 }
 
 // Asset2Asset2 converts a build.Asset to a horizon.Asset
-func Asset2Asset2(Asset build.Asset) horizon.Asset {
-	a := horizon.Asset{}
+func Asset2Asset2(Asset build.Asset) hProtocol.Asset {
+	a := hProtocol.Asset{}
 
 	a.Code = Asset.Code
 	a.Issuer = Asset.Issuer
@@ -116,7 +117,7 @@ func Asset2Asset2(Asset build.Asset) horizon.Asset {
 }
 
 // Asset2String converts a horizon.Asset to a string representation, using "native" for the native XLM
-func Asset2String(asset horizon.Asset) string {
+func Asset2String(asset hProtocol.Asset) string {
 	if asset.Type == Native {
 		return Native
 	}
@@ -124,7 +125,7 @@ func Asset2String(asset horizon.Asset) string {
 }
 
 // Asset2CodeString extracts the code out of a horizon.Asset
-func Asset2CodeString(asset horizon.Asset) string {
+func Asset2CodeString(asset hProtocol.Asset) string {
 	if asset.Type == Native {
 		return "XLM"
 	}
@@ -132,7 +133,7 @@ func Asset2CodeString(asset horizon.Asset) string {
 }
 
 // String2Asset converts a code:issuer to a horizon.Asset
-func String2Asset(code string, issuer string) horizon.Asset {
+func String2Asset(code string, issuer string) hProtocol.Asset {
 	if code == "XLM" {
 		return Asset2Asset2(build.NativeAsset())
 	}
@@ -140,18 +141,18 @@ func String2Asset(code string, issuer string) horizon.Asset {
 }
 
 // LoadAllOffers loads all the offers for a given account
-func LoadAllOffers(account string, api *horizon.Client) ([]horizon.Offer, error) {
+func LoadAllOffers(account string, api *horizon.Client) ([]hProtocol.Offer, error) {
 	// get what orders are outstanding now
 	offersPage, e := api.LoadAccountOffers(account, horizon.Limit(193))
 	if e != nil {
-		return []horizon.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
+		return []hProtocol.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
 	}
 
 	offersRet := offersPage.Embedded.Records
 	for len(offersPage.Embedded.Records) > 0 {
 		offersPage, e = api.LoadAccountOffers(account, horizon.Limit(193), horizon.At(offersPage.Links.Next.Href))
 		if e != nil {
-			return []horizon.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
+			return []hProtocol.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
 		}
 		offersRet = append(offersRet, offersPage.Embedded.Records...)
 	}
@@ -160,7 +161,7 @@ func LoadAllOffers(account string, api *horizon.Client) ([]horizon.Offer, error)
 }
 
 // FilterOffers filters out the offers into selling and buying, where sellOffers sells the sellAsset and buyOffers buys the sellAsset
-func FilterOffers(offers []horizon.Offer, sellAsset horizon.Asset, buyAsset horizon.Asset) (sellOffers []horizon.Offer, buyOffers []horizon.Offer) {
+func FilterOffers(offers []hProtocol.Offer, sellAsset hProtocol.Asset, buyAsset hProtocol.Asset) (sellOffers []hProtocol.Offer, buyOffers []hProtocol.Offer) {
 	for _, offer := range offers {
 		if offer.Selling == sellAsset {
 			if offer.Buying == buyAsset {
@@ -210,7 +211,7 @@ func GetJSON(client http.Client, url string, target interface{}) error {
 }
 
 // GetCreditBalance is a drop-in for the function in the GoSDK, we want it to return nil if there's no balance (as opposed to "0")
-func GetCreditBalance(a horizon.Account, code string, issuer string) *string {
+func GetCreditBalance(a hProtocol.Account, code string, issuer string) *string {
 	for _, balance := range a.Balances {
 		if balance.Asset.Code == code && balance.Asset.Issuer == issuer {
 			return &balance.Balance
@@ -220,7 +221,7 @@ func GetCreditBalance(a horizon.Account, code string, issuer string) *string {
 }
 
 // AssetsEqual is a convenience method to compare horizon.Asset and base.Asset because they are not type aliased
-func AssetsEqual(baseAsset base.Asset, horizonAsset horizon.Asset) bool {
+func AssetsEqual(baseAsset base.Asset, horizonAsset hProtocol.Asset) bool {
 	return horizonAsset.Type == baseAsset.Type &&
 		horizonAsset.Code == baseAsset.Code &&
 		horizonAsset.Issuer == baseAsset.Issuer
@@ -250,7 +251,7 @@ func CheckedString(v interface{}) string {
 }
 
 // ParseAsset returns a horizon asset a string
-func ParseAsset(code string, issuer string) (*horizon.Asset, error) {
+func ParseAsset(code string, issuer string) (*hProtocol.Asset, error) {
 	if code != "XLM" && issuer == "" {
 		return nil, fmt.Errorf("error: issuer can only be empty if asset is XLM")
 	}
@@ -268,7 +269,7 @@ func ParseAsset(code string, issuer string) (*horizon.Asset, error) {
 	return &asset, nil
 }
 
-func assetEqualsXDR(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
+func assetEqualsXDR(hAsset hProtocol.Asset, xAsset xdr.Asset) (bool, error) {
 	if xAsset.Type == xdr.AssetTypeAssetTypeNative {
 		return hAsset.Type == Native, nil
 	} else if hAsset.Type == Native {
@@ -284,7 +285,7 @@ func assetEqualsXDR(hAsset horizon.Asset, xAsset xdr.Asset) (bool, error) {
 }
 
 // IsSelling helper method
-func IsSelling(sdexBase horizon.Asset, sdexQuote horizon.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
+func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
 	sellingBase, e := assetEqualsXDR(sdexBase, selling)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexBase with selling asset")

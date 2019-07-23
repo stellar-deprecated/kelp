@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -12,8 +12,8 @@ import (
 type BotInfo struct {
 	Strategy      string             `json:"strategy"`
 	TradingPair   *model.TradingPair `json:"trading_pair"`
-	AssetBase     horizon.Asset      `json:"asset_base"`
-	AssetQuote    horizon.Asset      `json:"asset_quote"`
+	AssetBase     hProtocol.Asset    `json:"asset_base"`
+	AssetQuote    hProtocol.Asset    `json:"asset_quote"`
 	BalanceBase   float64            `json:"balance_base"`
 	BalanceQuote  float64            `json:"balance_quote"`
 	NumBids       int                `json:"num_bids"`
