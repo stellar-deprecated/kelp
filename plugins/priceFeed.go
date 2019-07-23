@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
 
 // privateSdexHack is a temporary hack struct for SDEX price feeds pending refactor
 type privateSdexHack struct {
-	API     *horizon.Client
+	API     *horizonclient.Client
 	Ieif    *IEIF
 	Network build.Network
 }
@@ -21,7 +21,7 @@ type privateSdexHack struct {
 var privateSdexHackVar *privateSdexHack
 
 // SetPrivateSdexHack sets the privateSdexHack variable which is temporary until the pending SDEX price feed refactor
-func SetPrivateSdexHack(api *horizon.Client, ieif *IEIF, network build.Network) error {
+func SetPrivateSdexHack(api *horizonclient.Client, ieif *IEIF, network build.Network) error {
 	if privateSdexHackVar != nil {
 		return fmt.Errorf("privateSdexHack is already set: %+v", privateSdexHackVar)
 	}

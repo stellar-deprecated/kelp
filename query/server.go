@@ -9,7 +9,7 @@ import (
 
 	"github.com/stellar/kelp/support/utils"
 
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -23,7 +23,7 @@ type Server struct {
 	strategyName string
 	strategy     api.Strategy
 	botConfig    trader.BotConfig
-	client       *horizon.Client
+	client       *horizonclient.Client
 	sdex         *plugins.SDEX
 	exchangeShim api.ExchangeShim
 	tradingPair  *model.TradingPair
@@ -35,7 +35,7 @@ func MakeServer(
 	strategyName string,
 	strategy api.Strategy,
 	botConfig trader.BotConfig,
-	client *horizon.Client,
+	client *horizonclient.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,

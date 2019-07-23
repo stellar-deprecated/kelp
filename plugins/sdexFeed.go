@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -44,7 +44,7 @@ func makeSDEXFeed(url string) (*sdexFeed, error) {
 		tradingPair.Quote: *quoteAsset,
 	}
 
-	var api *horizon.Client
+	var api *horizonclient.Client
 	var ieif *IEIF
 	var network build.Network
 	if privateSdexHackVar != nil {
@@ -53,7 +53,7 @@ func makeSDEXFeed(url string) (*sdexFeed, error) {
 		network = privateSdexHackVar.Network
 	} else {
 		// use production network by default
-		api = horizon.DefaultPublicNetClient
+		api = horizonclient.DefaultPublicNetClient
 		ieif = MakeIEIF(true)
 		network = build.PublicNetwork
 	}
