@@ -7,8 +7,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/model"
@@ -87,8 +91,40 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		Base:  model.Asset(utils.Asset2CodeString(assetBase)),
 		Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
 	}
-	balanceBase := 100.0
-	balanceQuote := 1000.0
+	account, e := s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()})
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("cannot get account data for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+		return
+	}
+	var balanceBase float64
+	if assetBase == utils.NativeAsset {
+		balanceBase, e = getNativeBalance(account)
+		if e != nil {
+			s.writeErrorJson(w, fmt.Sprintf("error getting native balanceBase for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			return
+		}
+	} else {
+		balanceBase, e = getCreditBalance(account, assetBase)
+		if e != nil {
+			s.writeErrorJson(w, fmt.Sprintf("error getting credit balanceBase for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			return
+		}
+	}
+	var balanceQuote float64
+	if assetQuote == utils.NativeAsset {
+		balanceQuote, e = getNativeBalance(account)
+		if e != nil {
+			s.writeErrorJson(w, fmt.Sprintf("error getting native balanceQuote for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			return
+		}
+	} else {
+		balanceQuote, e = getCreditBalance(account, assetQuote)
+		if e != nil {
+			s.writeErrorJson(w, fmt.Sprintf("error getting credit balanceQuote for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			return
+		}
+	}
+
 	numBids := 9
 	numAsks := 90
 	spread := 0.01
@@ -118,4 +154,28 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(marshalledJson)
+}
+
+func getNativeBalance(account hProtocol.Account) (float64, error) {
+	balanceString, e := account.GetNativeBalance()
+	if e != nil {
+		return 0.0, fmt.Errorf("cannot get native balance: %s\n", e)
+	}
+
+	balance, e := strconv.ParseFloat(balanceString, 64)
+	if e != nil {
+		return 0.0, fmt.Errorf("cannot parse native balance: %s (string value = %s)\n", e, balanceString)
+	}
+
+	return balance, nil
+}
+
+func getCreditBalance(account hProtocol.Account, asset horizon.Asset) (float64, error) {
+	balanceString := account.GetCreditBalance(asset.Code, asset.Issuer)
+	balance, e := strconv.ParseFloat(balanceString, 64)
+	if e != nil {
+		return 0.0, fmt.Errorf("cannot parse credit asset balance (%s:%s): %s (string value = %s)\n", asset.Code, asset.Issuer, e, balanceString)
+	}
+
+	return balance, nil
 }
