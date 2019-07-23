@@ -15,6 +15,7 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -258,7 +259,7 @@ func makeExchangeShimSdex(
 		}
 	}
 
-	sdexAssetMap := map[model.Asset]horizon.Asset{
+	sdexAssetMap := map[model.Asset]hProtocol.Asset{
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
@@ -294,8 +295,8 @@ func makeStrategy(
 	client *horizon.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
-	assetBase horizon.Asset,
-	assetQuote horizon.Asset,
+	assetBase hProtocol.Asset,
+	assetQuote hProtocol.Asset,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
 	options inputs,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -14,8 +15,8 @@ import (
 // sdexFeed represents a pricefeed from the SDEX
 type sdexFeed struct {
 	sdex       *SDEX
-	assetBase  *horizon.Asset
-	assetQuote *horizon.Asset
+	assetBase  *hProtocol.Asset
+	assetQuote *hProtocol.Asset
 }
 
 // ensure that it implements PriceFeed
@@ -38,7 +39,7 @@ func makeSDEXFeed(url string) (*sdexFeed, error) {
 		Base:  model.Asset(utils.Asset2CodeString(*baseAsset)),
 		Quote: model.Asset(utils.Asset2CodeString(*quoteAsset)),
 	}
-	sdexAssetMap := map[model.Asset]horizon.Asset{
+	sdexAssetMap := map[model.Asset]hProtocol.Asset{
 		tradingPair.Base:  *baseAsset,
 		tradingPair.Quote: *quoteAsset,
 	}
@@ -82,7 +83,7 @@ func makeSDEXFeed(url string) (*sdexFeed, error) {
 	}, nil
 }
 
-func parseHorizonAsset(assetString string) (*horizon.Asset, error) {
+func parseHorizonAsset(assetString string) (*hProtocol.Asset, error) {
 	parts := strings.Split(assetString, ":")
 	code := parts[0]
 	issuer := parts[1]

@@ -6,15 +6,15 @@ import (
 	"math"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
 )
 
 type orderConstraintsFilter struct {
 	oc         *model.OrderConstraints
-	baseAsset  horizon.Asset
-	quoteAsset horizon.Asset
+	baseAsset  hProtocol.Asset
+	quoteAsset hProtocol.Asset
 }
 
 var _ SubmitFilter = &orderConstraintsFilter{}
@@ -22,8 +22,8 @@ var _ SubmitFilter = &orderConstraintsFilter{}
 // MakeFilterOrderConstraints makes a submit filter based on the passed in orderConstraints
 func MakeFilterOrderConstraints(
 	oc *model.OrderConstraints,
-	baseAsset horizon.Asset,
-	quoteAsset horizon.Asset,
+	baseAsset hProtocol.Asset,
+	quoteAsset hProtocol.Asset,
 ) SubmitFilter {
 	return &orderConstraintsFilter{
 		oc:         oc,
@@ -35,8 +35,8 @@ func MakeFilterOrderConstraints(
 // Apply impl.
 func (f *orderConstraintsFilter) Apply(
 	ops []build.TransactionMutator,
-	sellingOffers []horizon.Offer,
-	buyingOffers []horizon.Offer,
+	sellingOffers []hProtocol.Offer,
+	buyingOffers []hProtocol.Offer,
 ) ([]build.TransactionMutator, error) {
 	numKeep := 0
 	numDropped := 0
