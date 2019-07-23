@@ -12,7 +12,7 @@ import (
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/strkey"
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/toml"
@@ -78,7 +78,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filenamePair := model.GetBotFilenames(req.Name, req.Strategy)
+	filenamePair := model2.GetBotFilenames(req.Name, req.Strategy)
 	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
 	botConfig := req.TraderConfig
 	log.Printf("upsert bot config to file: %s\n", traderFilePath)
@@ -160,7 +160,7 @@ func hasNewLevel(levels []plugins.StaticLevel) bool {
 
 func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 	isTestnet := strings.Contains(req.TraderConfig.HorizonURL, "test")
-	bot := &model.Bot{
+	bot := &model2.Bot{
 		Name:     req.Name,
 		Strategy: req.Strategy,
 		Running:  false,

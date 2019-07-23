@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
 )
 
 // KelpOS is a struct that manages all subprocesses started by this Kelp process
@@ -40,7 +40,7 @@ func init() {
 
 // BotInstance is an instance of a given bot along with the metadata
 type BotInstance struct {
-	Bot   *model.Bot
+	Bot   *model2.Bot
 	State BotState
 }
 

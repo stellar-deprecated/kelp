@@ -5,11 +5,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
 )
 
 // RegisterBot registers a new bot, returning an error if one already exists with the same name
-func (kos *KelpOS) RegisterBot(bot *model.Bot) error {
+func (kos *KelpOS) RegisterBot(bot *model2.Bot) error {
 	return kos.RegisterBotWithState(bot, InitState())
 }
 
@@ -27,17 +27,17 @@ func (kos *KelpOS) SafeUnregisterBot(botName string) {
 }
 
 // RegisterBotWithState registers a new bot with a given state, returning an error if one already exists with the same name
-func (kos *KelpOS) RegisterBotWithState(bot *model.Bot, state BotState) error {
+func (kos *KelpOS) RegisterBotWithState(bot *model2.Bot, state BotState) error {
 	return kos.registerBotWithState(bot, state, false)
 }
 
 // RegisterBotWithStateUpsert registers a new bot with a given state, it always registers the bot even if it is already registered, never returning an error
-func (kos *KelpOS) RegisterBotWithStateUpsert(bot *model.Bot, state BotState) {
+func (kos *KelpOS) RegisterBotWithStateUpsert(bot *model2.Bot, state BotState) {
 	_ = kos.registerBotWithState(bot, state, true)
 }
 
 // registerBotWithState registers a new bot with a given state, returning an error if one already exists with the same name
-func (kos *KelpOS) registerBotWithState(bot *model.Bot, state BotState, forceRegister bool) error {
+func (kos *KelpOS) registerBotWithState(bot *model2.Bot, state BotState, forceRegister bool) error {
 	kos.botLock.Lock()
 	defer kos.botLock.Unlock()
 

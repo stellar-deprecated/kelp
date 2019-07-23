@@ -10,7 +10,8 @@ import (
 	"strings"
 
 	"github.com/stellar/go/support/config"
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
+	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/query"
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
@@ -66,7 +67,7 @@ func (s *APIServer) runGetBotInfoViaIPC(w http.ResponseWriter, botName string) {
 func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	log.Printf("getBotInfo is invoking logic directly for botName: %s\n", botName)
 
-	filenamePair := model.GetBotFilenames(botName, buysell)
+	filenamePair := model2.GetBotFilenames(botName, buysell)
 	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
 	var botConfig trader.BotConfig
 	e := config.Read(traderFilePath, &botConfig)
@@ -80,6 +81,12 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		return
 	}
 
+	assetBase := botConfig.AssetBase()
+	assetQuote := botConfig.AssetQuote()
+	tradingPair := &model.TradingPair{
+		Base:  model.Asset(utils.Asset2CodeString(assetBase)),
+		Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
+	}
 	balanceBase := 100.0
 	balanceQuote := 1000.0
 	numBids := 9
@@ -88,9 +95,9 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	spreadPct := 0.05
 	bi := query.BotInfo{
 		Strategy:      buysell,
-		TradingPair:   nil,
-		AssetBase:     botConfig.AssetBase(),
-		AssetQuote:    botConfig.AssetQuote(),
+		TradingPair:   tradingPair,
+		AssetBase:     assetBase,
+		AssetQuote:    assetQuote,
 		BalanceBase:   balanceBase,
 		BalanceQuote:  balanceQuote,
 		NumBids:       numBids,

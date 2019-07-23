@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stellar/kelp/gui/model"
+	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/support/kelpos"
 )
 
@@ -51,7 +51,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	s.kos.SafeUnregisterBot(botName)
 
 	// delete configs
-	botPrefix := model.GetPrefix(botName)
+	botPrefix := model2.GetPrefix(botName)
 	_, e = s.kos.Blocking("rm", fmt.Sprintf("rm %s/%s*", s.configsDir, botPrefix))
 	if e != nil {
 		s.writeError(w, fmt.Sprintf("error running rm command for bot configs: %s\n", e))
