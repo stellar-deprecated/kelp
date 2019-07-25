@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -142,7 +142,7 @@ func (t *Trader) deleteAllOffers() {
 	}
 
 	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d; (deleteCyclesThreshold to be exceeded=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
-	dOps := []build.TransactionMutator{}
+	dOps := []txnbuild.Operation{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
 	t.sellingAOffers = []hProtocol.Offer{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
@@ -192,7 +192,7 @@ func (t *Trader) update() {
 	}
 
 	// delete excess offers
-	var pruneOps []build.TransactionMutator
+	var pruneOps []txnbuild.Operation
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strategy.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {

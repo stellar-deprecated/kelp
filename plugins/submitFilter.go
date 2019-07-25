@@ -1,15 +1,15 @@
 package plugins
 
 import (
-	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 )
 
 // SubmitFilter allows you to filter out operations before submitting to the network
 type SubmitFilter interface {
 	Apply(
-		ops []build.TransactionMutator,
+		ops []txnbuild.Operation,
 		sellingOffers []hProtocol.Offer, // quoted quote/base
 		buyingOffers []hProtocol.Offer, // quoted base/quote
-	) ([]build.TransactionMutator, error)
+	) ([]txnbuild.Operation, error)
 }

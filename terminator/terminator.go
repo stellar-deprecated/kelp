@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/utils"
@@ -96,8 +96,12 @@ func (t *Terminator) run() {
 		// update data to reflect a successful return from terminator
 		newTimestamp := time.Now().UnixNano() / 1000000
 		tsMillisStr := fmt.Sprintf("%d", newTimestamp)
-		ops := []build.TransactionMutator{
-			build.SetData(terminatorKey, []byte(tsMillisStr), build.SourceAccount{AddressOrSeed: t.tradingAccount}),
+		ops := []txnbuild.Operation{
+			&txnbuild.ManageData{
+				Name:          terminatorKey,
+				Value:         []byte(tsMillisStr),
+				SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+			},
 		}
 
 		log.Printf("updating delete timestamp to %s\n", tsMillisStr)
@@ -127,32 +131,46 @@ func (t *Terminator) run() {
 
 func convertToAsset(code string, issuer string) hProtocol.Asset {
 	if code == utils.Native {
-		return utils.Asset2Asset2(build.NativeAsset())
+		return utils.Asset2Asset2(txnbuild.NativeAsset{})
 	}
-	return utils.Asset2Asset2(build.CreditAsset(code, issuer))
+	return utils.Asset2Asset2(txnbuild.CreditAsset{code, issuer})
 }
 
 // deleteOffers deletes passed in offers along with the data for the passed in hash
 func (t *Terminator) deleteOffers(sellOffers []hProtocol.Offer, buyOffers []hProtocol.Offer, botKey model.BotKey, tsMillis int64) {
-	ops := []build.TransactionMutator{}
+	ops := []txnbuild.Operation{}
 	ops = append(ops, t.sdex.DeleteAllOffers(sellOffers)...)
 	ops = append(ops, t.sdex.DeleteAllOffers(buyOffers)...)
 	numOffers := len(ops)
 
 	// delete existing data entries
-	ops = append(ops, build.ClearData(botKey.FullKey(0), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
-	ops = append(ops, build.ClearData(botKey.FullKey(1), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(0),
+		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+	})
+	ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(1),
+		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+	})
 	if len(botKey.AssetBaseIssuer) > 0 {
-		ops = append(ops, build.ClearData(botKey.FullKey(2), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+		ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(2),
+			SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+		})
 	}
-	ops = append(ops, build.ClearData(botKey.FullKey(3), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(3),
+		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+	})
 	if len(botKey.AssetQuoteIssuer) > 0 {
-		ops = append(ops, build.ClearData(botKey.FullKey(4), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+		ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(4),
+			SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+		})
 	}
 
 	// update timestamp for terminator
 	tsMillisStr := fmt.Sprintf("%d", tsMillis)
-	ops = append(ops, build.SetData(terminatorKey, []byte(tsMillisStr), build.SourceAccount{AddressOrSeed: t.tradingAccount}))
+	ops = append(ops, &txnbuild.ManageData{
+		Name:          terminatorKey,
+		Value:         []byte(tsMillisStr),
+		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+	})
 
 	log.Printf("deleting %d offers and 5 data entries, updating delete timestamp to %s\n", numOffers, tsMillisStr)
 	if len(ops) > 0 {

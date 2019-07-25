@@ -12,7 +12,6 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
@@ -196,7 +195,7 @@ func makeExchangeShimSdex(
 	options inputs,
 	client *horizonclient.Client,
 	ieif *plugins.IEIF,
-	network build.Network,
+	network string,
 	threadTracker *multithreading.ThreadTracker,
 	tradingPair *model.TradingPair,
 ) (api.ExchangeShim, *plugins.SDEX) {
@@ -288,7 +287,7 @@ func makeExchangeShimSdex(
 
 func makeStrategy(
 	l logger.Logger,
-	network build.Network,
+	network string,
 	botConfig trader.BotConfig,
 	client *horizonclient.Client,
 	sdex *plugins.SDEX,

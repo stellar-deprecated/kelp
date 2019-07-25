@@ -3,8 +3,8 @@ package plugins
 import (
 	"log"
 
-	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
@@ -33,9 +33,9 @@ func makeDeleteSideStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *deleteSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer) {
+func (s *deleteSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]txnbuild.Operation, []hProtocol.Offer) {
 	log.Printf("deleteSideStrategy: deleting %d offers\n", len(offers))
-	pruneOps := []build.TransactionMutator{}
+	pruneOps := []txnbuild.Operation{}
 	for i := 0; i < len(offers); i++ {
 		pOp := s.sdex.DeleteOffer(offers[i])
 		pruneOps = append(pruneOps, &pOp)
@@ -49,8 +49,8 @@ func (s *deleteSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float
 }
 
 // UpdateWithOps impl
-func (s *deleteSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
-	return []build.TransactionMutator{}, nil, nil
+func (s *deleteSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []txnbuild.Operation, newTopOffer *model.Number, e error) {
+	return []txnbuild.Operation{}, nil, nil
 }
 
 // PostUpdate impl

@@ -3,8 +3,8 @@ package api
 import (
 	"fmt"
 
-	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/model"
 )
 
@@ -222,8 +222,8 @@ type Balance struct {
 
 // ExchangeShim is the interface we use as a generic API for all crypto exchanges
 type ExchangeShim interface {
-	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
-	SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
+	SubmitOps(ops []txnbuild.Operation, asyncCallback func(hash string, e error)) error
+	SubmitOpsSynch(ops []txnbuild.Operation, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
 	GetBalanceHack(asset hProtocol.Asset) (*Balance, error)
 	LoadOffersHack() ([]hProtocol.Offer, error)
 	Constrainable
