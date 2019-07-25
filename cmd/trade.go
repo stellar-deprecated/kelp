@@ -13,7 +13,6 @@ import (
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
@@ -195,8 +194,7 @@ func makeExchangeShimSdex(
 	l logger.Logger,
 	botConfig trader.BotConfig,
 	options inputs,
-	client *horizon.Client,
-	newClient *horizonclient.Client,
+	client *horizonclient.Client,
 	ieif *plugins.IEIF,
 	network build.Network,
 	threadTracker *multithreading.ThreadTracker,
@@ -263,7 +261,7 @@ func makeExchangeShimSdex(
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
-	feeFn := makeFeeFn(l, botConfig, newClient)
+	feeFn := makeFeeFn(l, botConfig, client)
 	sdex := plugins.MakeSDEX(
 		client,
 		ieif,
@@ -292,7 +290,7 @@ func makeStrategy(
 	l logger.Logger,
 	network build.Network,
 	botConfig trader.BotConfig,
-	client *horizon.Client,
+	client *horizonclient.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	assetBase hProtocol.Asset,
@@ -324,7 +322,7 @@ func makeStrategy(
 func makeBot(
 	l logger.Logger,
 	botConfig trader.BotConfig,
-	client *horizon.Client,
+	client *horizonclient.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	ieif *plugins.IEIF,
@@ -397,20 +395,13 @@ func runTradeCmd(options inputs) {
 		Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
 	}
 
-	client := &horizon.Client{
-		URL:  botConfig.HorizonURL,
-		HTTP: http.DefaultClient,
-	}
-	newClient := &horizonclient.Client{
-		// TODO horizonclient.Client has a bug in it where it does not use "/" to separate the horizonURL from the fee_stats endpoint
-		HorizonURL: botConfig.HorizonURL + "/",
+	client := &horizonclient.Client{
+		HorizonURL: botConfig.HorizonURL,
 		HTTP:       http.DefaultClient,
 	}
 	if !*options.noHeaders {
 		client.AppName = "kelp"
 		client.AppVersion = version
-		newClient.AppName = "kelp"
-		newClient.AppVersion = version
 
 		p := prefs.Make(prefsFilename)
 		if p.FirstTime() {
@@ -439,7 +430,6 @@ func runTradeCmd(options inputs) {
 		botConfig,
 		options,
 		client,
-		newClient,
 		ieif,
 		network,
 		threadTracker,
@@ -560,7 +550,7 @@ func startFillTracking(
 	l logger.Logger,
 	strategy api.Strategy,
 	botConfig trader.BotConfig,
-	client *horizon.Client,
+	client *horizonclient.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
@@ -607,7 +597,7 @@ func startQueryServer(
 	strategyName string,
 	strategy api.Strategy,
 	botConfig trader.BotConfig,
-	client *horizon.Client,
+	client *horizonclient.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
@@ -643,14 +633,15 @@ func startQueryServer(
 	}()
 }
 
-func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trader.BotConfig) {
+func validateTrustlines(l logger.Logger, client *horizonclient.Client, botConfig *trader.BotConfig) {
 	if !botConfig.IsTradingSdex() {
 		l.Info("no need to validate trustlines because we're not using SDEX as the trading exchange")
 		return
 	}
 
 	log.Printf("validating trustlines...\n")
-	account, e := client.LoadAccount(botConfig.TradingAccount())
+	acctReq := horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()}
+	account, e := client.AccountDetail(acctReq)
 	if e != nil {
 		logger.Fatal(l, e)
 	}
@@ -679,7 +670,7 @@ func validateTrustlines(l logger.Logger, client *horizon.Client, botConfig *trad
 func deleteAllOffersAndExit(
 	l logger.Logger,
 	botConfig trader.BotConfig,
-	client *horizon.Client,
+	client *horizonclient.Client,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	threadTracker *multithreading.ThreadTracker,
