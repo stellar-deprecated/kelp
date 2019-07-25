@@ -402,8 +402,6 @@ func runTradeCmd(options inputs) {
 	if !*options.noHeaders {
 		client.AppName = "kelp"
 		client.AppVersion = version
-		client.AppName = "kelp"
-		client.AppVersion = version
 
 		p := prefs.Make(prefsFilename)
 		if p.FirstTime() {
