@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/protocols/horizon/base"
@@ -141,16 +141,21 @@ func String2Asset(code string, issuer string) hProtocol.Asset {
 }
 
 // LoadAllOffers loads all the offers for a given account
-func LoadAllOffers(account string, api *horizon.Client) ([]hProtocol.Offer, error) {
+func LoadAllOffers(account string, api *horizonclient.Client) ([]hProtocol.Offer, error) {
 	// get what orders are outstanding now
-	offersPage, e := api.LoadAccountOffers(account, horizon.Limit(193))
+	offerReq := horizonclient.OfferRequest{
+		ForAccount: account,
+		Limit:      uint(193),
+	}
+
+	offersPage, e := api.Offers(offerReq)
 	if e != nil {
 		return []hProtocol.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
 	}
 
 	offersRet := offersPage.Embedded.Records
 	for len(offersPage.Embedded.Records) > 0 {
-		offersPage, e = api.LoadAccountOffers(account, horizon.Limit(193), horizon.At(offersPage.Links.Next.Href))
+		offersPage, e = api.NextOffersPage(offersPage)
 		if e != nil {
 			return []hProtocol.Offer{}, fmt.Errorf("Can't load offers: %s\n", e)
 		}

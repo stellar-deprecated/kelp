@@ -138,7 +138,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		}
 	}
 
-	offers, e := utils.LoadAllOffers(account.AccountID, horizon.DefaultTestNetClient)
+	offers, e := utils.LoadAllOffers(account.AccountID, horizonclient.DefaultTestNetClient)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error getting offers for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
 		return
