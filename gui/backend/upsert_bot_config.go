@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
@@ -302,11 +301,11 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 
 	txSuccess, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
-		var herr *horizon.Error
+		var herr *horizonclient.Error
 		switch t := e.(type) {
-		case *horizon.Error:
+		case *horizonclient.Error:
 			herr = t
-		case horizon.Error:
+		case horizonclient.Error:
 			herr = &t
 		default:
 			return fmt.Errorf("error when submitting change trust transaction for address %s for bot '%s' for assets(%v): %s (%s)\n", address, botName, trustlines, e, txn64)
