@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
@@ -172,6 +173,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	}
 
 	bi := query.BotInfo{
+		LastUpdated:   time.Now().Format("1/_2/2006 15:04:05"),
 		Strategy:      buysell,
 		TradingPair:   tradingPair,
 		AssetBase:     assetBase,

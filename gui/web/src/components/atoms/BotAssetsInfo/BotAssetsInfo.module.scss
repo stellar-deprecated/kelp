@@ -36,3 +36,19 @@ $spacing-small: 3/16+rem;
     composes: _textMono;
     margin-left: 1rem;
 }
+
+.lastUpdatedLine {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-small;
+}
+
+.lastUpdatedField {
+    composes: _textMono;
+    margin-right:0.3rem;
+}
+
+.lastUpdatedValue {
+    composes: _textMono;
+    margin-right:1rem;
+}

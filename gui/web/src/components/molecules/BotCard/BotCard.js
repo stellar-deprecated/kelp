@@ -20,6 +20,7 @@ import getState from '../../../kelp-ops-api/getState';
 import getBotInfo from '../../../kelp-ops-api/getBotInfo';
 
 let defaultBotInfo = {
+  "last_updated": "Never",
   "strategy": "buysell",
   "trading_pair": {
     "Base": "?",
@@ -117,7 +118,9 @@ class BotCard extends Component {
         }
 
         delete _this._asyncRequests["botInfo"];
-        if (JSON.stringify(resp) !== "{}") {
+        if (resp.error) {
+          // do nothing
+        } else if (JSON.stringify(resp) !== "{}") {
           _this.setState({
             botInfo: resp,
           });
@@ -329,6 +332,7 @@ class BotCard extends Component {
               assetBaseBalance={this.state.botInfo.balance_base}
               assetQuoteCode={this.state.botInfo.trading_pair.Quote}
               assetQuoteBalance={this.state.botInfo.balance_quote}
+              lastUpdated={this.state.botInfo.last_updated}
             />
           </div>
         </div>

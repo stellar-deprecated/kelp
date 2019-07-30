@@ -115,6 +115,8 @@ class Bots extends Component {
           {cards}
         </div>
       );
+    } else {
+      this.fetchBots()
     }
 
     return (
