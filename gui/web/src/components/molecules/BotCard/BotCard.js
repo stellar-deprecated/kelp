@@ -117,7 +117,9 @@ class BotCard extends Component {
         }
 
         delete _this._asyncRequests["botInfo"];
-        if (JSON.stringify(resp) !== "{}") {
+        if (resp.error) {
+          // do nothing
+        } else if (JSON.stringify(resp) !== "{}") {
           _this.setState({
             botInfo: resp,
           });
