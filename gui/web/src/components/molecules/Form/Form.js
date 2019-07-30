@@ -317,6 +317,7 @@ class Form extends Component {
                   ]}
                   selected={network}
                   onSelect={(selected) => {
+                    // TODO use URI passed in from command line, or indicate to backend it's test/public
                     let newValue = "https://horizon-testnet.stellar.org";
                     if (selected === "PubNet") {
                       newValue = "https://horizon.stellar.org";
