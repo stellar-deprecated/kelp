@@ -182,7 +182,7 @@ func (s *APIServer) makeSampleTrader(seed string) *trader.BotConfig {
 		"both",
 		0,
 		0,
-		s.apiTestNet.HorizonURL,
+		s.horizonTestnetURI,
 		nil,
 		&trader.FeeConfig{
 			CapacityTrigger: 0.8,

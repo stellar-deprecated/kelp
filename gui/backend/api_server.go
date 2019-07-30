@@ -17,15 +17,17 @@ import (
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	dirPath       string
-	binPath       string
-	configsDir    string
-	logsDir       string
-	kos           *kelpos.KelpOS
-	apiTestNet    *horizonclient.Client
-	apiPubNet     *horizonclient.Client
-	apiTestNetOld *horizon.Client
-	apiPubNetOld  *horizon.Client
+	dirPath           string
+	binPath           string
+	configsDir        string
+	logsDir           string
+	kos               *kelpos.KelpOS
+	horizonTestnetURI string
+	horizonPubnetURI  string
+	apiTestNet        *horizonclient.Client
+	apiPubNet         *horizonclient.Client
+	apiTestNetOld     *horizon.Client
+	apiPubNetOld      *horizon.Client
 }
 
 // MakeAPIServer is a factory method
@@ -61,15 +63,17 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 	}
 
 	return &APIServer{
-		dirPath:       dirPath,
-		binPath:       binPath,
-		configsDir:    configsDir,
-		logsDir:       logsDir,
-		kos:           kos,
-		apiTestNet:    apiTestNet,
-		apiPubNet:     apiPubNet,
-		apiTestNetOld: apiTestNetOld,
-		apiPubNetOld:  apiPubNetOld,
+		dirPath:           dirPath,
+		binPath:           binPath,
+		configsDir:        configsDir,
+		logsDir:           logsDir,
+		kos:               kos,
+		horizonTestnetURI: horizonTestnetURI,
+		horizonPubnetURI:  horizonPubnetURI,
+		apiTestNet:        apiTestNet,
+		apiPubNet:         apiPubNet,
+		apiTestNetOld:     apiTestNetOld,
+		apiPubNetOld:      apiPubNetOld,
 	}, nil
 }
 
