@@ -24,6 +24,10 @@ class BotAssetsInfo extends Component {
           <span className={styles.assetValue}> </span>
           <span className={styles.assetValue}>{this.props.assetQuoteBalance < 0 ? "?" : this.props.assetQuoteBalance}</span>
         </div>
+        <div className={styles.lastUpdatedLine}>
+            <span className={styles.lastUpdatedField}>Updated: </span>
+            <span className={styles.lastUpdatedValue}>{this.props.lastUpdated}</span>
+          </div>
       </div>
     )
   }
