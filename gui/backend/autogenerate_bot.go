@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
@@ -183,7 +182,7 @@ func (s *APIServer) makeSampleTrader(seed string) *trader.BotConfig {
 		"both",
 		0,
 		0,
-		strings.TrimSuffix(s.apiTestNet.HorizonURL, "/"),
+		s.apiTestNet.HorizonURL,
 		nil,
 		&trader.FeeConfig{
 			CapacityTrigger: 0.8,

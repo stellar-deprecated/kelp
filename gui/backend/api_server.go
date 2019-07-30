@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
@@ -38,6 +39,8 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 	configsDir := dirPath + "/ops/configs"
 	logsDir := dirPath + "/ops/logs"
 
+	horizonTestnetURI = strings.TrimSuffix(horizonTestnetURI, "/")
+	horizonPubnetURI = strings.TrimSuffix(horizonPubnetURI, "/")
 	log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
 	log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
 	apiTestNet := &horizonclient.Client{
