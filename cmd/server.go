@@ -24,9 +24,11 @@ var serverCmd = &cobra.Command{
 }
 
 type serverInputs struct {
-	port       *uint16
-	dev        *bool
-	devAPIPort *uint16
+	port              *uint16
+	dev               *bool
+	devAPIPort        *uint16
+	horizonTestnetURI *string
+	horizonPubnetURI  *string
 }
 
 func init() {
@@ -34,10 +36,19 @@ func init() {
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
 	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
+	options.horizonTestnetURI = serverCmd.Flags().String("horizon-testnet-uri", "https://horizon-testnet.stellar.org", "URI to use for the horizon instance connected to the Stellar Test Network (must contain the word 'test')")
+	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		if !strings.Contains(*options.horizonTestnetURI, "test") {
+			panic("'horizon-testnet-uri' argument must contain the word 'test'")
+		}
+		if strings.Contains(*options.horizonPubnetURI, "test") {
+			panic("'horizon-pubnet-uri' argument must not contain the word 'test'")
+		}
+
 		kos := kelpos.GetKelpOS()
-		s, e := backend.MakeAPIServer(kos)
+		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, *options.horizonPubnetURI)
 		if e != nil {
 			panic(e)
 		}

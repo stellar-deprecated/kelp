@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -104,7 +103,7 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 		return fmt.Errorf("error checking and funding account: %s\n", e)
 	}
 
-	client := horizon.DefaultTestNetClient
+	client := s.apiTestNetOld
 	txn, e := build.Transaction(
 		build.SourceAccount{AddressOrSeed: address},
 		build.AutoSequence{SequenceProvider: client},
@@ -140,7 +139,7 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 }
 
 func (s *APIServer) checkFundAccount(address string, botName string) (*hProtocol.Account, error) {
-	account, e := horizonclient.DefaultTestNetClient.AccountDetail(horizonclient.AccountRequest{AccountID: address})
+	account, e := s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: address})
 	if e == nil {
 		log.Printf("account already exists %s for bot '%s', no need to fund via friendbot\n", address, botName)
 		return &account, nil
