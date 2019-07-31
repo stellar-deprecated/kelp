@@ -117,13 +117,19 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 }
 
 func (s *APIServer) writeJson(w http.ResponseWriter, v interface{}) {
+	s.writeJsonWithLog(w, v, true)
+}
+
+func (s *APIServer) writeJsonWithLog(w http.ResponseWriter, v interface{}, doLog bool) {
 	marshalledJson, e := json.MarshalIndent(v, "", "    ")
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("unable to marshal json with indentation: %s", e))
 		return
 	}
 
-	log.Printf("responseJson: %s\n", string(marshalledJson))
+	if doLog {
+		log.Printf("responseJson: %s\n", string(marshalledJson))
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(marshalledJson)
 }

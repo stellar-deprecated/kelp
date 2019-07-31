@@ -318,5 +318,5 @@ func loadOptionsMetadata() (metadata, error) {
 }
 
 func (s *APIServer) optionsMetadata(w http.ResponseWriter, r *http.Request) {
-	s.writeJson(w, s.cachedOptionsMetadata)
+	s.writeJsonWithLog(w, s.cachedOptionsMetadata, false)
 }
