@@ -236,7 +236,7 @@ func AssetsEqual(baseAsset base.Asset, horizonAsset hProtocol.Asset) bool {
 func CheckFetchFloat(m map[string]interface{}, key string) (float64, error) {
 	v, ok := m[key]
 	if !ok {
-		return 0.0, fmt.Errorf("'%s' field not in map", key)
+		return 0.0, fmt.Errorf("'%s' field not in map: %v", key, m)
 	}
 
 	f, ok := v.(float64)

@@ -52,6 +52,7 @@ var ccxtBlacklist = utils.StringSet([]string{
 	"allcoin",
 	"anybits",
 	"bibox",
+	"bitmex",
 	"bitsane",
 	"bitz",
 	"btctradeim",
