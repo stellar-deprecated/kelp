@@ -118,7 +118,7 @@ class Bots extends Component {
         </div>
       );
     } else {
-      this.fetchBots()
+      setTimeout(this.fetchBots, 5000);
     }
 
     return (
