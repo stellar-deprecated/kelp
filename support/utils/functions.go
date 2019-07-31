@@ -326,3 +326,12 @@ func Shuffle(slice []string) {
 		slice[n-1], slice[randIndex] = slice[randIndex], slice[n-1]
 	}
 }
+
+// StringSet converts a string slice to a map of string to bool values to represent a Set
+func StringSet(list []string) map[string]bool {
+	m := map[string]bool{}
+	for _, s := range list {
+		m[s] = true
+	}
+	return m
+}

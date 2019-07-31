@@ -8,6 +8,7 @@ import (
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/sdk"
+	"github.com/stellar/kelp/support/utils"
 )
 
 type metadata interface{}
@@ -43,6 +44,33 @@ var ccxtExchangeNames = map[string]string{
 	"_1btcxe":       "1btcxe",
 	"coinmarketcap": "CoinMarketCap",
 }
+
+var ccxtBlacklist = utils.StringSet([]string{
+	"_1broker",
+	"allcoin",
+	"anybits",
+	"bibox",
+	"bitsane",
+	"bitz",
+	"btctradeim",
+	"ccex",
+	"coinegg",
+	"coingi",
+	"cointiger",
+	"coolcoin",
+	"cryptopia",
+	"flowbtc",
+	"gatecoin",
+	"huobicny",
+	"kucoin",
+	"liqui",
+	"rightbtc",
+	"theocean",
+	"tidex",
+	"wex",
+	"xbtce",
+	"yunbi",
+})
 
 //   const optionsMetadata = {
 // 	type: "dropdown",
@@ -277,6 +305,10 @@ func (dob *dropdownOptionsBuilder) _build() map[string]dropdownOption {
 func loadOptionsMetadata() (metadata, error) {
 	ccxtOptions := optionsBuilder()
 	for _, ccxtExchangeName := range sdk.GetExchangeList() {
+		if _, ok := ccxtBlacklist[ccxtExchangeName]; ok {
+			continue
+		}
+
 		displayName := strings.Title(ccxtExchangeName)
 		if name, ok := ccxtExchangeNames[ccxtExchangeName]; ok {
 			displayName = name
