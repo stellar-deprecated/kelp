@@ -26,7 +26,7 @@ class PriceFeedAsset extends Component {
     onChange: PropTypes.func,
     onLoadingPrice: PropTypes.func,
     onNewPrice: PropTypes.func,
-    optionsMetadata: PropTypes.object.isRequired,
+    optionsMetadata: PropTypes.object,
   };
 
   componentDidMount() {

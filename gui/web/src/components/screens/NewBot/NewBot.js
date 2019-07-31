@@ -3,181 +3,8 @@ import Form from '../../molecules/Form/Form';
 import getBotConfig from '../../../kelp-ops-api/getBotConfig';
 import getNewBotConfig from '../../../kelp-ops-api/getNewBotConfig';
 import upsertBotConfig from '../../../kelp-ops-api/upsertBotConfig';
+import fetchOptionsMetadata from '../../../kelp-ops-api/fetchOptionsMetadata';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
-
-const optionsMetadata = {
-  type: "dropdown",
-  options: {
-    "crypto": {
-      value: "crypto",
-      text: "Crypto from CMC",
-      subtype: {
-        type: "dropdown",
-        options: {
-          "https://api.coinmarketcap.com/v1/ticker/stellar/": {
-            value: "https://api.coinmarketcap.com/v1/ticker/stellar/",
-            text: "Stellar",
-            subtype: null,
-          },
-          "https://api.coinmarketcap.com/v1/ticker/bitcoin/": {
-            value: "https://api.coinmarketcap.com/v1/ticker/bitcoin/",
-            text: "Bitcoin",
-            subtype: null,
-          },
-          "https://api.coinmarketcap.com/v1/ticker/ethereum/": {
-            value: "https://api.coinmarketcap.com/v1/ticker/ethereum/",
-            text: "Ethereum",
-            subtype: null,
-          },
-          "https://api.coinmarketcap.com/v1/ticker/litecoin/": {
-            value: "https://api.coinmarketcap.com/v1/ticker/litecoin/",
-            text: "Litecoin",
-            subtype: null,
-          },
-          "https://api.coinmarketcap.com/v1/ticker/tether/": {
-            value: "https://api.coinmarketcap.com/v1/ticker/tether/",
-            text: "Tether",
-            subtype: null,
-          }
-        }
-      }
-    },
-    "fiat": {
-      value: "fiat",
-      text: "Fiat from CurrencyLayer",
-      subtype: {
-        type: "dropdown",
-        options: {
-          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=USD": {
-            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=USD",
-            text: "USD",
-            subtype: null,
-          },
-          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=EUR": {
-            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=EUR",
-            text: "EUR",
-            subtype: null,
-          },
-          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=GBP": {
-            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=GBP",
-            text: "GBP",
-            subtype: null,
-          },
-          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=INR": {
-            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=INR",
-            text: "INR",
-            subtype: null,
-          },
-          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=PHP": {
-            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=PHP",
-            text: "PHP",
-            subtype: null,
-          },
-          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=NGN": {
-            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=NGN",
-            text: "NGN",
-            subtype: null,
-          }
-        }
-      }
-    },
-    "fixed": {
-      value: "fixed",
-      text: "Fixed value",
-      subtype: {
-        type: "text",
-        defaultValue: "1.0",
-        subtype: null,
-      }
-    },
-    "exchange": {
-      value: "exchange",
-      text: "Centralized Exchange",
-      subtype: {
-        type: "dropdown",
-        options: {
-          "kraken": {
-            value: "kraken",
-            text: "Kraken",
-            subtype: {
-              type: "dropdown",
-              options: {
-                "XXLM/ZUSD": {
-                  value: "XXLM/ZUSD",
-                  text: "XLM/USD",
-                  subtype: null,
-                },
-                "XXLM/XXBT": {
-                  value: "XXLM/XXBT",
-                  text: "XLM/BTC",
-                  subtype: null,
-                },
-                "XXBT/ZUSD": {
-                  value: "XXBT/ZUSD",
-                  text: "BTC/USD",
-                  subtype: null,
-                },
-                "XETH/ZUSD": {
-                  value: "XETH/ZUSD",
-                  text: "ETH/USD",
-                  subtype: null,
-                },
-                "XETH/XXBT": {
-                  value: "XETH/XXBT",
-                  text: "ETH/BTC",
-                  subtype: null,
-                }
-              }
-            }
-          },
-          "ccxt-binance": {
-            value: "ccxt-binance",
-            text: "Binance (via CCXT)",
-            subtype: {
-              type: "dropdown",
-              options: {
-                "BTC/USDT": {
-                  value: "BTC/USDT",
-                  text: "BTC/USDT",
-                  subtype: null,
-                },
-                "ETH/USDT": {
-                  value: "ETH/USDT",
-                  text: "ETH/USDT",
-                  subtype: null,
-                },
-                "BNB/USDT": {
-                  value: "BNB/USDT",
-                  text: "BNB/USDT",
-                  subtype: null,
-                },
-                "BNB/BTC": {
-                  value: "BNB/USDT",
-                  text: "BNB/USDT",
-                  subtype: null,
-                },
-                "XLM/USDT": {
-                  value: "XLM/USDT",
-                  text: "XLM/USDT",
-                  subtype: null,
-                },
-              }
-            }
-          }
-        }
-      }
-    // },
-    // "sdex": {
-    //   value: "sdex",
-    //   text: "Stellar DEX",
-    //   subtype: {
-    //     type: "text",
-    //     defaultValue: "USD:GDUKMGUGDZQK6YHYA5Z6AY2G4XDSZPSZ3SW5UN3ARVMO6QSRDWP5YLEX/XLM:",
-    //     subtype: null,
-    //   }
-    }
-  }
-};
 
 class NewBot extends Component {
   constructor(props) {
@@ -195,23 +22,40 @@ class NewBot extends Component {
     this.loadBotConfigData = this.loadBotConfigData.bind(this);
     this.onChangeForm = this.onChangeForm.bind(this);
     this.updateUsingDotNotation = this.updateUsingDotNotation.bind(this);
+    this.loadOptionsMetadata = this.loadOptionsMetadata.bind(this);
 
     this._asyncRequests = {};
   }
 
-  componentWillMount() {
-    var _this = this;
-    setTimeout(function() {
-      _this.setState({
-        optionsMetadata: optionsMetadata,
-      })
-    }, 5000);
+  componentDidMount() {
+    this.loadOptionsMetadata();
   }
 
   componentWillUnmount() {
     if (this._asyncRequests["botConfig"]) {
       delete this._asyncRequests["botConfig"];
     }
+  }
+
+  loadOptionsMetadata() {
+    var _this = this;
+    this._asyncRequests["optionsMetadata"] = fetchOptionsMetadata(this.props.baseUrl).then(optionsMetadata => {
+      if (!_this._asyncRequests["optionsMetadata"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["optionsMetadata"];
+      if (optionsMetadata.hasOwnProperty('error')) {
+        console.log("error when loading optionsMetadata: " + optionsMetadata.error);
+        // retry
+        setTimeout(_this.loadOptionsMetadata, 5000);
+      } else {
+        _this.setState(prevState => ({
+          optionsMetadata: optionsMetadata,
+        }))
+      }
+    });
   }
 
   saveNew() {
