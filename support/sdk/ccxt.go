@@ -264,6 +264,11 @@ func (c *Ccxt) GetMarket(tradingPair string) *CcxtMarket {
 	return nil
 }
 
+// GetMarkets returns all the markets
+func (c *Ccxt) GetMarkets() map[string]CcxtMarket {
+	return c.markets
+}
+
 // FetchTicker calls the /fetchTicker endpoint on CCXT, trading pair is the CCXT version of the trading pair
 func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
 	e := c.symbolExists(tradingPair)

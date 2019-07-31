@@ -150,7 +150,7 @@ func (sdex *SDEX) GetAccountBalances(assetList []interface{}) (map[interface{}]m
 }
 
 // GetAssetConverter impl
-func (sdex *SDEX) GetAssetConverter() *model.AssetConverter {
+func (sdex *SDEX) GetAssetConverter() model.AssetConverterInterface {
 	return model.Display
 }
 

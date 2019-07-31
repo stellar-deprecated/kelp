@@ -3,6 +3,7 @@ import Form from '../../molecules/Form/Form';
 import getBotConfig from '../../../kelp-ops-api/getBotConfig';
 import getNewBotConfig from '../../../kelp-ops-api/getNewBotConfig';
 import upsertBotConfig from '../../../kelp-ops-api/upsertBotConfig';
+import fetchOptionsMetadata from '../../../kelp-ops-api/fetchOptionsMetadata';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
 class NewBot extends Component {
@@ -12,6 +13,7 @@ class NewBot extends Component {
       isSaving: false,
       configData: null,
       errorResp: null,
+      optionsMetadata: null,
     };
 
     this.saveNew = this.saveNew.bind(this);
@@ -20,14 +22,40 @@ class NewBot extends Component {
     this.loadBotConfigData = this.loadBotConfigData.bind(this);
     this.onChangeForm = this.onChangeForm.bind(this);
     this.updateUsingDotNotation = this.updateUsingDotNotation.bind(this);
+    this.loadOptionsMetadata = this.loadOptionsMetadata.bind(this);
 
     this._asyncRequests = {};
+  }
+
+  componentDidMount() {
+    this.loadOptionsMetadata();
   }
 
   componentWillUnmount() {
     if (this._asyncRequests["botConfig"]) {
       delete this._asyncRequests["botConfig"];
     }
+  }
+
+  loadOptionsMetadata() {
+    var _this = this;
+    this._asyncRequests["optionsMetadata"] = fetchOptionsMetadata(this.props.baseUrl).then(optionsMetadata => {
+      if (!_this._asyncRequests["optionsMetadata"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["optionsMetadata"];
+      if (optionsMetadata.hasOwnProperty('error')) {
+        console.log("error when loading optionsMetadata: " + optionsMetadata.error);
+        // retry
+        setTimeout(_this.loadOptionsMetadata, 5000);
+      } else {
+        _this.setState(prevState => ({
+          optionsMetadata: optionsMetadata,
+        }))
+      }
+    });
   }
 
   saveNew() {
@@ -152,6 +180,7 @@ class NewBot extends Component {
         isNew={true}
         baseUrl={this.props.baseUrl}
         title="New Bot"
+        optionsMetadata={this.state.optionsMetadata}
         onChange={this.onChangeForm}
         configData={this.state.configData}
         saveFn={this.saveNew}
@@ -185,6 +214,7 @@ class NewBot extends Component {
       isNew={false}
       baseUrl={this.props.baseUrl}
       title="Edit Bot"
+      optionsMetadata={this.state.optionsMetadata}
       onChange={this.onChangeForm}
       configData={this.state.configData}
       saveFn={this.saveEdit}

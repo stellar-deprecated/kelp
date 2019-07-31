@@ -96,7 +96,7 @@ type OrderbookFetcher interface {
 
 // TradeAPI is the interface we use as a generic API for trading on any crypto exchange
 type TradeAPI interface {
-	GetAssetConverter() *model.AssetConverter
+	GetAssetConverter() model.AssetConverterInterface
 
 	Constrainable
 
