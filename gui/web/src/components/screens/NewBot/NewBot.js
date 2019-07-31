@@ -5,6 +5,180 @@ import getNewBotConfig from '../../../kelp-ops-api/getNewBotConfig';
 import upsertBotConfig from '../../../kelp-ops-api/upsertBotConfig';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
+const optionsMetadata = {
+  type: "dropdown",
+  options: {
+    "crypto": {
+      value: "crypto",
+      text: "Crypto from CMC",
+      subtype: {
+        type: "dropdown",
+        options: {
+          "https://api.coinmarketcap.com/v1/ticker/stellar/": {
+            value: "https://api.coinmarketcap.com/v1/ticker/stellar/",
+            text: "Stellar",
+            subtype: null,
+          },
+          "https://api.coinmarketcap.com/v1/ticker/bitcoin/": {
+            value: "https://api.coinmarketcap.com/v1/ticker/bitcoin/",
+            text: "Bitcoin",
+            subtype: null,
+          },
+          "https://api.coinmarketcap.com/v1/ticker/ethereum/": {
+            value: "https://api.coinmarketcap.com/v1/ticker/ethereum/",
+            text: "Ethereum",
+            subtype: null,
+          },
+          "https://api.coinmarketcap.com/v1/ticker/litecoin/": {
+            value: "https://api.coinmarketcap.com/v1/ticker/litecoin/",
+            text: "Litecoin",
+            subtype: null,
+          },
+          "https://api.coinmarketcap.com/v1/ticker/tether/": {
+            value: "https://api.coinmarketcap.com/v1/ticker/tether/",
+            text: "Tether",
+            subtype: null,
+          }
+        }
+      }
+    },
+    "fiat": {
+      value: "fiat",
+      text: "Fiat from CurrencyLayer",
+      subtype: {
+        type: "dropdown",
+        options: {
+          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=USD": {
+            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=USD",
+            text: "USD",
+            subtype: null,
+          },
+          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=EUR": {
+            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=EUR",
+            text: "EUR",
+            subtype: null,
+          },
+          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=GBP": {
+            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=GBP",
+            text: "GBP",
+            subtype: null,
+          },
+          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=INR": {
+            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=INR",
+            text: "INR",
+            subtype: null,
+          },
+          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=PHP": {
+            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=PHP",
+            text: "PHP",
+            subtype: null,
+          },
+          "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=NGN": {
+            value: "http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=NGN",
+            text: "NGN",
+            subtype: null,
+          }
+        }
+      }
+    },
+    "fixed": {
+      value: "fixed",
+      text: "Fixed value",
+      subtype: {
+        type: "text",
+        defaultValue: "1.0",
+        subtype: null,
+      }
+    },
+    "exchange": {
+      value: "exchange",
+      text: "Centralized Exchange",
+      subtype: {
+        type: "dropdown",
+        options: {
+          "kraken": {
+            value: "kraken",
+            text: "Kraken",
+            subtype: {
+              type: "dropdown",
+              options: {
+                "XXLM/ZUSD": {
+                  value: "XXLM/ZUSD",
+                  text: "XLM/USD",
+                  subtype: null,
+                },
+                "XXLM/XXBT": {
+                  value: "XXLM/XXBT",
+                  text: "XLM/BTC",
+                  subtype: null,
+                },
+                "XXBT/ZUSD": {
+                  value: "XXBT/ZUSD",
+                  text: "BTC/USD",
+                  subtype: null,
+                },
+                "XETH/ZUSD": {
+                  value: "XETH/ZUSD",
+                  text: "ETH/USD",
+                  subtype: null,
+                },
+                "XETH/XXBT": {
+                  value: "XETH/XXBT",
+                  text: "ETH/BTC",
+                  subtype: null,
+                }
+              }
+            }
+          },
+          "ccxt-binance": {
+            value: "ccxt-binance",
+            text: "Binance (via CCXT)",
+            subtype: {
+              type: "dropdown",
+              options: {
+                "BTC/USDT": {
+                  value: "BTC/USDT",
+                  text: "BTC/USDT",
+                  subtype: null,
+                },
+                "ETH/USDT": {
+                  value: "ETH/USDT",
+                  text: "ETH/USDT",
+                  subtype: null,
+                },
+                "BNB/USDT": {
+                  value: "BNB/USDT",
+                  text: "BNB/USDT",
+                  subtype: null,
+                },
+                "BNB/BTC": {
+                  value: "BNB/USDT",
+                  text: "BNB/USDT",
+                  subtype: null,
+                },
+                "XLM/USDT": {
+                  value: "XLM/USDT",
+                  text: "XLM/USDT",
+                  subtype: null,
+                },
+              }
+            }
+          }
+        }
+      }
+    // },
+    // "sdex": {
+    //   value: "sdex",
+    //   text: "Stellar DEX",
+    //   subtype: {
+    //     type: "text",
+    //     defaultValue: "USD:GDUKMGUGDZQK6YHYA5Z6AY2G4XDSZPSZ3SW5UN3ARVMO6QSRDWP5YLEX/XLM:",
+    //     subtype: null,
+    //   }
+    }
+  }
+};
+
 class NewBot extends Component {
   constructor(props) {
     super(props);
@@ -12,6 +186,7 @@ class NewBot extends Component {
       isSaving: false,
       configData: null,
       errorResp: null,
+      optionsMetadata: null,
     };
 
     this.saveNew = this.saveNew.bind(this);
@@ -22,6 +197,15 @@ class NewBot extends Component {
     this.updateUsingDotNotation = this.updateUsingDotNotation.bind(this);
 
     this._asyncRequests = {};
+  }
+
+  componentWillMount() {
+    var _this = this;
+    setTimeout(function() {
+      _this.setState({
+        optionsMetadata: optionsMetadata,
+      })
+    }, 5000);
   }
 
   componentWillUnmount() {
@@ -152,6 +336,7 @@ class NewBot extends Component {
         isNew={true}
         baseUrl={this.props.baseUrl}
         title="New Bot"
+        optionsMetadata={this.state.optionsMetadata}
         onChange={this.onChangeForm}
         configData={this.state.configData}
         saveFn={this.saveNew}
@@ -185,6 +370,7 @@ class NewBot extends Component {
       isNew={false}
       baseUrl={this.props.baseUrl}
       title="Edit Bot"
+      optionsMetadata={this.state.optionsMetadata}
       onChange={this.onChangeForm}
       configData={this.state.configData}
       saveFn={this.saveEdit}
