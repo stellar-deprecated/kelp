@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -36,6 +37,7 @@ type dropdownOption struct {
 
 const dropdownString = "dropdown"
 const textString = "text"
+const cmcListURL = "https://s2.coinmarketcap.com/generated/search/quick_search.json"
 
 var ccxtExchangeNames = map[string]string{
 	"bitfinex2":     "Bitfinex [alternate]",
@@ -304,7 +306,40 @@ func (dob *dropdownOptionsBuilder) _build() map[string]dropdownOption {
 	return dob.m
 }
 
+type cmcListItem struct {
+	ID     uint32 `json:"id"`
+	Name   string `json:"name"`
+	Rank   uint32 `json:"rank"`
+	Slug   string `json:"slug"`
+	Symbol string `json:"symbol"`
+}
+
+func fetchCmcSlug2NameMap() (map[string]string, error) {
+	m := map[string]string{}
+
+	var list []cmcListItem
+	e := networking.JSONRequest(http.DefaultClient, "GET", cmcListURL, "", nil, &list, "error")
+	if e != nil {
+		return m, fmt.Errorf("error fetching list of currencies from coinmarketcap: %s", e)
+	}
+
+	for _, item := range list {
+		m[item.Slug] = item.Name + " - " + item.Symbol
+	}
+	return m, nil
+}
+
 func loadOptionsMetadata() (metadata, error) {
+	cmcSlug2Name, e := fetchCmcSlug2NameMap()
+	if e != nil {
+		return nil, fmt.Errorf("cannot load CMC slug2Name map: %s", e)
+	}
+	coinmarketcapOptions := optionsBuilder()
+	for slug, name := range cmcSlug2Name {
+		coinmarketcapOptions.coinmarketcap(slug, name)
+	}
+	log.Printf("loaded %d currencies from coinmarketcap\n", len(cmcSlug2Name))
+
 	ccxtOptions := optionsBuilder()
 	for _, ccxtExchangeName := range sdk.GetExchangeList() {
 		if _, ok := ccxtBlacklist[ccxtExchangeName]; ok {
@@ -332,11 +367,8 @@ func loadOptionsMetadata() (metadata, error) {
 	}
 
 	builder := optionsBuilder().
-		option("crypto", "Crypto (CMC)", dropdown(optionsBuilder().
-			coinmarketcap("stellar", "Stellar").
-			coinmarketcap("bitcoin", "Bitcoin").
-			coinmarketcap("ethereum", "Ethereum").
-			coinmarketcap("litecoin", "Litecoin"))).
+		option("crypto", "Crypto (CMC)", dropdown(
+			coinmarketcapOptions)).
 		option("exchange", "Centralized Exchange", dropdown(optionsBuilder().
 			option("kraken", "Kraken", dropdown(optionsBuilder().
 				krakenMarket("XXLM/ZUSD", "XLM/USD"))).
