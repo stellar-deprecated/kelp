@@ -2,7 +2,11 @@ package backend
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/support/sdk"
 )
 
 type metadata interface{}
@@ -30,6 +34,11 @@ type dropdownOption struct {
 
 const dropdownString = "dropdown"
 const textString = "text"
+
+var ccxtWhitelist = map[string]string{
+	"binance":  "Binance (via CCXT)",
+	"poloniex": "Poloniex (via CCXT)",
+}
 
 //   const optionsMetadata = {
 // 	type: "dropdown",
@@ -250,12 +259,40 @@ func (dob *dropdownOptionsBuilder) option(value string, text string, subtype met
 	return dob
 }
 
+func (dob *dropdownOptionsBuilder) includeOptions(other *dropdownOptionsBuilder) *dropdownOptionsBuilder {
+	for key, value := range other._build() {
+		dob.option(key, value.Text, value.Subtype)
+	}
+	return dob
+}
+
 func (dob *dropdownOptionsBuilder) _build() map[string]dropdownOption {
 	return dob.m
 }
 
 func loadOptionsMetadata() (metadata, error) {
-	mdata := dropdown(optionsBuilder().
+	ccxtOptions := optionsBuilder()
+	for _, ccxtExchangeName := range sdk.GetExchangeList() {
+		name, ok := ccxtWhitelist[ccxtExchangeName]
+		if !ok {
+			continue
+		}
+
+		c, e := sdk.MakeInitializedCcxtExchange(ccxtExchangeName, api.ExchangeAPIKey{}, []api.ExchangeParam{}, []api.ExchangeHeader{})
+		if e != nil {
+			// don't block if we are unable to load an exchange
+			log.Printf("unable to make ccxt exchange '%s' when trying to load options metadata, continuing: %s\n", ccxtExchangeName, e)
+			continue
+		}
+
+		marketsBuilder := optionsBuilder()
+		for tradingPair := range c.GetMarkets() {
+			marketsBuilder.ccxtMarket(tradingPair)
+		}
+		ccxtOptions.option("ccxt-"+ccxtExchangeName, name, dropdown(marketsBuilder))
+	}
+
+	builder := optionsBuilder().
 		option("crypto", "Crypto (CMC)", dropdown(optionsBuilder().
 			coinmarketcap("stellar", "Stellar").
 			coinmarketcap("bitcoin", "Bitcoin").
@@ -263,19 +300,15 @@ func loadOptionsMetadata() (metadata, error) {
 			coinmarketcap("litecoin", "Litecoin"))).
 		option("exchange", "Centralized Exchange", dropdown(optionsBuilder().
 			option("kraken", "Kraken", dropdown(optionsBuilder().
-				krakenMarket("XXLM/ZUSD", "XLM/USD"))))).
+				krakenMarket("XXLM/ZUSD", "XLM/USD"))).
+			includeOptions(ccxtOptions))).
 		option("fiat", "Fiat (CurrencyLayer)", dropdown(optionsBuilder().
 			currencylayer("USD").
 			currencylayer("EUR").
 			currencylayer("GBP").
 			currencylayer("INR"))).
-		option("fixed", "Fixed Value", text("1.0")))
-
-	var e error
-	if e != nil {
-		return nil, fmt.Errorf("cannot get optionsMetadata: %s", e)
-	}
-
+		option("fixed", "Fixed Value", text("1.0"))
+	mdata := dropdown(builder)
 	return mdata, nil
 }
 
