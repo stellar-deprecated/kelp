@@ -7,20 +7,20 @@ import (
 
 type metadata interface{}
 
-type dropdown struct {
+type dropdownType struct {
 	Type    string                    `json:"type"`
 	Options map[string]dropdownOption `json:"options"`
 }
 
-var _ metadata = dropdown{}
+var _ metadata = dropdownType{}
 
-type text struct {
+type textType struct {
 	Type         string      `json:"type"`
 	DefaultValue string      `json:"defaultValue"`
 	Subtype      interface{} `json:"subtype"`
 }
 
-var _ metadata = text{}
+var _ metadata = textType{}
 
 type dropdownOption struct {
 	Value   string   `json:"value"`
@@ -196,69 +196,80 @@ const textString = "text"
 // 	}
 //   };
 
-func (s *APIServer) optionsMetadata(w http.ResponseWriter, r *http.Request) {
-	mdata := dropdown{
-		Type: dropdownString,
-		Options: map[string]dropdownOption{
-			"crypto": dropdownOption{
-				Value: "crypto",
-				Text:  "Crypto from CMC",
-				Subtype: dropdown{
-					Type: dropdownString,
-					Options: map[string]dropdownOption{
-						"https://api.coinmarketcap.com/v1/ticker/stellar/": dropdownOption{
-							Value:   "https://api.coinmarketcap.com/v1/ticker/stellar/",
-							Text:    "Stellar",
-							Subtype: nil,
-						},
-						"https://api.coinmarketcap.com/v1/ticker/bitcoin/": dropdownOption{
-							Value:   "https://api.coinmarketcap.com/v1/ticker/bitcoin/",
-							Text:    "Bitcoin",
-							Subtype: nil,
-						},
-					},
-				},
-			},
-			"exchange": dropdownOption{
-				Value: "exchange",
-				Text:  "Centralized Exchange",
-				Subtype: dropdown{
-					Type: dropdownString,
-					Options: map[string]dropdownOption{
-						"kraken": dropdownOption{
-							Value: "kraken",
-							Text:  "Kraken",
-							Subtype: dropdown{
-								Type: dropdownString,
-								Options: map[string]dropdownOption{
-									"XXLM/ZUSD": dropdownOption{
-										Value:   "XXLM/ZUSD",
-										Text:    "XLM/USD",
-										Subtype: nil,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			"fixed": dropdownOption{
-				Value: "fixed",
-				Text:  "Fixed Value",
-				Subtype: text{
-					Type:         textString,
-					DefaultValue: "1.0",
-					Subtype:      nil,
-				},
-			},
-		},
+func dropdown(options *dropdownOptionsBuilder) dropdownType {
+	return dropdownType{
+		Type:    dropdownString,
+		Options: options._build(),
 	}
+}
+
+func text(defaultValue string) textType {
+	return textType{
+		Type:         textString,
+		DefaultValue: defaultValue,
+		Subtype:      nil,
+	}
+}
+
+type dropdownOptionsBuilder struct {
+	m map[string]dropdownOption
+}
+
+func optionsBuilder() *dropdownOptionsBuilder {
+	return &dropdownOptionsBuilder{
+		m: map[string]dropdownOption{},
+	}
+}
+
+func (dob *dropdownOptionsBuilder) ccxtMarket(marketCode string) *dropdownOptionsBuilder {
+	return dob._leaf(marketCode, marketCode)
+}
+
+func (dob *dropdownOptionsBuilder) krakenMarket(marketCode string, marketName string) *dropdownOptionsBuilder {
+	return dob._leaf(marketCode, marketName)
+}
+
+func (dob *dropdownOptionsBuilder) coinmarketcap(tickerCode string, currencyName string) *dropdownOptionsBuilder {
+	return dob._leaf(fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", tickerCode), currencyName)
+}
+
+func (dob *dropdownOptionsBuilder) _leaf(value string, text string) *dropdownOptionsBuilder {
+	return dob.option(value, text, nil)
+}
+
+func (dob *dropdownOptionsBuilder) option(value string, text string, subtype metadata) *dropdownOptionsBuilder {
+	dob.m[value] = dropdownOption{
+		Value:   value,
+		Text:    text,
+		Subtype: subtype,
+	}
+	return dob
+}
+
+func (dob *dropdownOptionsBuilder) _build() map[string]dropdownOption {
+	return dob.m
+}
+
+func loadOptionsMetadata() (metadata, error) {
+	mdata := dropdown(optionsBuilder().
+		option("crypto", "Crypto from CMC", dropdown(optionsBuilder().
+			coinmarketcap("stellar", "Stellar").
+			coinmarketcap("bitcoin", "Bitcoin").
+			coinmarketcap("ethereum", "Ethereum").
+			coinmarketcap("litecoin", "Litecoin"))).
+		option("exchange", "Centralized Exchange", dropdown(optionsBuilder().
+			option("kraken", "Kraken", dropdown(optionsBuilder().
+				krakenMarket("XXLM/ZUSD", "XLM/USD"))))).
+		option("fixed", "Fixed Value", text("1.0")))
 
 	var e error
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot get optionsMetadata: %s", e))
-		return
+		return nil, fmt.Errorf("cannot get optionsMetadata: %s", e)
 	}
 
-	s.writeJson(w, mdata)
+	return mdata, nil
+}
+
+func (s *APIServer) optionsMetadata(w http.ResponseWriter, r *http.Request) {
+	s.writeJson(w, s.cachedOptionsMetadata)
 }
