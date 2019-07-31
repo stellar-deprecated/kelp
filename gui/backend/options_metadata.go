@@ -196,6 +196,11 @@ func loadOptionsMetadata() (metadata, error) {
 
 		marketsBuilder := optionsBuilder()
 		for tradingPair := range c.GetMarkets() {
+			if strings.Count(tradingPair, "/") != 1 {
+				log.Printf("ignoring ccxt exchange market for tradingPair on '%s' exchange because there was not exactly one '/' in the tradingPair: %s", ccxtExchangeName, tradingPair)
+				continue
+			}
+
 			marketsBuilder.ccxtMarket(tradingPair)
 		}
 		ccxtOptions.option("ccxt-"+ccxtExchangeName, displayName, dropdown(marketsBuilder))
