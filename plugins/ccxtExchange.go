@@ -20,7 +20,7 @@ var _ api.Exchange = ccxtExchange{}
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
 type ccxtExchange struct {
-	assetConverter     *model.AssetConverter
+	assetConverter     model.AssetConverterInterface
 	delimiter          string
 	ocOverridesHandler *OrderConstraintsOverridesHandler
 	api                *sdk.Ccxt
@@ -96,7 +96,7 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 }
 
 // GetAssetConverter impl
-func (c ccxtExchange) GetAssetConverter() *model.AssetConverter {
+func (c ccxtExchange) GetAssetConverter() model.AssetConverterInterface {
 	return c.assetConverter
 }
 
