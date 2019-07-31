@@ -233,6 +233,10 @@ func (dob *dropdownOptionsBuilder) coinmarketcap(tickerCode string, currencyName
 	return dob._leaf(fmt.Sprintf("https://api.coinmarketcap.com/v1/ticker/%s/", tickerCode), currencyName)
 }
 
+func (dob *dropdownOptionsBuilder) currencylayer(tickerCode string) *dropdownOptionsBuilder {
+	return dob._leaf(fmt.Sprintf("http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=%s", tickerCode), tickerCode)
+}
+
 func (dob *dropdownOptionsBuilder) _leaf(value string, text string) *dropdownOptionsBuilder {
 	return dob.option(value, text, nil)
 }
@@ -252,7 +256,7 @@ func (dob *dropdownOptionsBuilder) _build() map[string]dropdownOption {
 
 func loadOptionsMetadata() (metadata, error) {
 	mdata := dropdown(optionsBuilder().
-		option("crypto", "Crypto from CMC", dropdown(optionsBuilder().
+		option("crypto", "Crypto (CMC)", dropdown(optionsBuilder().
 			coinmarketcap("stellar", "Stellar").
 			coinmarketcap("bitcoin", "Bitcoin").
 			coinmarketcap("ethereum", "Ethereum").
@@ -260,6 +264,11 @@ func loadOptionsMetadata() (metadata, error) {
 		option("exchange", "Centralized Exchange", dropdown(optionsBuilder().
 			option("kraken", "Kraken", dropdown(optionsBuilder().
 				krakenMarket("XXLM/ZUSD", "XLM/USD"))))).
+		option("fiat", "Fiat (CurrencyLayer)", dropdown(optionsBuilder().
+			currencylayer("USD").
+			currencylayer("EUR").
+			currencylayer("GBP").
+			currencylayer("INR"))).
 		option("fixed", "Fixed Value", text("1.0")))
 
 	var e error
