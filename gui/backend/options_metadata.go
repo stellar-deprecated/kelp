@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/sdk"
@@ -35,9 +36,12 @@ type dropdownOption struct {
 const dropdownString = "dropdown"
 const textString = "text"
 
-var ccxtWhitelist = map[string]string{
-	"binance":  "Binance (via CCXT)",
-	"poloniex": "Poloniex (via CCXT)",
+var ccxtExchangeNames = map[string]string{
+	"bitfinex2":     "Bitfinex [alternate]",
+	"hitbtc2":       "Hitbtc [alternate]",
+	"_1broker":      "1broker",
+	"_1btcxe":       "1btcxe",
+	"coinmarketcap": "CoinMarketCap",
 }
 
 //   const optionsMetadata = {
@@ -273,10 +277,11 @@ func (dob *dropdownOptionsBuilder) _build() map[string]dropdownOption {
 func loadOptionsMetadata() (metadata, error) {
 	ccxtOptions := optionsBuilder()
 	for _, ccxtExchangeName := range sdk.GetExchangeList() {
-		name, ok := ccxtWhitelist[ccxtExchangeName]
-		if !ok {
-			continue
+		displayName := strings.Title(ccxtExchangeName)
+		if name, ok := ccxtExchangeNames[ccxtExchangeName]; ok {
+			displayName = name
 		}
+		displayName = displayName + " (via CCXT)"
 
 		c, e := sdk.MakeInitializedCcxtExchange(ccxtExchangeName, api.ExchangeAPIKey{}, []api.ExchangeParam{}, []api.ExchangeHeader{})
 		if e != nil {
@@ -289,7 +294,7 @@ func loadOptionsMetadata() (metadata, error) {
 		for tradingPair := range c.GetMarkets() {
 			marketsBuilder.ccxtMarket(tradingPair)
 		}
-		ccxtOptions.option("ccxt-"+ccxtExchangeName, name, dropdown(marketsBuilder))
+		ccxtOptions.option("ccxt-"+ccxtExchangeName, displayName, dropdown(marketsBuilder))
 	}
 
 	builder := optionsBuilder().
