@@ -41,6 +41,10 @@ class Bots extends Component {
   }
 
   fetchBots() {
+    if (this._asyncRequests["listBots"]) {
+      return
+    }
+
     var _this = this
     this._asyncRequests["listBots"] = listBots(this.props.baseUrl).then(bots => {
       if (!_this._asyncRequests["listBots"]) {
@@ -51,8 +55,7 @@ class Bots extends Component {
       delete _this._asyncRequests["listBots"];
       if (bots.hasOwnProperty('error')) {
         console.log("error in listBots: " + bots.error);
-        // retry
-        setTimeout(_this.fetchBots, 5000);
+        _this.fetchBots();
       } else {
         _this.setState(prevState => ({
           bots: bots
@@ -118,7 +121,7 @@ class Bots extends Component {
         </div>
       );
     } else {
-      setTimeout(this.fetchBots, 5000);
+      setTimeout(this.fetchBots, 500);
     }
 
     return (

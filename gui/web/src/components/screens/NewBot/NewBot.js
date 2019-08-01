@@ -38,6 +38,10 @@ class NewBot extends Component {
   }
 
   loadOptionsMetadata() {
+    if (this._asyncRequests["optionsMetadata"]) {
+      return
+    }
+
     var _this = this;
     this._asyncRequests["optionsMetadata"] = fetchOptionsMetadata(this.props.baseUrl).then(optionsMetadata => {
       if (!_this._asyncRequests["optionsMetadata"]) {
@@ -48,8 +52,7 @@ class NewBot extends Component {
       delete _this._asyncRequests["optionsMetadata"];
       if (optionsMetadata.hasOwnProperty('error')) {
         console.log("error when loading optionsMetadata: " + optionsMetadata.error);
-        // retry
-        setTimeout(_this.loadOptionsMetadata, 5000);
+        setTimeout(_this.loadOptionsMetadata, 1000);
       } else {
         _this.setState(prevState => ({
           optionsMetadata: optionsMetadata,
