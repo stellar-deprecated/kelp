@@ -338,7 +338,10 @@ class BotCard extends Component {
         <div className={styles.firstColumn}>
           <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
-            <BotExchangeInfo strategy={this.state.botInfo.strategy}/>
+            <BotExchangeInfo
+              isTestnet={this.state.botInfo.is_testnet}
+              strategy={this.state.botInfo.strategy}
+              />
           </div>
           <div>
             <BotAssetsInfo
