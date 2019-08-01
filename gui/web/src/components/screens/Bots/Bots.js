@@ -55,7 +55,7 @@ class Bots extends Component {
       delete _this._asyncRequests["listBots"];
       if (bots.hasOwnProperty('error')) {
         console.log("error in listBots: " + bots.error);
-        _this.fetchBots();
+        setTimeout(this.fetchBots, 1000);
       } else {
         _this.setState(prevState => ({
           bots: bots
@@ -121,7 +121,7 @@ class Bots extends Component {
         </div>
       );
     } else {
-      setTimeout(this.fetchBots, 500);
+      setTimeout(this.fetchBots, 1000);
     }
 
     return (
