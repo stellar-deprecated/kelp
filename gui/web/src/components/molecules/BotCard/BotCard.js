@@ -22,6 +22,7 @@ import getBotInfo from '../../../kelp-ops-api/getBotInfo';
 let defaultBotInfo = {
   "last_updated": "Never",
   "strategy": "buysell",
+  "is_testnet": true,
   "trading_pair": {
     "Base": "?",
     "Quote": "?"
@@ -277,6 +278,9 @@ class BotCard extends Component {
     let baseCode = this.state.botInfo.asset_base.asset_type === "native" ? "XLM/native" : this.state.botInfo.asset_base.asset_code + "/" + this.state.botInfo.asset_base.asset_issuer;
     let quoteCode = this.state.botInfo.asset_quote.asset_type === "native" ? "XLM/native" : this.state.botInfo.asset_quote.asset_code + "/" + this.state.botInfo.asset_quote.asset_issuer;
     let link = "https://testnet.interstellar.exchange/app/#/trade/guest/" + baseCode + "/" + quoteCode;
+    if (!this.state.botInfo.is_testnet) {
+      link = "https://interstellar.exchange/app/#/trade/guest/" + baseCode + "/" + quoteCode;
+    }
     window.open(link);
   }
 
