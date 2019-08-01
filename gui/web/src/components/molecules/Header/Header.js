@@ -2,8 +2,6 @@ import React, { Component } from 'react';
 import logo from '../../../assets/images/kelp-logo.svg';
 import grid from '../../_styles/grid.module.scss';
 import styles from './Header.module.scss';
-import Button from '../../atoms/Button/Button';
-
 
 class Header extends Component {
   render() {

@@ -6,7 +6,7 @@ class BotExchangeInfo extends Component {
   render() {
     return (
       <div className={styles.wrapper}>
-        <Badge test={true}/>
+        <Badge testnet={this.props.isTestnet}/>
         <span className={styles.exchange}>SDEX</span>
         <span className={styles.exchange}>  </span>
         <span className={styles.strategy}>{this.props.strategy}</span>
