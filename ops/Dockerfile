@@ -13,7 +13,7 @@ WORKDIR /go/src/github.com/stellar/kelp
 RUN pwd
 
 # install glide
-RUN curl https://glide.sh/get | sh
+RUN curl -s https://glide.sh/get | sh
 
 # install kelp
 ENV GOPATH /go
@@ -24,4 +24,10 @@ RUN ./scripts/build.sh
 # set ulimit
 RUN ulimit -n 10000
 
-CMD ["./bin/kelp", "server", "-p", "8000", "--horizon-testnet-uri=https://horizon-dev-testnet.stellar.org"]
+# use command line arguments from invocation of docker run against this ENTRYPOINT command - https://stackoverflow.com/a/40312311/1484710
+ENTRYPOINT ["./bin/kelp"]
+
+# sample command to run this container:
+# docker run -p 8011:8011 <image> server -p 8011 --ccxt-rest-url=http://host.docker.internal:3000
+# this assumes that you are running ccxt on port 3000 outside this kelp docker container
+# the three port numbers (8011 in the example above) must be the same and must be specified
