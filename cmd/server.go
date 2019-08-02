@@ -29,6 +29,7 @@ type serverInputs struct {
 	devAPIPort        *uint16
 	horizonTestnetURI *string
 	horizonPubnetURI  *string
+	ccxtRestUrl       *string
 }
 
 func init() {
@@ -38,6 +39,7 @@ func init() {
 	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
 	options.horizonTestnetURI = serverCmd.Flags().String("horizon-testnet-uri", "https://horizon-testnet.stellar.org", "URI to use for the horizon instance connected to the Stellar Test Network (must contain the word 'test')")
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
+	options.ccxtRestUrl = serverCmd.Flags().String("ccxt-rest-url", "", "URL to use for the CCXT-rest API, passed as a parameter into the Kelp subprocesses started by the GUI")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		if !strings.Contains(*options.horizonTestnetURI, "test") {
@@ -46,9 +48,19 @@ func init() {
 		if strings.Contains(*options.horizonPubnetURI, "test") {
 			panic("'horizon-pubnet-uri' argument must not contain the word 'test'")
 		}
+		if *options.ccxtRestUrl != "" {
+			if !strings.HasPrefix(*options.ccxtRestUrl, "http://") && !strings.HasPrefix(*options.ccxtRestUrl, "https://") {
+				panic("'ccxt-rest-url' argument must start with either `http://` or `https://` in the value")
+			}
+
+			e := testCcxtURL(*options.ccxtRestUrl)
+			if e != nil {
+				panic(e)
+			}
+		}
 
 		kos := kelpos.GetKelpOS()
-		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, *options.horizonPubnetURI)
+		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, *options.horizonPubnetURI, *options.ccxtRestUrl)
 		if e != nil {
 			panic(e)
 		}

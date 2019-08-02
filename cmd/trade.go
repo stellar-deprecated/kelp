@@ -75,6 +75,7 @@ type inputs struct {
 	logPrefix                     *string
 	fixedIterations               *uint64
 	noHeaders                     *bool
+	ccxtRestUrl                   *string
 }
 
 func validateCliParams(l logger.Logger, options inputs) {
@@ -92,6 +93,25 @@ func validateCliParams(l logger.Logger, options inputs) {
 	} else {
 		l.Infof("will run only %d update iterations\n", *options.fixedIterations)
 	}
+
+	if *options.ccxtRestUrl != "" {
+		if !strings.HasPrefix(*options.ccxtRestUrl, "http://") && !strings.HasPrefix(*options.ccxtRestUrl, "https://") {
+			panic("'ccxt-rest-url' argument must start with either `http://` or `https://` in the value")
+		}
+
+		e := testCcxtURL(*options.ccxtRestUrl)
+		if e != nil {
+			panic(e)
+		}
+	}
+}
+
+func testCcxtURL(ccxtURL string) error {
+	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtURL, "", map[string]string{}, nil, "")
+	if e != nil {
+		return fmt.Errorf("unable to connect to ccxt at the URL: %s", ccxtURL)
+	}
+	return nil
 }
 
 func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
@@ -129,6 +149,7 @@ func init() {
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
+	options.ccxtRestUrl = tradeCmd.Flags().String("ccxt-rest-url", "", "URL to use for the CCXT-rest API. Takes precendence over the CCXT_REST_URL param set in the botConfg file (default URL is https://localhost:3000)")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -415,7 +436,12 @@ func runTradeCmd(options inputs) {
 		}
 	}
 
-	if botConfig.CcxtRestURL != nil {
+	if *options.ccxtRestUrl != "" {
+		e := sdk.SetBaseURL(*options.ccxtRestUrl)
+		if e != nil {
+			logger.Fatal(l, fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *options.ccxtRestUrl, e))
+		}
+	} else if botConfig.CcxtRestURL != nil {
 		e := sdk.SetBaseURL(*botConfig.CcxtRestURL)
 		if e != nil {
 			logger.Fatal(l, fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *botConfig.CcxtRestURL, e))
