@@ -21,6 +21,7 @@ var ccxtBaseURL = "http://localhost:3000"
 // SetBaseURL allows setting the base URL for ccxt
 func SetBaseURL(baseURL string) error {
 	ccxtBaseURL = strings.TrimSuffix(baseURL, "/")
+	log.Printf("updated ccxtBaseURL to '%s'\n", ccxtBaseURL)
 	return nil
 }
 

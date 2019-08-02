@@ -16,6 +16,7 @@ import (
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/sdk"
 )
 
 var serverCmd = &cobra.Command{
@@ -56,6 +57,11 @@ func init() {
 			e := testCcxtURL(*options.ccxtRestUrl)
 			if e != nil {
 				panic(e)
+			}
+
+			e = sdk.SetBaseURL(*options.ccxtRestUrl)
+			if e != nil {
+				panic(fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *options.ccxtRestUrl, e))
 			}
 		}
 
