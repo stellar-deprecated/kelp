@@ -45,7 +45,6 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 
 	horizonTestnetURI = strings.TrimSuffix(horizonTestnetURI, "/")
 	horizonPubnetURI = strings.TrimSuffix(horizonPubnetURI, "/")
-	ccxtRestUrl = strings.TrimSuffix(ccxtRestUrl, "/")
 	log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
 	log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
 	log.Printf("using ccxtRestUrl: %s\n", ccxtRestUrl)

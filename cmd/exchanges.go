@@ -16,6 +16,7 @@ var exchanagesCmd = &cobra.Command{
 
 func init() {
 	exchanagesCmd.Run = func(ccmd *cobra.Command, args []string) {
+		checkInitRootFlags()
 		// call sdk.GetExchangeList() here so we pre-load exchanges before displaying the table
 		sdk.GetExchangeList()
 		fmt.Printf("  Exchange\t\t\tTested\t\tTrading\t\tDescription\n")
