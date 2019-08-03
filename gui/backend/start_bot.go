@@ -42,6 +42,9 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
 	}
+	if s.ccxtRestUrl != "" {
+		command = fmt.Sprintf("%s --ccxt-rest-url %s", command, s.ccxtRestUrl)
+	}
 	log.Printf("run command for bot '%s': %s\n", botName, command)
 
 	p, e := s.runKelpCommandBackground(botName, command)

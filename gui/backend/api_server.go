@@ -24,6 +24,7 @@ type APIServer struct {
 	kos                   *kelpos.KelpOS
 	horizonTestnetURI     string
 	horizonPubnetURI      string
+	ccxtRestUrl           string
 	apiTestNet            *horizonclient.Client
 	apiPubNet             *horizonclient.Client
 	apiTestNetOld         *horizon.Client
@@ -32,7 +33,7 @@ type APIServer struct {
 }
 
 // MakeAPIServer is a factory method
-func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetURI string) (*APIServer, error) {
+func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetURI string, ccxtRestUrl string) (*APIServer, error) {
 	binPath, e := filepath.Abs(os.Args[0])
 	if e != nil {
 		return nil, fmt.Errorf("could not get binPath of currently running binary: %s", e)
@@ -46,6 +47,7 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 	horizonPubnetURI = strings.TrimSuffix(horizonPubnetURI, "/")
 	log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
 	log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
+	log.Printf("using ccxtRestUrl: %s\n", ccxtRestUrl)
 	apiTestNet := &horizonclient.Client{
 		HorizonURL: horizonTestnetURI,
 		HTTP:       http.DefaultClient,
@@ -76,6 +78,7 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 		kos:                   kos,
 		horizonTestnetURI:     horizonTestnetURI,
 		horizonPubnetURI:      horizonPubnetURI,
+		ccxtRestUrl:           ccxtRestUrl,
 		apiTestNet:            apiTestNet,
 		apiPubNet:             apiPubNet,
 		apiTestNetOld:         apiTestNetOld,

@@ -78,6 +78,8 @@ type inputs struct {
 }
 
 func validateCliParams(l logger.Logger, options inputs) {
+	checkInitRootFlags()
+
 	if *options.operationalBuffer < 0 {
 		panic(fmt.Sprintf("invalid operationalBuffer argument, must be non-negative: %f", *options.operationalBuffer))
 	}
@@ -415,7 +417,7 @@ func runTradeCmd(options inputs) {
 		}
 	}
 
-	if botConfig.CcxtRestURL != nil {
+	if *rootCcxtRestURL == "" && botConfig.CcxtRestURL != nil {
 		e := sdk.SetBaseURL(*botConfig.CcxtRestURL)
 		if e != nil {
 			logger.Fatal(l, fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *botConfig.CcxtRestURL, e))

@@ -20,10 +20,8 @@ var ccxtBaseURL = "http://localhost:3000"
 
 // SetBaseURL allows setting the base URL for ccxt
 func SetBaseURL(baseURL string) error {
-	if strings.HasSuffix(baseURL, "/") {
-		return fmt.Errorf("invalid format for baseURL, should not end with trailing '/': %s", baseURL)
-	}
-	ccxtBaseURL = baseURL
+	ccxtBaseURL = strings.TrimSuffix(baseURL, "/")
+	log.Printf("updated ccxtBaseURL to '%s'\n", ccxtBaseURL)
 	return nil
 }
 
@@ -106,10 +104,10 @@ func loadExchangeList() {
 	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtBaseURL+pathExchanges, "", map[string]string{}, &output, "error")
 	if e != nil {
 		eMsg1 := strings.Contains(e.Error(), "could not execute http request")
-		eMsg2 := strings.Contains(e.Error(), "http://localhost:3000/exchanges: dial tcp")
+		eMsg2 := strings.Contains(e.Error(), ccxtBaseURL+"/exchanges: dial tcp")
 		eMsg3 := strings.Contains(e.Error(), "connection refused")
 		if eMsg1 && eMsg2 && eMsg3 {
-			log.Printf("ccxt-rest is not running on port 3000 so we cannot include those exchanges")
+			log.Printf("ccxt-rest is not running at %s so we cannot include those exchanges: %s", ccxtBaseURL, e.Error())
 		} else {
 			panic(fmt.Errorf("error getting list of supported exchanges by CCXT: %s", e))
 		}
