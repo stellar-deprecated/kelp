@@ -29,6 +29,7 @@ RUN ulimit -n 10000
 ENTRYPOINT ["./bin/kelp"]
 
 # sample command to run this container as a daemon process:
-# docker run -d -p 8011:8011 <image> server -p 8011 --ccxt-rest-url=http://host.docker.internal:3000
+# docker run -v `pwd`/ops:/go/src/github.com/stellar/kelp/bin/ops -d -p 8011:8011 <image> server -p 8011 --ccxt-rest-url=http://host.docker.internal:3000
 # this assumes that you are running ccxt on port 3000 outside this kelp docker container
 # the three port numbers (8011 in the example above) must be the same and must be specified
+# the first part of the -v argument is the directory where you want to save the kelp configs and kelp logs from the bots created in this container
