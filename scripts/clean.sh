@@ -10,7 +10,7 @@ function delete_large_dir() {
     echo $1
 }
 
-if [[ ($# -gt 1 || `pwd | rev | cut -d'/' -f1 | rev` != "kelp") ]]
+if [[ ($# -gt 1 || $(basename $("pwd")) != "kelp") ]]
 then
     echo "need to invoke from the root 'kelp' directory"
     exit 1
