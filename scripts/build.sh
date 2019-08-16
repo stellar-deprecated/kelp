@@ -33,7 +33,7 @@ function generate_static_web_files() {
     echo ""
 }
 
-if [[ ($# -gt 1 || `pwd | rev | cut -d'/' -f1 | rev` != "kelp") ]]
+if [[ ($# -gt 1 || $(basename $("pwd")) != "kelp") ]]
 then
     echo "need to invoke from the root 'kelp' directory"
     exit 1
@@ -117,7 +117,7 @@ install_web_dependencies
 generate_static_web_files
 
 echo "embedding contents of gui/web/build into a .go file ..."
-go run ./scripts/fs_bin_gen.go 
+go run ./scripts/fs_bin_gen.go
 echo "... finished embedding contents of gui/web/build into a .go file"
 echo ""
 
