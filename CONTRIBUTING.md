@@ -2,7 +2,7 @@
 
 Please read the [Contribution Guide below](#contribution-guide)
 
-Then please [sign the Contributor License Agreement](https://goo.gl/forms/lkjJbvkPOO4zZFDp2).
+Then please [sign the Contributor License Agreement](https://docs.google.com/forms/d/e/1FAIpQLSc5eppq6GOu9-TnFuRMBh4qIP1ChmZx9lrA6zOTyYiowKiwpA/viewform?usp=sf_link).
 
 ## Contribution Guide
 
@@ -17,7 +17,7 @@ We want to make it as easy as possible to contribute changes that help the proje
   * Clearly describe the issue including steps to reproduce it (if it is a bug).
 * Fork the repository on GitHub and start working on your change.
 * When your change is ready then [submit a Pull Request].
-* Please [sign the Contributor License Agreement](https://goo.gl/forms/lkjJbvkPOO4zZFDp2) so we can accept your contributions.
+* Please [sign the Contributor License Agreement](https://docs.google.com/forms/d/e/1FAIpQLSc5eppq6GOu9-TnFuRMBh4qIP1ChmZx9lrA6zOTyYiowKiwpA/viewform?usp=sf_link) so we can accept your contributions.
 
 #### Minor Changes
 
@@ -43,7 +43,7 @@ Of course, feel free to create a new issue if you think something needs to be ad
 
 ### Submitting Changes
 
-* [Sign the Contributor License Agreement](https://goo.gl/forms/lkjJbvkPOO4zZFDp2) so we can accept your contributions.
+* [Sign the Contributor License Agreement](https://docs.google.com/forms/d/e/1FAIpQLSc5eppq6GOu9-TnFuRMBh4qIP1ChmZx9lrA6zOTyYiowKiwpA/viewform?usp=sf_link) so we can accept your contributions.
 * All content, comments, and pull requests must follow the [Stellar Community Guidelines](https://www.stellar.org/community-guidelines/).
 * Push your changes to a feature branch in your fork of the repository.
 * Submit a Pull Request.
@@ -55,7 +55,7 @@ At this point you're waiting on us. We like to at least comment on pull requests
 
 ## Additional Resources
 
-* [Contributor License Agreement](https://goo.gl/forms/lkjJbvkPOO4zZFDp2)
+* [Contributor License Agreement](https://docs.google.com/forms/d/e/1FAIpQLSc5eppq6GOu9-TnFuRMBh4qIP1ChmZx9lrA6zOTyYiowKiwpA/viewform?usp=sf_link)
 * [Explore the Stellar API](https://www.stellar.org/developers/reference/)
 * Ask questions on the [Stellar StackExchange](https://stellar.stackexchange.com/); use the `kelp` tag 
 
