@@ -418,6 +418,13 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 		offerPrice := model.NumberFromFloat(curPrice, s.orderConstraints.PricePrecision)
 		return offerPrice, false, nil, nil
 	}
+	triggers := []string{}
+	if priceTrigger {
+		triggers = append(triggers, "price")
+	}
+	if amountTrigger {
+		triggers = append(triggers, "amount")
+	}
 
 	targetPrice = *model.NumberByCappingPrecision(&targetPrice, s.orderConstraints.PricePrecision)
 	targetAmount = *model.NumberByCappingPrecision(&targetAmount, s.orderConstraints.VolumePrecision)
@@ -445,8 +452,8 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 				lowestPriceLogged = 1 / highestPrice
 				highestPriceLogged = 1 / lowestPrice
 			}
-			log.Printf("%s | modify | old level=%d | new level = %d | targetPriceQuote=%.8f | targetAmtBase=%.8f | curPriceQuote=%.8f | lowPriceQuote=%.8f | highPriceQuote=%.8f | curAmtBase=%.8f | minAmtBase=%.8f | maxAmtBase=%.8f\n",
-				s.action, index+1, newIndex+1, priceLogged, amountLogged, curPriceLogged, lowestPriceLogged, highestPriceLogged, curAmountLogged, minAmountLogged, maxAmountLogged)
+			log.Printf("%s | modify | old level=%d | new level = %d | triggers=%v | targetPriceQuote=%.8f | targetAmtBase=%.8f | curPriceQuote=%.8f | lowPriceQuote=%.8f | highPriceQuote=%.8f | curAmtBase=%.8f | minAmtBase=%.8f | maxAmtBase=%.8f\n",
+				s.action, index+1, newIndex+1, triggers, priceLogged, amountLogged, curPriceLogged, lowestPriceLogged, highestPriceLogged, curAmountLogged, minAmountLogged, maxAmountLogged)
 			return s.sdex.ModifySellOffer(offers[index], price, amount, incrementalNativeAmountRaw)
 		},
 		offers[index].Selling,
