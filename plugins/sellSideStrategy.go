@@ -219,9 +219,8 @@ func (s *sellSideStrategy) createPrecedingOffers(
 
 	for i := 0; i < len(precedingLevels); i++ {
 		if hitCapacityLimit {
-			// we consider the ith level consumed because we don't want to create an offer for it anyway since we hit the capacity limit
-			log.Printf("%s, hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", s.action, i+1)
-			return (i + 1), true, ops, newTopOffer, nil
+			log.Printf("%s, hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", s.action, i)
+			return i, true, ops, newTopOffer, nil
 		}
 
 		targetPrice, targetAmount, e := s.computeTargets(precedingLevels[i])
