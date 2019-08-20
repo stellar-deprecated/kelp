@@ -277,7 +277,8 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 		offers = append([]hProtocol.Offer{{}}, offers...)
 	}
 
-	// next we want to adjust our remaining offers to be in line with what is desired, creating new offers that may not exist at the end of our existing offers
+	// next we want to adjust our remaining offers to be in line with what is desired
+	// either modifying the existing offers, or creating new offers at the end of our existing offers
 	for i := numLevelsConsumed; i < len(s.currentLevels); i++ {
 		isModify := i < len(offers)
 		// we only want to delete offers after we hit the capacity limit which is why we perform this check in the beginning
