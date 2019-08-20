@@ -97,12 +97,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:                       simMode,
-		pair:                          pair,
-		assetMap:                      assetMap,
-		opFeeStroopsFn:                opFeeStroopsFn,
-		tradingOnSdex:                 exchangeShim == nil,
-		ocOverridesHandler:            MakeEmptyOrderConstraintsOverridesHandler(),
+		simMode:            simMode,
+		pair:               pair,
+		assetMap:           assetMap,
+		opFeeStroopsFn:     opFeeStroopsFn,
+		tradingOnSdex:      exchangeShim == nil,
+		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
@@ -584,8 +584,17 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 	}
 }
 
+func makeEffectsLink(trade hProtocol.Trade) string {
+	effectsLink := trade.Links.Operation.Href
+	if !strings.HasSuffix(effectsLink, "/") {
+		effectsLink = effectsLink + "/"
+	}
+	return effectsLink + "effects?limit=200"
+}
+
 func (sdex *SDEX) getOrderAction(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, trade hProtocol.Trade) (*model.OrderAction, error) {
 	if trade.BaseAccount != sdex.TradingAccount && trade.CounterAccount != sdex.TradingAccount {
+		// if the trade is different from what we expect for this bot instance then return empty values so we ignore this trade
 		return nil, nil
 	}
 
@@ -603,50 +612,116 @@ func (sdex *SDEX) getOrderAction(baseAsset hProtocol.Asset, quoteAsset hProtocol
 		return nil, nil
 	}
 
-	var output map[string]interface{}
-	e := networking.JSONRequest(http.DefaultClient, "GET", trade.Links.Operation.Href, "", map[string]string{}, &output, "error")
-	if e != nil {
-		return nil, fmt.Errorf("could not get operation related to trade to fetch orderAction (URL=%s): %s", trade.Links.Operation.Href, e)
-	}
-	sourceAccount, ok := output["source_account"].(string)
-	if !ok {
-		return nil, fmt.Errorf("could not cast 'source_account' to a string in the operation json result: %s (type=%T)", output["source_account"], output["source_account"])
-	}
-	sourceSellingAsset := utils.Native
-	sourceSellingAssetType, ok := output["selling_asset_type"].(string)
-	if !ok {
-		return nil, fmt.Errorf("could not cast 'selling_asset_type' to a string in the operation json result: %s (type=%T)", output["selling_asset_type"], output["selling_asset_type"])
-	}
-	if sourceSellingAssetType != utils.Native {
-		sourceSellingAssetCode, ok := output["selling_asset_code"].(string)
-		if !ok {
-			return nil, fmt.Errorf("could not cast 'selling_asset_code' to a string in the operation json result: %s (type=%T)", output["selling_asset_code"], output["selling_asset_code"])
+	effectsLink := makeEffectsLink(trade)
+	for {
+		var output map[string]interface{}
+		e := networking.JSONRequest(http.DefaultClient, "GET", effectsLink, "", map[string]string{}, &output, "error")
+		if e != nil {
+			return nil, fmt.Errorf("could not get effect related to trade to fetch orderAction (URL=%s): %s", effectsLink, e)
 		}
-		sourceSellingAssetIssuer, ok := output["selling_asset_issuer"].(string)
+		embedded, ok := output["_embedded"].(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("could not cast 'selling_asset_issuer' to a string in the operation json result: %s (type=%T)", output["selling_asset_issuer"], output["selling_asset_issuer"])
+			return nil, fmt.Errorf("could not cast _embedded field in effect from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", effectsLink, output["_embedded"], output["_embedded"])
 		}
-		sourceSellingAsset = sourceSellingAssetCode + ":" + sourceSellingAssetIssuer
-	}
+		effectRecords, ok := embedded["records"].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("could not cast records to a []interface{} from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", effectsLink, embedded["records"], embedded["records"])
+		}
+		if len(effectRecords) == 0 {
+			break
+		}
 
-	// compare the base and quote asset on the trade to what we are using as our base and quote
-	// then compare whether it was the base or the quote that was the seller
-	actionSell := model.OrderActionSell
-	actionBuy := model.OrderActionBuy
-	if sourceAccount == sdex.TradingAccount {
-		if sdexBaseAsset == sourceSellingAsset {
-			return &actionSell, nil
-		} else {
+		for i, effect := range effectRecords {
+			effectMap, ok := effect.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("could not cast record to a map[string]iterface{} for effect at index %d from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", i, effectsLink, effect, effect)
+			}
+
+			effectType, ok := effectMap["type"].(string)
+			if !ok {
+				return nil, fmt.Errorf("could not cast 'type' for effect record at index %d from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", i, effectsLink, effectMap["type"], effectMap["type"])
+			}
+			if effectType != "trade" {
+				continue
+			}
+
+			accountString, ok := effectMap["account"].(string)
+			if !ok {
+				return nil, fmt.Errorf("could not cast 'account' for effect record at index %d from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", i, effectsLink, effectMap["account"], effectMap["account"])
+			}
+			if accountString != sdex.TradingAccount {
+				continue
+			}
+
+			soldAsset, e := sdex.parseAssetFromEffect(effectMap, "sold")
+			if e != nil {
+				return nil, fmt.Errorf("could not parse asset with prefix '%s' from effect at index %d from URL when trying to fetch orderAction (URL=%s): %s", "sold", i, effectsLink, e)
+			}
+
+			boughtAsset, e := sdex.parseAssetFromEffect(effectMap, "bought")
+			if e != nil {
+				return nil, fmt.Errorf("could not parse asset with prefix '%s' from effect at index %d from URL when trying to fetch orderAction (URL=%s): %s", "bought", i, effectsLink, e)
+			}
+
+			if !(sdexBaseAsset == soldAsset && sdexQuoteAsset == boughtAsset) && !(sdexBaseAsset == boughtAsset && sdexQuoteAsset == soldAsset) {
+				// continue here because it could be another trade in this list of assets
+				// i.e. we could have multiple trades in the same path payment but we want to consider these trades individually
+				continue
+			}
+
+			// compare the base and quote asset on the trade to what we are using as our base and quote
+			actionSell := model.OrderActionSell
+			actionBuy := model.OrderActionBuy
+			if sdexBaseAsset == soldAsset {
+				return &actionSell, nil
+			}
 			return &actionBuy, nil
 		}
+
+		links, ok := output["_links"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("could not cast _links field in effect from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", effectsLink, output["_links"], output["_links"])
+		}
+		next, ok := links["next"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("could not cast 'next' field in effect's _links from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", effectsLink, links["next"], links["next"])
+		}
+
+		nextHref, ok := next["href"].(string)
+		if !ok {
+			return nil, fmt.Errorf("could not cast 'href' field in next object of effect's _links from URL when trying to fetch orderAction (URL=%s): type=%T and json=%v", effectsLink, next["href"], next["href"])
+		}
+
+		effectsLink = nextHref
 	}
 
-	// else
-	if sdexBaseAsset == sourceSellingAsset {
-		return &actionBuy, nil
-	} else {
-		return &actionSell, nil
+	// if we found nothing for this bot instance then return empty values so it ignores this trade
+	return nil, nil
+}
+
+func (sdex *SDEX) parseAssetFromEffect(effectMap map[string]interface{}, prefix string) (string, error) {
+	assetType := effectMap[prefix+"_asset_type"]
+	assetTypeString, ok := assetType.(string)
+	if !ok {
+		return "", fmt.Errorf("could not cast '%s_asset_type' to a string in the operation json result: %s (type=%T)", prefix, assetType, assetType)
 	}
+	if assetTypeString == utils.Native {
+		return utils.Native, nil
+	}
+
+	assetCode := effectMap[prefix+"_asset_code"]
+	assetCodeString, ok := assetCode.(string)
+	if !ok {
+		return "", fmt.Errorf("could not cast '%s_asset_code' to a string in the operation json result: %s (type=%T)", prefix, assetCode, assetCode)
+	}
+
+	assetIssuer := effectMap[prefix+"_asset_issuer"]
+	assetIssuerString, ok := assetIssuer.(string)
+	if !ok {
+		return "", fmt.Errorf("could not cast '%s_asset_issuer' to a string in the operation json result: %s (type=%T)", prefix, assetIssuer, assetIssuer)
+	}
+
+	return assetCodeString + ":" + assetIssuerString, nil
 }
 
 // returns tradeHistoryResult, hitCursorEnd, and any error
