@@ -28,7 +28,7 @@ type sellSideStrategy struct {
 	action              string
 
 	// uninitialized
-	currentLevels []api.Level // levels for current iteration
+	desiredLevels []api.Level // levels for current iteration
 	maxAssetBase  float64
 	maxAssetQuote float64
 }
@@ -69,7 +69,7 @@ func makeSellSideStrategy(
 // PruneExistingOffers impl
 func (s *sellSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer) {
 	// figure out which offers we want to prune
-	shouldPrune := computeOffersToPrune(offers, s.currentLevels)
+	shouldPrune := computeOffersToPrune(offers, s.desiredLevels)
 
 	pruneOps := []build.TransactionMutator{}
 	updatedOffers := []hProtocol.Offer{}
@@ -139,14 +139,14 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	nothingToSell := maxAssetBase == 0
 	lineFull := maxAssetQuote == trustQuote
 	if nothingToSell || lineFull {
-		s.currentLevels = []api.Level{}
+		s.desiredLevels = []api.Level{}
 		log.Printf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
 		return nil
 	}
 
-	// load currentLevels only once here
+	// load desiredLevels only once here
 	var e error
-	s.currentLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
+	s.desiredLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
 	if e != nil {
 		log.Printf("levels couldn't be loaded: %s\n", e)
 		return e
@@ -219,9 +219,8 @@ func (s *sellSideStrategy) createPrecedingOffers(
 
 	for i := 0; i < len(precedingLevels); i++ {
 		if hitCapacityLimit {
-			// we consider the ith level consumed because we don't want to create an offer for it anyway since we hit the capacity limit
-			log.Printf("hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", i+1)
-			return (i + 1), true, ops, newTopOffer, nil
+			log.Printf("%s, hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", s.action, i)
+			return i, true, ops, newTopOffer, nil
 		}
 
 		targetPrice, targetAmount, e := s.computeTargets(precedingLevels[i])
@@ -246,8 +245,17 @@ func (s *sellSideStrategy) createPrecedingOffers(
 		}
 	}
 
+	numLevelsConsumed := len(precedingLevels)
+	newTopOfferPrice := "<nil>"
+	if newTopOffer != nil {
+		newTopOfferPrice = newTopOffer.AsString()
+	}
+	log.Printf("%s, done creating preceding offers (numLevelsConsumed=%d, hitCapacityLimit=%v, numOps=%d, newTopOfferPrice=%s)",
+		s.action, numLevelsConsumed, hitCapacityLimit, len(ops), newTopOfferPrice,
+	)
+
 	// hitCapacityLimit can be updated after the check inside the for loop
-	return len(precedingLevels), hitCapacityLimit, ops, newTopOffer, nil
+	return numLevelsConsumed, hitCapacityLimit, ops, newTopOffer, nil
 }
 
 // UpdateWithOps impl
@@ -255,27 +263,24 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 	deleteOps := []build.TransactionMutator{}
 
 	// first we want to re-create any offers that precede our existing offers and are additions to the existing offers that we have
-	precedingLevels := computePrecedingLevels(offers, s.currentLevels)
+	precedingLevels := computePrecedingLevels(offers, s.desiredLevels)
 	var hitCapacityLimit bool
 	var numLevelsConsumed int
 	numLevelsConsumed, hitCapacityLimit, ops, newTopOffer, e = s.createPrecedingOffers(precedingLevels)
 	if e != nil {
 		return nil, nil, fmt.Errorf("unable to create preceding offers: %s", e)
 	}
-	// pad the offers so it lines up correctly with numLevelsConsumed.
-	// alternatively we could chop off the beginning of s.currentLevels but then that affects the logging of levels downstream
-	for i := 0; i < numLevelsConsumed; i++ {
-		offers = append([]hProtocol.Offer{{}}, offers...)
-	}
 
-	// next we want to adjust our remaining offers to be in line with what is desired, creating new offers that may not exist at the end of our existing offers
-	for i := numLevelsConsumed; i < len(s.currentLevels); i++ {
-		isModify := i < len(offers)
+	// next we want to adjust our remaining offers to be in line with what is desired
+	// either modifying the existing offers, or creating new offers at the end of our existing offers
+	for i := numLevelsConsumed; i < len(s.desiredLevels); i++ {
+		existingOffersIdx := i - numLevelsConsumed
+		isModify := existingOffersIdx < len(offers)
 		// we only want to delete offers after we hit the capacity limit which is why we perform this check in the beginning
 		if hitCapacityLimit {
 			if isModify {
-				delOp := s.sdex.DeleteOffer(offers[i])
-				log.Printf("deleting offer because we previously hit the capacity limit, offerId=%d\n", offers[i].ID)
+				delOp := s.sdex.DeleteOffer(offers[existingOffersIdx])
+				log.Printf("deleting offer because we previously hit the capacity limit, offerId=%d\n", offers[existingOffersIdx].ID)
 				deleteOps = append(deleteOps, delOp)
 				continue
 			} else {
@@ -285,7 +290,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 		}
 
 		// hitCapacityLimit can be updated below
-		targetPrice, targetAmount, e := s.computeTargets(s.currentLevels[i])
+		targetPrice, targetAmount, e := s.computeTargets(s.desiredLevels[i])
 		if e != nil {
 			return nil, nil, fmt.Errorf("could not compute targets: %s", e)
 		}
@@ -293,7 +298,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 		var offerPrice *model.Number
 		var op *build.ManageOfferBuilder
 		if isModify {
-			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, i, *targetPrice, *targetAmount)
+			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, existingOffersIdx, i, *targetPrice, *targetAmount)
 		} else {
 			offerPrice, hitCapacityLimit, op, e = s.createSellLevel(i, *targetPrice, *targetAmount)
 		}
@@ -301,7 +306,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 			return nil, nil, fmt.Errorf("unable to update existing offers or create new offers: %s", e)
 		}
 		if op != nil {
-			reducedOrderSize := isModify && targetAmount.AsFloat() < utils.AmountStringAsFloat(offers[i].Amount)
+			reducedOrderSize := isModify && targetAmount.AsFloat() < utils.AmountStringAsFloat(offers[existingOffersIdx].Amount)
 			hitCapacityLimitModify := isModify && hitCapacityLimit
 			if reducedOrderSize || hitCapacityLimitModify {
 				// prepend operations that reduce the size of an existing order because they decrease our liabilities
@@ -382,7 +387,7 @@ func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, 
 				priceLogged = 1 / price
 				amountLogged = amount * price
 			}
-			log.Printf("%s | create | level=%d | priceQuote=%.8f | amtBase=%.8f\n", s.action, index+1, priceLogged, amountLogged)
+			log.Printf("%s | create | new level=%d | priceQuote=%.8f | amtBase=%.8f\n", s.action, index+1, priceLogged, amountLogged)
 			return s.sdex.CreateSellOffer(*s.assetBase, *s.assetQuote, price, amount, incrementalNativeAmountRaw)
 		},
 		*s.assetBase,
@@ -392,7 +397,7 @@ func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, 
 }
 
 // modifySellLevel returns offerPrice, hitCapacityLimit, op, error.
-func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
+func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, newIndex int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
 	highestPrice := targetPrice.AsFloat() + targetPrice.AsFloat()*s.priceTolerance
 	lowestPrice := targetPrice.AsFloat() - targetPrice.AsFloat()*s.priceTolerance
 	minAmount := targetAmount.AsFloat() - targetAmount.AsFloat()*s.amountTolerance
@@ -409,6 +414,7 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 	if !priceTrigger && !amountTrigger {
 		// always add back the current offer in the cached liabilities when we don't modify it
 		s.ieif.AddLiabilities(offers[index].Selling, offers[index].Buying, curAmount, curAmount*curPrice, incrementalNativeAmountRaw)
+		log.Printf("%s | modify | unmodified original level = %d | newLevel number = %d\n", s.action, index+1, newIndex+1)
 		offerPrice := model.NumberFromFloat(curPrice, s.orderConstraints.PricePrecision)
 		return offerPrice, false, nil, nil
 	}
@@ -439,8 +445,8 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 				lowestPriceLogged = 1 / highestPrice
 				highestPriceLogged = 1 / lowestPrice
 			}
-			log.Printf("%s | modify | level=%d | targetPriceQuote=%.8f | targetAmtBase=%.8f | curPriceQuote=%.8f | lowPriceQuote=%.8f | highPriceQuote=%.8f | curAmtBase=%.8f | minAmtBase=%.8f | maxAmtBase=%.8f\n",
-				s.action, index+1, priceLogged, amountLogged, curPriceLogged, lowestPriceLogged, highestPriceLogged, curAmountLogged, minAmountLogged, maxAmountLogged)
+			log.Printf("%s | modify | old level=%d | new level = %d | targetPriceQuote=%.8f | targetAmtBase=%.8f | curPriceQuote=%.8f | lowPriceQuote=%.8f | highPriceQuote=%.8f | curAmtBase=%.8f | minAmtBase=%.8f | maxAmtBase=%.8f\n",
+				s.action, index+1, newIndex+1, priceLogged, amountLogged, curPriceLogged, lowestPriceLogged, highestPriceLogged, curAmountLogged, minAmountLogged, maxAmountLogged)
 			return s.sdex.ModifySellOffer(offers[index], price, amount, incrementalNativeAmountRaw)
 		},
 		offers[index].Selling,
