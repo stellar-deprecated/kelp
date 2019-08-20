@@ -220,7 +220,7 @@ func (s *sellSideStrategy) createPrecedingOffers(
 	for i := 0; i < len(precedingLevels); i++ {
 		if hitCapacityLimit {
 			// we consider the ith level consumed because we don't want to create an offer for it anyway since we hit the capacity limit
-			log.Printf("hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", i+1)
+			log.Printf("%s, hitCapacityLimit in preceding level loop, returning numLevelsConsumed=%d\n", s.action, i+1)
 			return (i + 1), true, ops, newTopOffer, nil
 		}
 
@@ -251,8 +251,8 @@ func (s *sellSideStrategy) createPrecedingOffers(
 	if newTopOffer != nil {
 		newTopOfferPrice = newTopOffer.AsString()
 	}
-	log.Printf("done creating preceding offers (numLevelsConsumed=%d, hitCapacityLimit=%v, numOps=%d, newTopOfferPrice=%s)",
-		numLevelsConsumed, hitCapacityLimit, len(ops), newTopOfferPrice,
+	log.Printf("%s, done creating preceding offers (numLevelsConsumed=%d, hitCapacityLimit=%v, numOps=%d, newTopOfferPrice=%s)",
+		s.action, numLevelsConsumed, hitCapacityLimit, len(ops), newTopOfferPrice,
 	)
 
 	// hitCapacityLimit can be updated after the check inside the for loop
