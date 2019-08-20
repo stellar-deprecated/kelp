@@ -246,8 +246,17 @@ func (s *sellSideStrategy) createPrecedingOffers(
 		}
 	}
 
+	numLevelsConsumed := len(precedingLevels)
+	newTopOfferPrice := "<nil>"
+	if newTopOffer != nil {
+		newTopOfferPrice = newTopOffer.AsString()
+	}
+	log.Printf("done creating preceding offers (numLevelsConsumed=%d, hitCapacityLimit=%v, numOps=%d, newTopOfferPrice=%s)",
+		numLevelsConsumed, hitCapacityLimit, len(ops), newTopOfferPrice,
+	)
+
 	// hitCapacityLimit can be updated after the check inside the for loop
-	return len(precedingLevels), hitCapacityLimit, ops, newTopOffer, nil
+	return numLevelsConsumed, hitCapacityLimit, ops, newTopOffer, nil
 }
 
 // UpdateWithOps impl
