@@ -410,8 +410,22 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 	// existing offer not within tolerances
 	priceTrigger := (curPrice > highestPrice) || (curPrice < lowestPrice)
 	amountTrigger := (curAmount < minAmount) || (curAmount > maxAmount)
+	var oversellTrigger bool
+	sellingAsset := offers[index].Selling
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(false)
-	if !priceTrigger && !amountTrigger {
+	var e error
+	if sellingAsset == utils.NativeAsset {
+		oversellTrigger, e = s.ieif.willOversellNative(curAmount + incrementalNativeAmountRaw)
+		if e != nil {
+			return nil, false, nil, fmt.Errorf("could not check oversellTrigger for native asset: %s", e)
+		}
+	} else {
+		oversellTrigger, e = s.ieif.willOversell(sellingAsset, curAmount)
+		if e != nil {
+			return nil, false, nil, fmt.Errorf("could not check oversellTrigger for sellingAsset (%s): %s", utils.Asset2String(sellingAsset), e)
+		}
+	}
+	if !priceTrigger && !amountTrigger && !oversellTrigger {
 		// always add back the current offer in the cached liabilities when we don't modify it
 		s.ieif.AddLiabilities(offers[index].Selling, offers[index].Buying, curAmount, curAmount*curPrice, incrementalNativeAmountRaw)
 		log.Printf("%s | modify | unmodified original level = %d | newLevel number = %d\n", s.action, index+1, newIndex+1)
@@ -424,6 +438,9 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 	}
 	if amountTrigger {
 		triggers = append(triggers, "amount")
+	}
+	if oversellTrigger {
+		triggers = append(triggers, "oversell")
 	}
 
 	targetPrice = *model.NumberByCappingPrecision(&targetPrice, s.orderConstraints.PricePrecision)
