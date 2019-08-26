@@ -32,6 +32,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Security
 
+## [v1.7.2] - 2019-08-26
+
+### Added
+
+- add triggers to modification log line in sdex ([a9991dcfde025c20239bf28f35c0f28d73b1107c](https://github.com/stellar/kelp/commit/a9991dcfde025c20239bf28f35c0f28d73b1107c))
+
+### Fixed
+
+- fix fill tracker to also work with path_payment type operations for sdex, fixes #219 ([fb6f4d41bb395769fdc4965e9c0d76033bbcd192](https://github.com/stellar/kelp/commit/fb6f4d41bb395769fdc4965e9c0d76033bbcd192))
+- fix op_underfunded error when replenishing top offer ([b56d7b51b467a4c2c0f059c8620b59800049c321](https://github.com/stellar/kelp/commit/b56d7b51b467a4c2c0f059c8620b59800049c321))
+- new oversell trigger during modify to check need to reduce amount of existing offers ([82285f3c5b4dcb6c05d5e400a49d57e23c7942b3](https://github.com/stellar/kelp/commit/82285f3c5b4dcb6c05d5e400a49d57e23c7942b3))
+
 ## [v1.7.1] - 2019-07-18
 
 ### Fixed
@@ -193,7 +205,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.7.2...HEAD
+[v1.7.2]: https://github.com/stellar/kelp/compare/v1.7.1...v1.7.2
 [v1.7.1]: https://github.com/stellar/kelp/compare/v1.7.0...v1.7.1
 [v1.7.0]: https://github.com/stellar/kelp/compare/v1.6.1...v1.7.0
 [v1.6.1]: https://github.com/stellar/kelp/compare/v1.6.0...v1.6.1
