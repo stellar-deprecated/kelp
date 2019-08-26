@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Dockerize Kelp binary ([b61207012dd10b44220acf644703aa346834778c](https://github.com/stellar/kelp/commit/b61207012dd10b44220acf644703aa346834778c))
-- add triggers to modification log line in sdex ([a9991dcfde025c20239bf28f35c0f28d73b1107c](https://github.com/stellar/kelp/commit/a9991dcfde025c20239bf28f35c0f28d73b1107c))
 
 ### Changed
 
@@ -24,13 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- fix fill tracker to also work with path_payment type operations for sdex, fixes #219 ([fb6f4d41bb395769fdc4965e9c0d76033bbcd192](https://github.com/stellar/kelp/commit/fb6f4d41bb395769fdc4965e9c0d76033bbcd192))
-- fix op_underfunded error when replenishing top offer ([b56d7b51b467a4c2c0f059c8620b59800049c321](https://github.com/stellar/kelp/commit/b56d7b51b467a4c2c0f059c8620b59800049c321))
 - git bash windows compatibility, replace `rev` command in build.sh and clean.sh ([8ea336c379e6770a7ee4646aa3750ca51ed6f203](https://github.com/stellar/kelp/commit/8ea336c379e6770a7ee4646aa3750ca51ed6f203))
-- new oversell trigger during modify to check need to reduce amount of existing offers ([82285f3c5b4dcb6c05d5e400a49d57e23c7942b3](https://github.com/stellar/kelp/commit/82285f3c5b4dcb6c05d5e400a49d57e23c7942b3))
-
 
 ### Security
+
 
 ## [v1.7.2] - 2019-08-26
 
