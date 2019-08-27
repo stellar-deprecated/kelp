@@ -232,7 +232,7 @@ func AssetsEqual(baseAsset base.Asset, horizonAsset hProtocol.Asset) bool {
 func CheckFetchFloat(m map[string]interface{}, key string) (float64, error) {
 	v, ok := m[key]
 	if !ok {
-		return 0.0, fmt.Errorf("'%s' field not in map", key)
+		return 0.0, fmt.Errorf("'%s' field not in map: %v", key, m)
 	}
 
 	f, ok := v.(float64)
@@ -332,4 +332,13 @@ func SignWithSeed(tx *txnbuild.Transaction, seeds ...string) error {
 	}
 
 	return nil
+}
+
+// StringSet converts a string slice to a map of string to bool values to represent a Set
+func StringSet(list []string) map[string]bool {
+	m := map[string]bool{}
+	for _, s := range list {
+		m[s] = true
+	}
+	return m
 }

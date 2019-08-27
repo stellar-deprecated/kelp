@@ -31,8 +31,8 @@ func (p TradingPair) String() string {
 	return s
 }
 
-// ToString converts the trading pair to a string using the passed in assetConverter
-func (p TradingPair) ToString(c *AssetConverter, delim string) (string, error) {
+// ToString converts the trading pair to a string using the passed in assetConverterInterface
+func (p TradingPair) ToString(c AssetConverterInterface, delim string) (string, error) {
 	a, e := c.ToString(p.Base)
 	if e != nil {
 		return "", e
@@ -47,12 +47,12 @@ func (p TradingPair) ToString(c *AssetConverter, delim string) (string, error) {
 }
 
 // TradingPairFromString makes a TradingPair out of a string
-func TradingPairFromString(codeSize int8, c *AssetConverter, p string) (*TradingPair, error) {
-	return TradingPairFromString2(codeSize, []*AssetConverter{c}, p)
+func TradingPairFromString(codeSize int8, c AssetConverterInterface, p string) (*TradingPair, error) {
+	return TradingPairFromString2(codeSize, []AssetConverterInterface{c}, p)
 }
 
 // TradingPairFromString2 makes a TradingPair out of a string
-func TradingPairFromString2(codeSize int8, converters []*AssetConverter, p string) (*TradingPair, error) {
+func TradingPairFromString2(codeSize int8, converters []AssetConverterInterface, p string) (*TradingPair, error) {
 	var base Asset
 	var quote Asset
 	var e error
@@ -83,7 +83,7 @@ func TradingPairFromString2(codeSize int8, converters []*AssetConverter, p strin
 }
 
 // TradingPairs2Strings converts the trading pairs to an array of strings
-func TradingPairs2Strings(c *AssetConverter, delim string, pairs []TradingPair) (map[TradingPair]string, error) {
+func TradingPairs2Strings(c AssetConverterInterface, delim string, pairs []TradingPair) (map[TradingPair]string, error) {
 	m := map[TradingPair]string{}
 	for _, p := range pairs {
 		pairString, e := p.ToString(c, delim)
@@ -96,7 +96,7 @@ func TradingPairs2Strings(c *AssetConverter, delim string, pairs []TradingPair) 
 }
 
 // TradingPairs2Strings2 converts the trading pairs to an array of strings
-func TradingPairs2Strings2(c *AssetConverter, delim string, pairs []*TradingPair) (map[TradingPair]string, error) {
+func TradingPairs2Strings2(c AssetConverterInterface, delim string, pairs []*TradingPair) (map[TradingPair]string, error) {
 	m := map[TradingPair]string{}
 	for _, p := range pairs {
 		pairString, e := p.ToString(c, delim)

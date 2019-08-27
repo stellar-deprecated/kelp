@@ -8,24 +8,32 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
 )
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	dirPath    string
-	binPath    string
-	configsDir string
-	logsDir    string
-	kos        *kelpos.KelpOS
-	apiTestNet *horizonclient.Client
-	apiPubNet  *horizonclient.Client
+	dirPath               string
+	binPath               string
+	configsDir            string
+	logsDir               string
+	kos                   *kelpos.KelpOS
+	horizonTestnetURI     string
+	horizonPubnetURI      string
+	ccxtRestUrl           string
+	apiTestNet            *horizonclient.Client
+	apiPubNet             *horizonclient.Client
+	apiTestNetOld         *horizon.Client
+	apiPubNetOld          *horizon.Client
+	cachedOptionsMetadata metadata
 }
 
 // MakeAPIServer is a factory method
-func MakeAPIServer(kos *kelpos.KelpOS) (*APIServer, error) {
+func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetURI string, ccxtRestUrl string) (*APIServer, error) {
 	binPath, e := filepath.Abs(os.Args[0])
 	if e != nil {
 		return nil, fmt.Errorf("could not get binPath of currently running binary: %s", e)
@@ -35,17 +43,47 @@ func MakeAPIServer(kos *kelpos.KelpOS) (*APIServer, error) {
 	configsDir := dirPath + "/ops/configs"
 	logsDir := dirPath + "/ops/logs"
 
-	apiTestNet := horizonclient.DefaultTestNetClient
-	apiPubNet := horizonclient.DefaultPublicNetClient
+	horizonTestnetURI = strings.TrimSuffix(horizonTestnetURI, "/")
+	horizonPubnetURI = strings.TrimSuffix(horizonPubnetURI, "/")
+	log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
+	log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
+	log.Printf("using ccxtRestUrl: %s\n", ccxtRestUrl)
+	apiTestNet := &horizonclient.Client{
+		HorizonURL: horizonTestnetURI,
+		HTTP:       http.DefaultClient,
+	}
+	apiPubNet := &horizonclient.Client{
+		HorizonURL: horizonPubnetURI,
+		HTTP:       http.DefaultClient,
+	}
+	apiTestNetOld := &horizon.Client{
+		URL:  horizonTestnetURI,
+		HTTP: http.DefaultClient,
+	}
+	apiPubNetOld := &horizon.Client{
+		URL:  horizonPubnetURI,
+		HTTP: http.DefaultClient,
+	}
+
+	optionsMetadata, e := loadOptionsMetadata()
+	if e != nil {
+		return nil, fmt.Errorf("error while loading options metadata when making APIServer: %s", e)
+	}
 
 	return &APIServer{
-		dirPath:    dirPath,
-		binPath:    binPath,
-		configsDir: configsDir,
-		logsDir:    logsDir,
-		kos:        kos,
-		apiTestNet: apiTestNet,
-		apiPubNet:  apiPubNet,
+		dirPath:               dirPath,
+		binPath:               binPath,
+		configsDir:            configsDir,
+		logsDir:               logsDir,
+		kos:                   kos,
+		horizonTestnetURI:     horizonTestnetURI,
+		horizonPubnetURI:      horizonPubnetURI,
+		ccxtRestUrl:           ccxtRestUrl,
+		apiTestNet:            apiTestNet,
+		apiPubNet:             apiPubNet,
+		apiTestNetOld:         apiTestNetOld,
+		apiPubNetOld:          apiPubNetOld,
+		cachedOptionsMetadata: optionsMetadata,
 	}, nil
 }
 
@@ -82,13 +120,19 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 }
 
 func (s *APIServer) writeJson(w http.ResponseWriter, v interface{}) {
+	s.writeJsonWithLog(w, v, true)
+}
+
+func (s *APIServer) writeJsonWithLog(w http.ResponseWriter, v interface{}, doLog bool) {
 	marshalledJson, e := json.MarshalIndent(v, "", "    ")
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("unable to marshal json with indentation: %s", e))
 		return
 	}
 
-	log.Printf("responseJson: %s\n", string(marshalledJson))
+	if doLog {
+		log.Printf("responseJson: %s\n", string(marshalledJson))
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(marshalledJson)
 }

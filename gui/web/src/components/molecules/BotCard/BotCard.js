@@ -20,7 +20,9 @@ import getState from '../../../kelp-ops-api/getState';
 import getBotInfo from '../../../kelp-ops-api/getBotInfo';
 
 let defaultBotInfo = {
+  "last_updated": "Never",
   "strategy": "buysell",
+  "is_testnet": true,
   "trading_pair": {
     "Base": "?",
     "Quote": "?"
@@ -66,6 +68,7 @@ class BotCard extends Component {
     this.tick = this.tick.bind(this);
     this.toggleOptions = this.toggleOptions.bind(this);
     this.editBot = this.editBot.bind(this);
+    this.showMarket = this.showMarket.bind(this);
     this.callDeleteBot = this.callDeleteBot.bind(this);
 
     this._asyncRequests = {};
@@ -117,7 +120,9 @@ class BotCard extends Component {
         }
 
         delete _this._asyncRequests["botInfo"];
-        if (JSON.stringify(resp) !== "{}") {
+        if (resp.error) {
+          // do nothing
+        } else if (JSON.stringify(resp) !== "{}") {
           _this.setState({
             botInfo: resp,
           });
@@ -269,6 +274,16 @@ class BotCard extends Component {
     this.props.history.push('/edit?bot_name=' + encodeURIComponent(this.props.name))
   }
 
+  showMarket() {
+    let baseCode = this.state.botInfo.asset_base.asset_type === "native" ? "XLM/native" : this.state.botInfo.asset_base.asset_code + "/" + this.state.botInfo.asset_base.asset_issuer;
+    let quoteCode = this.state.botInfo.asset_quote.asset_type === "native" ? "XLM/native" : this.state.botInfo.asset_quote.asset_code + "/" + this.state.botInfo.asset_quote.asset_issuer;
+    let link = "https://testnet.interstellar.exchange/app/#/trade/guest/" + baseCode + "/" + quoteCode;
+    if (!this.state.botInfo.is_testnet) {
+      link = "https://interstellar.exchange/app/#/trade/guest/" + baseCode + "/" + quoteCode;
+    }
+    window.open(link);
+  }
+
   render() {
     let popover = "";
     if (this.state.popoverVisible) {
@@ -278,6 +293,8 @@ class BotCard extends Component {
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
+            enableMarket={true}
+            onMarket={this.showMarket}
             enableEdit={enableEdit}
             onEdit={this.editBot}
             enableCopy={false}
@@ -321,7 +338,10 @@ class BotCard extends Component {
         <div className={styles.firstColumn}>
           <h2 className={styles.title}>{this.props.name}</h2>
           <div className={styles.botDetailsLine}>
-            <BotExchangeInfo strategy={this.state.botInfo.strategy}/>
+            <BotExchangeInfo
+              isTestnet={this.state.botInfo.is_testnet}
+              strategy={this.state.botInfo.strategy}
+              />
           </div>
           <div>
             <BotAssetsInfo
@@ -329,6 +349,7 @@ class BotCard extends Component {
               assetBaseBalance={this.state.botInfo.balance_base}
               assetQuoteCode={this.state.botInfo.trading_pair.Quote}
               assetQuoteBalance={this.state.botInfo.balance_quote}
+              lastUpdated={this.state.botInfo.last_updated}
             />
           </div>
         </div>

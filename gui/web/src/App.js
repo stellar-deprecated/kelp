@@ -27,10 +27,15 @@ class App extends Component {
       version: ""
     };
 
+    this.setVersion = this.setVersion.bind(this);
     this._asyncRequests = {};
   }
 
   componentDidMount() {
+    this.setVersion()
+  }
+
+  setVersion() {
     var _this = this
     this._asyncRequests["version"] = version(baseUrl).then(resp => {
       if (!_this._asyncRequests["version"]) {
@@ -39,7 +44,11 @@ class App extends Component {
       }
 
       delete _this._asyncRequests["version"];
-      _this.setState({version: resp});
+      if (!resp.includes("error")) {
+        _this.setState({version: resp});
+      } else {
+        setTimeout(_this.setVersion, 30000);
+      }
     });
   }
 

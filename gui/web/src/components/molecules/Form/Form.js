@@ -258,6 +258,8 @@ class Form extends Component {
       error = (<ErrorMessage error={this.props.errorResp.error}/>);
     }
 
+    let saveButtonDisabled = this.props.optionsMetadata == null;
+
     return (
       <div>
         <div className={grid.container}>
@@ -317,6 +319,7 @@ class Form extends Component {
                   ]}
                   selected={network}
                   onSelect={(selected) => {
+                    // TODO use URI passed in from command line, or indicate to backend it's test/public
                     let newValue = "https://horizon-testnet.stellar.org";
                     if (selected === "PubNet") {
                       newValue = "https://horizon.stellar.org";
@@ -620,6 +623,7 @@ class Form extends Component {
                   baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("a", newValues)}
                   title="Current numerator price"
+                  optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_a}
                   feed_url={this.props.configData.strategy_config.data_feed_a_url}
                   onLoadingPrice={() => this.setLoadingFormula()}
@@ -631,6 +635,7 @@ class Form extends Component {
                   baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("b", newValues)}
                   title="Current denominator price"
+                  optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_b}
                   feed_url={this.props.configData.strategy_config.data_feed_b_url}
                   onLoadingPrice={() => this.setLoadingFormula()}
@@ -638,7 +643,7 @@ class Form extends Component {
                   />
               </FieldItem>
               <PriceFeedFormula
-                isLoading={this.state.isLoadingFormula}
+                isLoading={this.state.isLoadingFormula || this.props.optionsMetadata == null}
                 numerator={this.state.numerator}
                 denominator={this.state.denominator}
                 />
@@ -741,6 +746,7 @@ class Form extends Component {
               icon="add" 
               size="large" 
               loading={this.state.isSaving}
+              disabled={saveButtonDisabled}
               onClick={this.save}
               >
               {this.props.saveText}

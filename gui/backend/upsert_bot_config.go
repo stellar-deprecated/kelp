@@ -221,10 +221,10 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 
 func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, traderSeed string, botName string, isTestnet bool, assets []hProtocol.Asset) error {
 	activeNetwork := network.PublicNetworkPassphrase
-	client := horizonclient.DefaultPublicNetClient
+	client := s.apiPubNet
 	if isTestnet {
 		activeNetwork = network.TestNetworkPassphrase
-		client = horizonclient.DefaultTestNetClient
+		client = s.apiTestNet
 	}
 
 	// find trustlines to be added

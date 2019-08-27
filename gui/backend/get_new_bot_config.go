@@ -13,7 +13,7 @@ func (s *APIServer) getNewBotConfig(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorJson(w, fmt.Sprintf("cannot generate a new bot name: %s", e))
 		return
 	}
-	sampleTrader := makeSampleTrader("")
+	sampleTrader := s.makeSampleTrader("")
 	strategy := "buysell"
 	sampleBuysell := makeSampleBuysell()
 

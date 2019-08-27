@@ -2,6 +2,8 @@ package query
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
@@ -10,7 +12,9 @@ import (
 
 // BotInfo is the response from the getBotInfo IPC request
 type BotInfo struct {
+	LastUpdated   string             `json:"last_updated"`
 	Strategy      string             `json:"strategy"`
+	IsTestnet     bool               `json:"is_testnet"`
 	TradingPair   *model.TradingPair `json:"trading_pair"`
 	AssetBase     hProtocol.Asset    `json:"asset_base"`
 	AssetQuote    hProtocol.Asset    `json:"asset_quote"`
@@ -62,7 +66,9 @@ func (s *Server) getBotInfo() (*BotInfo, error) {
 	}
 
 	return &BotInfo{
+		LastUpdated:   time.Now().Format("1/_2/2006 15:04:05"),
 		Strategy:      s.strategyName,
+		IsTestnet:     strings.Contains(s.sdex.API.HorizonURL, "test"),
 		TradingPair:   s.tradingPair,
 		AssetBase:     assetBase,
 		AssetQuote:    assetQuote,

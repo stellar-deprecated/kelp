@@ -48,11 +48,21 @@ const (
 	OMG  Asset = "OMG"
 )
 
+// AssetConverterInterface is the interface which allows the creation of asset converters with logic instead of static bindings
+type AssetConverterInterface interface {
+	ToString(a Asset) (string, error)
+	FromString(s string) (Asset, error)
+	MustFromString(s string) Asset
+}
+
 // AssetConverter converts to and from the asset type, it is specific to an exchange
 type AssetConverter struct {
 	asset2String map[Asset]string
 	string2Asset map[string]Asset
 }
+
+// ensure AssetConverter implements AssetConverterInterface
+var _ AssetConverterInterface = AssetConverter{}
 
 // makeAssetConverter is a factory method for AssetConverter
 func makeAssetConverter(asset2String map[Asset]string) *AssetConverter {
@@ -94,40 +104,32 @@ func (c AssetConverter) MustFromString(s string) Asset {
 	return a
 }
 
-// Display is a basic converter for display purposes
-var Display = makeAssetConverter(map[Asset]string{
-	XLM:  string(XLM),
-	BTC:  string(BTC),
-	USD:  string(USD),
-	ETH:  string(ETH),
-	LTC:  string(LTC),
-	REP:  string(REP),
-	ADA:  string(ADA),
-	BCH:  string(BCH),
-	DASH: string(DASH),
-	EOS:  string(EOS),
-	GNO:  string(GNO),
-	FEE:  string(FEE),
-	QTUM: string(QTUM),
-	USDT: string(USDT),
-	USDC: string(USDC),
-	DAO:  string(DAO),
-	ETC:  string(ETC),
-	ICN:  string(ICN),
-	MLN:  string(MLN),
-	NMC:  string(NMC),
-	XDG:  string(XDG),
-	XMR:  string(XMR),
-	XRP:  string(XRP),
-	XVN:  string(XVN),
-	ZEC:  string(ZEC),
-	CAD:  string(CAD),
-	EUR:  string(EUR),
-	GBP:  string(GBP),
-	JPY:  string(JPY),
-	KRW:  string(KRW),
-	OMG:  string(OMG),
-})
+type displayAssetConverter struct{}
+
+// ToString converts an asset to a string
+func (c displayAssetConverter) ToString(a Asset) (string, error) {
+	return string(a), nil
+}
+
+// FromString converts from a string to an asset
+func (c displayAssetConverter) FromString(s string) (Asset, error) {
+	return Asset(s), nil
+}
+
+// MustFromString converts from a string to an asset, failing on errors
+func (c displayAssetConverter) MustFromString(s string) Asset {
+	a, e := c.FromString(s)
+	if e != nil {
+		log.Fatal(fmt.Errorf("exiting on an error-enforced asset conversion: %s", e))
+	}
+	return a
+}
+
+// ensure that displayAssetConverter implements AssetConverterInterface
+var _ AssetConverterInterface = displayAssetConverter{}
+
+// Display is a basic string-mapping converter for display purposes
+var Display = displayAssetConverter{}
 
 // CcxtAssetConverter is the asset converter for the CCXT exchange interface
 var CcxtAssetConverter = Display

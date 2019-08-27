@@ -214,7 +214,7 @@ func (k *krakenExchange) OverrideOrderConstraints(pair *model.TradingPair, overr
 }
 
 // GetAssetConverter impl.
-func (k *krakenExchange) GetAssetConverter() *model.AssetConverter {
+func (k *krakenExchange) GetAssetConverter() model.AssetConverterInterface {
 	return k.assetConverter
 }
 
@@ -232,7 +232,7 @@ func (k *krakenExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tr
 		return nil, e
 	}
 
-	assetConverters := []*model.AssetConverter{k.assetConverterOpenOrders, model.Display}
+	assetConverters := []model.AssetConverterInterface{*k.assetConverterOpenOrders, model.Display}
 	m := map[model.TradingPair][]model.OpenOrder{}
 	for ID, o := range openOrdersResponse.Open {
 		// kraken uses different symbols when fetching open orders!
