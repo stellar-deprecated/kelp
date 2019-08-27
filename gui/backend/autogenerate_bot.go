@@ -186,6 +186,22 @@ func (s *APIServer) checkFundAccount(address string, botName string) (*hProtocol
 		return nil, fmt.Errorf("error funding address %s for bot '%s': %s\n", address, botName, e)
 	}
 	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
+
+	// refetch account to confirm
+	account, e = s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: address})
+	if e != nil {
+		var herr *horizonclient.Error
+		switch t := e.(type) {
+		case *horizonclient.Error:
+			herr = t
+		case horizonclient.Error:
+			herr = &t
+		default:
+			return nil, fmt.Errorf("unexpected error when checking for existence of account %s for bot '%s': %s", address, botName, e)
+		}
+
+		return nil, fmt.Errorf("horizon error when checking for existence of account %s for bot '%s': %d (%v) -- could this be caused because horizon has not ingested this data yet? (programmer: maybe create hProtocol.Account instance manually instead of fetching)", address, botName, herr.Problem.Status, *herr)
+	}
 	return &account, nil
 }
 
