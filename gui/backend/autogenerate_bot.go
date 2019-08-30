@@ -105,16 +105,20 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 
 	var txOps []txnbuild.Operation
 	trustOp := txnbuild.ChangeTrust{
-		Line: txnbuild.CreditAsset{Code: "COUPON",
-			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+		Line: txnbuild.CreditAsset{
+			Code:   "COUPON",
+			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
+		},
 	}
 	txOps = append(txOps, &trustOp)
 
 	paymentOp := txnbuild.Payment{
 		Destination: address,
 		Amount:      "1000.0",
-		Asset: txnbuild.CreditAsset{Code: "COUPON",
-			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+		Asset: txnbuild.CreditAsset{
+			Code:   "COUPON",
+			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
+		},
 		SourceAccount: &txnbuild.SimpleAccount{AccountID: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
 	}
 	txOps = append(txOps, &paymentOp)

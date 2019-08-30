@@ -264,7 +264,6 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 
 	var txOps []txnbuild.Operation
 	for _, a := range trustlines {
-
 		trustOp := txnbuild.ChangeTrust{
 			Line: txnbuild.CreditAsset{Code: a.Code, Issuer: a.Issuer},
 		}
