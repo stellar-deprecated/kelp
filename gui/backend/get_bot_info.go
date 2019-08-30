@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
@@ -215,7 +214,7 @@ func getNativeBalance(account hProtocol.Account) (float64, error) {
 	return balance, nil
 }
 
-func getCreditBalance(account hProtocol.Account, asset horizon.Asset) (float64, error) {
+func getCreditBalance(account hProtocol.Account, asset hProtocol.Asset) (float64, error) {
 	balanceString := account.GetCreditBalance(asset.Code, asset.Issuer)
 	balance, e := strconv.ParseFloat(balanceString, 64)
 	if e != nil {
