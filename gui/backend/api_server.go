@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
 )
@@ -27,8 +26,6 @@ type APIServer struct {
 	ccxtRestUrl           string
 	apiTestNet            *horizonclient.Client
 	apiPubNet             *horizonclient.Client
-	apiTestNetOld         *horizon.Client
-	apiPubNetOld          *horizon.Client
 	cachedOptionsMetadata metadata
 }
 
@@ -56,14 +53,6 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 		HorizonURL: horizonPubnetURI,
 		HTTP:       http.DefaultClient,
 	}
-	apiTestNetOld := &horizon.Client{
-		URL:  horizonTestnetURI,
-		HTTP: http.DefaultClient,
-	}
-	apiPubNetOld := &horizon.Client{
-		URL:  horizonPubnetURI,
-		HTTP: http.DefaultClient,
-	}
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
@@ -81,8 +70,6 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 		ccxtRestUrl:           ccxtRestUrl,
 		apiTestNet:            apiTestNet,
 		apiPubNet:             apiPubNet,
-		apiTestNetOld:         apiTestNetOld,
-		apiPubNetOld:          apiPubNetOld,
 		cachedOptionsMetadata: optionsMetadata,
 	}, nil
 }
