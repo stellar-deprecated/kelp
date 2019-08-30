@@ -374,11 +374,11 @@ func manageOffer2Order(mob *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset,
 
 	amountFloat, e := strconv.ParseFloat(mob.Amount, 64)
 	if e != nil {
-		return nil, fmt.Errorf("could not convert amount to float: %s", e)
+		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", mob.Amount, e)
 	}
 
 	price := model.NumberFromFloat(priceFloat, largePrecision)
-	volume := model.NumberFromFloat(amountFloat/math.Pow(10, 7), largePrecision)
+	volume := model.NumberFromFloat(amountFloat, largePrecision)
 	isBuy, e := utils.AssetOnlyCodeEquals(quoteAsset, mob.Selling)
 	if e != nil {
 		return nil, fmt.Errorf("could not compare assets, error: %s", e)
@@ -464,12 +464,7 @@ func op2CommandsHack(
 		return nil, fmt.Errorf("error converting from manageOffer op to Order: %s", e)
 	}
 
-	amountFloat, e := strconv.ParseFloat(manageOffer.Amount, 64)
-	if e != nil {
-		return nil, fmt.Errorf("could not convert amount to float: %s", e)
-	}
-
-	if amountFloat == 0 {
+	if manageOffer.Amount == "0" {
 		// cancel
 		// fetch real orderID here (hoops we have to jump through because of the hacked approach to using centralized exchanges)
 		var orderID string

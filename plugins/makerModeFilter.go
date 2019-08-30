@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -176,14 +175,8 @@ func (f *makerModeFilter) transformOfferMakerMode(
 	topAskPrice *model.Number,
 	op *txnbuild.ManageSellOffer,
 ) (*txnbuild.ManageSellOffer, bool, error) {
-	//represent amount as float
-	amountFloat, e := strconv.ParseFloat(op.Amount, 64)
-	if e != nil {
-		return nil, false, fmt.Errorf("could not convert amount to float: %s", e)
-	}
-
 	// delete operations should never be dropped
-	if amountFloat == 0 {
+	if op.Amount == "0" {
 		return op, true, nil
 	}
 
@@ -224,11 +217,11 @@ func (f *makerModeFilter) transformOfferMakerMode(
 	if op.OfferID == 0 {
 		// new offers can be dropped
 		return nil, false, nil
-	} else if amountFloat != 0 {
+	} else if op.Amount != "0" {
 		// modify offers should be converted to delete offers
 		opCopy := *op
 		opCopy.Amount = "0"
 		return &opCopy, false, nil
 	}
-	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.OfferID, amountFloat/math.Pow(10, 7), sellPrice)
+	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
 }

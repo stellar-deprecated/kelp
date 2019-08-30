@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -59,11 +58,6 @@ func (f *orderConstraintsFilter) Apply(
 			keep = true
 		}
 
-		amountFloat, e := strconv.ParseFloat(opPtr.Amount, 64)
-		if e != nil {
-			return nil, fmt.Errorf("could not convert amount to float: %s", e)
-		}
-
 		if keep {
 			filteredOps = append(filteredOps, opPtr)
 			numKeep++
@@ -72,13 +66,13 @@ func (f *orderConstraintsFilter) Apply(
 			// figure out how to convert the offer to a dropped state
 			if opPtr.OfferID == 0 {
 				// new offers can be dropped, so don't add to filteredOps
-			} else if amountFloat != 0 {
+			} else if opPtr.Amount != "0" {
 				// modify offers should be converted to delete offers
 				opCopy := *opPtr
 				opCopy.Amount = "0"
 				filteredOps = append(filteredOps, &opCopy)
 			} else {
-				return nil, fmt.Errorf("unable to drop manageOffer operation (probably a delete op that should not have reached here): offerID=%d, amountRaw=%.8f", opPtr.OfferID, amountFloat)
+				return nil, fmt.Errorf("unable to drop manageOffer operation (probably a delete op that should not have reached here): offerID=%d, amountRaw=%s", opPtr.OfferID, opPtr.Amount)
 			}
 		}
 	}
@@ -89,12 +83,13 @@ func (f *orderConstraintsFilter) Apply(
 
 func (f *orderConstraintsFilter) shouldKeepOffer(op *txnbuild.ManageSellOffer) (bool, error) {
 	// delete operations should never be dropped
+	if op.Amount == "0" {
+		return true, nil
+	}
+
 	amountFloat, e := strconv.ParseFloat(op.Amount, 64)
 	if e != nil {
-		return false, fmt.Errorf("could not convert amount to float: %s", e)
-	}
-	if amountFloat == 0 {
-		return true, nil
+		return false, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
 
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
@@ -108,7 +103,7 @@ func (f *orderConstraintsFilter) shouldKeepOffer(op *txnbuild.ManageSellOffer) (
 	}
 
 	if isSell {
-		baseAmount := amountFloat / math.Pow(10, 7)
+		baseAmount := amountFloat
 		quoteAmount := baseAmount * sellPrice
 		if baseAmount < f.oc.MinBaseVolume.AsFloat() {
 			log.Printf("orderConstraintsFilter: selling, keep = (baseAmount) %.8f < %s (MinBaseVolume): keep = false\n", baseAmount, f.oc.MinBaseVolume.AsString())
@@ -123,7 +118,7 @@ func (f *orderConstraintsFilter) shouldKeepOffer(op *txnbuild.ManageSellOffer) (
 	}
 
 	// buying
-	quoteAmount := amountFloat / math.Pow(10, 7)
+	quoteAmount := amountFloat
 	baseAmount := quoteAmount * sellPrice
 	if baseAmount < f.oc.MinBaseVolume.AsFloat() {
 		log.Printf("orderConstraintsFilter:  buying, keep = (baseAmount) %.8f < %s (MinBaseVolume): keep = false\n", baseAmount, f.oc.MinBaseVolume.AsString())
