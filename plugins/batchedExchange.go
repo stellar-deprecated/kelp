@@ -369,7 +369,7 @@ func manageOffer2Order(mob *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset,
 
 	priceFloat, e := strconv.ParseFloat(mob.Price, 64)
 	if e != nil {
-		return nil, fmt.Errorf("could not convert price to float: %s", e)
+		return nil, fmt.Errorf("could not convert price (%s) to float: %s", mob.Price, e)
 	}
 
 	amountFloat, e := strconv.ParseFloat(mob.Amount, 64)

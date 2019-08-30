@@ -99,7 +99,7 @@ func (f *orderConstraintsFilter) shouldKeepOffer(op *txnbuild.ManageSellOffer) (
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
-		return false, fmt.Errorf("could not convert price to float: %s", e)
+		return false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
 	if isSell {

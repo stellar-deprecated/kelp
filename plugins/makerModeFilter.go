@@ -187,7 +187,7 @@ func (f *makerModeFilter) transformOfferMakerMode(
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
-		return nil, false, fmt.Errorf("could not convert price to float: %s", e)
+		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
 	var keep bool
