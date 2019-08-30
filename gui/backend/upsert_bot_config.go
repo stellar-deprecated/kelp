@@ -257,7 +257,7 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 	// build txn
 	address := kp.Address()
 	accountReq := horizonclient.AccountRequest{AccountID: address}
-	account, err := horizonclient.DefaultTestNetClient.AccountDetail(accountReq)
+	account, err := client.AccountDetail(accountReq)
 	if err != nil {
 		return fmt.Errorf("Unable to load account for %s\n: %s", address, err)
 	}

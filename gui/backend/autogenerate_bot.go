@@ -148,7 +148,7 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	client := horizonclient.DefaultTestNetClient
+	client := s.apiTestNet
 	resp, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
 		return fmt.Errorf("error submitting change trust transaction for address %s for bot '%s': %s\n", address, botName, e)
