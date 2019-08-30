@@ -371,10 +371,11 @@ func (sdex *SDEX) SubmitOps(ops []txnbuild.Operation, asyncCallback func(hash st
 func (sdex *SDEX) submitOps(ops []txnbuild.Operation, asyncCallback func(hash string, e error), asyncMode bool) error {
 	sdex.incrementSeqNum()
 	tx := txnbuild.Transaction{
-		//Note: sequence number is decremented here because Transaction.Build auto increments sequence number
-		// To do: @Nikhil confirm if this works as intended.
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: sdex.SourceAccount,
-			Sequence: int64(sdex.seqNum - 1)},
+		// sequence number is decremented here because Transaction.Build auto increments sequence number
+		SourceAccount: &txnbuild.SimpleAccount{
+			AccountID: sdex.SourceAccount,
+			Sequence:  int64(sdex.seqNum - 1),
+		},
 		Operations: ops,
 		Timebounds: txnbuild.NewInfiniteTimeout(),
 		Network:    sdex.Network,
@@ -432,7 +433,7 @@ func (sdex *SDEX) sign(tx *txnbuild.Transaction) (string, error) {
 		e = utils.SignWithSeed(tx, sdex.SourceSeed)
 	}
 	if e != nil {
-		return "", e
+		return "", fmt.Errorf("error signing transaction: %s", e)
 	}
 
 	return tx.Base64()

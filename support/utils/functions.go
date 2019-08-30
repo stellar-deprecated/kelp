@@ -330,16 +330,17 @@ func Shuffle(slice []string) {
 	}
 }
 
+// SignWithSeed modifies the passed in tx with the signatures of the passed in seeds
 func SignWithSeed(tx *txnbuild.Transaction, seeds ...string) error {
-	for _, s := range seeds {
+	for i, s := range seeds {
 		kp, e := keypair.Parse(s)
 		if e != nil {
-			return e
+			return fmt.Errorf("cannot parse seed into keypair at index %d: %s", i, e)
 		}
 
 		e = tx.Sign(kp.(*keypair.Full))
 		if e != nil {
-			return e
+			return fmt.Errorf("cannot sign tx with keypair at index %d (pubKey: %s): %s", i, kp.Address(), e)
 		}
 	}
 
