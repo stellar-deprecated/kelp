@@ -270,7 +270,19 @@ func ParseAsset(code string, issuer string) (*hProtocol.Asset, error) {
 	return &asset, nil
 }
 
-func assetEqualsXDR(hAsset hProtocol.Asset, xAsset txnbuild.Asset) (bool, error) {
+// AssetOnlyCodeEquals only checks the type and code of these assets, i.e. insensitive to asset issuer
+func AssetOnlyCodeEquals(hAsset hProtocol.Asset, txnAsset txnbuild.Asset) (bool, error) {
+	if txnAsset.IsNative() {
+		return hAsset.Type == Native, nil
+	} else if hAsset.Type == Native {
+		return false, nil
+	}
+
+	return txnAsset.GetCode() == hAsset.Code, nil
+}
+
+// assetEqualsExact does an exact comparison of two assets
+func assetEqualsExact(hAsset hProtocol.Asset, xAsset txnbuild.Asset) (bool, error) {
 	if xAsset.IsNative() {
 		return hAsset.Type == Native, nil
 	} else if hAsset.Type == Native {
@@ -282,11 +294,11 @@ func assetEqualsXDR(hAsset hProtocol.Asset, xAsset txnbuild.Asset) (bool, error)
 
 // IsSelling helper method
 func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling txnbuild.Asset, buying txnbuild.Asset) (bool, error) {
-	sellingBase, e := assetEqualsXDR(sdexBase, selling)
+	sellingBase, e := assetEqualsExact(sdexBase, selling)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexBase with selling asset")
 	}
-	buyingQuote, e := assetEqualsXDR(sdexQuote, buying)
+	buyingQuote, e := assetEqualsExact(sdexQuote, buying)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexQuote with buying asset")
 	}
@@ -294,11 +306,11 @@ func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling txnb
 		return true, nil
 	}
 
-	sellingQuote, e := assetEqualsXDR(sdexQuote, selling)
+	sellingQuote, e := assetEqualsExact(sdexQuote, selling)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexQuote with selling asset")
 	}
-	buyingBase, e := assetEqualsXDR(sdexBase, buying)
+	buyingBase, e := assetEqualsExact(sdexBase, buying)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexBase with buying asset")
 	}

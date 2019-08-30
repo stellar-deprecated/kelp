@@ -363,17 +363,6 @@ func convert2Price(number *model.Number) (hProtocol.Price, error) {
 	}, nil
 }
 
-// to do: @Nikhil this method is similar to utils.assetsEqualXDR. Consider removing one?
-func assetsEqual(hAsset hProtocol.Asset, txnAsset txnbuild.Asset) (bool, error) {
-	if txnAsset.IsNative() {
-		return hAsset.Type == utils.Native, nil
-	} else if hAsset.Type == utils.Native {
-		return false, nil
-	}
-
-	return txnAsset.GetCode() == hAsset.Code, nil
-}
-
 // manageOffer2Order converts a manage offer operation to a model.Order
 func manageOffer2Order(mob *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
 	orderAction := model.OrderActionSell
@@ -390,7 +379,7 @@ func manageOffer2Order(mob *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset,
 
 	price := model.NumberFromFloat(priceFloat, largePrecision)
 	volume := model.NumberFromFloat(amountFloat/math.Pow(10, 7), largePrecision)
-	isBuy, e := assetsEqual(quoteAsset, mob.Selling)
+	isBuy, e := utils.AssetOnlyCodeEquals(quoteAsset, mob.Selling)
 	if e != nil {
 		return nil, fmt.Errorf("could not compare assets, error: %s", e)
 	}
