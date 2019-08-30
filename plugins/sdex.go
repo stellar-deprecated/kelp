@@ -197,16 +197,15 @@ func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []txnbuild.Operation
 // DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
 func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 	var result txnbuild.ManageSellOffer
-	var err error
+	var e error
 	if sdex.SourceAccount == sdex.TradingAccount {
-		result, err = txnbuild.DeleteOfferOp(offer.ID)
+		result, e = txnbuild.DeleteOfferOp(offer.ID)
 	} else {
-		result, err = txnbuild.DeleteOfferOp(offer.ID, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
+		result, e = txnbuild.DeleteOfferOp(offer.ID, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
 	}
 
-	if err != nil {
-		// to do: log or return error
-		return txnbuild.ManageSellOffer{}
+	if e != nil {
+		panic(fmt.Sprintf("unexpected error while creating delete offer op: %s", e))
 	}
 	return result
 }
