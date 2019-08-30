@@ -440,7 +440,7 @@ func Ops2CommandsHack(
 		case *txnbuild.ManageSellOffer:
 			c, e := op2CommandsHack(manageOffer, baseAsset, quoteAsset, offerID2OrderID, orderConstraints)
 			if e != nil {
-				return nil, fmt.Errorf("unable to convert *build.ManageOfferBuilder to a Command: %s", e)
+				return nil, fmt.Errorf("unable to convert *txnbuild.ManageSellOffer to a Command: %s", e)
 			}
 			commands = append(commands, c...)
 		default:
