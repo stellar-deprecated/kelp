@@ -1,5 +1,5 @@
-hash: 6221ecb513f011696bf06ccf89b7f15cd77ac17a5b075beb8562a74ee10e1f34
-updated: 2019-07-19T12:33:12.198828562-07:00
+hash: 93f84071fccdfc0c10e17f1808daa7461f29f9bf3bca6dec05b4fbb9068ba487
+updated: 2019-08-30T04:28:19.867973525-07:00
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
@@ -106,8 +106,6 @@ imports:
   version: a599ed95b928a7bdcee21cee4999efd05e43c2df
   subpackages:
   - amount
-  - build
-  - clients/horizon
   - clients/horizonclient
   - crc16
   - hash
@@ -119,7 +117,6 @@ imports:
   - protocols/horizon/effects
   - protocols/horizon/operations
   - strkey
-  - support/app
   - support/config
   - support/errors
   - support/log
