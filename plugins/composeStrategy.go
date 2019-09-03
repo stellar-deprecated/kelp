@@ -6,9 +6,9 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 
-	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/errors"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -39,7 +39,7 @@ func makeComposeStrategy(
 }
 
 // PruneExistingOffers impl
-func (s *composeStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, sellingAOffers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer, []hProtocol.Offer) {
+func (s *composeStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, sellingAOffers []hProtocol.Offer) ([]txnbuild.Operation, []hProtocol.Offer, []hProtocol.Offer) {
 	pruneOps1, newBuyingAOffers := s.buyStrat.PruneExistingOffers(buyingAOffers)
 	pruneOps2, newSellingAOffers := s.sellStrat.PruneExistingOffers(sellingAOffers)
 	pruneOps1 = append(pruneOps1, pruneOps2...)
@@ -71,7 +71,7 @@ func (s *composeStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64,
 func (s *composeStrategy) UpdateWithOps(
 	buyingAOffers []hProtocol.Offer,
 	sellingAOffers []hProtocol.Offer,
-) ([]build.TransactionMutator, error) {
+) ([]txnbuild.Operation, error) {
 	// buy side, flip newTopBuyPrice because it will be inverted from this parent strategy's context of base/quote
 	buyOps, newTopBuyPriceInverted, e1 := s.buyStrat.UpdateWithOps(buyingAOffers)
 	newTopBuyPrice := model.InvertNumber(newTopBuyPriceInverted)
@@ -79,7 +79,7 @@ func (s *composeStrategy) UpdateWithOps(
 	sellOps, _, e2 := s.sellStrat.UpdateWithOps(sellingAOffers)
 
 	// check for errors
-	ops := []build.TransactionMutator{}
+	ops := []txnbuild.Operation{}
 	if e1 != nil && e2 != nil {
 		return ops, fmt.Errorf("errors on both sides: buying (= %s) and selling (= %s)", e1, e2)
 	} else if e1 != nil {

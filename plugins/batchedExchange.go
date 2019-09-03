@@ -10,7 +10,6 @@ import (
 
 	"math/rand"
 
-	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
@@ -175,14 +174,12 @@ func (b BatchedExchange) GetLatestTradeCursor() (interface{}, error) {
 }
 
 // SubmitOpsSynch is the forced synchronous version of SubmitOps below (same for batchedExchange)
-func (b BatchedExchange) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+func (b BatchedExchange) SubmitOpsSynch(ops []txnbuild.Operation, asyncCallback func(hash string, e error)) error {
 	return b.SubmitOps(ops, asyncCallback)
 }
 
 // SubmitOps performs any finalization or submission step needed by the exchange
-func (b BatchedExchange) SubmitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
-	ops := api.ConvertTM2Operation(opsOld)
-
+func (b BatchedExchange) SubmitOps(ops []txnbuild.Operation, asyncCallback func(hash string, e error)) error {
 	var e error
 	b.commands, e = b.Ops2Commands(ops, b.baseAsset, b.quoteAsset)
 	if e != nil {

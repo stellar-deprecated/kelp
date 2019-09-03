@@ -11,7 +11,6 @@ import:
 - package: github.com/stellar/go
   version: a599ed95b928a7bdcee21cee4999efd05e43c2df
   subpackages:
-  - build
   - clients/horizonclient
   - support/config
   - support/errors
