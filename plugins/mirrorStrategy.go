@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
@@ -192,8 +193,8 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 }
 
 // PruneExistingOffers deletes any extra offers
-func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, sellingAOffers []hProtocol.Offer) ([]txnbuild.Operation, []hProtocol.Offer, []hProtocol.Offer) {
-	return []txnbuild.Operation{}, buyingAOffers, sellingAOffers
+func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, sellingAOffers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer, []hProtocol.Offer) {
+	return []build.TransactionMutator{}, buyingAOffers, sellingAOffers
 }
 
 // PreUpdate changes the strategy's state in prepration for the update
@@ -230,7 +231,7 @@ func (s *mirrorStrategy) recordBalances() error {
 func (s *mirrorStrategy) UpdateWithOps(
 	buyingAOffers []hProtocol.Offer,
 	sellingAOffers []hProtocol.Offer,
-) ([]txnbuild.Operation, error) {
+) ([]build.TransactionMutator, error) {
 	ob, e := s.exchange.GetOrderBook(s.backingPair, s.orderbookDepth)
 	if e != nil {
 		return nil, e
@@ -295,7 +296,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 		ops = append(ops, sellOps...)
 	}
 
-	return ops, nil
+	return api.ConvertOperation2TM(ops), nil
 }
 
 func (s *mirrorStrategy) updateLevels(

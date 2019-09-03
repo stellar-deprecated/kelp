@@ -697,7 +697,7 @@ func deleteAllOffersAndExit(
 	l.Infof("created %d operations to delete offers\n", len(dOps))
 
 	if len(dOps) > 0 {
-		e := exchangeShim.SubmitOpsSynch(dOps, func(hash string, e error) {
+		e := exchangeShim.SubmitOpsSynch(api.ConvertOperation2TM(dOps), func(hash string, e error) {
 			if e != nil {
 				logger.Fatal(l, e)
 				return

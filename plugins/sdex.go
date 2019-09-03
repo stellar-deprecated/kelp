@@ -12,6 +12,7 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
+	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
@@ -358,17 +359,19 @@ func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtoco
 }
 
 // SubmitOpsSynch is the forced synchronous version of SubmitOps below
-func (sdex *SDEX) SubmitOpsSynch(ops []txnbuild.Operation, asyncCallback func(hash string, e error)) error {
+func (sdex *SDEX) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	return sdex.submitOps(ops, asyncCallback, false)
 }
 
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
-func (sdex *SDEX) SubmitOps(ops []txnbuild.Operation, asyncCallback func(hash string, e error)) error {
+func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
 	return sdex.submitOps(ops, asyncCallback, true)
 }
 
 // submitOps submits the passed in operations to the network in a single transaction. Asynchronous or not based on flag.
-func (sdex *SDEX) submitOps(ops []txnbuild.Operation, asyncCallback func(hash string, e error), asyncMode bool) error {
+func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
+	ops := api.ConvertTM2Operation(opsOld)
+
 	sdex.incrementSeqNum()
 	tx := txnbuild.Transaction{
 		// sequence number is decremented here because Transaction.Build auto increments sequence number
