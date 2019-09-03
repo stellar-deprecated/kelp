@@ -3,10 +3,10 @@ package plugins
 import (
 	"fmt"
 	"log"
-	"math"
+	"strconv"
 
-	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -32,7 +32,7 @@ func MakeFilterMakerMode(submitMode api.SubmitMode, exchangeShim api.ExchangeShi
 
 var _ SubmitFilter = &makerModeFilter{}
 
-func (f *makerModeFilter) Apply(ops []build.TransactionMutator, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]build.TransactionMutator, error) {
+func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
 	ob, e := f.exchangeShim.GetOrderBook(f.tradingPair, 50)
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch orderbook: %s", e)
@@ -110,11 +110,11 @@ func (f *makerModeFilter) topOrderPriceExcludingTrader(obSide []model.Order, tra
 }
 
 func (f *makerModeFilter) filterOps(
-	ops []build.TransactionMutator,
+	ops []txnbuild.Operation,
 	ob *model.OrderBook,
 	sellingOffers []hProtocol.Offer,
 	buyingOffers []hProtocol.Offer,
-) ([]build.TransactionMutator, error) {
+) ([]txnbuild.Operation, error) {
 	baseAsset, quoteAsset, e := f.sdex.Assets()
 	if e != nil {
 		return nil, fmt.Errorf("could not get assets: %s", e)
@@ -132,20 +132,15 @@ func (f *makerModeFilter) filterOps(
 	numKeep := 0
 	numDropped := 0
 	numTransformed := 0
-	filteredOps := []build.TransactionMutator{}
+	filteredOps := []txnbuild.Operation{}
 	for _, op := range ops {
-		var newOp build.TransactionMutator
+		var newOp txnbuild.Operation
 		var keep bool
 		switch o := op.(type) {
-		case *build.ManageOfferBuilder:
+		case *txnbuild.ManageSellOffer:
 			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, o)
 			if e != nil {
 				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
-			}
-		case build.ManageOfferBuilder:
-			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, &o)
-			if e != nil {
-				return nil, fmt.Errorf("could not check transform offer (non-pointer case): %s", e)
 			}
 		default:
 			newOp = o
@@ -178,19 +173,23 @@ func (f *makerModeFilter) transformOfferMakerMode(
 	quoteAsset hProtocol.Asset,
 	topBidPrice *model.Number,
 	topAskPrice *model.Number,
-	op *build.ManageOfferBuilder,
-) (*build.ManageOfferBuilder, bool, error) {
+	op *txnbuild.ManageSellOffer,
+) (*txnbuild.ManageSellOffer, bool, error) {
 	// delete operations should never be dropped
-	if op.MO.Amount == 0 {
+	if op.Amount == "0" {
 		return op, true, nil
 	}
 
-	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.MO.Selling, op.MO.Buying)
+	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
-	sellPrice := float64(op.MO.Price.N) / float64(op.MO.Price.D)
+	sellPrice, e := strconv.ParseFloat(op.Price, 64)
+	if e != nil {
+		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
+	}
+
 	var keep bool
 	if !isSell && topAskPrice != nil {
 		// invert price when buying
@@ -215,14 +214,14 @@ func (f *makerModeFilter) transformOfferMakerMode(
 	}
 
 	// figure out how to convert the offer to a dropped state
-	if op.MO.OfferId == 0 {
+	if op.OfferID == 0 {
 		// new offers can be dropped
 		return nil, false, nil
-	} else if op.MO.Amount != 0 {
+	} else if op.Amount != "0" {
 		// modify offers should be converted to delete offers
 		opCopy := *op
-		opCopy.MO.Amount = 0
+		opCopy.Amount = "0"
 		return &opCopy, false, nil
 	}
-	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%.7f, price=%.7f", op.MO.OfferId, float64(op.MO.Amount)/math.Pow(10, 7), sellPrice)
+	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
 }

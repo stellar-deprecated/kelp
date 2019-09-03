@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/protocols/horizon/base"
-	"github.com/stellar/go/xdr"
+	"github.com/stellar/go/txnbuild"
 )
 
 // Common Utilities needed by various bots
@@ -88,25 +88,21 @@ func GetInvertedPrice(offer hProtocol.Offer) float64 {
 	return PriceAsFloat(big.NewRat(int64(offer.PriceR.D), int64(offer.PriceR.N)).FloatString(10))
 }
 
-// Asset2Asset is a Boyz2Men cover band on the blockchain
-func Asset2Asset(Asset hProtocol.Asset) build.Asset {
-	a := build.Asset{}
-
-	a.Code = Asset.Code
-	a.Issuer = Asset.Issuer
+// Asset2Asset converts a horizon.Asset to a txnbuild.Asset.
+func Asset2Asset(Asset hProtocol.Asset) txnbuild.Asset {
 	if Asset.Type == Native {
-		a.Native = true
+		return txnbuild.NativeAsset{}
 	}
-	return a
+	return txnbuild.CreditAsset{Code: Asset.Code, Issuer: Asset.Issuer}
 }
 
-// Asset2Asset2 converts a build.Asset to a horizon.Asset
-func Asset2Asset2(Asset build.Asset) hProtocol.Asset {
+// Asset2Asset2 converts a txnbuild.Asset to a horizon.Asset.
+func Asset2Asset2(Asset txnbuild.Asset) hProtocol.Asset {
 	a := hProtocol.Asset{}
 
-	a.Code = Asset.Code
-	a.Issuer = Asset.Issuer
-	if Asset.Native {
+	a.Code = Asset.GetCode()
+	a.Issuer = Asset.GetIssuer()
+	if Asset.IsNative() {
 		a.Type = Native
 	} else if len(a.Code) > 4 {
 		a.Type = "credit_alphanum12"
@@ -135,9 +131,9 @@ func Asset2CodeString(asset hProtocol.Asset) string {
 // String2Asset converts a code:issuer to a horizon.Asset
 func String2Asset(code string, issuer string) hProtocol.Asset {
 	if code == "XLM" {
-		return Asset2Asset2(build.NativeAsset())
+		return Asset2Asset2(txnbuild.NativeAsset{})
 	}
-	return Asset2Asset2(build.CreditAsset(code, issuer))
+	return Asset2Asset2(txnbuild.CreditAsset{Code: code, Issuer: issuer})
 }
 
 // LoadAllOffers loads all the offers for a given account
@@ -197,11 +193,11 @@ func ParseSecret(secret string) (*string, error) {
 }
 
 // ParseNetwork checks the horizon url and returns the test network if it contains "test"
-func ParseNetwork(horizonURL string) build.Network {
+func ParseNetwork(horizonURL string) string {
 	if strings.Contains(horizonURL, "test") {
-		return build.TestNetwork
+		return network.TestNetworkPassphrase
 	}
-	return build.PublicNetwork
+	return network.PublicNetworkPassphrase
 }
 
 // GetJSON is a helper method to get json from a URL
@@ -266,36 +262,43 @@ func ParseAsset(code string, issuer string) (*hProtocol.Asset, error) {
 	}
 
 	if code == "XLM" {
-		asset := Asset2Asset2(build.NativeAsset())
+		asset := Asset2Asset2(txnbuild.NativeAsset{})
 		return &asset, nil
 	}
 
-	asset := Asset2Asset2(build.CreditAsset(code, issuer))
+	asset := Asset2Asset2(txnbuild.CreditAsset{Code: code, Issuer: issuer})
 	return &asset, nil
 }
 
-func assetEqualsXDR(hAsset hProtocol.Asset, xAsset xdr.Asset) (bool, error) {
-	if xAsset.Type == xdr.AssetTypeAssetTypeNative {
+// AssetOnlyCodeEquals only checks the type and code of these assets, i.e. insensitive to asset issuer
+func AssetOnlyCodeEquals(hAsset hProtocol.Asset, txnAsset txnbuild.Asset) (bool, error) {
+	if txnAsset.IsNative() {
 		return hAsset.Type == Native, nil
 	} else if hAsset.Type == Native {
 		return false, nil
 	}
 
-	var xAssetType, xAssetCode, xAssetIssuer string
-	e := xAsset.Extract(&xAssetType, &xAssetCode, &xAssetIssuer)
-	if e != nil {
-		return false, fmt.Errorf("could not extract asset information from xdr.Asset: %s", e)
+	return txnAsset.GetCode() == hAsset.Code, nil
+}
+
+// assetEqualsExact does an exact comparison of two assets
+func assetEqualsExact(hAsset hProtocol.Asset, xAsset txnbuild.Asset) (bool, error) {
+	if xAsset.IsNative() {
+		return hAsset.Type == Native, nil
+	} else if hAsset.Type == Native {
+		return false, nil
 	}
-	return xAssetCode == hAsset.Code && xAssetIssuer == hAsset.Issuer, nil
+
+	return xAsset.GetCode() == hAsset.Code && xAsset.GetIssuer() == hAsset.Issuer, nil
 }
 
 // IsSelling helper method
-func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling xdr.Asset, buying xdr.Asset) (bool, error) {
-	sellingBase, e := assetEqualsXDR(sdexBase, selling)
+func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling txnbuild.Asset, buying txnbuild.Asset) (bool, error) {
+	sellingBase, e := assetEqualsExact(sdexBase, selling)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexBase with selling asset")
 	}
-	buyingQuote, e := assetEqualsXDR(sdexQuote, buying)
+	buyingQuote, e := assetEqualsExact(sdexQuote, buying)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexQuote with buying asset")
 	}
@@ -303,11 +306,11 @@ func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling xdr.
 		return true, nil
 	}
 
-	sellingQuote, e := assetEqualsXDR(sdexQuote, selling)
+	sellingQuote, e := assetEqualsExact(sdexQuote, selling)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexQuote with selling asset")
 	}
-	buyingBase, e := assetEqualsXDR(sdexBase, buying)
+	buyingBase, e := assetEqualsExact(sdexBase, buying)
 	if e != nil {
 		return false, fmt.Errorf("error comparing sdexBase with buying asset")
 	}
@@ -325,6 +328,23 @@ func Shuffle(slice []string) {
 		randIndex := r.Intn(n)
 		slice[n-1], slice[randIndex] = slice[randIndex], slice[n-1]
 	}
+}
+
+// SignWithSeed modifies the passed in tx with the signatures of the passed in seeds
+func SignWithSeed(tx *txnbuild.Transaction, seeds ...string) error {
+	for i, s := range seeds {
+		kp, e := keypair.Parse(s)
+		if e != nil {
+			return fmt.Errorf("cannot parse seed into keypair at index %d: %s", i, e)
+		}
+
+		e = tx.Sign(kp.(*keypair.Full))
+		if e != nil {
+			return fmt.Errorf("cannot sign tx with keypair at index %d (pubKey: %s): %s", i, kp.Address(), e)
+		}
+	}
+
+	return nil
 }
 
 // StringSet converts a string slice to a map of string to bool values to represent a Set

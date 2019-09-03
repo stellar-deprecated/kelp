@@ -6,10 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
@@ -97,38 +98,62 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) setupAccount(address string, signer string, botName string) error {
-	_, e := s.checkFundAccount(address, botName)
+	fundedAccount, e := s.checkFundAccount(address, botName)
 	if e != nil {
 		return fmt.Errorf("error checking and funding account: %s\n", e)
 	}
 
-	client := s.apiTestNetOld
-	txn, e := build.Transaction(
-		build.SourceAccount{AddressOrSeed: address},
-		build.AutoSequence{SequenceProvider: client},
-		build.TestNetwork,
-		build.Trust("COUPON", "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"),
-		build.Payment(
-			build.Destination{AddressOrSeed: address},
-			build.CreditAmount{Code: "COUPON", Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI", Amount: "1000.0"},
-			build.SourceAccount{AddressOrSeed: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
-		),
-	)
+	var txOps []txnbuild.Operation
+	trustOp := txnbuild.ChangeTrust{
+		Line: txnbuild.CreditAsset{
+			Code:   "COUPON",
+			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
+		},
+	}
+	txOps = append(txOps, &trustOp)
+
+	paymentOp := txnbuild.Payment{
+		Destination: address,
+		Amount:      "1000.0",
+		Asset: txnbuild.CreditAsset{
+			Code:   "COUPON",
+			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
+		},
+		SourceAccount: &txnbuild.SimpleAccount{AccountID: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+	}
+	txOps = append(txOps, &paymentOp)
+
+	tx := txnbuild.Transaction{
+		SourceAccount: fundedAccount,
+		Operations:    txOps,
+		Timebounds:    txnbuild.NewInfiniteTimeout(),
+		Network:       network.TestNetworkPassphrase,
+		BaseFee:       100,
+	}
+	e = tx.Build()
 	if e != nil {
 		return fmt.Errorf("cannot create trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	txnS, e := txn.Sign(signer, issuerSeed)
-	if e != nil {
-		return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
+	for _, s := range []string{signer, issuerSeed} {
+		kp, e := keypair.Parse(s)
+		if e != nil {
+			return fmt.Errorf("cannot parse seed  %s required for signing: %s\n", s, e)
+		}
+
+		e = tx.Sign(kp.(*keypair.Full))
+		if e != nil {
+			return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
+		}
 	}
 
-	txn64, e := txnS.Base64()
+	txn64, e := tx.Base64()
 	if e != nil {
 		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	resp, e := client.SubmitTransaction(txn64)
+	client := s.apiTestNet
+	resp, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
 		return fmt.Errorf("error submitting change trust transaction for address %s for bot '%s': %s\n", address, botName, e)
 	}
@@ -165,6 +190,22 @@ func (s *APIServer) checkFundAccount(address string, botName string) (*hProtocol
 		return nil, fmt.Errorf("error funding address %s for bot '%s': %s\n", address, botName, e)
 	}
 	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
+
+	// refetch account to confirm
+	account, e = s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: address})
+	if e != nil {
+		var herr *horizonclient.Error
+		switch t := e.(type) {
+		case *horizonclient.Error:
+			herr = t
+		case horizonclient.Error:
+			herr = &t
+		default:
+			return nil, fmt.Errorf("unexpected error when checking for existence of account %s for bot '%s': %s", address, botName, e)
+		}
+
+		return nil, fmt.Errorf("horizon error when checking for existence of account %s for bot '%s': %d (%v) -- could this be caused because horizon has not ingested this data yet? (programmer: maybe create hProtocol.Account instance manually instead of fetching)", address, botName, herr.Problem.Status, *herr)
+	}
 	return &account, nil
 }
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
@@ -35,12 +36,12 @@ func makeDeleteSideStrategy(
 // PruneExistingOffers impl
 func (s *deleteSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]build.TransactionMutator, []hProtocol.Offer) {
 	log.Printf("deleteSideStrategy: deleting %d offers\n", len(offers))
-	pruneOps := []build.TransactionMutator{}
+	pruneOps := []txnbuild.Operation{}
 	for i := 0; i < len(offers); i++ {
 		pOp := s.sdex.DeleteOffer(offers[i])
 		pruneOps = append(pruneOps, &pOp)
 	}
-	return pruneOps, []hProtocol.Offer{}
+	return api.ConvertOperation2TM(pruneOps), []hProtocol.Offer{}
 }
 
 // PreUpdate impl

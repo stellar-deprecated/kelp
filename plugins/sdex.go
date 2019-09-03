@@ -15,6 +15,7 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/networking"
@@ -38,7 +39,7 @@ type SDEX struct {
 	TradingAccount                string
 	SourceSeed                    string
 	TradingSeed                   string
-	Network                       build.Network
+	Network                       string
 	threadTracker                 *multithreading.ThreadTracker
 	operationalBuffer             float64
 	operationalBufferNonNativePct float64
@@ -77,7 +78,7 @@ func MakeSDEX(
 	tradingSeed string,
 	sourceAccount string,
 	tradingAccount string,
-	network build.Network,
+	network string,
 	threadTracker *multithreading.ThreadTracker,
 	operationalBuffer float64,
 	operationalBufferNonNativePct float64,
@@ -111,7 +112,7 @@ func MakeSDEX(
 	// TODO 2 remove this hack, we need to find a way of having ieif get a handle to compute balances or always compute and pass balances in?
 	ieif.SetExchangeShim(exchangeShim)
 
-	log.Printf("Using network passphrase: %s\n", sdex.Network.Passphrase)
+	log.Printf("Using network passphrase: %s\n", sdex.Network)
 
 	if sdex.SourceAccount == "" {
 		sdex.SourceAccount = sdex.TradingAccount
@@ -185,8 +186,8 @@ func (sdex *SDEX) OverrideOrderConstraints(pair *model.TradingPair, override *mo
 }
 
 // DeleteAllOffers is a helper that accumulates delete operations for the passed in offers
-func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []build.TransactionMutator {
-	ops := []build.TransactionMutator{}
+func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []txnbuild.Operation {
+	ops := []txnbuild.Operation{}
 	for _, offer := range offers {
 		op := sdex.DeleteOffer(offer)
 		ops = append(ops, &op)
@@ -195,31 +196,33 @@ func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []build.TransactionM
 }
 
 // DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
-func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) build.ManageOfferBuilder {
-	rate := build.Rate{
-		Selling: utils.Asset2Asset(offer.Selling),
-		Buying:  utils.Asset2Asset(offer.Buying),
-		Price:   build.Price(offer.Price),
+func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
+	var result txnbuild.ManageSellOffer
+	var e error
+	if sdex.SourceAccount == sdex.TradingAccount {
+		result, e = txnbuild.DeleteOfferOp(offer.ID)
+	} else {
+		result, e = txnbuild.DeleteOfferOp(offer.ID, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
 	}
 
-	if sdex.SourceAccount == sdex.TradingAccount {
-		return build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID))
+	if e != nil {
+		panic(fmt.Sprintf("unexpected error while creating delete offer op: %s", e))
 	}
-	return build.ManageOffer(false, build.Amount("0"), rate, build.OfferID(offer.ID), build.SourceAccount{AddressOrSeed: sdex.TradingAccount})
+	return result
 }
 
 // ModifyBuyOffer modifies a buy offer
-func (sdex *SDEX) ModifyBuyOffer(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) ModifyBuyOffer(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 	return sdex.ModifySellOffer(offer, 1/price, amount*price, incrementalNativeAmountRaw)
 }
 
 // ModifySellOffer modifies a sell offer
-func (sdex *SDEX) ModifySellOffer(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) ModifySellOffer(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 	return sdex.createModifySellOffer(&offer, offer.Selling, offer.Buying, price, amount, incrementalNativeAmountRaw)
 }
 
 // CreateSellOffer creates a sell offer
-func (sdex *SDEX) CreateSellOffer(base hProtocol.Asset, counter hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) CreateSellOffer(base hProtocol.Asset, counter hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 	return sdex.createModifySellOffer(nil, base, counter, price, amount, incrementalNativeAmountRaw)
 }
 
@@ -294,7 +297,7 @@ func (sdex *SDEX) ComputeIncrementalNativeAmountRaw(isNewOffer bool) float64 {
 }
 
 // createModifySellOffer is the main method that handles the logic of creating or modifying an offer, note that all offers are treated as sell offers in Stellar
-func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtocol.Asset, buying hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtocol.Asset, buying hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 	if price <= 0 {
 		return nil, fmt.Errorf("error: cannot create or modify offer, invalid price: %.8f", price)
 	}
@@ -338,23 +341,20 @@ func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtoco
 	}
 
 	stringPrice := strconv.FormatFloat(price, 'f', int(sdexOrderConstraints.PricePrecision), 64)
-	rate := build.Rate{
-		Selling: utils.Asset2Asset(selling),
-		Buying:  utils.Asset2Asset(buying),
-		Price:   build.Price(stringPrice),
+	stringAmount := strconv.FormatFloat(amount, 'f', int(sdexOrderConstraints.VolumePrecision), 64)
+
+	result, err := txnbuild.CreateOfferOp(utils.Asset2Asset(selling), utils.Asset2Asset(buying), stringAmount, stringPrice)
+	if err != nil {
+		return nil, err
 	}
 
-	mutators := []interface{}{
-		rate,
-		build.Amount(strconv.FormatFloat(amount, 'f', int(sdexOrderConstraints.VolumePrecision), 64)),
-	}
 	if offer != nil {
-		mutators = append(mutators, build.OfferID(offer.ID))
+		result.OfferID = offer.ID
 	}
 	if sdex.SourceAccount != sdex.TradingAccount {
-		mutators = append(mutators, build.SourceAccount{AddressOrSeed: sdex.TradingAccount})
+		result.SourceAccount = &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount}
 	}
-	result := build.ManageOffer(false, mutators...)
+
 	return &result, nil
 }
 
@@ -369,29 +369,34 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 }
 
 // submitOps submits the passed in operations to the network in a single transaction. Asynchronous or not based on flag.
-func (sdex *SDEX) submitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
+func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
+	ops := api.ConvertTM2Operation(opsOld)
+
 	sdex.incrementSeqNum()
-	muts := []build.TransactionMutator{
-		build.Sequence{Sequence: sdex.seqNum},
-		sdex.Network,
-		build.SourceAccount{AddressOrSeed: sdex.SourceAccount},
+	tx := txnbuild.Transaction{
+		// sequence number is decremented here because Transaction.Build auto increments sequence number
+		SourceAccount: &txnbuild.SimpleAccount{
+			AccountID: sdex.SourceAccount,
+			Sequence:  int64(sdex.seqNum - 1),
+		},
+		Operations: ops,
+		Timebounds: txnbuild.NewInfiniteTimeout(),
+		Network:    sdex.Network,
 	}
+
 	// compute fee per operation
 	opFee, e := sdex.opFeeStroopsFn()
 	if e != nil {
 		return fmt.Errorf("SubmitOps error when computing op fee: %s", e)
 	}
-	muts = append(muts, build.BaseFee{Amount: opFee})
-	// add transaction mutators
-	muts = append(muts, ops...)
-
-	tx, e := build.Transaction(muts...)
+	tx.BaseFee = uint32(opFee)
+	e = tx.Build()
 	if e != nil {
 		return errors.Wrap(e, "SubmitOps error: ")
 	}
 
 	// convert to xdr string
-	txeB64, e := sdex.sign(tx)
+	txeB64, e := sdex.sign(&tx)
 	if e != nil {
 		return e
 	}
@@ -419,24 +424,22 @@ func (sdex *SDEX) submitOps(ops []build.TransactionMutator, asyncCallback func(h
 }
 
 // CreateBuyOffer creates a buy offer
-func (sdex *SDEX) CreateBuyOffer(base hProtocol.Asset, counter hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+func (sdex *SDEX) CreateBuyOffer(base hProtocol.Asset, counter hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 	return sdex.CreateSellOffer(counter, base, 1/price, amount*price, incrementalNativeAmountRaw)
 }
 
-func (sdex *SDEX) sign(tx *build.TransactionBuilder) (string, error) {
-	var txe build.TransactionEnvelopeBuilder
+func (sdex *SDEX) sign(tx *txnbuild.Transaction) (string, error) {
 	var e error
-
 	if sdex.SourceSeed != sdex.TradingSeed {
-		txe, e = tx.Sign(sdex.SourceSeed, sdex.TradingSeed)
+		e = utils.SignWithSeed(tx, sdex.SourceSeed, sdex.TradingSeed)
 	} else {
-		txe, e = tx.Sign(sdex.SourceSeed)
+		e = utils.SignWithSeed(tx, sdex.SourceSeed)
 	}
 	if e != nil {
-		return "", e
+		return "", fmt.Errorf("error signing transaction: %s", e)
 	}
 
-	return txe.Base64()
+	return tx.Base64()
 }
 
 func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error), asyncMode bool) {

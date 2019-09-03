@@ -5,13 +5,14 @@ import (
 	"log"
 	"math"
 	"reflect"
+	"strconv"
 	"time"
 
 	"math/rand"
 
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
-	"github.com/stellar/go/xdr"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -179,7 +180,9 @@ func (b BatchedExchange) SubmitOpsSynch(ops []build.TransactionMutator, asyncCal
 }
 
 // SubmitOps performs any finalization or submission step needed by the exchange
-func (b BatchedExchange) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+func (b BatchedExchange) SubmitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+	ops := api.ConvertTM2Operation(opsOld)
+
 	var e error
 	b.commands, e = b.Ops2Commands(ops, b.baseAsset, b.quoteAsset)
 	if e != nil {
@@ -363,27 +366,23 @@ func convert2Price(number *model.Number) (hProtocol.Price, error) {
 	}, nil
 }
 
-func assetsEqual(hAsset hProtocol.Asset, xAsset xdr.Asset) (bool, error) {
-	if xAsset.Type == xdr.AssetTypeAssetTypeNative {
-		return hAsset.Type == utils.Native, nil
-	} else if hAsset.Type == utils.Native {
-		return false, nil
-	}
-
-	var xAssetType, xAssetCode, xAssetIssuer string
-	e := xAsset.Extract(&xAssetType, &xAssetCode, &xAssetIssuer)
-	if e != nil {
-		return false, e
-	}
-	return xAssetCode == hAsset.Code, nil
-}
-
 // manageOffer2Order converts a manage offer operation to a model.Order
-func manageOffer2Order(mob *build.ManageOfferBuilder, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
+func manageOffer2Order(mob *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, orderConstraints *model.OrderConstraints) (*model.Order, error) {
 	orderAction := model.OrderActionSell
-	price := model.NumberFromFloat(float64(mob.MO.Price.N)/float64(mob.MO.Price.D), largePrecision)
-	volume := model.NumberFromFloat(float64(mob.MO.Amount)/math.Pow(10, 7), largePrecision)
-	isBuy, e := assetsEqual(quoteAsset, mob.MO.Selling)
+
+	priceFloat, e := strconv.ParseFloat(mob.Price, 64)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert price (%s) to float: %s", mob.Price, e)
+	}
+
+	amountFloat, e := strconv.ParseFloat(mob.Amount, 64)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", mob.Amount, e)
+	}
+
+	price := model.NumberFromFloat(priceFloat, largePrecision)
+	volume := model.NumberFromFloat(amountFloat, largePrecision)
+	isBuy, e := utils.AssetOnlyCodeEquals(quoteAsset, mob.Selling)
 	if e != nil {
 		return nil, fmt.Errorf("could not compare assets, error: %s", e)
 	}
@@ -422,7 +421,7 @@ func order2OpenOrder(order *model.Order, txID *model.TransactionID) *model.OpenO
 }
 
 // Ops2Commands converts...
-func (b BatchedExchange) Ops2Commands(ops []build.TransactionMutator, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) ([]Command, error) {
+func (b BatchedExchange) Ops2Commands(ops []txnbuild.Operation, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) ([]Command, error) {
 	pair := &model.TradingPair{
 		Base:  model.FromHorizonAsset(baseAsset),
 		Quote: model.FromHorizonAsset(quoteAsset),
@@ -432,7 +431,7 @@ func (b BatchedExchange) Ops2Commands(ops []build.TransactionMutator, baseAsset 
 
 // Ops2CommandsHack converts...
 func Ops2CommandsHack(
-	ops []build.TransactionMutator,
+	ops []txnbuild.Operation,
 	baseAsset hProtocol.Asset,
 	quoteAsset hProtocol.Asset,
 	offerID2OrderID map[int64]string, // if map is nil then we ignore ID errors
@@ -441,16 +440,10 @@ func Ops2CommandsHack(
 	commands := []Command{}
 	for _, op := range ops {
 		switch manageOffer := op.(type) {
-		case *build.ManageOfferBuilder:
+		case *txnbuild.ManageSellOffer:
 			c, e := op2CommandsHack(manageOffer, baseAsset, quoteAsset, offerID2OrderID, orderConstraints)
 			if e != nil {
-				return nil, fmt.Errorf("unable to convert *build.ManageOfferBuilder to a Command: %s", e)
-			}
-			commands = append(commands, c...)
-		case build.ManageOfferBuilder:
-			c, e := op2CommandsHack(&manageOffer, baseAsset, quoteAsset, offerID2OrderID, orderConstraints)
-			if e != nil {
-				return nil, fmt.Errorf("unable to convert build.ManageOfferBuilder to a Command: %s", e)
+				return nil, fmt.Errorf("unable to convert *txnbuild.ManageSellOffer to a Command: %s", e)
 			}
 			commands = append(commands, c...)
 		default:
@@ -462,7 +455,7 @@ func Ops2CommandsHack(
 
 // op2CommandsHack converts one op to possibly many Commands
 func op2CommandsHack(
-	manageOffer *build.ManageOfferBuilder,
+	manageOffer *txnbuild.ManageSellOffer,
 	baseAsset hProtocol.Asset,
 	quoteAsset hProtocol.Asset,
 	offerID2OrderID map[int64]string, // if map is nil then we ignore ID errors
@@ -474,12 +467,12 @@ func op2CommandsHack(
 		return nil, fmt.Errorf("error converting from manageOffer op to Order: %s", e)
 	}
 
-	if manageOffer.MO.Amount == 0 {
+	if manageOffer.Amount == "0" {
 		// cancel
 		// fetch real orderID here (hoops we have to jump through because of the hacked approach to using centralized exchanges)
 		var orderID string
 		if offerID2OrderID != nil {
-			ID := int64(manageOffer.MO.OfferId)
+			ID := manageOffer.OfferID
 			var ok bool
 			orderID, ok = offerID2OrderID[ID]
 			if !ok {
@@ -491,13 +484,13 @@ func op2CommandsHack(
 		txID := model.MakeTransactionID(orderID)
 		openOrder := order2OpenOrder(order, txID)
 		commands = append(commands, MakeCommandCancel(openOrder))
-	} else if manageOffer.MO.OfferId != 0 {
+	} else if manageOffer.OfferID != 0 {
 		// modify is cancel followed by create
 		// -- cancel
 		// fetch real orderID here (hoops we have to jump through because of the hacked approach to using centralized exchanges)
 		var orderID string
 		if offerID2OrderID != nil {
-			ID := int64(manageOffer.MO.OfferId)
+			ID := manageOffer.OfferID
 			var ok bool
 			orderID, ok = offerID2OrderID[ID]
 			if !ok {

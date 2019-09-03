@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
+	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/model"
 )
 
@@ -229,4 +232,85 @@ type ExchangeShim interface {
 	Constrainable
 	OrderbookFetcher
 	FillTrackable
+}
+
+// ConvertOperation2TM is a temporary adapter to support transitioning from the old Go SDK to the new SDK without having to bump the major version
+func ConvertOperation2TM(ops []txnbuild.Operation) []build.TransactionMutator {
+	muts := []build.TransactionMutator{}
+	for _, o := range ops {
+		var mob build.ManageOfferBuilder
+		if mso, ok := o.(*txnbuild.ManageSellOffer); ok {
+			mob = build.ManageOffer(
+				false,
+				build.Amount(mso.Amount),
+				build.Rate{
+					Selling: build.Asset{Code: mso.Selling.GetCode(), Issuer: mso.Selling.GetIssuer(), Native: mso.Selling.IsNative()},
+					Buying:  build.Asset{Code: mso.Buying.GetCode(), Issuer: mso.Buying.GetIssuer(), Native: mso.Buying.IsNative()},
+					Price:   build.Price(mso.Price),
+				},
+				build.OfferID(mso.OfferID),
+			)
+			if mso.SourceAccount != nil {
+				mob.Mutate(build.SourceAccount{AddressOrSeed: mso.SourceAccount.GetAccountID()})
+			}
+		} else {
+			panic(fmt.Sprintf("could not convert txnbuild.Operation to build.TransactionMutator: %v\n", o))
+		}
+		muts = append(muts, mob)
+	}
+	return muts
+}
+
+// ConvertTM2Operation is a temporary adapter to support transitioning from the old Go SDK to the new SDK without having to bump the major version
+func ConvertTM2Operation(muts []build.TransactionMutator) []txnbuild.Operation {
+	ops := []txnbuild.Operation{}
+	for _, m := range muts {
+		var mso *txnbuild.ManageSellOffer
+		if mob, ok := m.(build.ManageOfferBuilder); ok {
+			mso = convertMOB2MSO(mob)
+		} else if mob, ok := m.(*build.ManageOfferBuilder); ok {
+			mso = convertMOB2MSO(*mob)
+		} else {
+			panic(fmt.Sprintf("could not convert build.TransactionMutator to txnbuild.Operation: %v (type=%T)\n", m, m))
+		}
+		ops = append(ops, mso)
+	}
+	return ops
+}
+
+func convertMOB2MSO(mob build.ManageOfferBuilder) *txnbuild.ManageSellOffer {
+	mso := &txnbuild.ManageSellOffer{
+		Amount:  fmt.Sprintf("%.7f", float64(mob.MO.Amount)/math.Pow(10, 7)),
+		OfferID: int64(mob.MO.OfferId),
+		Price:   fmt.Sprintf("%.7f", float64(mob.MO.Price.N)/float64(mob.MO.Price.D)),
+	}
+	if mob.O.SourceAccount != nil {
+		mso.SourceAccount = &txnbuild.SimpleAccount{
+			AccountID: mob.O.SourceAccount.Address(),
+		}
+	}
+
+	if mob.MO.Buying.Type == xdr.AssetTypeAssetTypeNative {
+		mso.Buying = txnbuild.NativeAsset{}
+	} else {
+		var tipe, code, issuer string
+		mob.MO.Buying.MustExtract(&tipe, &code, &issuer)
+		mso.Buying = txnbuild.CreditAsset{
+			Code:   code,
+			Issuer: issuer,
+		}
+	}
+
+	if mob.MO.Selling.Type == xdr.AssetTypeAssetTypeNative {
+		mso.Selling = txnbuild.NativeAsset{}
+	} else {
+		var tipe, code, issuer string
+		mob.MO.Selling.MustExtract(&tipe, &code, &issuer)
+		mso.Selling = txnbuild.CreditAsset{
+			Code:   code,
+			Issuer: issuer,
+		}
+	}
+
+	return mso
 }

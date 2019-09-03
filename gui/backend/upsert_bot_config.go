@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/strkey"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
@@ -219,11 +220,11 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 }
 
 func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, traderSeed string, botName string, isTestnet bool, assets []hProtocol.Asset) error {
-	network := build.PublicNetwork
-	client := s.apiPubNetOld
+	activeNetwork := network.PublicNetworkPassphrase
+	client := s.apiPubNet
 	if isTestnet {
-		network = build.TestNetwork
-		client = s.apiTestNetOld
+		activeNetwork = network.TestNetworkPassphrase
+		client = s.apiTestNet
 	}
 
 	// find trustlines to be added
@@ -255,37 +256,55 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 
 	// build txn
 	address := kp.Address()
-	muts := []build.TransactionMutator{
-		build.SourceAccount{AddressOrSeed: address},
-		build.AutoSequence{SequenceProvider: client},
-		network,
+	accountReq := horizonclient.AccountRequest{AccountID: address}
+	account, err := client.AccountDetail(accountReq)
+	if err != nil {
+		return fmt.Errorf("Unable to load account for %s\n: %s", address, err)
 	}
+
+	var txOps []txnbuild.Operation
 	for _, a := range trustlines {
-		muts = append(muts, build.Trust(a.Code, a.Issuer))
+		trustOp := txnbuild.ChangeTrust{
+			Line: txnbuild.CreditAsset{Code: a.Code, Issuer: a.Issuer},
+		}
+		txOps = append(txOps, &trustOp)
 		log.Printf("added trust asset operation to transaction for asset: %+v\n", a)
 	}
-	tx, e := build.Transaction(muts...)
+
+	tx := txnbuild.Transaction{
+		SourceAccount: &account,
+		Operations:    txOps,
+		Timebounds:    txnbuild.NewInfiniteTimeout(),
+		Network:       activeNetwork,
+		BaseFee:       100,
+	}
+	e := tx.Build()
 	if e != nil {
 		return fmt.Errorf("cannot create trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	txnS, e := tx.Sign(traderSeed)
+	kpSigner, e := keypair.Parse(traderSeed)
+	if e != nil {
+		return fmt.Errorf("cannot parse seed  %s required for signing: %s\n", traderSeed, e)
+	}
+
+	e = tx.Sign(kpSigner.(*keypair.Full))
 	if e != nil {
 		return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	txn64, e := txnS.Base64()
+	txn64, e := tx.Base64()
 	if e != nil {
 		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s\n", address, botName, e)
 	}
 
-	txSuccess, e := client.SubmitTransaction(txn64)
+	txSuccess, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
-		var herr *horizon.Error
+		var herr *horizonclient.Error
 		switch t := e.(type) {
-		case *horizon.Error:
+		case *horizonclient.Error:
 			herr = t
-		case horizon.Error:
+		case horizonclient.Error:
 			herr = &t
 		default:
 			return fmt.Errorf("error when submitting change trust transaction for address %s for bot '%s' for assets(%v): %s (%s)\n", address, botName, trustlines, e, txn64)

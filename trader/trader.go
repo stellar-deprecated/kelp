@@ -11,6 +11,7 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -142,7 +143,7 @@ func (t *Trader) deleteAllOffers() {
 	}
 
 	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d; (deleteCyclesThreshold to be exceeded=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
-	dOps := []build.TransactionMutator{}
+	dOps := []txnbuild.Operation{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
 	t.sellingAOffers = []hProtocol.Offer{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
@@ -150,7 +151,7 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.exchangeShim.SubmitOps(dOps, nil)
+		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -217,7 +218,7 @@ func (t *Trader) update() {
 		return
 	}
 
-	ops, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
+	opsOld, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
 	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
@@ -228,6 +229,7 @@ func (t *Trader) update() {
 		return
 	}
 
+	ops := api.ConvertTM2Operation(opsOld)
 	for i, filter := range t.submitFilters {
 		ops, e = filter.Apply(ops, t.sellingAOffers, t.buyingAOffers)
 		if e != nil {
@@ -239,7 +241,7 @@ func (t *Trader) update() {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.exchangeShim.SubmitOps(ops, nil)
+		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()

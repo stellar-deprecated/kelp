@@ -6,6 +6,7 @@ import (
 
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/utils"
@@ -71,7 +72,7 @@ func (s *sellSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]buil
 	// figure out which offers we want to prune
 	shouldPrune := computeOffersToPrune(offers, s.desiredLevels)
 
-	pruneOps := []build.TransactionMutator{}
+	pruneOps := []txnbuild.Operation{}
 	updatedOffers := []hProtocol.Offer{}
 	for i, offer := range offers {
 		isPruning := shouldPrune[i]
@@ -91,7 +92,7 @@ func (s *sellSideStrategy) PruneExistingOffers(offers []hProtocol.Offer) ([]buil
 		// base and quote here refers to the bot's base and quote, not the base and quote of the sellSideStrategy
 		log.Printf("offer | %s | level=%d | curPriceQuote=%.8f | curAmtBase=%.8f | pruning=%v\n", s.action, i+1, curPrice, curAmount, isPruning)
 	}
-	return pruneOps, updatedOffers
+	return api.ConvertOperation2TM(pruneOps), updatedOffers
 }
 
 // computeOffersToPrune returns a list of bools representing whether we should prune the offer at that position or not
@@ -209,12 +210,12 @@ func (s *sellSideStrategy) createPrecedingOffers(
 ) (
 	int, // numLevelsConsumed
 	bool, // hitCapacityLimit
-	[]build.TransactionMutator, // ops
+	[]txnbuild.Operation, // ops
 	*model.Number, // newTopOffer
 	error, // e
 ) {
 	hitCapacityLimit := false
-	ops := []build.TransactionMutator{}
+	ops := []txnbuild.Operation{}
 	var newTopOffer *model.Number
 
 	for i := 0; i < len(precedingLevels); i++ {
@@ -229,7 +230,7 @@ func (s *sellSideStrategy) createPrecedingOffers(
 		}
 
 		var offerPrice *model.Number
-		var op *build.ManageOfferBuilder
+		var op *txnbuild.ManageSellOffer
 		offerPrice, hitCapacityLimit, op, e = s.createSellLevel(i, *targetPrice, *targetAmount)
 		if e != nil {
 			return 0, false, nil, nil, fmt.Errorf("unable to create new preceding offer: %s", e)
@@ -259,8 +260,9 @@ func (s *sellSideStrategy) createPrecedingOffers(
 }
 
 // UpdateWithOps impl
-func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.TransactionMutator, newTopOffer *model.Number, e error) {
-	deleteOps := []build.TransactionMutator{}
+func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (opsOld []build.TransactionMutator, newTopOffer *model.Number, e error) {
+	var ops []txnbuild.Operation
+	deleteOps := []txnbuild.Operation{}
 
 	// first we want to re-create any offers that precede our existing offers and are additions to the existing offers that we have
 	precedingLevels := computePrecedingLevels(offers, s.desiredLevels)
@@ -281,7 +283,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 			if isModify {
 				delOp := s.sdex.DeleteOffer(offers[existingOffersIdx])
 				log.Printf("deleting offer because we previously hit the capacity limit, offerId=%d\n", offers[existingOffersIdx].ID)
-				deleteOps = append(deleteOps, delOp)
+				deleteOps = append(deleteOps, &delOp)
 				continue
 			} else {
 				// we can break because we would never see a modify operation happen after a non-modify operation
@@ -296,7 +298,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 		}
 
 		var offerPrice *model.Number
-		var op *build.ManageOfferBuilder
+		var op *txnbuild.ManageSellOffer
 		if isModify {
 			offerPrice, hitCapacityLimit, op, e = s.modifySellLevel(offers, existingOffersIdx, i, *targetPrice, *targetAmount)
 		} else {
@@ -310,7 +312,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 			hitCapacityLimitModify := isModify && hitCapacityLimit
 			if reducedOrderSize || hitCapacityLimitModify {
 				// prepend operations that reduce the size of an existing order because they decrease our liabilities
-				ops = append([]build.TransactionMutator{op}, ops...)
+				ops = append([]txnbuild.Operation{op}, ops...)
 			} else {
 				ops = append(ops, op)
 			}
@@ -325,7 +327,7 @@ func (s *sellSideStrategy) UpdateWithOps(offers []hProtocol.Offer) (ops []build.
 	// prepend deleteOps because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
 	ops = append(deleteOps, ops...)
 
-	return ops, newTopOffer, nil
+	return api.ConvertOperation2TM(ops), newTopOffer, nil
 }
 
 // PostUpdate impl
@@ -371,7 +373,7 @@ func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64,
 }
 
 // createSellLevel returns offerPrice, hitCapacityLimit, op, error.
-func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
+func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *txnbuild.ManageSellOffer, error) {
 	incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
 	targetPrice = *model.NumberByCappingPrecision(&targetPrice, s.orderConstraints.PricePrecision)
 	targetAmount = *model.NumberByCappingPrecision(&targetAmount, s.orderConstraints.VolumePrecision)
@@ -380,7 +382,7 @@ func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, 
 		targetPrice.AsFloat(),
 		targetAmount.AsFloat(),
 		incrementalNativeAmountRaw,
-		func(price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+		func(price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 			priceLogged := price
 			amountLogged := amount
 			if s.divideAmountByPrice {
@@ -397,7 +399,7 @@ func (s *sellSideStrategy) createSellLevel(index int, targetPrice model.Number, 
 }
 
 // modifySellLevel returns offerPrice, hitCapacityLimit, op, error.
-func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, newIndex int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *build.ManageOfferBuilder, error) {
+func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, newIndex int, targetPrice model.Number, targetAmount model.Number) (*model.Number, bool, *txnbuild.ManageSellOffer, error) {
 	highestPrice := targetPrice.AsFloat() + targetPrice.AsFloat()*s.priceTolerance
 	lowestPrice := targetPrice.AsFloat() - targetPrice.AsFloat()*s.priceTolerance
 	minAmount := targetAmount.AsFloat() - targetAmount.AsFloat()*s.amountTolerance
@@ -449,7 +451,7 @@ func (s *sellSideStrategy) modifySellLevel(offers []hProtocol.Offer, index int, 
 		targetPrice.AsFloat(),
 		targetAmount.AsFloat(),
 		incrementalNativeAmountRaw,
-		func(price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error) {
+		func(price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error) {
 			priceLogged := price
 			amountLogged := amount
 			curPriceLogged := curPrice
@@ -484,10 +486,10 @@ func (s *sellSideStrategy) placeOrderWithRetry(
 	targetPrice float64,
 	targetAmount float64,
 	incrementalNativeAmountRaw float64,
-	placeOffer func(price float64, amount float64, incrementalNativeAmountRaw float64) (*build.ManageOfferBuilder, error),
+	placeOffer func(price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	assetBase hProtocol.Asset,
 	assetQuote hProtocol.Asset,
-) (bool, *build.ManageOfferBuilder, error) {
+) (bool, *txnbuild.ManageSellOffer, error) {
 	op, e := placeOffer(targetPrice, targetAmount, incrementalNativeAmountRaw)
 	if e != nil {
 		return false, nil, e
