@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Dockerize Kelp binary ([b61207012dd10b44220acf644703aa346834778c](https://github.com/stellar/kelp/commit/b61207012dd10b44220acf644703aa346834778c))
+- update instructions in README on how to compile Kelp from source ([c58982c25e8ead8c91ca17f09d4c96cc3705d772](https://github.com/stellar/kelp/commit/c58982c25e8ead8c91ca17f09d4c96cc3705d772))
 
 ### Changed
 
 - Upgraded horizon types to use hProtocol package ([4af564dd9aeeb976685e381470f8a9fa0626b49e](https://github.com/stellar/kelp/commit/4af564dd9aeeb976685e381470f8a9fa0626b49e))
 - Upgraded Go SDK to use horizonclient package ([585080c76f173acd5a1348f3f662796d5aeda719](https://github.com/stellar/kelp/commit/585080c76f173acd5a1348f3f662796d5aeda719))
+- Upgraded Go SDK usage to `txnbuild` package instead of `build` package ([c18c97f388d3a605b9c48edb5085008791467a1c](https://github.com/stellar/kelp/commit/c18c97f388d3a605b9c48edb5085008791467a1c))
 
 ### Deprecated
 
@@ -24,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - git bash windows compatibility, replace `rev` command in build.sh and clean.sh ([8ea336c379e6770a7ee4646aa3750ca51ed6f203](https://github.com/stellar/kelp/commit/8ea336c379e6770a7ee4646aa3750ca51ed6f203))
+- improve number.AsRatio() conversion using stellar/go/price for more accurate pricing on centralized exchanges ([59cabd6bf81e61a237f33c25e319530937941d76](https://github.com/stellar/kelp/commit/59cabd6bf81e61a237f33c25e319530937941d76))
 
 ### Security
 
