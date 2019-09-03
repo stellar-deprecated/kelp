@@ -289,12 +289,12 @@ func TestAsRatio(t *testing.T) {
 			wantD: 1000000,
 		}, {
 			n:     NumberFromFloat(5274.26, 8),
-			wantN: 527426,
-			wantD: 100,
+			wantN: 263713,
+			wantD: 50,
 		}, {
 			n:     NumberFromFloat(-5274.26, 8),
-			wantN: -527426,
-			wantD: 100,
+			wantN: -263713,
+			wantD: 50,
 		}, {
 			n:     NumberFromFloat(10.0, 4),
 			wantN: 10,
@@ -303,6 +303,10 @@ func TestAsRatio(t *testing.T) {
 			n:     NumberFromFloat(-10.0, 4),
 			wantN: -10,
 			wantD: 1,
+		}, {
+			n:     NumberFromFloat(2.599999999, 9),
+			wantN: 1039999997,
+			wantD: 399999999,
 		},
 	}
 
@@ -317,25 +321,6 @@ func TestAsRatio(t *testing.T) {
 				return
 			}
 			assert.Equal(t, kase.wantD, den)
-		})
-	}
-}
-
-func TestAsRatio_Error(t *testing.T) {
-	testCases := []struct {
-		n *Number
-	}{
-		{
-			n: NumberFromFloat(2.599999999, 9),
-		},
-	}
-
-	for _, kase := range testCases {
-		t.Run(kase.n.AsString(), func(t *testing.T) {
-			num, den, e := kase.n.AsRatio()
-			if !assert.Error(t, e, fmt.Sprintf("got back num=%d, den=%d, expected an error", num, den)) {
-				return
-			}
 		})
 	}
 }
