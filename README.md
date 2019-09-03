@@ -93,15 +93,17 @@ To compile Kelp from source:
 1. [Download][golang-download] and [setup][golang-setup] Golang.
 2. [Install Glide][glide-install] for dependency management
     * `curl https://glide.sh/get | sh`
-3. Clone the repo into `$GOPATH/src/github.com/stellar/kelp`:
+3. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] to build the Kelp GUI
+4. Clone the repo into `$GOPATH/src/github.com/stellar/kelp`:
     * `git clone git@github.com:stellar/kelp.git`
-4. Change to the kelp directory and install the dependencies:
+5. Change to the kelp directory and install the dependencies:
     * `glide install`
-5. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
+6. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
     * `./scripts/build.sh`
-6. Confirm one new binary file:
+7. Confirm one new binary file:
     * `./bin/kelp`
-7. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
+8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
+    * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
 
 ## Running Kelp
 
@@ -306,6 +308,8 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [golang-download]: https://golang.org/dl/
 [golang-setup]: https://golang.org/doc/install#install
 [glide-install]: https://github.com/Masterminds/glide#install
+[yarn-install]: https://yarnpkg.com/lang/en/docs/install/
+[nodejs-install]: https://nodejs.org/en/download/
 [spread]: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
 [hedge]: https://en.wikipedia.org/wiki/Hedge_(finance)
 [cmc]: https://coinmarketcap.com/
