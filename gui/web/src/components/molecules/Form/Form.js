@@ -199,22 +199,6 @@ class Form extends Component {
     //   tradingPlatform = this.props.configData.trader_config.trading_exchange;
     // }
 
-    let traderSecretKeyInput = (
-      <Input
-        value={this.props.configData.trader_config.trading_secret_seed}
-        type="string"
-        onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
-        error={this.getError("trader_config.trading_secret_seed")}
-        />
-    );
-    let sourceSecretKeyInput = (
-      <Input
-        value={this.props.configData.trader_config.source_secret_seed}
-        type="string"
-        onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
-        error={this.getError("trader_config.source_secret_seed")}
-        />
-    );
     let isTestNet = this.props.configData.trader_config.horizon_url.includes("test");
     // let network = "PubNet";
     // if (isTestNet) {
@@ -303,7 +287,9 @@ class Form extends Component {
                 <SecretKey
                   label="Trader account secret key"
                   isTestNet={isTestNet}
-                  secret={traderSecretKeyInput}
+                  secret={this.props.configData.trader_config.trading_secret_seed}
+                  onSecretChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
+                  onError={this.getError("trader_config.trading_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.trading_secret_seed")}
                 />
               </FieldItem>
@@ -374,7 +360,9 @@ class Form extends Component {
                 <SecretKey
                   label="Source account secret key"
                   isTestNet={isTestNet}
-                  secret={sourceSecretKeyInput}
+                  secret={this.props.configData.trader_config.source_secret_seed}
+                  onSecretChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+                  onError={this.getError("trader_config.source_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.source_secret_seed")}
                   optional={true}
                 />

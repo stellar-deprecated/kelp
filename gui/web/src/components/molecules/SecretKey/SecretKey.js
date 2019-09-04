@@ -3,23 +3,33 @@ import PropTypes from 'prop-types';
 import grid from '../../_styles/grid.module.scss';
 import Button from '../../atoms/Button/Button';
 import Label from '../../atoms/Label/Label';
+import Input from '../../atoms/Input/Input';
 
 class SecretKey extends Component {
   static propTypes = {
     label: PropTypes.string.isRequired,
     isTestNet: PropTypes.bool.isRequired,
-    secret: PropTypes.element.isRequired,
+    secret: PropTypes.string.isRequired,
+    onSecretChange: PropTypes.func.isRequired,
+    onError: PropTypes.func.isRequired,
     onNewKeyClick: PropTypes.func,
     optional: PropTypes.bool,
   };
 
   render() {
-    let secret = this.props.secret;
+    let inputElem = (<Input
+      value={this.props.secret}
+      type="string"
+      onChange={(event) => { this.props.onSecretChange(event) }}
+      error={this.props.onError}
+      />);
+
+    let secretElem = inputElem;
     if (this.props.isTestNet) {
-      secret = (
+      secretElem = (
         <div className={grid.row}>
           <div className={grid.col90p}>
-            {this.props.secret}
+            {inputElem}
           </div>
           <div className={grid.col10p}>
             <Button 
@@ -42,7 +52,7 @@ class SecretKey extends Component {
     return (
       <div>
         {label}
-        {secret}
+        {secretElem}
       </div>
     );
   }
