@@ -41,15 +41,9 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, e = s.kos.Blocking("mkdir", "mkdir -p "+s.configsDir)
+	e = s.setupOpsDirectory()
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error running mkdir command for configsDir: %s\n", e))
-		return
-	}
-
-	_, e = s.kos.Blocking("mkdir", "mkdir -p "+s.logsDir)
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("error running mkdir command for logsDir: %s\n", e))
+		s.writeError(w, fmt.Sprintf("error setting up ops directory: %s\n", e))
 		return
 	}
 

@@ -80,6 +80,12 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	e = s.setupOpsDirectory()
+	if e != nil {
+		s.writeError(w, fmt.Sprintf("error setting up ops directory: %s\n", e))
+		return
+	}
+
 	filenamePair := model2.GetBotFilenames(req.Name, req.Strategy)
 	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
 	botConfig := req.TraderConfig

@@ -164,3 +164,12 @@ func (kos *KelpOS) RegisteredProcesses() []string {
 	}
 	return list
 }
+
+// Mkdir function with a neat error message
+func (kos *KelpOS) Mkdir(dirPath string) error {
+	_, e := kos.Blocking("mkdir", fmt.Sprintf("mkdir -p %s", dirPath))
+	if e != nil {
+		return fmt.Errorf("error running mkdir command for dir (%s): %s\n", dirPath, e)
+	}
+	return nil
+}

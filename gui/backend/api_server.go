@@ -133,3 +133,17 @@ func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kel
 	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
 	return s.kos.Background(namespace, cmdString)
 }
+
+func (s *APIServer) setupOpsDirectory() error {
+	e := s.kos.Mkdir(s.configsDir)
+	if e != nil {
+		return fmt.Errorf("error setting up configs directory: %s\n", e)
+	}
+
+	e = s.kos.Mkdir(s.logsDir)
+	if e != nil {
+		return fmt.Errorf("error setting up logs directory: %s\n", e)
+	}
+
+	return nil
+}
