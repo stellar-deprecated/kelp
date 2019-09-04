@@ -441,7 +441,7 @@ class Form extends Component {
               </FieldItem>
 
               <FieldItem>
-                <Label>Delete cycles treshold</Label>
+                <Label>Delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.delete_cycles_threshold}
                   type="int_positive"
