@@ -19,6 +19,7 @@ import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import newSecretKey from '../../../kelp-ops-api/newSecretKey';
+import SecretKey from '../SecretKey/SecretKey';
 
 class Form extends Component {
   constructor(props) {
@@ -198,60 +199,11 @@ class Form extends Component {
     //   tradingPlatform = this.props.configData.trader_config.trading_exchange;
     // }
 
-    let traderSecretKeyInput = (
-      <Input
-        value={this.props.configData.trader_config.trading_secret_seed}
-        type="string"
-        onChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
-        error={this.getError("trader_config.trading_secret_seed")}
-        />
-    );
-    let sourceSecretKeyInput = (
-      <Input
-        value={this.props.configData.trader_config.source_secret_seed}
-        type="string"
-        onChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
-        error={this.getError("trader_config.source_secret_seed")}
-        />
-    );
+    let isTestNet = this.props.configData.trader_config.horizon_url.includes("test");
     // let network = "PubNet";
-    let traderSecretKey = traderSecretKeyInput;
-    let sourceSecretKey = sourceSecretKeyInput;
-    if (this.props.configData.trader_config.horizon_url.includes("test")) {
+    // if (isTestNet) {
       // network = "TestNet";
-      traderSecretKey = (
-        <div className={grid.row}>
-          <div className={grid.col90p}>
-            {traderSecretKeyInput}
-          </div>
-          <div className={grid.col10p}>
-            <Button 
-              icon="refresh"
-              size="small"
-              hsize="round"
-              loading={false}
-              onClick={() => this.newSecret("trader_config.trading_secret_seed")}
-              />
-          </div>
-        </div>
-      );
-      sourceSecretKey = (
-        <div className={grid.row}>
-          <div className={grid.col90p}>
-            {sourceSecretKeyInput}
-          </div>
-          <div className={grid.col10p}>
-            <Button 
-              icon="refresh"
-              size="small"
-              hsize="round"
-              loading={false}
-              onClick={() => this.newSecret("trader_config.source_secret_seed")}
-              />
-          </div>
-        </div>
-      );
-    }
+    // }
 
     let error = "";
     if (this.props.errorResp) {
@@ -332,8 +284,14 @@ class Form extends Component {
             
             <FormSection>
               <FieldItem>
-                <Label>Trader account secret key</Label>
-                {traderSecretKey}
+                <SecretKey
+                  label="Trader account secret key"
+                  isTestNet={isTestNet}
+                  secret={this.props.configData.trader_config.trading_secret_seed}
+                  onSecretChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
+                  onError={this.getError("trader_config.trading_secret_seed")}
+                  onNewKeyClick={() => this.newSecret("trader_config.trading_secret_seed")}
+                />
               </FieldItem>
             </FormSection>
 
@@ -399,8 +357,15 @@ class Form extends Component {
           <div className={grid.container}>
             <FormSection>
               <FieldItem>
-                <Label optional>Source account secret key</Label>
-                {sourceSecretKey}
+                <SecretKey
+                  label="Source account secret key"
+                  isTestNet={isTestNet}
+                  secret={this.props.configData.trader_config.source_secret_seed}
+                  onSecretChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
+                  onError={this.getError("trader_config.source_secret_seed")}
+                  onNewKeyClick={() => this.newSecret("trader_config.source_secret_seed")}
+                  optional={true}
+                />
               </FieldItem>
 
               <FieldItem>
