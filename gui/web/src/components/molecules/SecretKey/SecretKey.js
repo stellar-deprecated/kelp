@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import styles from './SecretKey.module.scss';
+import StellarSdk from 'stellar-sdk'
 import grid from '../../_styles/grid.module.scss';
 import Button from '../../atoms/Button/Button';
 import Label from '../../atoms/Label/Label';
@@ -49,9 +51,20 @@ class SecretKey extends Component {
       label = (<Label optional>{this.props.label}</Label>);
     }
 
+    let pubkeyElem = ""
+    if (this.props.secret !== "") {
+      let pubkeypair = StellarSdk.Keypair.fromSecret(this.props.secret);
+      pubkeyElem = (
+        <div>
+          <span className={styles.pubkeyLabel}>PubKey: </span><span className={styles.pubkey}>{pubkeypair.publicKey()}</span>
+        </div>
+      );
+    }
+
     return (
       <div>
         {label}
+        {pubkeyElem}
         {secretElem}
       </div>
     );
