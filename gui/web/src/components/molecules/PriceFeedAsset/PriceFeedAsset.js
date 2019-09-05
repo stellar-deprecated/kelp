@@ -63,7 +63,10 @@ class PriceFeedAsset extends Component {
       // component is unmounted
       let updateStateObj = { isLoading: false };
       if (!resp.error) {
-        updateStateObj.price = resp.price
+        updateStateObj.price = resp.price;
+        this.props.onNewPrice(resp.price);
+      } else {
+        updateStateObj.price = null;
         this.props.onNewPrice(resp.price);
       }
 
