@@ -52,28 +52,38 @@ class PriceFeedAsset extends Component {
     this.props.onLoadingPrice();
 
     var _this = this;
-    let currentRequest = fetchPrice(this.props.baseUrl, this.props.type, this.props.feed_url).then(resp => {
-      if (currentRequest !== _this._asyncRequests["price"]) {
-        // if we have a later request it means we don't want to process the result of this request
-        return
-      }
-
-      // don't delete _this._asyncRequests["price"] because it may be different from currentRequest and we
-      // don't want to introduce locking to avoid this contention, especially since we delete it when this
-      // component is unmounted
-      let updateStateObj = { isLoading: false };
-      if (!resp.error) {
-        updateStateObj.price = resp.price;
-        this.props.onNewPrice(resp.price);
-      } else {
-        updateStateObj.price = null;
-        this.props.onNewPrice(resp.price);
-      }
-
-      _this.setState(updateStateObj);
-    });
+    let currentRequest = fetchPrice.bind(this, this.props.baseUrl, this.props.type, this.props.feed_url);
     // we need to set the cached request to the current request so we always track the latest request we want processed
     this._asyncRequests["price"] = currentRequest;
+    setTimeout(() => {
+      // check that this is the latest request before we send the request to the server
+      if (currentRequest !== _this._asyncRequests["price"]) {
+        // if we have a later request it means we don't want to send this request to the server
+        return;
+      }
+
+      currentRequest().then(resp => {
+        // check again that this is the latest request after we receive the response from the server
+        if (currentRequest !== _this._asyncRequests["price"]) {
+          // if we have a later request it means we don't want to process the result of this request
+          return;
+        }
+  
+        // don't delete _this._asyncRequests["price"] because it may be different from currentRequest and we
+        // don't want to introduce locking to avoid this contention, especially since we delete it when this
+        // component is unmounted
+        let updateStateObj = { isLoading: false };
+        if (!resp.error) {
+          updateStateObj.price = resp.price;
+          this.props.onNewPrice(resp.price);
+        } else {
+          updateStateObj.price = null;
+          this.props.onNewPrice(resp.price);
+        }
+  
+        _this.setState(updateStateObj);
+      });
+    }, 500);  // buffer requests up to 0.5 second so we don't hit rate-limits with our pricing APIs, and also introduces a noticeable loading animation
   }
 
   componentWillUnmount() {
