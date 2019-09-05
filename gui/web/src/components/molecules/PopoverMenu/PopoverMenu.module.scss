@@ -8,6 +8,7 @@ $arrow-size: 8px;
     border-radius: 2px;
     padding: 0.5rem 0;
     position: relative;
+    z-index: 10;
 
     &:before {
         content: "";
