@@ -23,7 +23,7 @@ class SecretKey extends Component {
       value={this.props.secret}
       type="string"
       onChange={(event) => { this.props.onSecretChange(event) }}
-      error={this.props.onError}
+      error={this.props.onError()}
       />);
 
     let secretElem = inputElem;

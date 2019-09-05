@@ -289,7 +289,7 @@ class Form extends Component {
                   isTestNet={isTestNet}
                   secret={this.props.configData.trader_config.trading_secret_seed}
                   onSecretChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
-                  onError={this.getError("trader_config.trading_secret_seed")}
+                  onError={() => this.getError("trader_config.trading_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.trading_secret_seed")}
                 />
               </FieldItem>
@@ -362,7 +362,7 @@ class Form extends Component {
                   isTestNet={isTestNet}
                   secret={this.props.configData.trader_config.source_secret_seed}
                   onSecretChange={(event) => { this.props.onChange("trader_config.source_secret_seed", event) }}
-                  onError={this.getError("trader_config.source_secret_seed")}
+                  onError={() => this.getError("trader_config.source_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.source_secret_seed")}
                   optional={true}
                 />
