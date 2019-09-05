@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/stellar/kelp/plugins"
 )
@@ -21,7 +20,6 @@ type fetchPriceOutput struct {
 }
 
 func (s *APIServer) fetchPrice(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
 	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error reading request input: %s", e))
@@ -46,13 +44,6 @@ func (s *APIServer) fetchPrice(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorJson(w, fmt.Sprintf("unable to fetch price: %s", e))
 		return
 	}
-
-	// force sleep for at least 1 second to cause some artificial delay
-	minRequestTime := 1 * time.Second
-	elapsed := time.Now().Sub(startTime)
-	nanos := minRequestTime.Nanoseconds() - elapsed.Nanoseconds()
-	log.Printf("force sleep for %d nanoseconds\n", nanos)
-	time.Sleep(time.Duration(nanos))
 
 	s.writeJson(w, fetchPriceOutput{
 		Price: price,
