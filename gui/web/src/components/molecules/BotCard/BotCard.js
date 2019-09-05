@@ -67,6 +67,8 @@ class BotCard extends Component {
     this.stopBot = this.stopBot.bind(this);
     this.tick = this.tick.bind(this);
     this.toggleOptions = this.toggleOptions.bind(this);
+    this.closeOptions = this.closeOptions.bind(this);
+    this.handleClick = this.handleClick.bind(this);
     this.editBot = this.editBot.bind(this);
     this.showMarket = this.showMarket.bind(this);
     this.callDeleteBot = this.callDeleteBot.bind(this);
@@ -143,6 +145,22 @@ class BotCard extends Component {
     }
   }
 
+  componentWillMount() {
+    document.addEventListener('mousedown', this.handleClick, false);
+  }
+
+  handleClick(e) {
+    if (!this.optionsWrapperNode) {
+      return;
+    }
+
+    if (this.optionsWrapperNode.contains(e.target)) {
+      // click is inside the options wrapper node, so nothing extra to do
+      return;
+    }
+    this.closeOptions();
+  }
+
   componentDidMount() {
     this.checkState();
     this.checkBotInfo();
@@ -151,6 +169,8 @@ class BotCard extends Component {
   }
 
   componentWillUnmount() {
+    document.removeEventListener('mousedown', this.handleClick, false);
+
     if (this._stateTimer) {
       clearTimeout(this._stateTimer);
       this._stateTimer = null;
@@ -270,6 +290,12 @@ class BotCard extends Component {
     })
   }
 
+  closeOptions() {
+    this.setState({
+      popoverVisible: false,
+    })
+  }
+
   editBot() {
     this.props.history.push('/edit?bot_name=' + encodeURIComponent(this.props.name))
   }
@@ -310,7 +336,7 @@ class BotCard extends Component {
       <div className={styles.card}>
         <span className={this.state.state === Constants.BotState.running ? styles.statusRunning : styles.statusStopped}/>
 
-        <div className={styles.optionsWrapper}>
+        <div className={styles.optionsWrapper} ref={node => this.optionsWrapperNode = node}>
           <Button
               icon="options"
               size="large"
