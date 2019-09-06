@@ -487,7 +487,7 @@ class Form extends Component {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
                         "trader_config.fill_tracker_sleep_millis": (value) => {
                           // cannot set value to 0 or empty
-                          if (value.trim() === "0" || value.trim() === "") {
+                          if (value === 0) {
                             return this._last_fill_tracker_sleep_millis;
                           }
 
