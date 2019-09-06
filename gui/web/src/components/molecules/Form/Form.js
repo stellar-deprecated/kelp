@@ -29,6 +29,7 @@ class Form extends Component {
       isLoadingFormula: true,
       numerator: null,
       denominator: null,
+      numericalErrors: {},
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
@@ -40,6 +41,9 @@ class Form extends Component {
     this.removeLevel = this.removeLevel.bind(this);
     this.newSecret = this.newSecret.bind(this);
     this.getError = this.getError.bind(this);
+    this.addNumericalError = this.addNumericalError.bind(this);
+    this.clearNumericalError = this.clearNumericalError.bind(this);
+    this.getNumNumericalErrors = this.getNumNumericalErrors.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._fetchDotNotation = this._fetchDotNotation.bind(this);
@@ -88,6 +92,11 @@ class Form extends Component {
   }
 
   getError(fieldKey) {
+    let numericalError = this.state.numericalErrors[fieldKey];
+    if (numericalError) {
+      return numericalError;
+    }
+
     if (!this.props.errorResp) {
       return null;
     }
@@ -95,7 +104,19 @@ class Form extends Component {
     return this._fetchDotNotation(this.props.errorResp.fields, fieldKey);
   }
 
+  getNumNumericalErrors() {
+    return Object.keys(this.state.numericalErrors).length;
+  }
+
   save() {
+    if (this.getNumNumericalErrors() > 0) {
+      // set state so we refresh and show the error message
+      this.setState({
+        isSaving: false,
+      })
+      return;
+    }
+
     this.setState({
       isSaving: true,
     })
@@ -193,6 +214,22 @@ class Form extends Component {
     });
   }
 
+  clearNumericalError(field) {
+    let newNumericalErrors = this.state.numericalErrors;
+    delete newNumericalErrors[field];
+    this.setState({
+      numericalErrors: newNumericalErrors
+    });
+  }
+
+  addNumericalError(field, message) {
+    let newNumericalErrors = this.state.numericalErrors;
+    newNumericalErrors[field] = message;
+    this.setState({
+      numericalErrors: newNumericalErrors
+    });
+  }
+
   render() {
     // let tradingPlatform = "sdex";
     // if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
@@ -208,6 +245,8 @@ class Form extends Component {
     let error = "";
     if (this.props.errorResp) {
       error = (<ErrorMessage error={this.props.errorResp.error}/>);
+    } else if (this.getNumNumericalErrors() > 0) {
+      error = (<ErrorMessage error="there are some invalid numerical values inline"/>);
     }
 
     let saveButtonDisabled = this.props.optionsMetadata == null;
@@ -376,6 +415,8 @@ class Form extends Component {
                   type="int_positive"
                   onChange={(event) => { this.props.onChange("trader_config.tick_interval_seconds", event) }}
                   error={this.getError("trader_config.tick_interval_seconds")}
+                  triggerError={(message) => { this.addNumericalError("trader_config.tick_interval_seconds", message) }}
+                  clearError={() => { this.clearNumericalError("trader_config.tick_interval_seconds") }}
                   />
               </FieldItem>
 
