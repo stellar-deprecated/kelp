@@ -425,7 +425,7 @@ class Form extends Component {
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.max_tick_delay_millis}
-                  type="int_positive"
+                  type="int_nonnegative"
                   onChange={(event) => { this.props.onChange("trader_config.max_tick_delay_millis", event) }}
                   error={this.getError("trader_config.max_tick_delay_millis")}
                   triggerError={(message) => { this.addNumericalError("trader_config.max_tick_delay_millis", message) }}
@@ -452,7 +452,7 @@ class Form extends Component {
                 <Label>Delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.delete_cycles_threshold}
-                  type="int_positive"
+                  type="int_nonnegative"
                   onChange={(event) => { this.props.onChange("trader_config.delete_cycles_threshold", event) }}
                   error={this.getError("trader_config.delete_cycles_threshold")}
                   triggerError={(message) => { this.addNumericalError("trader_config.delete_cycles_threshold", message) }}
@@ -507,7 +507,7 @@ class Form extends Component {
                 <Label>Fill tracker delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
-                  type="int_positive"
+                  type="int_nonnegative"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
                   onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}
                   error={this.getError("trader_config.fill_tracker_delete_cycles_threshold")}

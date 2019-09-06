@@ -52,11 +52,27 @@ class Input extends Component {
         return
       }
       newEvent = { target: { value: val } };
+    } else if (this.props.type === "int_nonnegative") {
+      let val = +checked
+      if (val < 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a non-negative integer >= 0");
+        return
+      }
+      newEvent = { target: { value: val } };
     } else if (this.props.type === "float_positive") {
       let val = +checked
       if (val <= 0) {
         this.props.onChange({ target: { value: val } });
         this.props.triggerError("invalid input value, needs to be a positive decimal value greater than 0");
+        return
+      }
+      newEvent = { target: { value: val } };
+    } else if (this.props.type === "float_nonnegative") {
+      let val = +checked
+      if (val < 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a non-negative decimal value >= 0");
         return
       }
       newEvent = { target: { value: val } };
@@ -74,6 +90,16 @@ class Input extends Component {
       }
       // convert back to representation passed in to complete the abstraction of a % value input
       newEvent = { target: { value: val / 100 } };
+    } else if (this.props.type === "percent_nonnegative") {
+      // use event.target.value instead of checked here, because checked modified the value which is itself already modified
+      let val = +event.target.value
+      if (val < 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a non-negative percentage value >= 0, represented as a decimal");
+        return
+      }
+      // convert back to representation passed in to complete the abstraction of a % value input
+      newEvent = { target: { value: val / 100 } };
     }
     this.props.onChange(newEvent);
     this.props.clearError();
@@ -83,11 +109,11 @@ class Input extends Component {
   checkType(input) {
     if (this.props.type === "string") {
       return this.isString(input);
-    } else if (this.props.type === "int" || this.props.type === "int_positive") {
+    } else if (this.props.type === "int" || this.props.type === "int_positive" || this.props.type === "int_nonnegative") {
       return this.isInt(input);
-    } else if (this.props.type === "float" || this.props.type === "float_positive") {
+    } else if (this.props.type === "float" || this.props.type === "float_positive" || this.props.type === "float_nonnegative") {
       return this.isFloat(input);
-    } else if (this.props.type === "percent" || this.props.type === "percent_positive") {
+    } else if (this.props.type === "percent" || this.props.type === "percent_positive" || this.props.type === "percent_nonnegative") {
       return this.isPercent(input);
     }
   }
