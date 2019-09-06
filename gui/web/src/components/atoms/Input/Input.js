@@ -35,7 +35,7 @@ class Input extends Component {
   handleChange(event) {
     let checked = this.checkType(event.target.value);
     if (checked === null) {
-      this.props.onChange({ target: { value: this.props.value } });
+      this.props.onChange({ target: { value: event.target.value } });
       this.props.triggerError("invalid input value, expected type of input: " + this.props.type);
       return
     }
@@ -101,7 +101,7 @@ class Input extends Component {
 
   // isInt always returns a string or null
   isInt(input) {
-    if (isNaN(input)) {
+    if (isNaN(input) || input === "") {
       return null;
     }
 
@@ -120,7 +120,7 @@ class Input extends Component {
 
   // isFloat always returns a string or null
   isFloat(input) {
-    if (isNaN(input)) {
+    if (isNaN(input) || input === "") {
       return null;
     }
 
@@ -171,16 +171,11 @@ class Input extends Component {
       suffixDisabled,
     );
 
-    let value = this.checkType(this.props.value);
-    if (value === null) {
-      value = "invalid value: " + this.props.value + " for type=" + this.props.type;
-    }
-
     return (
       <div className={styles.wrapper}>
         <input
           className={inputClassList}
-          defaultValue={value}
+          defaultValue={this.props.value}
           type="text"
           onBlur={this.handleChange}
           disabled={this.props.disabled}
