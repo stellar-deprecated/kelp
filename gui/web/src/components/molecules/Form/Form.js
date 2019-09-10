@@ -218,12 +218,11 @@ class Form extends Component {
   }
 
   removeLevel(levelIdx) {
-    let newLevels = this.props.configData.strategy_config.levels;
-    if (levelIdx >= newLevels.length) {
+    if (levelIdx >= this.props.configData.strategy_config.levels.length) {
       return;
     }
 
-    newLevels.splice(levelIdx, 1);
+    let newLevels = this.props.configData.strategy_config.levels.filter((_, idx) => idx !== levelIdx);
     if (newLevels.length === 0) {
       newLevels.push(this._emptyLevel());
     }
