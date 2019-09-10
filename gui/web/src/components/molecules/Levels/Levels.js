@@ -8,20 +8,32 @@ import Input from '../../atoms/Input/Input';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 class Levels extends Component {
-  static defaultProps = {
+  static propTypes = {
     levels: PropTypes.arrayOf(PropTypes.shape({
-      spread: PropTypes.string,
-      amount: PropTypes.string,
+      spread: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     })).isRequired,
     updateLevel: PropTypes.func.isRequired,
     newLevel: PropTypes.func.isRequired,
     hasNewLevel: PropTypes.func.isRequired,
-    onRemove: PropTypes.func.isRequired
+    onRemove: PropTypes.func.isRequired,
+    levelErrors: PropTypes.object,
+    addLevelError: PropTypes.func.isRequired,
+    clearLevelError: PropTypes.func.isRequired
   }
 
   render() {
     let levels = [];
     for (let i = 0; i < this.props.levels.length; i++) {
+      let levelIdx = "" + i;
+      let levelError = this.props.levelErrors[levelIdx];
+      if (!levelError) {
+        levelError = {
+          spread: null,
+          amount: null,
+        };
+      }
+      
       levels.push((
         <div key={i} className={styles.item}>
           <div>
@@ -32,6 +44,9 @@ class Levels extends Component {
                 value={this.props.levels[i].spread}
                 type="percent_positive"
                 onChange={(event) => { this.props.updateLevel(i, "spread", event.target.value) }}
+                error={levelError.spread}
+                triggerError={(message) => { this.props.addLevelError(i, "spread", message) }}
+                clearError={() => { this.props.clearLevelError(i, "spread") }}
                 />
             </FieldItem>
             <FieldItem>
@@ -40,6 +55,9 @@ class Levels extends Component {
                 value={this.props.levels[i].amount}
                 type="float_positive"
                 onChange={(event) => { this.props.updateLevel(i, "amount", event.target.value) }}
+                error={levelError.amount}
+                triggerError={(message) => { this.props.addLevelError(i, "amount", message) }}
+                clearError={() => { this.props.clearLevelError(i, "amount") }}
                 />
             </FieldItem>
           </div>

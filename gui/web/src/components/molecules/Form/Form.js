@@ -30,6 +30,7 @@ class Form extends Component {
       numerator: null,
       denominator: null,
       numericalErrors: {},
+      levelNumericalErrors: {},
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
@@ -44,6 +45,8 @@ class Form extends Component {
     this.addNumericalError = this.addNumericalError.bind(this);
     this.clearNumericalError = this.clearNumericalError.bind(this);
     this.getNumNumericalErrors = this.getNumNumericalErrors.bind(this);
+    this.addLevelError = this.addLevelError.bind(this);
+    this.clearLevelError = this.clearLevelError.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._fetchDotNotation = this._fetchDotNotation.bind(this);
@@ -113,7 +116,7 @@ class Form extends Component {
       // set state so we refresh and show the error message
       this.setState({
         isSaving: false,
-      })
+      });
       return;
     }
 
@@ -143,6 +146,48 @@ class Form extends Component {
     let newLevels = this.props.configData.strategy_config.levels;
     newLevels[levelIdx][fieldAmtSpread] = value;
     this._triggerUpdateLevels(newLevels);
+  }
+
+  addLevelError(levelIdx, subfield, message) {
+    levelIdx = "" + levelIdx;
+    
+    let newLevelNumericalErrors = this.state.levelNumericalErrors;
+    let newValue = newLevelNumericalErrors[levelIdx];
+    if (!newValue) {
+      newValue = {
+        spread: null,
+        amount: null,
+      };
+    }
+    newValue[subfield] = message;
+    newLevelNumericalErrors[levelIdx] = newValue;
+    this.setState({
+      levelNumericalErrors: newLevelNumericalErrors
+    });
+
+    this.addNumericalError("strategy_config.levels", "there is an error in one of the levels");
+  }
+  
+  clearLevelError(levelIdx, subfield) {
+    levelIdx = "" + levelIdx;
+
+    let newLevelNumericalErrors = this.state.levelNumericalErrors;
+    let newValue = newLevelNumericalErrors[levelIdx];
+    if (newValue) {
+      newValue[subfield] = null;
+      if (!newValue.spread && !newValue.amount) {
+        delete newLevelNumericalErrors[levelIdx];
+      } else {
+        newLevelNumericalErrors[levelIdx] = newValue;
+        this.setState({
+          levelNumericalErrors: newLevelNumericalErrors
+        });
+      }
+    }
+
+    if (Object.keys(newLevelNumericalErrors).length === 0) {
+      this.clearNumericalError("strategy_config.levels")
+    }
   }
 
   hasNewLevel() {
@@ -182,6 +227,9 @@ class Form extends Component {
     if (newLevels.length === 0) {
       newLevels.push(this._emptyLevel());
     }
+
+    this.clearLevelError(levelIdx, "spread");
+    this.clearLevelError(levelIdx, "amount");
 
     this._triggerUpdateLevels(newLevels);
   }
@@ -682,11 +730,14 @@ class Form extends Component {
                 <FieldGroup groupTitle="Levels">
                   <Levels
                     levels={this.props.configData.strategy_config.levels}
-                    updateLevel={(levelIdx, fieldAmtSpread, value) => { this.updateLevel(levelIdx, fieldAmtSpread, value) }}
+                    updateLevel={(levelIdx, subfield, value) => { this.updateLevel(levelIdx, subfield, value) }}
                     newLevel={this.newLevel}
                     hasNewLevel={this.hasNewLevel}
                     onRemove={(levelIdx) => { this.removeLevel(levelIdx) }}
                     error={this.getError("strategy_config.levels")}
+                    levelErrors={this.state.levelNumericalErrors}
+                    addLevelError={(levelIdx, subfield, message) => { this.addLevelError(levelIdx, subfield, message) }}
+                    clearLevelError={(levelIdx, subfield) => { this.clearLevelError(levelIdx, subfield) }}
                     />
                 </FieldGroup>
               </div>
