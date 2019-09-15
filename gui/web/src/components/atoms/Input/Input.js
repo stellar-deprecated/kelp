@@ -84,7 +84,7 @@ class Input extends Component {
       // use event.target.value instead of checked here, because checked modified the value which is itself already modified
       let val = +event.target.value
       if (val <= 0) {
-        this.props.onChange({ target: { value: val } });
+        this.props.onChange({ target: { value: val / 100 } });
         this.props.triggerError("invalid input value, needs to be a positive percentage value greater than 0, represented as a decimal");
         return
       }
@@ -199,11 +199,16 @@ class Input extends Component {
       suffixDisabled,
     );
 
+    let value = this.checkType(this.props.value);
+    if (value === null) {
+      value = this.props.value;
+    }
+
     return (
       <div className={styles.wrapper} key={this.props.value}>
         <input
           className={inputClassList}
-          defaultValue={this.props.value}
+          defaultValue={value}
           type="text"
           onBlur={this.handleChange}
           disabled={this.props.disabled}
