@@ -198,7 +198,7 @@ class Input extends Component {
     );
 
     return (
-      <div className={styles.wrapper}>
+      <div className={styles.wrapper} key={this.props.value}>
         <input
           className={inputClassList}
           defaultValue={this.props.value}
