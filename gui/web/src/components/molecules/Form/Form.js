@@ -29,6 +29,8 @@ class Form extends Component {
       isLoadingFormula: true,
       numerator: null,
       denominator: null,
+      numericalErrors: {},
+      levelNumericalErrors: {},
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
@@ -40,6 +42,11 @@ class Form extends Component {
     this.removeLevel = this.removeLevel.bind(this);
     this.newSecret = this.newSecret.bind(this);
     this.getError = this.getError.bind(this);
+    this.addNumericalError = this.addNumericalError.bind(this);
+    this.clearNumericalError = this.clearNumericalError.bind(this);
+    this.getNumNumericalErrors = this.getNumNumericalErrors.bind(this);
+    this.addLevelError = this.addLevelError.bind(this);
+    this.clearLevelError = this.clearLevelError.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._fetchDotNotation = this._fetchDotNotation.bind(this);
@@ -75,6 +82,10 @@ class Form extends Component {
   }
 
   _fetchDotNotation(obj, path) {
+    if (obj === undefined || obj === null || obj === "" || obj === 0) {
+      return null;
+    }
+    
     let parts = path.split('.');
     for (let i = 0; i < parts.length; i++) {
       obj = obj[parts[i]];
@@ -88,6 +99,11 @@ class Form extends Component {
   }
 
   getError(fieldKey) {
+    let numericalError = this.state.numericalErrors[fieldKey];
+    if (numericalError) {
+      return numericalError;
+    }
+
     if (!this.props.errorResp) {
       return null;
     }
@@ -95,7 +111,19 @@ class Form extends Component {
     return this._fetchDotNotation(this.props.errorResp.fields, fieldKey);
   }
 
+  getNumNumericalErrors() {
+    return Object.keys(this.state.numericalErrors).length;
+  }
+
   save() {
+    if (this.getNumNumericalErrors() > 0) {
+      // set state so we refresh and show the error message
+      this.setState({
+        isSaving: false,
+      });
+      return;
+    }
+
     this.setState({
       isSaving: true,
     })
@@ -122,6 +150,48 @@ class Form extends Component {
     let newLevels = this.props.configData.strategy_config.levels;
     newLevels[levelIdx][fieldAmtSpread] = value;
     this._triggerUpdateLevels(newLevels);
+  }
+
+  addLevelError(levelIdx, subfield, message) {
+    levelIdx = "" + levelIdx;
+    
+    let newLevelNumericalErrors = this.state.levelNumericalErrors;
+    let newValue = newLevelNumericalErrors[levelIdx];
+    if (!newValue) {
+      newValue = {
+        spread: null,
+        amount: null,
+      };
+    }
+    newValue[subfield] = message;
+    newLevelNumericalErrors[levelIdx] = newValue;
+    this.setState({
+      levelNumericalErrors: newLevelNumericalErrors
+    });
+
+    this.addNumericalError("strategy_config.levels", "there is an error in one of the levels");
+  }
+  
+  clearLevelError(levelIdx, subfield) {
+    levelIdx = "" + levelIdx;
+
+    let newLevelNumericalErrors = this.state.levelNumericalErrors;
+    let newValue = newLevelNumericalErrors[levelIdx];
+    if (newValue) {
+      newValue[subfield] = null;
+      if (!newValue.spread && !newValue.amount) {
+        delete newLevelNumericalErrors[levelIdx];
+      } else {
+        newLevelNumericalErrors[levelIdx] = newValue;
+        this.setState({
+          levelNumericalErrors: newLevelNumericalErrors
+        });
+      }
+    }
+
+    if (Object.keys(newLevelNumericalErrors).length === 0) {
+      this.clearNumericalError("strategy_config.levels")
+    }
   }
 
   hasNewLevel() {
@@ -152,15 +222,17 @@ class Form extends Component {
   }
 
   removeLevel(levelIdx) {
-    let newLevels = this.props.configData.strategy_config.levels;
-    if (levelIdx >= newLevels.length) {
+    if (levelIdx >= this.props.configData.strategy_config.levels.length) {
       return;
     }
 
-    newLevels.splice(levelIdx, 1);
+    let newLevels = this.props.configData.strategy_config.levels.filter((_, idx) => idx !== levelIdx);
     if (newLevels.length === 0) {
       newLevels.push(this._emptyLevel());
     }
+
+    this.clearLevelError(levelIdx, "spread");
+    this.clearLevelError(levelIdx, "amount");
 
     this._triggerUpdateLevels(newLevels);
   }
@@ -193,6 +265,22 @@ class Form extends Component {
     });
   }
 
+  clearNumericalError(field) {
+    let newNumericalErrors = this.state.numericalErrors;
+    delete newNumericalErrors[field];
+    this.setState({
+      numericalErrors: newNumericalErrors
+    });
+  }
+
+  addNumericalError(field, message) {
+    let newNumericalErrors = this.state.numericalErrors;
+    newNumericalErrors[field] = message;
+    this.setState({
+      numericalErrors: newNumericalErrors
+    });
+  }
+
   render() {
     // let tradingPlatform = "sdex";
     // if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
@@ -208,6 +296,8 @@ class Form extends Component {
     let error = "";
     if (this.props.errorResp) {
       error = (<ErrorMessage error={this.props.errorResp.error}/>);
+    } else if (this.getNumNumericalErrors() > 0) {
+      error = (<ErrorMessage error="there are some invalid numerical values inline"/>);
     }
 
     let saveButtonDisabled = this.props.optionsMetadata == null;
@@ -376,6 +466,8 @@ class Form extends Component {
                   type="int_positive"
                   onChange={(event) => { this.props.onChange("trader_config.tick_interval_seconds", event) }}
                   error={this.getError("trader_config.tick_interval_seconds")}
+                  triggerError={(message) => { this.addNumericalError("trader_config.tick_interval_seconds", message) }}
+                  clearError={() => { this.clearNumericalError("trader_config.tick_interval_seconds") }}
                   />
               </FieldItem>
 
@@ -384,9 +476,11 @@ class Form extends Component {
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.max_tick_delay_millis}
-                  type="int_positive"
+                  type="int_nonnegative"
                   onChange={(event) => { this.props.onChange("trader_config.max_tick_delay_millis", event) }}
                   error={this.getError("trader_config.max_tick_delay_millis")}
+                  triggerError={(message) => { this.addNumericalError("trader_config.max_tick_delay_millis", message) }}
+                  clearError={() => { this.clearNumericalError("trader_config.max_tick_delay_millis") }}
                   />
               </FieldItem>
 
@@ -409,9 +503,11 @@ class Form extends Component {
                 <Label>Delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.delete_cycles_threshold}
-                  type="int_positive"
+                  type="int_nonnegative"
                   onChange={(event) => { this.props.onChange("trader_config.delete_cycles_threshold", event) }}
                   error={this.getError("trader_config.delete_cycles_threshold")}
+                  triggerError={(message) => { this.addNumericalError("trader_config.delete_cycles_threshold", message) }}
+                  clearError={() => { this.clearNumericalError("trader_config.delete_cycles_threshold") }}
                   />
               </FieldItem>
 
@@ -442,7 +538,7 @@ class Form extends Component {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", event, {
                         "trader_config.fill_tracker_sleep_millis": (value) => {
                           // cannot set value to 0 or empty
-                          if (value.trim() === "0" || value.trim() === "") {
+                          if (value === 0) {
                             return this._last_fill_tracker_sleep_millis;
                           }
 
@@ -453,6 +549,8 @@ class Form extends Component {
                       })
                     }
                   }
+                  triggerError={(message) => { this.addNumericalError("trader_config.fill_tracker_sleep_millis", message) }}
+                  clearError={() => { this.clearNumericalError("trader_config.fill_tracker_sleep_millis") }}
                   />
               </FieldItem>
 
@@ -460,10 +558,12 @@ class Form extends Component {
                 <Label>Fill tracker delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
-                  type="int_positive"
+                  type="int_nonnegative"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
                   onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}
                   error={this.getError("trader_config.fill_tracker_delete_cycles_threshold")}
+                  triggerError={(message) => { this.addNumericalError("trader_config.fill_tracker_delete_cycles_threshold", message) }}
+                  clearError={() => { this.clearNumericalError("trader_config.fill_tracker_delete_cycles_threshold") }}
                   />
               </FieldItem>
 
@@ -477,6 +577,8 @@ class Form extends Component {
                         type="float_positive"
                         onChange={(event) => { this.props.onChange("trader_config.fee.capacity_trigger", event) }}
                         error={this.getError("trader_config.fee.capacity_trigger")}
+                        triggerError={(message) => { this.addNumericalError("trader_config.fee.capacity_trigger", message) }}
+                        clearError={() => { this.clearNumericalError("trader_config.fee.capacity_trigger") }}
                         />
                     </FieldItem>
                   </div>
@@ -491,6 +593,8 @@ class Form extends Component {
                         type="int_positive"  // this is a selection from the fee stats endpoint
                         onChange={(event) => { this.props.onChange("trader_config.fee.percentile", event) }}
                         error={this.getError("trader_config.fee.percentile")}
+                        triggerError={(message) => { this.addNumericalError("trader_config.fee.percentile", message) }}
+                        clearError={() => { this.clearNumericalError("trader_config.fee.percentile") }}
                         />
                     </FieldItem>
                     </div>
@@ -505,6 +609,8 @@ class Form extends Component {
                         type="int_positive"
                         onChange={(event) => { this.props.onChange("trader_config.fee.max_op_fee_stroops", event) }}
                         error={this.getError("trader_config.fee.max_op_fee_stroops")}
+                        triggerError={(message) => { this.addNumericalError("trader_config.fee.max_op_fee_stroops", message) }}
+                        clearError={() => { this.clearNumericalError("trader_config.fee.max_op_fee_stroops") }}
                         />
                     </FieldItem>
                     </div>
@@ -521,6 +627,8 @@ class Form extends Component {
                       type="int_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_price_precision_override", event) }}
                       error={this.getError("trader_config.centralized_price_precision_override")}
+                      triggerError={(message) => { this.addNumericalError("trader_config.centralized_price_precision_override", message) }}
+                      clearError={() => { this.clearNumericalError("trader_config.centralized_price_precision_override") }}
                       />
                   </FieldItem>
                 </div>
@@ -533,6 +641,8 @@ class Form extends Component {
                       type="int_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_volume_precision_override", event) }}
                       error={this.getError("trader_config.centralized_volume_precision_override")}
+                      triggerError={(message) => { this.addNumericalError("trader_config.centralized_volume_precision_override", message) }}
+                      clearError={() => { this.clearNumericalError("trader_config.centralized_volume_precision_override") }}
                       />
                   </FieldItem>
                 </div>
@@ -548,6 +658,8 @@ class Form extends Component {
                       type="float_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_base_volume_override", event) }}
                       error={this.getError("trader_config.centralized_min_base_volume_override")}
+                      triggerError={(message) => { this.addNumericalError("trader_config.centralized_min_base_volume_override", message) }}
+                      clearError={() => { this.clearNumericalError("trader_config.centralized_min_base_volume_override") }}
                       />
                   </FieldItem>
                 </div>
@@ -560,6 +672,8 @@ class Form extends Component {
                       type="float_positive"
                       onChange={(event) => { this.props.onChange("trader_config.centralized_min_quote_volume_override", event) }}
                       error={this.getError("trader_config.centralized_min_quote_volume_override")}
+                      triggerError={(message) => { this.addNumericalError("trader_config.centralized_min_quote_volume_override", message) }}
+                      clearError={() => { this.clearNumericalError("trader_config.centralized_min_quote_volume_override") }}
                       />
                   </FieldItem>
                 </div>
@@ -619,11 +733,14 @@ class Form extends Component {
                 <FieldGroup groupTitle="Levels">
                   <Levels
                     levels={this.props.configData.strategy_config.levels}
-                    updateLevel={(levelIdx, fieldAmtSpread, value) => { this.updateLevel(levelIdx, fieldAmtSpread, value) }}
+                    updateLevel={(levelIdx, subfield, value) => { this.updateLevel(levelIdx, subfield, value) }}
                     newLevel={this.newLevel}
                     hasNewLevel={this.hasNewLevel}
                     onRemove={(levelIdx) => { this.removeLevel(levelIdx) }}
                     error={this.getError("strategy_config.levels")}
+                    levelErrors={this.state.levelNumericalErrors}
+                    addLevelError={(levelIdx, subfield, message) => { this.addLevelError(levelIdx, subfield, message) }}
+                    clearLevelError={(levelIdx, subfield) => { this.clearLevelError(levelIdx, subfield) }}
                     />
                 </FieldGroup>
               </div>
@@ -644,6 +761,8 @@ class Form extends Component {
                       type="percent_positive"
                       onChange={(event) => { this.props.onChange("strategy_config.price_tolerance", event) }}
                       error={this.getError("strategy_config.price_tolerance")}
+                      triggerError={(message) => { this.addNumericalError("strategy_config.price_tolerance", message) }}
+                      clearError={() => { this.clearNumericalError("strategy_config.price_tolerance") }}
                       />
                   </FieldItem>
                 </div>
@@ -656,6 +775,8 @@ class Form extends Component {
                       type="percent_positive"
                       onChange={(event) => { this.props.onChange("strategy_config.amount_tolerance", event) }}
                       error={this.getError("strategy_config.amount_tolerance")}
+                      triggerError={(message) => { this.addNumericalError("strategy_config.amount_tolerance", message) }}
+                      clearError={() => { this.clearNumericalError("strategy_config.amount_tolerance") }}
                       />
                   </FieldItem>
                 </div>
@@ -671,6 +792,8 @@ class Form extends Component {
                       type="percent"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset_percent", event) }}
                       error={this.getError("strategy_config.rate_offset_percent")}
+                      triggerError={(message) => { this.addNumericalError("strategy_config.rate_offset_percent", message) }}
+                      clearError={() => { this.clearNumericalError("strategy_config.rate_offset_percent") }}
                       />
                   </FieldItem>
                 </div>
@@ -682,6 +805,8 @@ class Form extends Component {
                       type="float"
                       onChange={(event) => { this.props.onChange("strategy_config.rate_offset", event) }}
                       error={this.getError("strategy_config.rate_offset")}
+                      triggerError={(message) => { this.addNumericalError("strategy_config.rate_offset", message) }}
+                      clearError={() => { this.clearNumericalError("strategy_config.rate_offset") }}
                       />
                   </FieldItem>
                 </div>

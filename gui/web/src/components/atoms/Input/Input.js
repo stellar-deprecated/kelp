@@ -25,6 +25,8 @@ class Input extends Component {
     type: PropTypes.string.isRequired,       // types: string, int, float, percent
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     error: PropTypes.string,
+    triggerError: PropTypes.func,
+    clearError: PropTypes.func,
     size: PropTypes.string,
     disabled: PropTypes.bool,
     onChange: PropTypes.func
@@ -33,7 +35,8 @@ class Input extends Component {
   handleChange(event) {
     let checked = this.checkType(event.target.value);
     if (checked === null) {
-      // if new input does not pass the check then don't allow an update
+      this.props.onChange({ target: { value: event.target.value } });
+      this.props.triggerError("invalid input value, expected type of input: " + this.props.type);
       return
     }
 
@@ -41,14 +44,36 @@ class Input extends Component {
     if (this.props.type === "int" || this.props.type === "float") {
       // convert back to number so it is set correctly in the state
       newEvent = { target: { value: +checked } };
-    } else if (this.props.type === "int_positive" || this.props.type === "float_positive") {
-      // ensure it is positive
+    } else if (this.props.type === "int_positive") {
       let val = +checked
-      if (val === 0) {
-        // don't allow an update if it's zero
+      if (val <= 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a positive integer greater than 0");
         return
-      } else if (val < 0) {
-        val = -val
+      }
+      newEvent = { target: { value: val } };
+    } else if (this.props.type === "int_nonnegative") {
+      let val = +checked
+      if (val < 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a non-negative integer >= 0");
+        return
+      }
+      newEvent = { target: { value: val } };
+    } else if (this.props.type === "float_positive") {
+      let val = +checked
+      if (val <= 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a positive decimal value greater than 0");
+        return
+      }
+      newEvent = { target: { value: val } };
+    } else if (this.props.type === "float_nonnegative") {
+      let val = +checked
+      if (val < 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a non-negative decimal value >= 0");
+        return
       }
       newEvent = { target: { value: val } };
     } else if (this.props.type === "percent") {
@@ -56,30 +81,41 @@ class Input extends Component {
       // use event.target.value instead of checked here, because checked modified the value which is itself already modified
       newEvent = { target: { value: +event.target.value / 100 } };
     } else if (this.props.type === "percent_positive") {
-      // ensure it is positive
       // use event.target.value instead of checked here, because checked modified the value which is itself already modified
       let val = +event.target.value
-      if (val === 0) {
-        // don't allow an update if it's zero
+      if (val <= 0) {
+        this.props.onChange({ target: { value: val / 100 } });
+        this.props.triggerError("invalid input value, needs to be a positive percentage value greater than 0, represented as a decimal");
         return
-      } else if (val < 0) {
-        val = -val
+      }
+      // convert back to representation passed in to complete the abstraction of a % value input
+      newEvent = { target: { value: val / 100 } };
+    } else if (this.props.type === "percent_nonnegative") {
+      // use event.target.value instead of checked here, because checked modified the value which is itself already modified
+      let val = +event.target.value
+      if (val < 0) {
+        this.props.onChange({ target: { value: val } });
+        this.props.triggerError("invalid input value, needs to be a non-negative percentage value >= 0, represented as a decimal");
+        return
       }
       // convert back to representation passed in to complete the abstraction of a % value input
       newEvent = { target: { value: val / 100 } };
     }
     this.props.onChange(newEvent);
+    if (this.props.type !== "string") {
+      this.props.clearError();
+    }
   }
 
   // returns "fixed-up" value as a string if type is correct, otherwise null
   checkType(input) {
     if (this.props.type === "string") {
       return this.isString(input);
-    } else if (this.props.type === "int" || this.props.type === "int_positive") {
+    } else if (this.props.type === "int" || this.props.type === "int_positive" || this.props.type === "int_nonnegative") {
       return this.isInt(input);
-    } else if (this.props.type === "float" || this.props.type === "float_positive") {
+    } else if (this.props.type === "float" || this.props.type === "float_positive" || this.props.type === "float_nonnegative") {
       return this.isFloat(input);
-    } else if (this.props.type === "percent" || this.props.type === "percent_positive") {
+    } else if (this.props.type === "percent" || this.props.type === "percent_positive" || this.props.type === "percent_nonnegative") {
       return this.isPercent(input);
     }
   }
@@ -93,7 +129,7 @@ class Input extends Component {
 
   // isInt always returns a string or null
   isInt(input) {
-    if (isNaN(input)) {
+    if (isNaN(input) || input === "") {
       return null;
     }
 
@@ -112,7 +148,7 @@ class Input extends Component {
 
   // isFloat always returns a string or null
   isFloat(input) {
-    if (isNaN(input)) {
+    if (isNaN(input) || input === "") {
       return null;
     }
 
@@ -165,16 +201,16 @@ class Input extends Component {
 
     let value = this.checkType(this.props.value);
     if (value === null) {
-      value = "invalid value: " + this.props.value + " for type=" + this.props.type;
+      value = this.props.value;
     }
 
     return (
-      <div className={styles.wrapper}>
+      <div className={styles.wrapper} key={this.props.value}>
         <input
           className={inputClassList}
-          value={value}
+          defaultValue={value}
           type="text"
-          onChange={this.handleChange}
+          onBlur={this.handleChange}
           disabled={this.props.disabled}
           />
         
