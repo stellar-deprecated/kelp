@@ -82,6 +82,10 @@ class Form extends Component {
   }
 
   _fetchDotNotation(obj, path) {
+    if (obj === undefined || obj === null || obj === "" || obj === 0) {
+      return null;
+    }
+    
     let parts = path.split('.');
     for (let i = 0; i < parts.length; i++) {
       obj = obj[parts[i]];
