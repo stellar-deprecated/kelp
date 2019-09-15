@@ -397,7 +397,7 @@ class Form extends Component {
                       onChange={(event) => {
                         this.props.onChange("trader_config.asset_code_a", event, {
                           "trader_config.issuer_a": (value) => {
-                            if (value == "XLM") {
+                            if (value === "XLM") {
                               return "";
                             }
                             return null;
@@ -433,7 +433,7 @@ class Form extends Component {
                       onChange={(event) => {
                         this.props.onChange("trader_config.asset_code_b", event, {
                           "trader_config.issuer_b": (value) => {
-                            if (value == "XLM") {
+                            if (value === "XLM") {
                               return "";
                             }
                             return null;
