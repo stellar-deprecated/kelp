@@ -102,7 +102,9 @@ class Input extends Component {
       newEvent = { target: { value: val / 100 } };
     }
     this.props.onChange(newEvent);
-    this.props.clearError();
+    if (this.props.type !== "string") {
+      this.props.clearError();
+    }
   }
 
   // returns "fixed-up" value as a string if type is correct, otherwise null
