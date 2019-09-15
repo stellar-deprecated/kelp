@@ -394,7 +394,16 @@ class Form extends Component {
                     <Input
                       value={this.props.configData.trader_config.asset_code_a}
                       type="string"
-                      onChange={(event) => { this.props.onChange("trader_config.asset_code_a", event) }}
+                      onChange={(event) => {
+                        this.props.onChange("trader_config.asset_code_a", event, {
+                          "trader_config.issuer_a": (value) => {
+                            if (value === "XLM") {
+                              return "";
+                            }
+                            return null;
+                          }
+                        })
+                      }}
                       error={this.getError("trader_config.asset_code_a")}
                       />
                   </FieldItem>
@@ -421,7 +430,16 @@ class Form extends Component {
                     <Input
                       value={this.props.configData.trader_config.asset_code_b}
                       type="string"
-                      onChange={(event) => { this.props.onChange("trader_config.asset_code_b", event) }}
+                      onChange={(event) => {
+                        this.props.onChange("trader_config.asset_code_b", event, {
+                          "trader_config.issuer_b": (value) => {
+                            if (value === "XLM") {
+                              return "";
+                            }
+                            return null;
+                          }
+                        })
+                      }}
                       error={this.getError("trader_config.asset_code_b")}
                       />
                   </FieldItem>
