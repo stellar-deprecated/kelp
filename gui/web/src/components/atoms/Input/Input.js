@@ -7,6 +7,7 @@ class Input extends Component {
   constructor(props) {
     super(props);
 
+    this.checkValueError = this.checkValueError.bind(this);
     this.checkType = this.checkType.bind(this);
     this.isString = this.isString.bind(this);
     this.isInt = this.isInt.bind(this);
@@ -31,6 +32,26 @@ class Input extends Component {
     disabled: PropTypes.bool,
     onChange: PropTypes.func
   };
+
+  componentWillMount() {
+    this.checkValueError(this.props);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.value === nextProps.value) {
+      return;
+    }
+    this.checkValueError(nextProps);
+  }
+
+  checkValueError(props) {
+    let value = this.checkType(props.value);
+    if (value === null) {
+      value = props.value;
+    }
+
+    this.handleChange({ target: { value: value } });
+  }
 
   handleChange(event) {
     let checked = this.checkType(event.target.value);
