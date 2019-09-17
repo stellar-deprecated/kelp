@@ -205,21 +205,21 @@ class Input extends Component {
     }
 
     return (
-      <div className={styles.wrapper} key={this.props.value}>
-        <input
-          className={inputClassList}
-          defaultValue={value}
-          type="text"
-          onBlur={this.handleChange}
-          disabled={this.props.disabled}
-          />
-        
-        { this.props.suffix && (
-        <p className={suffixClassList}>{this.props.suffix}</p>
-        )}
-
+      <div>
+        <div className={styles.wrapper} key={this.props.value}>
+          <input
+            className={inputClassList}
+            defaultValue={value}
+            type="text"
+            onBlur={this.handleChange}
+            disabled={this.props.disabled}
+            />
+          { this.props.suffix && (
+          <p className={suffixClassList}>{this.props.suffix}</p>
+          )}
+        </div>
         { this.props.error !== null && (
-        <p className={styles.errorMessage}>{this.props.error}</p>
+        <div><p className={styles.errorMessage}>{this.props.error}</p></div>
         )}
       </div>
     );
