@@ -31,9 +31,11 @@ class Form extends Component {
       denominator: null,
       numericalErrors: {},
       levelNumericalErrors: {},
+      attemptedFirstSave: false,
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
+    this.hasPriceFeedError = this.hasPriceFeedError.bind(this);
     this.save = this.save.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
     this.updateLevel = this.updateLevel.bind(this);
@@ -115,17 +117,32 @@ class Form extends Component {
     return Object.keys(this.state.numericalErrors).length;
   }
 
+  hasPriceFeedError() {
+    return isNaN(this.state.numerator) || isNaN(this.state.denominator);
+  }
+
   save() {
     if (this.getNumNumericalErrors() > 0) {
       // set state so we refresh and show the error message
       this.setState({
         isSaving: false,
+        attemptedFirstSave: true,
+      });
+      return;
+    }
+
+    if (this.hasPriceFeedError()) {
+      // set state so we refresh and show the error message
+      this.setState({
+        isSaving: false,
+        attemptedFirstSave: true,
       });
       return;
     }
 
     this.setState({
       isSaving: true,
+      attemptedFirstSave: true,
     })
     this.props.saveFn();
     // save fn will call router.goBack();
@@ -298,6 +315,8 @@ class Form extends Component {
       error = (<ErrorMessage error={this.props.errorResp.error}/>);
     } else if (this.getNumNumericalErrors() > 0) {
       error = (<ErrorMessage error="there are some invalid numerical values inline"/>);
+    } else if (this.state.attemptedFirstSave && this.hasPriceFeedError()) {
+      error = (<ErrorMessage error="the computed price feed is invalid"/>);
     }
 
     let saveButtonDisabled = this.props.optionsMetadata == null;
