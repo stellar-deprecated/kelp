@@ -35,6 +35,7 @@ class Form extends Component {
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
+    this.fetchErrorMessage = this.fetchErrorMessage.bind(this);
     this.hasPriceFeedError = this.hasPriceFeedError.bind(this);
     this.save = this.save.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
@@ -298,6 +299,25 @@ class Form extends Component {
     });
   }
 
+  fetchErrorMessage() {
+    let errorList = [];
+    if (this.props.errorResp) {
+      errorList.push(this.props.errorResp.error);
+    }
+    if (this.getNumNumericalErrors() > 0) {
+      errorList.push("there are some invalid numerical values inline");
+    }
+    if (this.state.attemptedFirstSave && this.hasPriceFeedError()) {
+      errorList.push("the computed price feed is invalid");
+    }
+
+    let error = "";
+    if (errorList.length > 0) {
+      error = (<ErrorMessage errorList={errorList}/>);
+    }
+    return error;
+  }
+
   render() {
     // let tradingPlatform = "sdex";
     // if (this.props.configData.trader_config.trading_exchange && this.props.configData.trader_config.trading_exchange !== "") {
@@ -310,14 +330,7 @@ class Form extends Component {
       // network = "TestNet";
     // }
 
-    let error = "";
-    if (this.props.errorResp) {
-      error = (<ErrorMessage error={this.props.errorResp.error}/>);
-    } else if (this.getNumNumericalErrors() > 0) {
-      error = (<ErrorMessage error="there are some invalid numerical values inline"/>);
-    } else if (this.state.attemptedFirstSave && this.hasPriceFeedError()) {
-      error = (<ErrorMessage error="the computed price feed is invalid"/>);
-    }
+    const error = this.fetchErrorMessage();
 
     let saveButtonDisabled = this.props.optionsMetadata == null;
 

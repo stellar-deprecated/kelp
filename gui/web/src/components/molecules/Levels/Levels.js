@@ -76,7 +76,7 @@ class Levels extends Component {
 
     let error = "";
     if (this.props.error) {
-      error = (<ErrorMessage error="remove any levels where spread or amount is 0, needs at least 1 valid level"/>);
+      error = (<ErrorMessage errorList={[this.props.error]}/>);
     }
 
     return (
