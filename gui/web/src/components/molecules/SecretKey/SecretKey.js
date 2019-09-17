@@ -53,10 +53,17 @@ class SecretKey extends Component {
 
     let pubkeyElem = ""
     if (this.props.secret !== "") {
-      let pubkeypair = StellarSdk.Keypair.fromSecret(this.props.secret);
+      let pubkey = "";
+      try {
+        let pubkeypair = StellarSdk.Keypair.fromSecret(this.props.secret);
+        pubkey = pubkeypair.publicKey();
+      } catch (error) {
+        pubkey = "<" + error.message + ">";
+      }
+
       pubkeyElem = (
         <div>
-          <span className={styles.pubkeyLabel}>PubKey: </span><span className={styles.pubkey}>{pubkeypair.publicKey()}</span>
+          <span className={styles.pubkeyLabel}>PubKey: </span><span className={styles.pubkey}>{pubkey}</span>
         </div>
       );
     }
