@@ -40,6 +40,8 @@ func init() {
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
+
 		checkInitRootFlags()
 		if !strings.Contains(*options.horizonTestnetURI, "test") {
 			panic("'horizon-testnet-uri' argument must contain the word 'test'")
