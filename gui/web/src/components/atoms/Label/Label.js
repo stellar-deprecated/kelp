@@ -3,13 +3,12 @@ import classNames from 'classnames';
 import styles from './Label.module.scss';
 
 class Label extends Component {
-
   render() {
     const padding = this.props.padding ? styles.padding : null;
-
     const classNameList = classNames(
       styles.label,
-      padding
+      padding,
+      this.props.className,
     );
 
     return (

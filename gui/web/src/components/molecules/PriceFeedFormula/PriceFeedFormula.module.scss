@@ -7,9 +7,22 @@
     margin-top: 27/16+rem;
 }
 
+.heading {
+    font-size: 1rem;
+}
+
 .formula {
     padding-top: 14/16+rem;
     font-size: 14/16+rem;
     font-family: $typeface-secondary;
     color: $color-contrast-2;
+}
+
+.highlight {
+    color: $color-highlight-1;
+}
+
+.explain {
+    padding-top: 1rem;
+    font-size: 51/64+rem;
 }
