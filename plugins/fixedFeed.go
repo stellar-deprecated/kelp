@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -9,15 +10,15 @@ type fixedFeed struct {
 	price float64
 }
 
-func newFixedFeed(url string) *fixedFeed {
+func newFixedFeed(url string) (*fixedFeed, error) {
 	m := new(fixedFeed)
-	pA, err := strconv.ParseFloat(url, 64)
-	if err != nil {
-		return nil
+	pA, e := strconv.ParseFloat(url, 64)
+	if e != nil {
+		return nil, fmt.Errorf("unable to parse float: %s", e)
 	}
 
 	m.price = pA
-	return m
+	return m, nil
 }
 
 // GetPrice impl

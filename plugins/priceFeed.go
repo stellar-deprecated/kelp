@@ -41,7 +41,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 	case "fiat":
 		return newFiatFeed(url), nil
 	case "fixed":
-		return newFixedFeed(url), nil
+		return newFixedFeed(url)
 	case "exchange":
 		// [0] = exchangeType, [1] = base, [2] = quote
 		urlParts := strings.Split(url, "/")
