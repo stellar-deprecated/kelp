@@ -1,6 +1,7 @@
 @import '../../_styles/variables.module.scss';
 
 .box {
+    min-height: 140px;
     background-color: $color-base-4;
     display: inline-block;
     padding: 1rem 1.5rem;
