@@ -6,8 +6,7 @@ import grid from '../../../components/_styles/grid.module.scss';
 
 class FormSection extends Component {
   static propTypes = {
-    wideCol80: PropTypes.bool,
-    wideCol100: PropTypes.bool,
+    wideCol: PropTypes.number,
     tip: PropTypes.string,
   };
   
@@ -18,9 +17,13 @@ class FormSection extends Component {
     );
 
     let colClassName = grid.col7;
-    if (this.props.wideCol80) {
+    if (this.props.wideCol === 70) {
+      colClassName = grid.col70p;
+    } else if (this.props.wideCol === 80) {
       colClassName = grid.col80p;
-    } else if (this.props.wideCol100) {
+    } else if (this.props.wideCol === 90) {
+      colClassName = grid.col90p;
+    } else if (this.props.wideCol === 100) {
       colClassName = grid.col100p;
     }
 

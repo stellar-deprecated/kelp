@@ -4,6 +4,7 @@ import styles from './PriceFeedDisplay.module.scss';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 import classNames from 'classnames';
 import Button from '../../atoms/Button/Button';
+import functions from '../../../utils/functions';
 
 class PriceFeedDisplay extends Component {
   static propTypes = {
@@ -19,11 +20,18 @@ class PriceFeedDisplay extends Component {
       isLoading,
     );
 
+    let priceCapped = this.props.price;
+    if (priceCapped) {
+      priceCapped = functions.capSdexPrecision(priceCapped);
+    } else {
+      priceCapped = "<missing>";
+    }
+
     return (
       <div className={styles.wrapper}>
         <span className={styles.equals}>=</span>
         <div className={styles.valueWrapper}>
-          <span className={valueClasses}>{this.props.price === null ? "<missing>" : this.props.price }</span>
+          <span className={valueClasses}>{priceCapped}</span>
           { this.props.loading && (
             <div className={styles.loaderWrapper}>
               <LoadingAnimation/>

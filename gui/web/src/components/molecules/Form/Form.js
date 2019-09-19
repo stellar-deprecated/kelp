@@ -73,12 +73,12 @@ class Form extends Component {
   updateFormulaPrice(ator, price) {
     if (ator === "numerator") {
       this.setState({
-        isLoadingFormula: false,
+        isLoadingFormula: this.state.denominator === null,
         numerator: price
       })
     } else {
       this.setState({
-        isLoadingFormula: false,
+        isLoadingFormula: this.state.numerator === null,
         denominator: price
       })
     }
@@ -418,7 +418,7 @@ class Form extends Component {
             </FormSection>
 
             {/* <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl."> */}
-            <FormSection wideCol80>
+            <FormSection wideCol={80}>
               <div className={grid.row}>
                 <div className={grid.col4}>
                   <FieldItem>
@@ -736,7 +736,7 @@ class Form extends Component {
 
         {/* Stratefy Settings */}
         <div className={grid.container}>
-          <FormSection wideCol100>
+          <FormSection wideCol={70}>
             <SectionTitle>
               Strategy Settings <i>(buysell)</i>
             </SectionTitle>

@@ -3,7 +3,8 @@
 .wrapper {
     display: flex;
     align-items: center;
-    margin-bottom: 5/16+rem;
+    margin-top: 3/16+rem;
+    width: 20%;
 }
 
 ._result {
@@ -18,7 +19,7 @@
 }
 
 .valueWrapper {
-    min-width: 60/16+rem;
+    width: 100px;
     position: relative;
 }
 

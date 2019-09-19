@@ -5,4 +5,8 @@ export function assetDisplay(code, issuer) {
     return code + ":" + issuer;
 }
 
-export default { assetDisplay };
+export function capSdexPrecision(num) {
+    return num.toFixed(7);
+}
+
+export default { assetDisplay, capSdexPrecision };
