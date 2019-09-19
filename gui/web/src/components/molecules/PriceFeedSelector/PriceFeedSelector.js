@@ -4,7 +4,6 @@ import styles from './PriceFeedSelector.module.scss';
 import Select from '../../atoms/Select/Select';
 import Input from '../../atoms/Input/Input';
 import grid from '../../../components/_styles/grid.module.scss';
-import classNames from 'classnames';
 
 class PriceFeedSelector extends Component {
   constructor(props) {
@@ -122,13 +121,9 @@ class PriceFeedSelector extends Component {
       }
       secondComponent = this.renderComponentRecursive(idx + 1, selectedOption.subtype, innerValues);
     }
-
-    const divClassList = classNames(
-      grid.row,
-      styles.rowtemp,
-    );
+    
     return (
-      <div className={divClassList}>
+      <div className={grid.row}>
         {firstComponent}
         {secondComponent}
       </div>

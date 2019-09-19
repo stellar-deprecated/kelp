@@ -26,8 +26,6 @@
     -webkit-box-orient: horizontal;
     -webkit-box-direction: normal;
     flex-direction: row;
-    -ms-flex-wrap: wrap;
-    flex-wrap: wrap;
     margin-right: -1rem;
     margin-left: -1rem;
 }
@@ -80,10 +78,22 @@
     max-width: 10.00%;
 }
 
+.col80p {
+    composes: _col;
+    flex-basis: 80.0%;
+    max-width: 80.00%;
+}
+
 .col90p {
     composes: _col;
     flex-basis: 90.0%;
     max-width: 90.00%;
+}
+
+.col100p {
+    composes: _col;
+    flex-basis: 100%;
+    max-width: 100%;
 }
 
 .colPriceSelector {

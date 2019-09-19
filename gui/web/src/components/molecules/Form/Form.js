@@ -418,7 +418,7 @@ class Form extends Component {
             </FormSection>
 
             {/* <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl."> */}
-            <FormSection>
+            <FormSection wideCol80>
               <div className={grid.row}>
                 <div className={grid.col4}>
                   <FieldItem>
@@ -736,7 +736,7 @@ class Form extends Component {
 
         {/* Stratefy Settings */}
         <div className={grid.container}>
-          <FormSection>
+          <FormSection wideCol100>
             <SectionTitle>
               Strategy Settings <i>(buysell)</i>
             </SectionTitle>
