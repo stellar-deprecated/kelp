@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/utils"
 )
 
 type fetchPriceInput struct {
@@ -45,7 +47,8 @@ func (s *APIServer) fetchPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	priceCappedPrecision := model.NumberFromFloat(price, utils.SdexPrecision).AsFloat()
 	s.writeJson(w, fetchPriceOutput{
-		Price: price,
+		Price: priceCappedPrecision,
 	})
 }

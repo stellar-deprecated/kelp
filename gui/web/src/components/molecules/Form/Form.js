@@ -73,12 +73,12 @@ class Form extends Component {
   updateFormulaPrice(ator, price) {
     if (ator === "numerator") {
       this.setState({
-        isLoadingFormula: false,
+        isLoadingFormula: this.state.denominator === null,
         numerator: price
       })
     } else {
       this.setState({
-        isLoadingFormula: false,
+        isLoadingFormula: this.state.numerator === null,
         denominator: price
       })
     }
@@ -418,7 +418,7 @@ class Form extends Component {
             </FormSection>
 
             {/* <FormSection tip="Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Etiam purus nunc, rhoncus ac lorem eget, eleifend congue nisl."> */}
-            <FormSection>
+            <FormSection wideCol={80}>
               <div className={grid.row}>
                 <div className={grid.col4}>
                   <FieldItem>
@@ -736,7 +736,7 @@ class Form extends Component {
 
         {/* Stratefy Settings */}
         <div className={grid.container}>
-          <FormSection>
+          <FormSection wideCol={70}>
             <SectionTitle>
               Strategy Settings <i>(buysell)</i>
             </SectionTitle>
@@ -751,7 +751,7 @@ class Form extends Component {
                 <PriceFeedAsset
                   baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("a", newValues)}
-                  title="Current numerator price"
+                  title={"Numerator: current price of base asset (" + this.props.configData.trader_config.asset_code_a + ")"}
                   optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_a}
                   feed_url={this.props.configData.strategy_config.data_feed_a_url}
@@ -763,7 +763,7 @@ class Form extends Component {
                 <PriceFeedAsset
                   baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("b", newValues)}
-                  title="Current denominator price"
+                  title={"Denominator: current price of quote asset (" + this.props.configData.trader_config.asset_code_b + ")"}
                   optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_b}
                   feed_url={this.props.configData.strategy_config.data_feed_b_url}
@@ -773,6 +773,10 @@ class Form extends Component {
               </FieldItem>
               <PriceFeedFormula
                 isLoading={this.state.isLoadingFormula || this.props.optionsMetadata == null}
+                baseCode={this.props.configData.trader_config.asset_code_a}
+                baseIssuer={this.props.configData.trader_config.issuer_a}
+                quoteCode={this.props.configData.trader_config.asset_code_b}
+                quoteIssuer={this.props.configData.trader_config.issuer_b}
                 numerator={this.state.numerator}
                 denominator={this.state.denominator}
                 />

@@ -1,14 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import styles from './PriceFeedTitle.module.scss';
-import Label from '../../atoms/Label/Label';
+import styles from './PriceFeedDisplay.module.scss';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 import classNames from 'classnames';
 import Button from '../../atoms/Button/Button';
+import functions from '../../../utils/functions';
 
-class PriceFeedTitle extends Component {
+class PriceFeedDisplay extends Component {
   static propTypes = {
-    label: PropTypes.string,
     loading: PropTypes.bool,
     price: PropTypes.number,
     fetchPrice: PropTypes.func
@@ -21,12 +20,18 @@ class PriceFeedTitle extends Component {
       isLoading,
     );
 
+    let priceCapped = this.props.price;
+    if (priceCapped) {
+      priceCapped = functions.capSdexPrecision(priceCapped);
+    } else {
+      priceCapped = "<missing>";
+    }
+
     return (
       <div className={styles.wrapper}>
-        <Label>{this.props.label}</Label>
         <span className={styles.equals}>=</span>
         <div className={styles.valueWrapper}>
-          <span className={valueClasses}>{this.props.price === null ? "<missing>" : this.props.price }</span>
+          <span className={valueClasses}>{priceCapped}</span>
           { this.props.loading && (
             <div className={styles.loaderWrapper}>
               <LoadingAnimation/>
@@ -41,11 +46,10 @@ class PriceFeedTitle extends Component {
           variant="transparent"
           hsize="round"
           disabled={this.props.loading}
-          >
-        </Button>
+          />
       </div>
     );
   }
 }
 
-export default PriceFeedTitle;
+export default PriceFeedDisplay;

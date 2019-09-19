@@ -3,12 +3,9 @@
 .wrapper {
     display: flex;
     flex-direction: row;
+    width: 80%;
 
     > * {
         flex-grow: 1;
     }
-}
-
-.rowtemp {
-    width: 50%;
 }
