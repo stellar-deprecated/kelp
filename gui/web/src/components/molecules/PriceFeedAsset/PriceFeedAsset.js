@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import styles from './PriceFeedAsset.module.scss';
-import PriceFeedTitle from '../PriceFeedTitle/PriceFeedTitle';
+import Label from '../../atoms/Label/Label';
+import PriceFeedDisplay from '../PriceFeedDisplay/PriceFeedDisplay';
 import PriceFeedSelector from '../PriceFeedSelector/PriceFeedSelector';
 import fetchPrice from '../../../kelp-ops-api/fetchPrice';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
@@ -93,15 +94,13 @@ class PriceFeedAsset extends Component {
   }
 
   render() {
-    let title = (<PriceFeedTitle
-      label={this.props.title}
+    let priceDisplay = (<PriceFeedDisplay
       loading={false}
       price={this.state.price}
       fetchPrice={this.queryPrice}
       />);
     if (this.state.isLoading || !this.props.optionsMetadata) {
-      title = (<PriceFeedTitle
-        label={this.props.title}
+      priceDisplay = (<PriceFeedDisplay
         loading={true}
         fetchPrice={this.queryPrice}
         />);
@@ -134,8 +133,13 @@ class PriceFeedAsset extends Component {
 
     return (
       <div>
-        {title}
-        {selector}
+        <div className={styles.wrapper}>
+          <Label>{this.props.title}</Label>
+        </div>
+        <div className={styles.wrapper}>
+          {selector}
+          {priceDisplay}
+        </div>
       </div>
     );
   }
