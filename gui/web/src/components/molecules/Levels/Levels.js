@@ -43,6 +43,7 @@ class Levels extends Component {
                 suffix="%"
                 value={this.props.levels[i].spread}
                 type="percent_positive"
+                invokeChangeOnLoad={true}
                 onChange={(event) => { this.props.updateLevel(i, "spread", event.target.value) }}
                 error={levelError.spread}
                 triggerError={(message) => { this.props.addLevelError(i, "spread", message) }}
@@ -54,6 +55,7 @@ class Levels extends Component {
               <Input
                 value={this.props.levels[i].amount}
                 type="float_positive"
+                invokeChangeOnLoad={true}
                 onChange={(event) => { this.props.updateLevel(i, "amount", event.target.value) }}
                 error={levelError.amount}
                 triggerError={(message) => { this.props.addLevelError(i, "amount", message) }}

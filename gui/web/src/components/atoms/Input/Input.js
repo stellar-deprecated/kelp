@@ -26,6 +26,7 @@ class Input extends Component {
     type: PropTypes.string.isRequired,       // types: string, int, float, percent
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     error: PropTypes.string,
+    invokeChangeOnLoad: PropTypes.bool,
     triggerError: PropTypes.func,
     clearError: PropTypes.func,
     size: PropTypes.string,
@@ -50,7 +51,9 @@ class Input extends Component {
       value = props.value;
     }
 
-    this.handleChange({ target: { value: value } });
+    if (props.invokeChangeOnLoad) {
+      this.handleChange({ target: { value: value } });
+    }
   }
 
   handleChange(event) {

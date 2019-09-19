@@ -592,7 +592,7 @@ class Form extends Component {
                             return this._last_fill_tracker_sleep_millis;
                           }
 
-                          // just save the last value here and don't update the state in this function
+                          // create a side-effect: just save the last value here and don't update the state in this function
                           this._last_fill_tracker_sleep_millis = value;
                           return null;
                         }
