@@ -172,7 +172,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	}
 
 	bi := query.BotInfo{
-		LastUpdated:   time.Now().Format("1/_2/2006 15:04:05"),
+		LastUpdated:   time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
 		Strategy:      buysell,
 		IsTestnet:     strings.Contains(botConfig.HorizonURL, "test"),
 		TradingPair:   tradingPair,

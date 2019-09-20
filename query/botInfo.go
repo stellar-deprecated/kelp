@@ -66,7 +66,7 @@ func (s *Server) getBotInfo() (*BotInfo, error) {
 	}
 
 	return &BotInfo{
-		LastUpdated:   time.Now().Format("1/_2/2006 15:04:05"),
+		LastUpdated:   time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
 		Strategy:      s.strategyName,
 		IsTestnet:     strings.Contains(s.sdex.API.HorizonURL, "test"),
 		TradingPair:   s.tradingPair,

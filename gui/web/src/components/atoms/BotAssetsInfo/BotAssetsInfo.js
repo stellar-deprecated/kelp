@@ -4,6 +4,9 @@ import InfoIcon from '../InfoIcon/InfoIcon';
 
 class BotAssetsInfo extends Component {
   render() {
+    const updatedDate = new Date(this.props.lastUpdated);
+    const updatedDateLocalString = updatedDate.toLocaleString().replace(",", "");
+
     return (
       <div>
         <div className={styles.baseAssetLine}>
@@ -25,8 +28,8 @@ class BotAssetsInfo extends Component {
           <span className={styles.assetValue}>{this.props.assetQuoteBalance < 0 ? "?" : this.props.assetQuoteBalance}</span>
         </div>
         <div className={styles.lastUpdatedLine}>
-            <span className={styles.lastUpdatedField}>Updated: </span>
-            <span className={styles.lastUpdatedValue}>{this.props.lastUpdated}</span>
+            <span className={styles.lastUpdatedField}>Updated</span>
+            <span className={styles.lastUpdatedValue}>{updatedDateLocalString}</span>
           </div>
       </div>
     )
