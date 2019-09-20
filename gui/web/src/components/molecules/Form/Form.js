@@ -71,14 +71,15 @@ class Form extends Component {
   }
 
   updateFormulaPrice(ator, price) {
+    const isPriceMissing = price === null || price === undefined;
     if (ator === "numerator") {
       this.setState({
-        isLoadingFormula: this.state.denominator === null,
+        isLoadingFormula: isPriceMissing || this.state.denominator === null || this.state.denominator === undefined,
         numerator: price
       })
     } else {
       this.setState({
-        isLoadingFormula: this.state.numerator === null,
+        isLoadingFormula: isPriceMissing || this.state.numerator === null || this.state.numerator === undefined,
         denominator: price
       })
     }
