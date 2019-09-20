@@ -642,7 +642,7 @@ class Form extends Component {
               </FieldItem>
 
               <FieldItem>
-                <Label>Fill tracker duration</Label>
+                <Label disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}>Fill tracker duration</Label>
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
@@ -670,7 +670,7 @@ class Form extends Component {
               </FieldItem>
 
               <FieldItem>
-                <Label>Fill tracker delete cycles threshold</Label>
+                <Label disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}>Fill tracker delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
                   type="int_nonnegative"

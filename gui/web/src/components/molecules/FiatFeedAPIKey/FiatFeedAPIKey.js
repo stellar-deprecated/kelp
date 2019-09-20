@@ -12,18 +12,15 @@ class FiatFeedAPIKey extends Component {
     };
 
     render() {
-        if (!this.props.enabled) {
-            return "";
-        }
-
         return (
             <div>
-                <Label>Fiat API Key (Currency Layer)</Label>
+                <Label disabled={!this.props.enabled}>Fiat API Key (Currency Layer)</Label>
                 <Input
                     value={this.props.value}
                     type="string"
                     onChange={this.props.onChange}
                     error={this.props.error}
+                    disabled={!this.props.enabled}
                     />
             </div>
         );
