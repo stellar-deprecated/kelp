@@ -69,13 +69,13 @@ class Form extends Component {
 
   _extractFiatAPIKey(props) {
     let url = null;
-    if (this.props.configData.strategy_config.data_type_a === "fiat") {
-      const urlA = this.props.configData.strategy_config.data_feed_a_url;
+    if (props.configData.strategy_config.data_type_a === "fiat") {
+      const urlA = props.configData.strategy_config.data_feed_a_url;
       if (urlA.startsWith(fiatURLPrefix) && urlA.indexOf(fiatURLCurrencyParam) > 0) {
         url = urlA;
       }
-    } else if (this.props.configData.strategy_config.data_type_b === "fiat") {
-      const urlB = this.props.configData.strategy_config.data_feed_b_url;
+    } else if (props.configData.strategy_config.data_type_b === "fiat") {
+      const urlB = props.configData.strategy_config.data_feed_b_url;
       if (urlB.startsWith(fiatURLPrefix) && urlB.indexOf(fiatURLCurrencyParam) > 0) {
         url = urlB;
       }
