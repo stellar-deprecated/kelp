@@ -22,6 +22,9 @@ import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import newSecretKey from '../../../kelp-ops-api/newSecretKey';
 import SecretKey from '../SecretKey/SecretKey';
 
+const fiatURLPrefix = "http://apilayer.net/api/live?access_key=";
+const fiatURLCurrencyParam = "&currencies=";
+
 class Form extends Component {
   constructor(props) {
     super(props);
@@ -33,7 +36,7 @@ class Form extends Component {
       numericalErrors: {},
       levelNumericalErrors: {},
       attemptedFirstSave: false,
-      fiatAPIKey: "",
+      fiatAPIKey: this._extractFiatAPIKey(props),
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
@@ -60,6 +63,26 @@ class Form extends Component {
     this._last_fill_tracker_sleep_millis = 1000;
 
     this._asyncRequests = {};
+  }
+
+  _extractFiatAPIKey(props) {
+    let url = null;
+    if (this.props.configData.strategy_config.data_type_a === "fiat") {
+      const urlA = this.props.configData.strategy_config.data_feed_a_url;
+      if (urlA.startsWith(fiatURLPrefix) && urlA.indexOf(fiatURLCurrencyParam) > 0) {
+        url = urlA;
+      }
+    } else if (this.props.configData.strategy_config.data_type_b === "fiat") {
+      const urlB = this.props.configData.strategy_config.data_feed_b_url;
+      if (urlB.startsWith(fiatURLPrefix) && urlB.indexOf(fiatURLCurrencyParam) > 0) {
+        url = urlB;
+      }
+    }
+
+    if (!url) {
+      return "";
+    }
+    return url.substring(fiatURLPrefix.length, url.indexOf(fiatURLCurrencyParam));
   }
 
   componentWillUnmount() {
@@ -289,7 +312,7 @@ class Form extends Component {
   }
 
   makeNewFiatDataFeedURL(apiKey, oldURL) {
-    return "http://apilayer.net/api/live?access_key=" + apiKey + oldURL.substring(oldURL.indexOf("&currencies="));
+    return fiatURLPrefix + apiKey + oldURL.substring(oldURL.indexOf(fiatURLCurrencyParam));
   }
 
   updateFiatAPIKey(apiKey) {
