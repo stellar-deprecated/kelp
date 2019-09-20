@@ -17,6 +17,12 @@ func (s *APIServer) getNewBotConfig(w http.ResponseWriter, r *http.Request) {
 	strategy := "buysell"
 	sampleBuysell := makeSampleBuysell()
 
+	// remove asset data from the trader file for the new config
+	sampleTrader.AssetCodeA = ""
+	sampleTrader.IssuerA = ""
+	sampleTrader.AssetCodeB = ""
+	sampleTrader.IssuerB = ""
+
 	response := botConfigResponse{
 		Name:           botName,
 		Strategy:       strategy,

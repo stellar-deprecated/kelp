@@ -491,6 +491,7 @@ class Form extends Component {
                     <Input
                       value={this.props.configData.trader_config.asset_code_a}
                       type="string"
+                      placeholder="XLM"
                       onChange={(event) => {
                         this.props.onChange("trader_config.asset_code_a", event, {
                           "trader_config.issuer_a": (value) => {
@@ -527,6 +528,7 @@ class Form extends Component {
                     <Input
                       value={this.props.configData.trader_config.asset_code_b}
                       type="string"
+                      placeholder="COUPON"
                       onChange={(event) => {
                         this.props.onChange("trader_config.asset_code_b", event, {
                           "trader_config.issuer_b": (value) => {
@@ -548,6 +550,7 @@ class Form extends Component {
                     <Input
                       value={this.props.configData.trader_config.issuer_b}
                       type="string"
+                      placeholder="GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
                       error={this.getError("trader_config.issuer_b")}

@@ -25,6 +25,7 @@ class Input extends Component {
   static propTypes = {
     type: PropTypes.string.isRequired,       // types: string, int, float, percent
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    placeholder: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     error: PropTypes.string,
     invokeChangeOnLoad: PropTypes.bool,
     triggerError: PropTypes.func,
@@ -234,6 +235,7 @@ class Input extends Component {
           <input
             className={inputClassList}
             defaultValue={value}
+            placeholder={this.props.placeholder}
             type="text"
             onBlur={this.handleChange}
             disabled={this.props.disabled}
