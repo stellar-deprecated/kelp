@@ -21,10 +21,10 @@ class PriceFeedDisplay extends Component {
     );
 
     let priceCapped = this.props.price;
-    if (priceCapped) {
-      priceCapped = functions.capSdexPrecision(priceCapped);
-    } else {
+    if (!priceCapped || priceCapped < 0) {
       priceCapped = "<missing>";
+    } else {
+      priceCapped = functions.capSdexPrecision(priceCapped);
     }
 
     return (

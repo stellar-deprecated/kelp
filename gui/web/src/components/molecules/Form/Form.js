@@ -147,7 +147,7 @@ class Form extends Component {
   }
 
   hasPriceFeedError() {
-    return isNaN(this.state.numerator) || isNaN(this.state.denominator);
+    return isNaN(this.state.numerator) || isNaN(this.state.denominator) || this.state.numerator < 0 || this.state.denominator < 0;
   }
 
   save() {
