@@ -15,6 +15,7 @@ import AdvancedWrapper from '../AdvancedWrapper/AdvancedWrapper';
 import FormSection from '../FormSection/FormSection';
 import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
+import FiatFeedAPIKey from '../FiatFeedAPIKey/FiatFeedAPIKey';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
@@ -32,6 +33,7 @@ class Form extends Component {
       numericalErrors: {},
       levelNumericalErrors: {},
       attemptedFirstSave: false,
+      fiatAPIKey: "",
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
@@ -50,6 +52,8 @@ class Form extends Component {
     this.getNumNumericalErrors = this.getNumNumericalErrors.bind(this);
     this.addLevelError = this.addLevelError.bind(this);
     this.clearLevelError = this.clearLevelError.bind(this);
+    this.makeNewFiatDataFeedURL = this.makeNewFiatDataFeedURL.bind(this);
+    this.updateFiatAPIKey = this.updateFiatAPIKey.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._fetchDotNotation = this._fetchDotNotation.bind(this);
@@ -282,6 +286,26 @@ class Form extends Component {
       delete _this._asyncRequests["secretKey"];
       this.props.onChange(field, {target: {value: resp}});
     });
+  }
+
+  makeNewFiatDataFeedURL(apiKey, oldURL) {
+    return "http://apilayer.net/api/live?access_key=" + apiKey + oldURL.substring(oldURL.indexOf("&currencies="));
+  }
+
+  updateFiatAPIKey(apiKey) {
+    if (this.props.configData.strategy_config.data_type_a === "fiat") {
+      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.props.configData.strategy_config.data_feed_a_url);
+      this.props.onChange("strategy_config.data_feed_a_url", {target: {value: newValue }});
+    }
+
+    if (this.props.configData.strategy_config.data_type_b === "fiat") {
+      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.props.configData.strategy_config.data_feed_b_url);
+      this.props.onChange("strategy_config.data_feed_b_url", {target: {value: newValue }});
+    }
+
+    this.setState({
+      fiatAPIKey: apiKey,
+    })
   }
 
   clearNumericalError(field) {
@@ -770,6 +794,13 @@ class Form extends Component {
                   feed_url={this.props.configData.strategy_config.data_feed_b_url}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
+                  />
+              </FieldItem>
+              <FieldItem>
+                <FiatFeedAPIKey
+                  enabled={this.props.configData.strategy_config.data_type_a === "fiat" || this.props.configData.strategy_config.data_type_b === "fiat"}
+                  value={this.state.fiatAPIKey}
+                  onChange={(event) => { this.updateFiatAPIKey(event.target.value) }}
                   />
               </FieldItem>
               <PriceFeedFormula
