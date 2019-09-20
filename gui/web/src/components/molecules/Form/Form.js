@@ -157,7 +157,7 @@ class Form extends Component {
     const hasNumeratorFiatFeedWithError = this.props.configData.strategy_config.data_type_a === "fiat" && this.state.numerator && this.state.numerator < 0;
     const hasDenominatorFiatFeedWithError = this.props.configData.strategy_config.data_type_b === "fiat" && this.state.denominator && this.state.denominator < 0;
     if (hasNumeratorFiatFeedWithError || hasDenominatorFiatFeedWithError) {
-      return "invalid API key, go to " + currencyLayerWebsite + " to sign up for an API key"
+      return "invalid API key, exhausted API limit, or API account inactive. Go to " + currencyLayerWebsite + " to sign up for an API key."
     }
     return null;
   }

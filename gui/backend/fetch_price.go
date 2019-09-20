@@ -45,8 +45,8 @@ func (s *APIServer) fetchPrice(w http.ResponseWriter, r *http.Request) {
 
 	price, e := pf.GetPrice()
 	if e != nil {
-		if fiatAPIError, ok := errors.Cause(e).(plugins.ErrFiatAPI); ok && fiatAPIError.Code == plugins.FiatAPIInvalidKeyCode {
-			log.Printf("invalid fiat API key used when fetching price: %s\n", fiatAPIError)
+		if fiatAPIError, ok := errors.Cause(e).(plugins.ErrFiatAPI); ok && (fiatAPIError.Code == plugins.FiatErrorCodeInvalidAPIKey || fiatAPIError.Code == plugins.FiatErrorCodeExhaustedAPIKey || fiatAPIError.Code == plugins.FiatErrorCodeAccountInactive) {
+			log.Printf("fiat API error when fetching price: %s\n", fiatAPIError)
 			s.writeJson(w, fetchPriceOutput{Price: -1.0})
 			return
 		}

@@ -21,7 +21,9 @@ import (
 }
 */
 
-const FiatAPIInvalidKeyCode = 101
+const FiatErrorCodeInvalidAPIKey = 101
+const FiatErrorCodeAccountInactive = 102
+const FiatErrorCodeExhaustedAPIKey = 104
 
 // ErrFiatAPI is a custom error currently used to identify when we have an invalid APIKey
 type ErrFiatAPI struct {
