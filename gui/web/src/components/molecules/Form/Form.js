@@ -24,6 +24,7 @@ import SecretKey from '../SecretKey/SecretKey';
 
 const fiatURLPrefix = "http://apilayer.net/api/live?access_key=";
 const fiatURLCurrencyParam = "&currencies=";
+const currencyLayerWebsite = "https://currencylayer.com/";
 
 class Form extends Component {
   constructor(props) {
@@ -42,6 +43,7 @@ class Form extends Component {
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
     this.fetchErrorMessage = this.fetchErrorMessage.bind(this);
     this.hasPriceFeedError = this.hasPriceFeedError.bind(this);
+    this.fiatAPIKeyError = this.fiatAPIKeyError.bind(this);
     this.save = this.save.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
     this.updateLevel = this.updateLevel.bind(this);
@@ -148,6 +150,15 @@ class Form extends Component {
 
   hasPriceFeedError() {
     return isNaN(this.state.numerator) || isNaN(this.state.denominator) || this.state.numerator < 0 || this.state.denominator < 0;
+  }
+
+  fiatAPIKeyError() {
+    const hasNumeratorFiatFeedWithError = this.props.configData.strategy_config.data_type_a === "fiat" && this.state.numerator && this.state.numerator < 0;
+    const hasDenominatorFiatFeedWithError = this.props.configData.strategy_config.data_type_b === "fiat" && this.state.denominator && this.state.denominator < 0;
+    if (hasNumeratorFiatFeedWithError || hasDenominatorFiatFeedWithError) {
+      return "invalid API key, go to " + currencyLayerWebsite + " to sign up for an API key"
+    }
+    return null;
   }
 
   save() {
@@ -823,6 +834,7 @@ class Form extends Component {
                 <FiatFeedAPIKey
                   enabled={this.props.configData.strategy_config.data_type_a === "fiat" || this.props.configData.strategy_config.data_type_b === "fiat"}
                   value={this.state.fiatAPIKey}
+                  error={this.fiatAPIKeyError()}
                   onChange={(event) => { this.updateFiatAPIKey(event.target.value) }}
                   />
               </FieldItem>
