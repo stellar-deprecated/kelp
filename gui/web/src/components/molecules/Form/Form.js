@@ -24,6 +24,7 @@ import SecretKey from '../SecretKey/SecretKey';
 
 const fiatURLPrefix = "http://apilayer.net/api/live?access_key=";
 const fiatURLCurrencyParam = "&currencies=";
+const fiatAPIKeyPlaceholder = "<api_key>";
 const currencyLayerWebsite = "https://currencylayer.com/";
 
 class Form extends Component {
@@ -196,6 +197,11 @@ class Form extends Component {
     let feedUrlValue = newValues[1];
     if (newValues.length > 2) {
       feedUrlValue = feedUrlValue + "/" + newValues[2];
+    }
+
+    // special handling for fiat feeds
+    if (dataTypeValue === "fiat") {
+      feedUrlValue = feedUrlValue.replace(fiatAPIKeyPlaceholder, this.state.fiatAPIKey);
     }
 
     let mergeUpdateInstructions = {};
