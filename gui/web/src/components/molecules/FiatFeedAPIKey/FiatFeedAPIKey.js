@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import styles from './FiatFeedAPIKey.module.scss';
 import PropTypes from 'prop-types';
 import Input from '../../atoms/Input/Input';
 import Label from '../../atoms/Label/Label';
@@ -13,7 +14,7 @@ class FiatFeedAPIKey extends Component {
 
     render() {
         return (
-            <div>
+            <div className={styles.apiKey}>
                 <Label disabled={!this.props.enabled}>Fiat API Key (Currency Layer)</Label>
                 <Input
                     value={this.props.value}
