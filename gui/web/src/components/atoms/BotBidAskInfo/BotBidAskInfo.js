@@ -1,14 +1,24 @@
 import React, { Component } from 'react';
 import styles from './BotBidAskInfo.module.scss';
-
+import functions from '../../../utils/functions';
 
 class BotBidAskInfo extends Component {
   render() {
+    let spreadValue = this.props.spread_value;
+    if (spreadValue > 0) {
+      spreadValue = functions.capSdexPrecision(spreadValue);
+    }
+
+    let spreadPct = this.props.spread_pct;
+    if (spreadPct > 0) {
+      spreadPct = spreadPct.toFixed(4);
+    }
+
     return (
       <div>
         <div className={styles.spreadLine}>
-          <span className={styles.spreadLabel}>Spread </span>
-          <span className={styles.spreadValue}> {this.props.spread_value + " (" + this.props.spread_pct + " %)"}</span>
+          <span className={styles.spreadLabel}>Spread</span>
+          <span className={styles.spreadValue}>{" " + spreadValue + " (" + spreadPct + " %)"}</span>
         </div>
         <div className={styles.bidsLine}>
           <span className={styles.quoteNumber}>{this.props.num_bids < 0 ? "?" : this.props.num_bids}</span>
