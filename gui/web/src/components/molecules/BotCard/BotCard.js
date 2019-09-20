@@ -386,8 +386,10 @@ class BotCard extends Component {
           <div>
             <BotAssetsInfo
               assetBaseCode={this.state.botInfo.trading_pair.Base}
+              assetBaseIssuer={this.state.botInfo.asset_base.asset_issuer}
               assetBaseBalance={this.state.botInfo.balance_base}
               assetQuoteCode={this.state.botInfo.trading_pair.Quote}
+              assetQuoteIssuer={this.state.botInfo.asset_quote.asset_issuer}
               assetQuoteBalance={this.state.botInfo.balance_quote}
               lastUpdated={this.state.botInfo.last_updated}
             />

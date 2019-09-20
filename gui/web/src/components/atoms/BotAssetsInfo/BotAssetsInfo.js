@@ -13,7 +13,7 @@ class BotAssetsInfo extends Component {
           <span className={styles.assetCode}>{this.props.assetBaseCode}</span>
           <span className={styles.assetCode}> </span>
           <div className={styles.assetHelper}>
-            {/* <InfoIcon/> */}
+            <InfoIcon issuer={this.props.assetBaseIssuer}/>
           </div>
           <span className={styles.assetValue}> </span>
           <span className={styles.assetValue}>{this.props.assetBaseBalance < 0 ? "?" : this.props.assetBaseBalance}</span>
@@ -22,7 +22,7 @@ class BotAssetsInfo extends Component {
           <span className={styles.assetCode}>{this.props.assetQuoteCode}</span>
           <span className={styles.assetCode}> </span>
           <div className={styles.assetHelper}>
-            <InfoIcon/>
+            <InfoIcon issuer={this.props.assetQuoteIssuer}/>
           </div> 
           <span className={styles.assetValue}> </span>
           <span className={styles.assetValue}>{this.props.assetQuoteBalance < 0 ? "?" : this.props.assetQuoteBalance}</span>

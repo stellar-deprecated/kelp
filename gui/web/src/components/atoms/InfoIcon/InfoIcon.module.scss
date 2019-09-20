@@ -16,3 +16,17 @@
    width: 8px;
    height: 8px;
 }
+
+.tooltipWrapper {
+   color: $color-primary;
+}
+
+.tooltip {
+   font-family: $typeface-secondary;
+   font-size: 13/16 +rem;
+   background-color: $color-primary;
+   color: $color-contrast-2;
+   letter-spacing: -0.5px;
+   padding: 8px;
+   border-radius: 15px;
+}

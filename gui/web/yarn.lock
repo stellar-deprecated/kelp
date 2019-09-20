@@ -7111,7 +7111,7 @@ prompts@^0.1.9:
     kleur "^2.0.1"
     sisteransi "^0.1.1"
 
-prop-types@^15.6.2:
+prop-types@^15.5.8, prop-types@^15.6.2:
   version "15.7.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
   dependencies:
@@ -7394,6 +7394,13 @@ react-scripts@2.1.8:
     workbox-webpack-plugin "3.6.3"
   optionalDependencies:
     fsevents "1.2.4"
+
+react-tooltip-lite@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/react-tooltip-lite/-/react-tooltip-lite-1.10.0.tgz#03c367c590339848a083942c3b0bee2a98254819"
+  integrity sha512-M4n6lGUWTrK2ngv2yDfVGnhO0EYoj5n3GNgKuZLYAK8q3jBbFK7Cj4tJNB6AtLgGlifL+y2TJ9LWWT2E3YKzhg==
+  dependencies:
+    prop-types "^15.5.8"
 
 react@^16.8.4:
   version "16.8.6"
