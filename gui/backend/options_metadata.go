@@ -113,7 +113,7 @@ func (dob *dropdownOptionsBuilder) coinmarketcap(tickerCode string, currencyName
 }
 
 func (dob *dropdownOptionsBuilder) currencylayer(tickerCode string, name string) *dropdownOptionsBuilder {
-	value := fmt.Sprintf("http://apilayer.net/api/live?access_key=8db4ba3aa504c601dd513777193f4f2b&currencies=%s", tickerCode)
+	value := fmt.Sprintf("http://apilayer.net/api/live?access_key=<api_key>&currencies=%s", tickerCode)
 	text := fmt.Sprintf("%s - %s", tickerCode, name)
 	return dob._leaf(value, text)
 }

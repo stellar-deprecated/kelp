@@ -15,6 +15,8 @@ class PriceFeedFormula extends Component {
           <LoadingAnimation/>
         </div>
       );
+    } else if (this.props.numerator < 0 || this.props.denominator < 0) {
+      display = (<div>{"<missing>"}</div>);
     } else {
       const value = functions.capSdexPrecision(this.props.numerator/this.props.denominator);
       const baseDisplay = functions.assetDisplay(this.props.baseCode, this.props.baseIssuer);

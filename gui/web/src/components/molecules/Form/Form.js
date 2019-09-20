@@ -15,11 +15,17 @@ import AdvancedWrapper from '../AdvancedWrapper/AdvancedWrapper';
 import FormSection from '../FormSection/FormSection';
 import FieldGroup from '../FieldGroup/FieldGroup';
 import PriceFeedAsset from '../PriceFeedAsset/PriceFeedAsset';
+import FiatFeedAPIKey from '../FiatFeedAPIKey/FiatFeedAPIKey';
 import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import newSecretKey from '../../../kelp-ops-api/newSecretKey';
 import SecretKey from '../SecretKey/SecretKey';
+
+const fiatURLPrefix = "http://apilayer.net/api/live?access_key=";
+const fiatURLCurrencyParam = "&currencies=";
+const fiatAPIKeyPlaceholder = "<api_key>";
+const currencyLayerWebsite = "https://currencylayer.com/";
 
 class Form extends Component {
   constructor(props) {
@@ -32,11 +38,13 @@ class Form extends Component {
       numericalErrors: {},
       levelNumericalErrors: {},
       attemptedFirstSave: false,
+      fiatAPIKey: this._extractFiatAPIKey(props),
     };
     this.setLoadingFormula = this.setLoadingFormula.bind(this);
     this.updateFormulaPrice = this.updateFormulaPrice.bind(this);
     this.fetchErrorMessage = this.fetchErrorMessage.bind(this);
     this.hasPriceFeedError = this.hasPriceFeedError.bind(this);
+    this.fiatAPIKeyError = this.fiatAPIKeyError.bind(this);
     this.save = this.save.bind(this);
     this.priceFeedAssetChangeHandler = this.priceFeedAssetChangeHandler.bind(this);
     this.updateLevel = this.updateLevel.bind(this);
@@ -50,12 +58,34 @@ class Form extends Component {
     this.getNumNumericalErrors = this.getNumNumericalErrors.bind(this);
     this.addLevelError = this.addLevelError.bind(this);
     this.clearLevelError = this.clearLevelError.bind(this);
+    this.makeNewFiatDataFeedURL = this.makeNewFiatDataFeedURL.bind(this);
+    this.updateFiatAPIKey = this.updateFiatAPIKey.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._fetchDotNotation = this._fetchDotNotation.bind(this);
     this._last_fill_tracker_sleep_millis = 1000;
 
     this._asyncRequests = {};
+  }
+
+  _extractFiatAPIKey(props) {
+    let url = null;
+    if (props.configData.strategy_config.data_type_a === "fiat") {
+      const urlA = props.configData.strategy_config.data_feed_a_url;
+      if (urlA.startsWith(fiatURLPrefix) && urlA.indexOf(fiatURLCurrencyParam) > 0) {
+        url = urlA;
+      }
+    } else if (props.configData.strategy_config.data_type_b === "fiat") {
+      const urlB = props.configData.strategy_config.data_feed_b_url;
+      if (urlB.startsWith(fiatURLPrefix) && urlB.indexOf(fiatURLCurrencyParam) > 0) {
+        url = urlB;
+      }
+    }
+
+    if (!url) {
+      return "";
+    }
+    return url.substring(fiatURLPrefix.length, url.indexOf(fiatURLCurrencyParam));
   }
 
   componentWillUnmount() {
@@ -120,7 +150,16 @@ class Form extends Component {
   }
 
   hasPriceFeedError() {
-    return isNaN(this.state.numerator) || isNaN(this.state.denominator);
+    return isNaN(this.state.numerator) || isNaN(this.state.denominator) || this.state.numerator < 0 || this.state.denominator < 0;
+  }
+
+  fiatAPIKeyError() {
+    const hasNumeratorFiatFeedWithError = this.props.configData.strategy_config.data_type_a === "fiat" && this.state.numerator && this.state.numerator < 0;
+    const hasDenominatorFiatFeedWithError = this.props.configData.strategy_config.data_type_b === "fiat" && this.state.denominator && this.state.denominator < 0;
+    if (hasNumeratorFiatFeedWithError || hasDenominatorFiatFeedWithError) {
+      return "invalid API key, exhausted API limit, or API account inactive. Go to " + currencyLayerWebsite + " to sign up for an API key."
+    }
+    return null;
   }
 
   save() {
@@ -158,6 +197,11 @@ class Form extends Component {
     let feedUrlValue = newValues[1];
     if (newValues.length > 2) {
       feedUrlValue = feedUrlValue + "/" + newValues[2];
+    }
+
+    // special handling for fiat feeds
+    if (dataTypeValue === "fiat") {
+      feedUrlValue = feedUrlValue.replace(fiatAPIKeyPlaceholder, this.state.fiatAPIKey);
     }
 
     let mergeUpdateInstructions = {};
@@ -282,6 +326,26 @@ class Form extends Component {
       delete _this._asyncRequests["secretKey"];
       this.props.onChange(field, {target: {value: resp}});
     });
+  }
+
+  makeNewFiatDataFeedURL(apiKey, oldURL) {
+    return fiatURLPrefix + apiKey + oldURL.substring(oldURL.indexOf(fiatURLCurrencyParam));
+  }
+
+  updateFiatAPIKey(apiKey) {
+    if (this.props.configData.strategy_config.data_type_a === "fiat") {
+      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.props.configData.strategy_config.data_feed_a_url);
+      this.props.onChange("strategy_config.data_feed_a_url", {target: {value: newValue }});
+    }
+
+    if (this.props.configData.strategy_config.data_type_b === "fiat") {
+      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.props.configData.strategy_config.data_feed_b_url);
+      this.props.onChange("strategy_config.data_feed_b_url", {target: {value: newValue }});
+    }
+
+    this.setState({
+      fiatAPIKey: apiKey,
+    })
   }
 
   clearNumericalError(field) {
@@ -578,7 +642,7 @@ class Form extends Component {
               </FieldItem>
 
               <FieldItem>
-                <Label>Fill tracker duration</Label>
+                <Label disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}>Fill tracker duration</Label>
                 <Input
                   suffix="miliseconds"
                   value={this.props.configData.trader_config.fill_tracker_sleep_millis === 0 ? this._last_fill_tracker_sleep_millis : this.props.configData.trader_config.fill_tracker_sleep_millis}
@@ -606,7 +670,7 @@ class Form extends Component {
               </FieldItem>
 
               <FieldItem>
-                <Label>Fill tracker delete cycles threshold</Label>
+                <Label disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}>Fill tracker delete cycles threshold</Label>
                 <Input
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
                   type="int_nonnegative"
@@ -770,6 +834,14 @@ class Form extends Component {
                   feed_url={this.props.configData.strategy_config.data_feed_b_url}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
+                  />
+              </FieldItem>
+              <FieldItem>
+                <FiatFeedAPIKey
+                  enabled={this.props.configData.strategy_config.data_type_a === "fiat" || this.props.configData.strategy_config.data_type_b === "fiat"}
+                  value={this.state.fiatAPIKey}
+                  error={this.fiatAPIKeyError()}
+                  onChange={(event) => { this.updateFiatAPIKey(event.target.value) }}
                   />
               </FieldItem>
               <PriceFeedFormula
