@@ -172,18 +172,19 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	}
 
 	bi := query.BotInfo{
-		LastUpdated:   time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
-		Strategy:      buysell,
-		IsTestnet:     strings.Contains(botConfig.HorizonURL, "test"),
-		TradingPair:   tradingPair,
-		AssetBase:     assetBase,
-		AssetQuote:    assetQuote,
-		BalanceBase:   balanceBase,
-		BalanceQuote:  balanceQuote,
-		NumBids:       numBids,
-		NumAsks:       numAsks,
-		SpreadValue:   model.NumberFromFloat(spread, 8).AsFloat(),
-		SpreadPercent: model.NumberFromFloat(spreadPct, 8).AsFloat(),
+		LastUpdated:    time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
+		TradingAccount: account.AccountID,
+		Strategy:       buysell,
+		IsTestnet:      strings.Contains(botConfig.HorizonURL, "test"),
+		TradingPair:    tradingPair,
+		AssetBase:      assetBase,
+		AssetQuote:     assetQuote,
+		BalanceBase:    balanceBase,
+		BalanceQuote:   balanceQuote,
+		NumBids:        numBids,
+		NumAsks:        numAsks,
+		SpreadValue:    model.NumberFromFloat(spread, 8).AsFloat(),
+		SpreadPercent:  model.NumberFromFloat(spreadPct, 8).AsFloat(),
 	}
 
 	marshalledJson, e := json.MarshalIndent(bi, "", "  ")

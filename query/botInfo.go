@@ -12,18 +12,19 @@ import (
 
 // BotInfo is the response from the getBotInfo IPC request
 type BotInfo struct {
-	LastUpdated   string             `json:"last_updated"`
-	Strategy      string             `json:"strategy"`
-	IsTestnet     bool               `json:"is_testnet"`
-	TradingPair   *model.TradingPair `json:"trading_pair"`
-	AssetBase     hProtocol.Asset    `json:"asset_base"`
-	AssetQuote    hProtocol.Asset    `json:"asset_quote"`
-	BalanceBase   float64            `json:"balance_base"`
-	BalanceQuote  float64            `json:"balance_quote"`
-	NumBids       int                `json:"num_bids"`
-	NumAsks       int                `json:"num_asks"`
-	SpreadValue   float64            `json:"spread_value"`
-	SpreadPercent float64            `json:"spread_pct"`
+	LastUpdated    string             `json:"last_updated"`
+	TradingAccount string             `json:"trading_account"`
+	Strategy       string             `json:"strategy"`
+	IsTestnet      bool               `json:"is_testnet"`
+	TradingPair    *model.TradingPair `json:"trading_pair"`
+	AssetBase      hProtocol.Asset    `json:"asset_base"`
+	AssetQuote     hProtocol.Asset    `json:"asset_quote"`
+	BalanceBase    float64            `json:"balance_base"`
+	BalanceQuote   float64            `json:"balance_quote"`
+	NumBids        int                `json:"num_bids"`
+	NumAsks        int                `json:"num_asks"`
+	SpreadValue    float64            `json:"spread_value"`
+	SpreadPercent  float64            `json:"spread_pct"`
 }
 
 func (s *Server) getBotInfo() (*BotInfo, error) {
@@ -66,17 +67,18 @@ func (s *Server) getBotInfo() (*BotInfo, error) {
 	}
 
 	return &BotInfo{
-		LastUpdated:   time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
-		Strategy:      s.strategyName,
-		IsTestnet:     strings.Contains(s.sdex.API.HorizonURL, "test"),
-		TradingPair:   s.tradingPair,
-		AssetBase:     assetBase,
-		AssetQuote:    assetQuote,
-		BalanceBase:   balanceBase.Balance,
-		BalanceQuote:  balanceQuote.Balance,
-		NumBids:       numBids,
-		NumAsks:       numAsks,
-		SpreadValue:   spreadValue.AsFloat(),
-		SpreadPercent: spreadPct.AsFloat(),
+		LastUpdated:    time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
+		TradingAccount: s.sdex.TradingAccount,
+		Strategy:       s.strategyName,
+		IsTestnet:      strings.Contains(s.sdex.API.HorizonURL, "test"),
+		TradingPair:    s.tradingPair,
+		AssetBase:      assetBase,
+		AssetQuote:     assetQuote,
+		BalanceBase:    balanceBase.Balance,
+		BalanceQuote:   balanceQuote.Balance,
+		NumBids:        numBids,
+		NumAsks:        numAsks,
+		SpreadValue:    spreadValue.AsFloat(),
+		SpreadPercent:  spreadPct.AsFloat(),
 	}, nil
 }

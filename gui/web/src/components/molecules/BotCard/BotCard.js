@@ -70,6 +70,7 @@ class BotCard extends Component {
     this.closeOptions = this.closeOptions.bind(this);
     this.handleClick = this.handleClick.bind(this);
     this.editBot = this.editBot.bind(this);
+    this.showOffers = this.showOffers.bind(this);
     this.showMarket = this.showMarket.bind(this);
     this.callDeleteBot = this.callDeleteBot.bind(this);
 
@@ -300,6 +301,17 @@ class BotCard extends Component {
     this.props.history.push('/edit?bot_name=' + encodeURIComponent(this.props.name))
   }
 
+  showOffers() {
+    const tradingAccount = this.state.botInfo.trading_account;
+    let urlNetwork = "testnet";
+    if (!this.state.botInfo.is_testnet) {
+      urlNetwork = "public";
+    }
+    
+    const link = "https://stellar.expert/explorer/" + urlNetwork + "/account/" + tradingAccount + "?filter=active-offers";
+    window.open(link);
+  }
+
   showMarket() {
     let baseCode = this.state.botInfo.asset_base.asset_type === "native" ? "XLM/native" : this.state.botInfo.asset_base.asset_code + "/" + this.state.botInfo.asset_base.asset_issuer;
     let quoteCode = this.state.botInfo.asset_quote.asset_type === "native" ? "XLM/native" : this.state.botInfo.asset_quote.asset_code + "/" + this.state.botInfo.asset_quote.asset_issuer;
@@ -319,6 +331,8 @@ class BotCard extends Component {
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
+            enableOffers={true}
+            onOffers={this.showOffers}
             enableMarket={true}
             onMarket={this.showMarket}
             enableEdit={enableEdit}
