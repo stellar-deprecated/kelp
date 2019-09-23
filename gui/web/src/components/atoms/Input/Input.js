@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import styles from './Input.module.scss';
+import Label from '../Label/Label';
 
 class Input extends Component {
   constructor(props) {
@@ -26,6 +27,7 @@ class Input extends Component {
     type: PropTypes.string.isRequired,       // types: string, int, float, percent
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     placeholder: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    readOnly: PropTypes.bool,
     error: PropTypes.string,
     invokeChangeOnLoad: PropTypes.bool,
     triggerError: PropTypes.func,
@@ -229,17 +231,25 @@ class Input extends Component {
       value = this.props.value;
     }
 
+    let valueComponent = (
+      <input
+        className={inputClassList}
+        defaultValue={value}
+        placeholder={this.props.placeholder}
+        type="text"
+        onBlur={this.handleChange}
+        disabled={this.props.disabled}
+        readOnly={this.props.readOnly}
+      />
+    );
+    if (this.props.readOnly) {
+      valueComponent = (<Label disabled={this.props.disabled}>{value}</Label>);
+    }
+
     return (
       <div>
         <div className={styles.wrapper} key={this.props.value}>
-          <input
-            className={inputClassList}
-            defaultValue={value}
-            placeholder={this.props.placeholder}
-            type="text"
-            onBlur={this.handleChange}
-            disabled={this.props.disabled}
-            />
+          {valueComponent}
           { this.props.suffix && (
           <p className={suffixClassList}>{this.props.suffix}</p>
           )}

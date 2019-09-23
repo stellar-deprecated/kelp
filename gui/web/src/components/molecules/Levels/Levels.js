@@ -19,7 +19,8 @@ class Levels extends Component {
     onRemove: PropTypes.func.isRequired,
     levelErrors: PropTypes.object,
     addLevelError: PropTypes.func.isRequired,
-    clearLevelError: PropTypes.func.isRequired
+    clearLevelError: PropTypes.func.isRequired,
+    readOnly: PropTypes.bool,
   }
 
   render() {
@@ -32,6 +33,19 @@ class Levels extends Component {
           spread: null,
           amount: null,
         };
+      }
+
+      let removeButton = (
+        <Button 
+          className={styles.button}
+          icon="remove" 
+          variant="danger" 
+          onClick={() => this.props.onRemove(i)}
+          hsize="round"
+          />
+      );
+      if (this.props.readOnly) {
+        removeButton = "";
       }
       
       levels.push((
@@ -48,6 +62,7 @@ class Levels extends Component {
                 error={levelError.spread}
                 triggerError={(message) => { this.props.addLevelError(i, "spread", message) }}
                 clearError={() => { this.props.clearLevelError(i, "spread") }}
+                readOnly={this.props.readOnly}
                 />
             </FieldItem>
             <FieldItem>
@@ -60,17 +75,12 @@ class Levels extends Component {
                 error={levelError.amount}
                 triggerError={(message) => { this.props.addLevelError(i, "amount", message) }}
                 clearError={() => { this.props.clearLevelError(i, "amount") }}
+                readOnly={this.props.readOnly}
                 />
             </FieldItem>
           </div>
           <div className={styles.actions}>
-            <Button 
-              className={styles.button}
-              icon="remove" 
-              variant="danger" 
-              onClick={() => this.props.onRemove(i)}
-              hsize="round"
-              />
+            {removeButton}
           </div>
         </div>
       ));
@@ -81,19 +91,26 @@ class Levels extends Component {
       error = (<ErrorMessage errorList={[this.props.error]}/>);
     }
 
+    let newLevelButton = (
+      <Button
+        className={styles.add}
+        icon="add"
+        variant="faded"
+        onClick={this.props.newLevel}
+        disabled={this.props.hasNewLevel()}
+        >
+          New Level
+      </Button>
+    );
+    if (this.props.readOnly) {
+      newLevelButton = "";
+    }
+
     return (
       <div className={styles.wrapper}>
         {levels}
         {error}
-        <Button
-          className={styles.add}
-          icon="add"
-          variant="faded"
-          onClick={this.props.newLevel}
-          disabled={this.props.hasNewLevel()}
-          >
-            New Level
-          </Button>
+        {newLevelButton}
       </div>
     );
   }

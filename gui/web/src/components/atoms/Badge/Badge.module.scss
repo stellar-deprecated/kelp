@@ -19,3 +19,9 @@
     composes: _badge;
     background-color: $color-tag-main;
 }
+
+.message {
+    composes: _badge;
+    font-size: 12/16+rem;   
+    background-color: $color-primary;
+}

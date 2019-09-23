@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import styles from './Form.module.scss';
 import grid from '../../_styles/grid.module.scss';
+import Badge from '../../atoms/Badge/Badge';
 import Input from '../../atoms/Input/Input';
 import Label from '../../atoms/Label/Label';
 import SectionTitle from '../../atoms/SectionTitle/SectionTitle';
@@ -397,7 +398,30 @@ class Form extends Component {
 
     const error = this.fetchErrorMessage();
 
-    let saveButtonDisabled = this.props.optionsMetadata == null;
+    let errorSubmitContainer = (
+      <div className={grid.container}>
+        {error}
+        <div className={styles.formFooter}>
+          <Button 
+            icon="add" 
+            size="large" 
+            loading={this.state.isSaving}
+            disabled={this.props.optionsMetadata == null}
+            onClick={this.save}
+            >
+            {this.props.saveText}
+          </Button>
+        </div>
+      </div>
+    );
+    if (this.props.readOnly) {
+      errorSubmitContainer = "";
+    }
+
+    let readOnlyMessage = "";
+    if (this.props.readOnly) {
+      readOnlyMessage = (<Badge type="message" value="read only"/>);
+    }
 
     return (
       <div>
@@ -405,6 +429,7 @@ class Form extends Component {
             <ScreenHeader title={this.props.title} backButtonFn={this.props.router.goBack}>
               {/* <Switch/>
               <Label>Helper Fields</Label> */}
+              {readOnlyMessage}
             </ScreenHeader>
 
             {error}
@@ -417,6 +442,7 @@ class Form extends Component {
                 onChange={(event) => { this.props.onChange("name", event) }}
                 disabled={!this.props.isNew}
                 error={this.getError("name")}
+                readOnly={this.props.readOnly}
                 />
 
               {/* Trader Settings */}
@@ -478,6 +504,7 @@ class Form extends Component {
                   onSecretChange={(event) => { this.props.onChange("trader_config.trading_secret_seed", event) }}
                   onError={() => this.getError("trader_config.trading_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.trading_secret_seed")}
+                  readOnly={this.props.readOnly}
                 />
               </FieldItem>
             </FormSection>
@@ -503,6 +530,7 @@ class Form extends Component {
                         })
                       }}
                       error={this.getError("trader_config.asset_code_a")}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -516,6 +544,7 @@ class Form extends Component {
                       onChange={(event) => { this.props.onChange("trader_config.issuer_a", event) }}
                       disabled={this.props.configData.trader_config.asset_code_a === "XLM"}
                       error={this.getError("trader_config.issuer_a")}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -540,6 +569,7 @@ class Form extends Component {
                         })
                       }}
                       error={this.getError("trader_config.asset_code_b")}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -554,6 +584,7 @@ class Form extends Component {
                       onChange={(event) => { this.props.onChange("trader_config.issuer_b", event) }}
                       disabled={this.props.configData.trader_config.asset_code_b === "XLM"}
                       error={this.getError("trader_config.issuer_b")}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -561,7 +592,7 @@ class Form extends Component {
             </FormSection>
         </div>
 
-        <AdvancedWrapper headerClass={grid.container}>
+        <AdvancedWrapper headerClass={grid.container} isOpened={this.props.readOnly}>
           <div className={grid.container}>
             <FormSection>
               <FieldItem>
@@ -573,6 +604,7 @@ class Form extends Component {
                   onError={() => this.getError("trader_config.source_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.source_secret_seed")}
                   optional={true}
+                  readOnly={this.props.readOnly}
                 />
               </FieldItem>
 
@@ -586,6 +618,7 @@ class Form extends Component {
                   error={this.getError("trader_config.tick_interval_seconds")}
                   triggerError={(message) => { this.addNumericalError("trader_config.tick_interval_seconds", message) }}
                   clearError={() => { this.clearNumericalError("trader_config.tick_interval_seconds") }}
+                  readOnly={this.props.readOnly}
                   />
               </FieldItem>
 
@@ -599,6 +632,7 @@ class Form extends Component {
                   error={this.getError("trader_config.max_tick_delay_millis")}
                   triggerError={(message) => { this.addNumericalError("trader_config.max_tick_delay_millis", message) }}
                   clearError={() => { this.clearNumericalError("trader_config.max_tick_delay_millis") }}
+                  readOnly={this.props.readOnly}
                   />
               </FieldItem>
 
@@ -613,6 +647,7 @@ class Form extends Component {
                       this.props.onChange("trader_config.submit_mode", {target: {value: newValue}});
                     }
                   }
+                  readOnly={this.props.readOnly}
                   />
                 <Label>Maker only mode</Label>  
               </FieldItem>
@@ -626,6 +661,7 @@ class Form extends Component {
                   error={this.getError("trader_config.delete_cycles_threshold")}
                   triggerError={(message) => { this.addNumericalError("trader_config.delete_cycles_threshold", message) }}
                   clearError={() => { this.clearNumericalError("trader_config.delete_cycles_threshold") }}
+                  readOnly={this.props.readOnly}
                   />
               </FieldItem>
 
@@ -640,6 +676,7 @@ class Form extends Component {
                       this.props.onChange("trader_config.fill_tracker_sleep_millis", {target: {value: newValue}});
                     }
                   }
+                  readOnly={this.props.readOnly}
                   />
                 <Label>Fill tracker</Label>
               </FieldItem>
@@ -667,6 +704,7 @@ class Form extends Component {
                       })
                     }
                   }
+                  readOnly={this.props.readOnly}
                   triggerError={(message) => { this.addNumericalError("trader_config.fill_tracker_sleep_millis", message) }}
                   clearError={() => { this.clearNumericalError("trader_config.fill_tracker_sleep_millis") }}
                   />
@@ -678,6 +716,7 @@ class Form extends Component {
                   value={this.props.configData.trader_config.fill_tracker_delete_cycles_threshold}
                   type="int_nonnegative"
                   disabled={this.props.configData.trader_config.fill_tracker_sleep_millis === 0}
+                  readOnly={this.props.readOnly}
                   onChange={(event) => { this.props.onChange("trader_config.fill_tracker_delete_cycles_threshold", event) }}
                   error={this.getError("trader_config.fill_tracker_delete_cycles_threshold")}
                   triggerError={(message) => { this.addNumericalError("trader_config.fill_tracker_delete_cycles_threshold", message) }}
@@ -697,6 +736,7 @@ class Form extends Component {
                         error={this.getError("trader_config.fee.capacity_trigger")}
                         triggerError={(message) => { this.addNumericalError("trader_config.fee.capacity_trigger", message) }}
                         clearError={() => { this.clearNumericalError("trader_config.fee.capacity_trigger") }}
+                        readOnly={this.props.readOnly}
                         />
                     </FieldItem>
                   </div>
@@ -713,6 +753,7 @@ class Form extends Component {
                         error={this.getError("trader_config.fee.percentile")}
                         triggerError={(message) => { this.addNumericalError("trader_config.fee.percentile", message) }}
                         clearError={() => { this.clearNumericalError("trader_config.fee.percentile") }}
+                        readOnly={this.props.readOnly}
                         />
                     </FieldItem>
                     </div>
@@ -729,6 +770,7 @@ class Form extends Component {
                         error={this.getError("trader_config.fee.max_op_fee_stroops")}
                         triggerError={(message) => { this.addNumericalError("trader_config.fee.max_op_fee_stroops", message) }}
                         clearError={() => { this.clearNumericalError("trader_config.fee.max_op_fee_stroops") }}
+                        readOnly={this.props.readOnly}
                         />
                     </FieldItem>
                     </div>
@@ -747,6 +789,7 @@ class Form extends Component {
                       error={this.getError("trader_config.centralized_price_precision_override")}
                       triggerError={(message) => { this.addNumericalError("trader_config.centralized_price_precision_override", message) }}
                       clearError={() => { this.clearNumericalError("trader_config.centralized_price_precision_override") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -761,6 +804,7 @@ class Form extends Component {
                       error={this.getError("trader_config.centralized_volume_precision_override")}
                       triggerError={(message) => { this.addNumericalError("trader_config.centralized_volume_precision_override", message) }}
                       clearError={() => { this.clearNumericalError("trader_config.centralized_volume_precision_override") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -778,6 +822,7 @@ class Form extends Component {
                       error={this.getError("trader_config.centralized_min_base_volume_override")}
                       triggerError={(message) => { this.addNumericalError("trader_config.centralized_min_base_volume_override", message) }}
                       clearError={() => { this.clearNumericalError("trader_config.centralized_min_base_volume_override") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -792,6 +837,7 @@ class Form extends Component {
                       error={this.getError("trader_config.centralized_min_quote_volume_override")}
                       triggerError={(message) => { this.addNumericalError("trader_config.centralized_min_quote_volume_override", message) }}
                       clearError={() => { this.clearNumericalError("trader_config.centralized_min_quote_volume_override") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -825,6 +871,7 @@ class Form extends Component {
                   feed_url={this.props.configData.strategy_config.data_feed_a_url}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("numerator", newPrice)}
+                  readOnly={this.props.readOnly}
                   />
               </FieldItem>
               <FieldItem>
@@ -837,6 +884,7 @@ class Form extends Component {
                   feed_url={this.props.configData.strategy_config.data_feed_b_url}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
+                  readOnly={this.props.readOnly}
                   />
               </FieldItem>
               <FieldItem>
@@ -845,6 +893,7 @@ class Form extends Component {
                   value={this.state.fiatAPIKey}
                   error={this.fiatAPIKeyError()}
                   onChange={(event) => { this.updateFiatAPIKey(event.target.value) }}
+                  readOnly={this.props.readOnly}
                   />
               </FieldItem>
               <PriceFeedFormula
@@ -871,6 +920,7 @@ class Form extends Component {
                     levelErrors={this.state.levelNumericalErrors}
                     addLevelError={(levelIdx, subfield, message) => { this.addLevelError(levelIdx, subfield, message) }}
                     clearLevelError={(levelIdx, subfield) => { this.clearLevelError(levelIdx, subfield) }}
+                    readOnly={this.props.readOnly}
                     />
                 </FieldGroup>
               </div>
@@ -878,7 +928,7 @@ class Form extends Component {
           </FormSection>
         </div>
 
-        <AdvancedWrapper headerClass={grid.container}>
+        <AdvancedWrapper headerClass={grid.container} isOpened={this.props.readOnly}>
           <div className={grid.container}>
             <FormSection>
               <div className={grid.row}>
@@ -893,6 +943,7 @@ class Form extends Component {
                       error={this.getError("strategy_config.price_tolerance")}
                       triggerError={(message) => { this.addNumericalError("strategy_config.price_tolerance", message) }}
                       clearError={() => { this.clearNumericalError("strategy_config.price_tolerance") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -907,6 +958,7 @@ class Form extends Component {
                       error={this.getError("strategy_config.amount_tolerance")}
                       triggerError={(message) => { this.addNumericalError("strategy_config.amount_tolerance", message) }}
                       clearError={() => { this.clearNumericalError("strategy_config.amount_tolerance") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -924,6 +976,7 @@ class Form extends Component {
                       error={this.getError("strategy_config.rate_offset_percent")}
                       triggerError={(message) => { this.addNumericalError("strategy_config.rate_offset_percent", message) }}
                       clearError={() => { this.clearNumericalError("strategy_config.rate_offset_percent") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -937,6 +990,7 @@ class Form extends Component {
                       error={this.getError("strategy_config.rate_offset")}
                       triggerError={(message) => { this.addNumericalError("strategy_config.rate_offset", message) }}
                       clearError={() => { this.clearNumericalError("strategy_config.rate_offset") }}
+                      readOnly={this.props.readOnly}
                       />
                   </FieldItem>
                 </div>
@@ -952,6 +1006,7 @@ class Form extends Component {
                       this.props.onChange("strategy_config.rate_offset_percent_first", {target: {value: newValue}});
                     }
                   }
+                  readOnly={this.props.readOnly}
                   />
                 <Label>Rate Offset Percent first</Label>
               </FieldItem>
@@ -959,21 +1014,7 @@ class Form extends Component {
           </div>
         </AdvancedWrapper>
 
-        <div className={grid.container}>
-          {error}
-          <div className={styles.formFooter}>
-            <Button 
-              icon="add" 
-              size="large" 
-              loading={this.state.isSaving}
-              disabled={saveButtonDisabled}
-              onClick={this.save}
-              >
-              {this.props.saveText}
-            </Button>
-          </div>
-        </div>
-      
+        {errorSubmitContainer}      
       </div>
     );
   }

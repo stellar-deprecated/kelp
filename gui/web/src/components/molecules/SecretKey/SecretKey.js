@@ -16,6 +16,7 @@ class SecretKey extends Component {
     onError: PropTypes.func.isRequired,
     onNewKeyClick: PropTypes.func,
     optional: PropTypes.bool,
+    readOnly: PropTypes.bool,
   };
 
   render() {
@@ -24,10 +25,11 @@ class SecretKey extends Component {
       type="string"
       onChange={(event) => { this.props.onSecretChange(event) }}
       error={this.props.onError()}
+      readOnly={this.props.readOnly}
       />);
 
     let secretElem = inputElem;
-    if (this.props.isTestNet) {
+    if (this.props.isTestNet && !this.props.readOnly) {
       secretElem = (
         <div className={grid.row}>
           <div className={grid.col90p}>

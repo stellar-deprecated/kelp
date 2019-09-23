@@ -1,11 +1,9 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from "react-router-dom";
-
 import styles from './App.module.scss';
 import Header from './components/molecules/Header/Header';
 import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
-import Details from './components/screens/Details/Details';
 // import Welcome from './components/molecules/Welcome/Welcome';
 // import Modal from './components/molecules/Modal/Modal';
 
@@ -75,7 +73,9 @@ class App extends Component {
           <Route exact path="/edit"
             render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
             />
-          <Route path="/details" component={Details} />
+          <Route exact path="/details"
+            render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
+            />
         </Router>
         {/* <Modal 
           type="error"

@@ -18,7 +18,8 @@ class PriceFeedSelector extends Component {
   static propTypes = {
     optionsMetadata: PropTypes.object,
     values: PropTypes.arrayOf(PropTypes.string),
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    readOnly: PropTypes.bool
   };
 
   getOptionItems(optionsObj) {
@@ -83,6 +84,7 @@ class PriceFeedSelector extends Component {
             value={value}
             type="string"
             onChange={(event) => this.changeHandler(idx, event)}
+            readOnly={this.props.readOnly}
             />
         </div>
       );
@@ -95,6 +97,7 @@ class PriceFeedSelector extends Component {
             options={options}
             selected={value}
             onChange={(event) => this.changeHandler(idx, event)}
+            readOnly={this.props.readOnly}
             />
         </div>
       );

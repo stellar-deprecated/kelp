@@ -10,6 +10,7 @@ class FiatFeedAPIKey extends Component {
         value: PropTypes.string.isRequired,
         onChange: PropTypes.func,
         error: PropTypes.string,
+        readOnly: PropTypes.bool,
     };
 
     render() {
@@ -22,6 +23,7 @@ class FiatFeedAPIKey extends Component {
                     onChange={this.props.onChange}
                     error={this.props.error}
                     disabled={!this.props.enabled}
+                    readOnly={this.props.readOnly}
                     />
             </div>
         );

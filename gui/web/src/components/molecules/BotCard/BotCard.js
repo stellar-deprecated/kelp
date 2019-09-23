@@ -70,6 +70,7 @@ class BotCard extends Component {
     this.closeOptions = this.closeOptions.bind(this);
     this.handleClick = this.handleClick.bind(this);
     this.editBot = this.editBot.bind(this);
+    this.showDetails = this.showDetails.bind(this);
     this.showOffers = this.showOffers.bind(this);
     this.showMarket = this.showMarket.bind(this);
     this.callDeleteBot = this.callDeleteBot.bind(this);
@@ -301,6 +302,10 @@ class BotCard extends Component {
     this.props.history.push('/edit?bot_name=' + encodeURIComponent(this.props.name))
   }
 
+  showDetails() {
+    this.props.history.push('/details?bot_name=' + encodeURIComponent(this.props.name))
+  }
+
   showOffers() {
     const tradingAccount = this.state.botInfo.trading_account;
     let urlNetwork = "testnet";
@@ -376,7 +381,7 @@ class BotCard extends Component {
         </div> */}
 
         <div className={styles.firstColumn}>
-          <h2 className={styles.title}>{this.props.name}</h2>
+          <h2 className={styles.title}><span onClick={this.showDetails}>{this.props.name}</span></h2>
           <div className={styles.botDetailsLine}>
             <BotExchangeInfo
               isTestnet={this.state.botInfo.is_testnet}

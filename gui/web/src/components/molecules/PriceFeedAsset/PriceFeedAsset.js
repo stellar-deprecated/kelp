@@ -28,6 +28,7 @@ class PriceFeedAsset extends Component {
     onLoadingPrice: PropTypes.func,
     onNewPrice: PropTypes.func,
     optionsMetadata: PropTypes.object,
+    readOnly: PropTypes.bool,
   };
 
   componentDidMount() {
@@ -122,6 +123,7 @@ class PriceFeedAsset extends Component {
       optionsMetadata={this.props.optionsMetadata}
       values={values}
       onChange={this.props.onChange}
+      readOnly={this.props.readOnly}
       />
     );
     if (!this.props.optionsMetadata) {

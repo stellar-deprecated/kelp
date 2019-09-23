@@ -91,10 +91,10 @@ $small-spacing: 3px;
   font-weight: 400;
   margin: 0;
   margin-bottom: 0.3rem;
-  // cursor: pointer;
-  // &:hover {
-  //   text-decoration: underline;
-  // }
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .botDetailsLine {

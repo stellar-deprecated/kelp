@@ -190,20 +190,22 @@ class NewBot extends Component {
         saveText="Create Bot"
         errorResp={this.state.errorResp}
         />);
-    } else if (this.props.location.pathname !== "/edit") {
+    }
+    
+    if (this.props.location.pathname !== "/edit" && this.props.location.pathname !== "/details") {
       console.log("invalid path: " + this.props.location.pathname);
       return "";
     }
 
     if (this.props.location.search.length === 0) {
-      console.log("no search params provided to '/edit' route");
+      console.log("no search params provided to '" + this.props.location.pathname + "' route");
       return "";
     }
 
     let searchParams = new URLSearchParams(this.props.location.search.substring(1));
     let botNameEncoded = searchParams.get("bot_name");
     if (!botNameEncoded) {
-      console.log("no botName param provided to '/edit' route");
+      console.log("no botName param provided to '" + this.props.location.pathname + "' route");
       return "";
     }
 
@@ -212,17 +214,24 @@ class NewBot extends Component {
       this.loadBotConfigData(botName);
       return (<div>Fetching config file for bot: {botName}</div>);
     }
+
+    const isDetails = this.props.location.pathname === "/details";
+    let formTitle = "Edit Bot";
+    if (isDetails) {
+      formTitle = "Bot Details";
+    }
     return (<Form 
       router={this.props.history}
       isNew={false}
       baseUrl={this.props.baseUrl}
-      title="Edit Bot"
+      title={formTitle}
       optionsMetadata={this.state.optionsMetadata}
       onChange={this.onChangeForm}
       configData={this.state.configData}
       saveFn={this.saveEdit}
       saveText="Save Bot Updates"
       errorResp={this.state.errorResp}
+      readOnly={isDetails}
       />);
   }
 }
