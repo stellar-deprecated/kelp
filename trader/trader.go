@@ -106,8 +106,8 @@ func (t *Trader) Start() {
 	for {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
-			t.update()
-			if t.fixedIterations != nil {
+			success := t.update()
+			if t.fixedIterations != nil && success {
 				*t.fixedIterations = *t.fixedIterations - 1
 				if *t.fixedIterations <= 0 {
 					log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
@@ -160,7 +160,8 @@ func (t *Trader) deleteAllOffers() {
 }
 
 // time to update the order book and possibly readjust the offers
-func (t *Trader) update() {
+// returns true if the update was successful, otherwise false
+func (t *Trader) update() bool {
 	var e error
 	t.load()
 	t.loadExistingOffers()
@@ -181,7 +182,7 @@ func (t *Trader) update() {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
-		return
+		return false
 	}
 
 	// strategy has a chance to set any state it needs
@@ -189,7 +190,7 @@ func (t *Trader) update() {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
-		return
+		return false
 	}
 
 	// delete excess offers
@@ -201,7 +202,7 @@ func (t *Trader) update() {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
-			return
+			return false
 		}
 	}
 
@@ -215,7 +216,7 @@ func (t *Trader) update() {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
-		return
+		return false
 	}
 
 	opsOld, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
@@ -226,7 +227,7 @@ func (t *Trader) update() {
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
 		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers()
-		return
+		return false
 	}
 
 	ops := api.ConvertTM2Operation(opsOld)
@@ -235,7 +236,7 @@ func (t *Trader) update() {
 		if e != nil {
 			log.Printf("error in filter index %d: %s\n", i, e)
 			t.deleteAllOffers()
-			return
+			return false
 		}
 	}
 
@@ -245,7 +246,7 @@ func (t *Trader) update() {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
-			return
+			return false
 		}
 	}
 
@@ -253,11 +254,12 @@ func (t *Trader) update() {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
-		return
+		return false
 	}
 
 	// reset deleteCycles on every successful run
 	t.deleteCycles = 0
+	return true
 }
 
 func (t *Trader) load() {
