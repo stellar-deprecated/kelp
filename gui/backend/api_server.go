@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
@@ -16,21 +15,31 @@ import (
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	dirPath               string
-	binPath               string
-	configsDir            string
-	logsDir               string
-	kos                   *kelpos.KelpOS
-	horizonTestnetURI     string
-	horizonPubnetURI      string
-	ccxtRestUrl           string
-	apiTestNet            *horizonclient.Client
-	apiPubNet             *horizonclient.Client
+	dirPath           string
+	binPath           string
+	configsDir        string
+	logsDir           string
+	kos               *kelpos.KelpOS
+	horizonTestnetURI string
+	horizonPubnetURI  string
+	ccxtRestUrl       string
+	apiTestNet        *horizonclient.Client
+	apiPubNet         *horizonclient.Client
+	noHeaders         bool
+
 	cachedOptionsMetadata metadata
 }
 
 // MakeAPIServer is a factory method
-func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetURI string, ccxtRestUrl string) (*APIServer, error) {
+func MakeAPIServer(
+	kos *kelpos.KelpOS,
+	horizonTestnetURI string,
+	apiTestNet *horizonclient.Client,
+	horizonPubnetURI string,
+	apiPubNet *horizonclient.Client,
+	ccxtRestUrl string,
+	noHeaders bool,
+) (*APIServer, error) {
 	binPath, e := filepath.Abs(os.Args[0])
 	if e != nil {
 		return nil, fmt.Errorf("could not get binPath of currently running binary: %s", e)
@@ -39,20 +48,6 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 	dirPath := filepath.Dir(binPath)
 	configsDir := dirPath + "/ops/configs"
 	logsDir := dirPath + "/ops/logs"
-
-	horizonTestnetURI = strings.TrimSuffix(horizonTestnetURI, "/")
-	horizonPubnetURI = strings.TrimSuffix(horizonPubnetURI, "/")
-	log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
-	log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
-	log.Printf("using ccxtRestUrl: %s\n", ccxtRestUrl)
-	apiTestNet := &horizonclient.Client{
-		HorizonURL: horizonTestnetURI,
-		HTTP:       http.DefaultClient,
-	}
-	apiPubNet := &horizonclient.Client{
-		HorizonURL: horizonPubnetURI,
-		HTTP:       http.DefaultClient,
-	}
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
@@ -70,6 +65,7 @@ func MakeAPIServer(kos *kelpos.KelpOS, horizonTestnetURI string, horizonPubnetUR
 		ccxtRestUrl:           ccxtRestUrl,
 		apiTestNet:            apiTestNet,
 		apiPubNet:             apiPubNet,
+		noHeaders:             noHeaders,
 		cachedOptionsMetadata: optionsMetadata,
 	}, nil
 }

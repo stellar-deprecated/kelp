@@ -13,9 +13,11 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/prefs"
 )
 
 var serverCmd = &cobra.Command{
@@ -29,6 +31,7 @@ type serverInputs struct {
 	devAPIPort        *uint16
 	horizonTestnetURI *string
 	horizonPubnetURI  *string
+	noHeaders         *bool
 }
 
 func init() {
@@ -38,6 +41,7 @@ func init() {
 	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
 	options.horizonTestnetURI = serverCmd.Flags().String("horizon-testnet-uri", "https://horizon-testnet.stellar.org", "URI to use for the horizon instance connected to the Stellar Test Network (must contain the word 'test')")
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
+	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
@@ -51,7 +55,37 @@ func init() {
 		}
 
 		kos := kelpos.GetKelpOS()
-		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, *options.horizonPubnetURI, *rootCcxtRestURL)
+		horizonTestnetURI := strings.TrimSuffix(*options.horizonTestnetURI, "/")
+		horizonPubnetURI := strings.TrimSuffix(*options.horizonPubnetURI, "/")
+		log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
+		log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
+		log.Printf("using ccxtRestUrl: %s\n", *rootCcxtRestURL)
+		apiTestNet := &horizonclient.Client{
+			HorizonURL: horizonTestnetURI,
+			HTTP:       http.DefaultClient,
+		}
+		apiPubNet := &horizonclient.Client{
+			HorizonURL: horizonPubnetURI,
+			HTTP:       http.DefaultClient,
+		}
+		if !*options.noHeaders {
+			apiTestNet.AppName = "kelp-ui"
+			apiTestNet.AppVersion = version
+			apiPubNet.AppName = "kelp-ui"
+			apiPubNet.AppVersion = version
+
+			p := prefs.Make(prefsFilename)
+			if p.FirstTime() {
+				log.Printf("Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.\n")
+				e := p.SetNotFirstTime()
+				if e != nil {
+					log.Println("")
+					log.Printf("unable to create preferences file: %s", e)
+					// we can still proceed with this error
+				}
+			}
+		}
+		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, apiTestNet, *options.horizonPubnetURI, apiPubNet, *rootCcxtRestURL, *options.noHeaders)
 		if e != nil {
 			panic(e)
 		}

@@ -74,6 +74,7 @@ type inputs struct {
 	logPrefix                     *string
 	fixedIterations               *uint64
 	noHeaders                     *bool
+	ui                            *bool
 }
 
 func validateCliParams(l logger.Logger, options inputs) {
@@ -130,11 +131,13 @@ func init() {
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
+	options.ui = tradeCmd.Flags().Bool("ui", false, "indicates a bot that is started from the Kelp UI server")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
 	hiddenFlag("operationalBuffer")
 	hiddenFlag("operationalBufferNonNativePct")
+	hiddenFlag("ui")
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
@@ -402,6 +405,9 @@ func runTradeCmd(options inputs) {
 	}
 	if !*options.noHeaders {
 		client.AppName = "kelp"
+		if *options.ui {
+			client.AppName = "kelp-ui"
+		}
 		client.AppVersion = version
 
 		p := prefs.Make(prefsFilename)
