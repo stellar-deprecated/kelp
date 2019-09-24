@@ -1,5 +1,5 @@
-hash: fea1924a14461af263f5435ea1fc0038870ad2b82b4fe6dec3e679cfea5b5bc9
-updated: 2019-08-30T05:39:34.749230033-07:00
+hash: fb77a709f1ca504db2e9abfa3c3191f019c8f1f973bf720d97a8e5afb602579e
+updated: 2019-09-23T17:55:26.021649719-07:00
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
@@ -68,6 +68,8 @@ imports:
   version: 635c5ce271490fba94880e62cde4eea3c1c184b9
 - name: github.com/pelletier/go-toml
   version: 728039f679cbcd4f6a54e080d2219a4c4928c546
+- name: github.com/pkg/browser
+  version: 0a3d74bf9ce488f035cf5bc36f753a711bc74334
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib

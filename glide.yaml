@@ -45,3 +45,5 @@ import:
   version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069
 - package: github.com/rs/cors
   version: v1.6.0
+- package: github.com/pkg/browser
+  version: 0a3d74bf9ce488f035cf5bc36f753a711bc74334

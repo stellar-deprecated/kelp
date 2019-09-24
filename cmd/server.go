@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizonclient"
@@ -116,6 +117,16 @@ func init() {
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
+		if env == envRelease {
+			go func() {
+				time.Sleep(2500 * time.Millisecond)
+				url := fmt.Sprintf("http://localhost:%d", *options.port)
+				eBrowser := browser.OpenURL(url)
+				if eBrowser != nil {
+					log.Fatal(eBrowser)
+				}
+			}()
+		}
 		e = http.ListenAndServe(portString, r)
 		log.Fatal(e)
 	}
