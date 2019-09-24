@@ -21,6 +21,8 @@ import (
 	"github.com/stellar/kelp/support/prefs"
 )
 
+const urlOpenDelayMillis = 1500
+
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Serves the Kelp GUI",
@@ -117,16 +119,17 @@ func init() {
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
-		if env == envRelease {
-			go func() {
-				time.Sleep(2500 * time.Millisecond)
-				url := fmt.Sprintf("http://localhost:%d", *options.port)
-				eBrowser := browser.OpenURL(url)
-				if eBrowser != nil {
-					log.Fatal(eBrowser)
-				}
-			}()
-		}
+		// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn)
+		go func() {
+			url := fmt.Sprintf("http://localhost:%d", *options.port)
+			log.Printf("A browser window will open up automatically to %s\n", url)
+			time.Sleep(urlOpenDelayMillis * time.Millisecond)
+
+			eBrowser := browser.OpenURL(url)
+			if eBrowser != nil {
+				log.Fatal(eBrowser)
+			}
+		}()
 		e = http.ListenAndServe(portString, r)
 		log.Fatal(e)
 	}
