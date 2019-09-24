@@ -1,5 +1,5 @@
-hash: fb77a709f1ca504db2e9abfa3c3191f019c8f1f973bf720d97a8e5afb602579e
-updated: 2019-09-23T17:55:26.021649719-07:00
+hash: b11aaf422e8a1d0e48af7ee8941c0434adede6590721cdd3683127f0aa475724
+updated: 2019-09-23T18:58:27.181155207-07:00
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
@@ -7,6 +7,21 @@ imports:
   - compute/metadata
 - name: github.com/asaskevich/govalidator
   version: f61b66f89f4a311bef65f13e575bcf1a2ffadda6
+- name: github.com/asticode/go-astilectron
+  version: 8e68f812e8a2dd6655af42a8d6bc44856dd172be
+- name: github.com/asticode/go-astilog
+  version: 4cf33948c164d333ae5af926301832f00bc47767
+- name: github.com/asticode/go-astitools
+  version: b66b923a0c4390c5b8e01126dd315a082ffad5cc
+  subpackages:
+  - archive
+  - context
+  - exec
+  - http
+  - io
+  - os
+  - regexp
+  - url
 - name: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
 - name: github.com/BurntSushi/toml
@@ -45,6 +60,8 @@ imports:
   - json/token
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/julienschmidt/httprouter
+  version: 667c1dbb44f3b5528b874c3c9071b23702e3dd0f
 - name: github.com/kr/session
   version: 6f756089c21ec9a4ceb14473bf90d5e3a3e9e303
 - name: github.com/lechengfan/googleauth
@@ -58,6 +75,10 @@ imports:
   version: 7757cc9fdb852f7579b24170bcacda2c7471bb6a
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/mattn/go-colorable
+  version: 388941e3ea99c461d2bc2747eaf27741b6dda096
+- name: github.com/mattn/go-isatty
+  version: bf9a1dea1961e1d831824fb135332bfb8c10e8b8
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nikhilsaraf/go-tools

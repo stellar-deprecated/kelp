@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	astilectron "github.com/asticode/go-astilectron"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizonclient"
@@ -124,11 +124,7 @@ func init() {
 			url := fmt.Sprintf("http://localhost:%d", *options.port)
 			log.Printf("A browser window will open up automatically to %s\n", url)
 			time.Sleep(urlOpenDelayMillis * time.Millisecond)
-
-			eBrowser := browser.OpenURL(url)
-			if eBrowser != nil {
-				log.Fatal(eBrowser)
-			}
+			openBrowser(url)
 		}()
 		e = http.ListenAndServe(portString, r)
 		log.Fatal(e)
@@ -191,4 +187,28 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 
 	log.Printf("... finished generating contents of gui/web/build\n")
 	log.Println()
+}
+
+func openBrowser(url string) {
+	var a, e = astilectron.New(astilectron.Options{
+		AppName: "Kelp",
+	})
+	if e != nil {
+		log.Fatal(e)
+	}
+	defer a.Close()
+
+	e = a.Start()
+	if e != nil {
+		log.Fatal(e)
+	}
+
+	w, e := a.NewWindow(url, &astilectron.WindowOptions{
+		Center: astilectron.PtrBool(true),
+		Width:  astilectron.PtrInt(1280),
+		Height: astilectron.PtrInt(960),
+	})
+	w.Create()
+
+	a.Wait()
 }

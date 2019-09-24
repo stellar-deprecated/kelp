@@ -47,3 +47,5 @@ import:
   version: v1.6.0
 - package: github.com/pkg/browser
   version: 0a3d74bf9ce488f035cf5bc36f753a711bc74334
+- package: github.com/asticode/go-astilectron
+  version: 8e68f812e8a2dd6655af42a8d6bc44856dd172be
