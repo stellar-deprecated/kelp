@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -45,10 +44,7 @@ var RootCmd = &cobra.Command{
                                                                             ` + version + `
 `
 		fmt.Println(intro)
-		e := ccmd.Help()
-		if e != nil {
-			log.Fatal(e)
-		}
+		serverCmd.Run(ccmd, args)
 	},
 }
 
@@ -60,9 +56,7 @@ func init() {
 	rootCcxtRestURL = RootCmd.PersistentFlags().String("ccxt-rest-url", "", "URL to use for the CCXT-rest API. Takes precendence over the CCXT_REST_URL param set in the botConfg file for the trade command and passed as a parameter into the Kelp subprocesses started by the GUI (default URL is https://localhost:3000)")
 
 	RootCmd.AddCommand(tradeCmd)
-	if env == envDev {
-		RootCmd.AddCommand(serverCmd)
-	}
+	RootCmd.AddCommand(serverCmd)
 	RootCmd.AddCommand(strategiesCmd)
 	RootCmd.AddCommand(exchanagesCmd)
 	RootCmd.AddCommand(terminateCmd)
