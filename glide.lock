@@ -1,14 +1,26 @@
-hash: b11aaf422e8a1d0e48af7ee8941c0434adede6590721cdd3683127f0aa475724
-updated: 2019-09-23T18:58:27.181155207-07:00
+hash: 2dedca773f0db7201129d0a87d9fe4401b7d5df746c30f1e1142a2f8c81d0f00
+updated: 2019-10-01T16:52:25.833636371-07:00
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
   subpackages:
   - compute/metadata
+- name: github.com/akavel/rsrc
+  version: b9f6b78f792dc3dddaf295854d968f5b6fdcdba1
+  subpackages:
+  - binutil
+  - coff
+  - ico
+  - internal
+  - rsrc
 - name: github.com/asaskevich/govalidator
   version: f61b66f89f4a311bef65f13e575bcf1a2ffadda6
 - name: github.com/asticode/go-astilectron
   version: 8e68f812e8a2dd6655af42a8d6bc44856dd172be
+- name: github.com/asticode/go-astilectron-bootstrap
+  version: 25b8572859996696903f9417598ebc94d5d61035
+- name: github.com/asticode/go-astilectron-bundler
+  version: 155c2a10bbb1791fbafe89a9b64be05c64f16c81
 - name: github.com/asticode/go-astilog
   version: 4cf33948c164d333ae5af926301832f00bc47767
 - name: github.com/asticode/go-astitools
@@ -20,8 +32,11 @@ imports:
   - http
   - io
   - os
+  - ptr
   - regexp
   - url
+- name: github.com/asticode/go-bindata
+  version: a0ff2567cfb70903282db057e799fd826784d41d
 - name: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
 - name: github.com/BurntSushi/toml
@@ -99,6 +114,8 @@ imports:
   - difflib
 - name: github.com/rs/cors
   version: 9a47f48565a795472d43519dd49aac781f3034fb
+- name: github.com/sam-kamerer/go-plister
+  version: 30eae28cab5bef0e3c6876f2af87a5127b30c12c
 - name: github.com/segmentio/go-loggly
   version: 7a70408c3650c37ba8e58a934f686d0c44cb9b58
 - name: github.com/shurcooL/httpfs
