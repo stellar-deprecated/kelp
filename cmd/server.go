@@ -9,7 +9,8 @@ import (
 	"strings"
 	"time"
 
-	astilectron "github.com/asticode/go-astilectron"
+	"github.com/asticode/go-astilectron"
+	"github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
@@ -190,25 +191,22 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 }
 
 func openBrowser(url string) {
-	var a, e = astilectron.New(astilectron.Options{
-		AppName: "Kelp",
+	e := bootstrap.Run(bootstrap.Options{
+		AstilectronOptions: astilectron.Options{
+			AppName: "Kelp",
+		},
+		Debug: false,
+		Windows: []*bootstrap.Window{&bootstrap.Window{
+			Homepage: url,
+			Options: &astilectron.WindowOptions{
+				Center: astilectron.PtrBool(true),
+				Width:  astilectron.PtrInt(1280),
+				Height: astilectron.PtrInt(960),
+			},
+		}},
 	})
+
 	if e != nil {
 		log.Fatal(e)
 	}
-	defer a.Close()
-
-	e = a.Start()
-	if e != nil {
-		log.Fatal(e)
-	}
-
-	w, e := a.NewWindow(url, &astilectron.WindowOptions{
-		Center: astilectron.PtrBool(true),
-		Width:  astilectron.PtrInt(1280),
-		Height: astilectron.PtrInt(960),
-	})
-	w.Create()
-
-	a.Wait()
 }
