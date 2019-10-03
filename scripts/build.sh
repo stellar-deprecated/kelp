@@ -5,6 +5,7 @@ function usage() {
     echo ""
     echo "Flags:"
     echo "    -d, --deploy        prepare tar archives in build/, only works on a tagged commit in the format v1.0.0 or v1.0.0-rc1"
+    echo "    -t, --test-deploy   test prepare tar archives in build/ for your native platform only"
     echo "    -h, --help          show this help info"
     exit 1
 }
@@ -40,14 +41,16 @@ then
 fi
 
 if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
-    MODE=deploy
     ENV=release
+    IS_TEST_MODE=0
+elif [[ ($# -eq 1 && ("$1" == "-t" || "$1" == "--test-deploy")) ]]; then
+    ENV=release
+    IS_TEST_MODE=1
 elif [[ ($# -eq 1 && ("$1" == "-h" || "$1" == "--help")) ]]; then
     usage
 elif [[ $# -eq 1 ]]; then
     usage
 else
-    MODE=build
     ENV=dev
 fi
 
@@ -57,15 +60,57 @@ GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS="-X github.com/stellar/kelp/cmd.version=$VERSION_STRING -X github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH -X github.com/stellar/kelp/cmd.gitHash=$GIT_HASH -X github.com/stellar/kelp/cmd.buildDate=$DATE -X github.com/stellar/kelp/cmd.env=$ENV"
+LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV")
+
+LDFLAGS=""
+LDFLAGS_UI=""
+for FLAG in "${LDFLAGS_ARRAY[@]}"
+do
+    LDFLAGS="$LDFLAGS -X $FLAG"
+    LDFLAGS_UI="$LDFLAGS_UI -ldflags X:$FLAG"
+done
 
 echo "version: $VERSION_STRING"
 echo "git branch: $GIT_BRANCH"
 echo "git hash: $GIT_HASH"
 echo "build date: $DATE"
 echo "env: $ENV"
+echo "LDFLAGS: $LDFLAGS"
 
-if [[ $MODE == "build" ]]
+if [[ $ENV == "release" ]]
+then
+    echo "LDFLAGS_UI: $LDFLAGS_UI"
+
+    if [[ IS_TEST_MODE -eq 0 ]]
+    then
+        if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
+        then
+            echo "error: the git commit needs to be tagged with a valid version to prepare archives, see $0 -h for more information"
+            exit 1
+        fi
+        EXPECTED_GIT_RELEASE_BRANCH="release/$(echo $VERSION | cut -d '.' -f1,2).x"
+        if ! [[ ("$GIT_BRANCH" == "$EXPECTED_GIT_RELEASE_BRANCH") || ("$GIT_BRANCH" == "master") ]]
+        then
+            echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
+            exit 1
+        fi
+    fi
+fi
+
+echo ""
+echo "embedding contents of gui/web/build into a .go file (env=$ENV) ..."
+go run ./scripts/fs_bin_gen.go -env $ENV
+BUILD_RESULT=$?
+if [[ $BUILD_RESULT -ne 0 ]]
+then
+    echo ""
+    echo "build failed with error code $BUILD_RESULT"
+    exit $BUILD_RESULT
+fi
+echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
+echo ""
+
+if [[ $ENV == "dev" ]]
 then
     echo "GOOS: $(go env GOOS)"
     echo "GOARCH: $(go env GOARCH)"
@@ -85,7 +130,7 @@ then
     mkdir -p bin
 
     echo -n "compiling ... "
-    go build -tags dev -ldflags "$LDFLAGS" -o $OUTFILE
+    go build -ldflags "$LDFLAGS" -o $OUTFILE
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -101,25 +146,8 @@ fi
 # else, we are in deploy mode
 echo ""
 
-if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
-then
-    echo "error: the git commit needs to be tagged with a valid version to prepare archives, see $0 -h for more information"
-    exit 1
-fi
-EXPECTED_GIT_RELEASE_BRANCH="release/$(echo $VERSION | cut -d '.' -f1,2).x"
-if ! [[ ("$GIT_BRANCH" == "$EXPECTED_GIT_RELEASE_BRANCH") || ("$GIT_BRANCH" == "master") ]]
-then
-    echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
-    exit 1
-fi
-
 install_web_dependencies
 generate_static_web_files
-
-echo "embedding contents of gui/web/build into a .go file ..."
-go run ./scripts/fs_bin_gen.go
-echo "... finished embedding contents of gui/web/build into a .go file"
-echo ""
 
 ARCHIVE_DIR=build/$DATE
 ARCHIVE_FOLDER_NAME=kelp-$VERSION
@@ -129,6 +157,11 @@ OUTFILE=$ARCHIVE_DIR_SOURCE/kelp
 cp examples/configs/trader/* $ARCHIVE_DIR_SOURCE/
 
 PLATFORM_ARGS=("darwin amd64" "linux amd64" "windows amd64" "linux arm64" "linux arm 5" "linux arm 6" "linux arm 7")
+if [[ IS_TEST_MODE -eq 1 ]]
+then
+    PLATFORM_ARGS=("$(go env GOOS) $(go env GOARCH)")
+fi
+
 for args in "${PLATFORM_ARGS[@]}"
 do
     # extract vars
@@ -145,7 +178,7 @@ do
     fi
 
     # compile
-    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -tags release -ldflags "$LDFLAGS" -o $BINARY
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
     BUILD_RESULT=$?
     if [[ $BUILD_RESULT -ne 0 ]]
     then
@@ -169,6 +202,10 @@ do
         exit $TAR_RESULT
     fi
     echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME}"
+
+    echo "building UI using astilectron-bundler ... "
+    astilectron-bundler -v -o bin/ui/ $LDFLAGS_UI
+    echo "successful"
 
     echo -n "cleaning up binary: $BINARY ... "
     rm $BINARY

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/asticode/go-astilectron"
-	"github.com/asticode/go-astilectron-bootstrap"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
@@ -127,8 +127,16 @@ func init() {
 			time.Sleep(urlOpenDelayMillis * time.Millisecond)
 			openBrowser(url)
 		}()
-		e = http.ListenAndServe(portString, r)
-		log.Fatal(e)
+
+		if env == envDev {
+			e = http.ListenAndServe(portString, r)
+			if e != nil {
+				log.Fatal(e)
+			}
+		} else {
+			_ = http.ListenAndServe(portString, r)
+			time.Sleep(10 * time.Minute)
+		}
 	}
 }
 
@@ -192,8 +200,11 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 
 func openBrowser(url string) {
 	e := bootstrap.Run(bootstrap.Options{
+		// Asset:         Asset,
+		// RestoreAssets: RestoreAssets,
 		AstilectronOptions: astilectron.Options{
-			AppName: "Kelp",
+			AppName:            "Kelp",
+			AppIconDefaultPath: "resources/kelp-icon@2x.png",
 		},
 		Debug: false,
 		Windows: []*bootstrap.Window{&bootstrap.Window{

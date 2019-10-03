@@ -23,7 +23,7 @@ commands:
     steps:
       - run:
           name: Run Kelp tests
-          command: go test -tags dev --short ./...
+          command: go test --short ./...
 
   build_kelp:
     steps:
