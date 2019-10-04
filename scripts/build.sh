@@ -34,11 +34,23 @@ function generate_static_web_files() {
     echo ""
 }
 
+# takes in the exit code ($?) of the previous command as the input
+function check_build_result() {
+    if [[ $1 -ne 0 ]]
+    then
+        echo ""
+        echo "build failed with error code $1"
+        exit $1
+    fi
+}
+
 if [[ ($# -gt 1 || $(basename $("pwd")) != "kelp") ]]
 then
     echo "need to invoke from the root 'kelp' directory"
     exit 1
 fi
+
+KELP=`pwd`
 
 if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
     ENV=release
@@ -97,16 +109,17 @@ then
     fi
 fi
 
+install_web_dependencies
+if [[ $ENV == "release" ]]
+then
+    # needed in the next step (embed gui/web/build) if generating filesystem binary for the GUI
+    generate_static_web_files
+fi
+
 echo ""
 echo "embedding contents of gui/web/build into a .go file (env=$ENV) ..."
 go run ./scripts/fs_bin_gen.go -env $ENV
-BUILD_RESULT=$?
-if [[ $BUILD_RESULT -ne 0 ]]
-then
-    echo ""
-    echo "build failed with error code $BUILD_RESULT"
-    exit $BUILD_RESULT
-fi
+check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
 
@@ -115,8 +128,6 @@ then
     echo "GOOS: $(go env GOOS)"
     echo "GOARCH: $(go env GOARCH)"
     echo ""
-
-    install_web_dependencies
 
     # explicit check for windows
     EXTENSION=""
@@ -131,13 +142,7 @@ then
 
     echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
-    BUILD_RESULT=$?
-    if [[ $BUILD_RESULT -ne 0 ]]
-    then
-        echo ""
-        echo "build failed with error code $BUILD_RESULT"
-        exit $BUILD_RESULT
-    fi
+    check_build_result $?
     echo "successful: $OUTFILE"
     echo ""
     echo "BUILD SUCCESSFUL"
@@ -146,22 +151,18 @@ fi
 # else, we are in deploy mode
 echo ""
 
-install_web_dependencies
-generate_static_web_files
-
 ARCHIVE_DIR=build/$DATE
+
 ARCHIVE_FOLDER_NAME=kelp-$VERSION
 ARCHIVE_DIR_SOURCE=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME
 mkdir -p $ARCHIVE_DIR_SOURCE
 OUTFILE=$ARCHIVE_DIR_SOURCE/kelp
 cp examples/configs/trader/* $ARCHIVE_DIR_SOURCE/
-
 PLATFORM_ARGS=("darwin amd64" "linux amd64" "windows amd64" "linux arm64" "linux arm 5" "linux arm 6" "linux arm 7")
 if [[ IS_TEST_MODE -eq 1 ]]
 then
     PLATFORM_ARGS=("$(go env GOOS) $(go env GOARCH)")
 fi
-
 for args in "${PLATFORM_ARGS[@]}"
 do
     # extract vars
@@ -179,13 +180,7 @@ do
 
     # compile
     env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
-    BUILD_RESULT=$?
-    if [[ $BUILD_RESULT -ne 0 ]]
-    then
-        echo ""
-        echo "build failed with error code $BUILD_RESULT"
-        exit $BUILD_RESULT
-    fi
+    check_build_result $?
     echo "successful"
 
     # archive
@@ -194,7 +189,7 @@ do
     echo -n "archiving binary file ... "
     tar cf ${ARCHIVE_FILENAME} $ARCHIVE_FOLDER_NAME
     TAR_RESULT=$?
-    cd ../../
+    cd $KELP
     if [[ $TAR_RESULT -ne 0 ]]
     then
         echo ""
@@ -203,22 +198,62 @@ do
     fi
     echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME}"
 
-    echo "building UI using astilectron-bundler ... "
-    astilectron-bundler -v -o bin/ui/ $LDFLAGS_UI
-    echo "successful"
-
     echo -n "cleaning up binary: $BINARY ... "
     rm $BINARY
     echo "successful"
     echo ""
 done
-
 echo -n "cleaning up kelp folder: $ARCHIVE_DIR_SOURCE/ ... "
 cd $ARCHIVE_DIR
 rm $ARCHIVE_FOLDER_NAME/*
 rmdir $ARCHIVE_FOLDER_NAME
-cd ../../
+cd $KELP
 echo "done"
+echo ""
+echo ""
+
+ARCHIVE_FOLDER_NAME_UI=kelp_ui-$VERSION
+ARCHIVE_DIR_SOURCE_UI=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME_UI
+PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
+if [[ IS_TEST_MODE -eq 1 ]]
+then
+    PLATFORM_ARGS_UI=("$(go env GOOS)")
+fi
+for args in "${PLATFORM_ARGS_UI[@]}"
+do
+    # extract vars
+    if [[ IS_TEST_MODE -eq 1 ]]
+    then
+        GOOS=$args
+        unset FLAG
+    else
+        GOOS=`echo $args | cut -d' ' -f1 | tr -d ' '`
+        FLAG=`echo $args | cut -d' ' -f2 | tr -d ' '`
+    fi
+    GOARCH=amd64
+    unset GOARM
+
+    # compile
+    echo -n "compiling UI for (GOOS=$GOOS, GOARCH=$GOARCH, FLAG=$FLAG) ... "
+    astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
+    check_build_result $?
+    echo "successful"
+
+    # archive
+    ARCHIVE_FILENAME_UI=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM.tar
+    cd $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH
+    check_build_result $?
+    echo -n "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH as $ARCHIVE_FILENAME_UI ... "
+    tar cf "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" .
+    check_build_result $?
+    cd $KELP
+    echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME_UI}"
+
+    echo -n "cleaning up UI: $ARCHIVE_DIR_SOURCE_UI ... "
+    rm -rf $ARCHIVE_DIR_SOURCE_UI
+    echo "successful"
+    echo ""
+done
 
 echo ""
 echo "BUILD SUCCESSFUL"
