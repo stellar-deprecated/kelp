@@ -21,5 +21,5 @@ rm -vrf bin
 rm -vrf build
 delete_large_dir gui/web/build
 delete_large_dir gui/web/node_modules
-rm -vf gui/filesystem_vfsdata_release.go
+rm -vf gui/filesystem_vfsdata.go
 echo "... done"
