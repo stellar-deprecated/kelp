@@ -109,6 +109,8 @@ then
     fi
 fi
 
+echo ""
+echo ""
 install_web_dependencies
 if [[ $ENV == "release" ]]
 then
@@ -240,11 +242,13 @@ do
     echo "successful"
 
     # archive
-    ARCHIVE_FILENAME_UI=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM.tar
-    cd $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH
+    ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
+    ARCHIVE_FILENAME_UI=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM.zip
+    mv $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME
     check_build_result $?
-    echo -n "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH as $ARCHIVE_FILENAME_UI ... "
-    tar cf "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" .
+    cd $ARCHIVE_DIR_SOURCE_UI
+    echo -n "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI ... "
+    zip -rq "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" $ARCHIVE_FOLDER_NAME
     check_build_result $?
     cd $KELP
     echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME_UI}"
