@@ -101,11 +101,11 @@ func init() {
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
 			runWithYarn(kos, options)
 			return
-		} else {
-			options.devAPIPort = nil
-			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
-			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 		}
+
+		options.devAPIPort = nil
+		// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
+		os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 
 		if env == envDev {
 			checkHomeDir()
@@ -120,7 +120,7 @@ func init() {
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
-		// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn)
+		// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
 		go func() {
 			url := fmt.Sprintf("http://localhost:%d", *options.port)
 			log.Printf("A browser window will open up automatically to %s\n", url)
@@ -135,7 +135,6 @@ func init() {
 			}
 		} else {
 			_ = http.ListenAndServe(portString, r)
-			time.Sleep(10 * time.Minute)
 		}
 	}
 }
