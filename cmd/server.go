@@ -209,14 +209,37 @@ func openBrowser(url string) {
 		Windows: []*bootstrap.Window{&bootstrap.Window{
 			Homepage: url,
 			Options: &astilectron.WindowOptions{
-				Center: astilectron.PtrBool(true),
-				Width:  astilectron.PtrInt(1280),
-				Height: astilectron.PtrInt(960),
+				Center:   astilectron.PtrBool(true),
+				Width:    astilectron.PtrInt(1280),
+				Height:   astilectron.PtrInt(960),
+				Closable: astilectron.PtrBool(false),
 			},
 		}},
+		TrayOptions: &astilectron.TrayOptions{
+			Image:   astilectron.PtrStr("../resources/kelp-icon@1-8x.png"),
+			Tooltip: astilectron.PtrStr("Tray Tooltip"),
+		},
+		TrayMenuOptions: []*astilectron.MenuItemOptions{
+			&astilectron.MenuItemOptions{
+				Label:   astilectron.PtrStr("Quit"),
+				Visible: astilectron.PtrBool(true),
+				Enabled: astilectron.PtrBool(true),
+				OnClick: astilectron.Listener(func(e astilectron.Event) (deleteListener bool) {
+					quit()
+					return false
+				}),
+			},
+		},
 	})
 
 	if e != nil {
 		log.Fatal(e)
 	}
+
+	quit()
+}
+
+func quit() {
+	log.Printf("quitting...")
+	os.Exit(0)
 }
