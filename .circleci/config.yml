@@ -5,7 +5,7 @@ commands:
       - checkout
       - restore_cache:
           keys:
-            - v1-pkg-cache
+            - v2-pkg-cache
             - v1-node-cache
       - run:
           name: Install glide
@@ -21,7 +21,7 @@ commands:
           command: go install github.com/asticode/go-astilectron-bundler
 
       - save_cache:
-          key: v1-pkg-cache
+          key: v2-pkg-cache
           paths:
             - "/go/src/github.com/stellar/kelp/vendor"
 
