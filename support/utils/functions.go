@@ -141,7 +141,7 @@ func LoadAllOffers(account string, api *horizonclient.Client) ([]hProtocol.Offer
 	// get what orders are outstanding now
 	offerReq := horizonclient.OfferRequest{
 		ForAccount: account,
-		Limit:      uint(193),
+		Limit:      uint(200),
 	}
 
 	offersPage, e := api.Offers(offerReq)

@@ -5,7 +5,7 @@ commands:
       - checkout
       - restore_cache:
           keys:
-            - v1-pkg-cache
+            - v2-pkg-cache
             - v1-node-cache
       - run:
           name: Install glide
@@ -13,9 +13,15 @@ commands:
       - run:
           name: Install dependencies using glide
           command: glide install
+      - run:
+          name: Fetch astilectron-bundler
+          command: go get -u github.com/asticode/go-astilectron-bundler/...
+      - run:
+          name: Install astilectron-bundler
+          command: go install github.com/asticode/go-astilectron-bundler
 
       - save_cache:
-          key: v1-pkg-cache
+          key: v2-pkg-cache
           paths:
             - "/go/src/github.com/stellar/kelp/vendor"
 
@@ -23,7 +29,7 @@ commands:
     steps:
       - run:
           name: Run Kelp tests
-          command: go test -tags dev --short ./...
+          command: go test --short ./...
 
   build_kelp:
     steps:
@@ -55,6 +61,7 @@ jobs:
 
     steps:
       - install_deps
+      - build_kelp
       - test_kelp
 
   test_1_11:
@@ -66,6 +73,7 @@ jobs:
 
     steps:
       - install_deps
+      - build_kelp
       - test_kelp
 
   test_1_12:
@@ -77,36 +85,8 @@ jobs:
 
     steps:
       - install_deps
+      - build_kelp
       - test_kelp
-
-
-  # build tries building Kelp
-  build_1_10:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.10-node
-
-    steps:
-      - install_deps
-      - build_kelp
-
-  build_1_11:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.11-node
-
-    steps:
-      - install_deps
-      - build_kelp
-
-  build_1_12:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.12-node
-
-    steps:
-      - install_deps
-      - build_kelp
 
 workflows:
   version: 2
@@ -115,6 +95,3 @@ workflows:
       - test_1_10
       - test_1_11
       - test_1_12
-      - build_1_10
-      - build_1_11
-      - build_1_12

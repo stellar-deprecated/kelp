@@ -7,5 +7,6 @@ vendor/
 build/
 bin/
 .idea
-gui/filesystem_vfsdata_release.go
+gui/filesystem_vfsdata.go
 kelp.prefs
+bind_*.go

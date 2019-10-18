@@ -1,12 +1,42 @@
-hash: fea1924a14461af263f5435ea1fc0038870ad2b82b4fe6dec3e679cfea5b5bc9
-updated: 2019-08-30T05:39:34.749230033-07:00
+hash: 2dedca773f0db7201129d0a87d9fe4401b7d5df746c30f1e1142a2f8c81d0f00
+updated: 2019-10-01T16:52:25.833636371-07:00
 imports:
 - name: cloud.google.com/go
   version: 24f9f82cf8c5ed3c0303f34f76876365ce742aad
   subpackages:
   - compute/metadata
+- name: github.com/akavel/rsrc
+  version: b9f6b78f792dc3dddaf295854d968f5b6fdcdba1
+  subpackages:
+  - binutil
+  - coff
+  - ico
+  - internal
+  - rsrc
 - name: github.com/asaskevich/govalidator
   version: f61b66f89f4a311bef65f13e575bcf1a2ffadda6
+- name: github.com/asticode/go-astilectron
+  version: 8e68f812e8a2dd6655af42a8d6bc44856dd172be
+- name: github.com/asticode/go-astilectron-bootstrap
+  version: 25b8572859996696903f9417598ebc94d5d61035
+- name: github.com/asticode/go-astilectron-bundler
+  version: 155c2a10bbb1791fbafe89a9b64be05c64f16c81
+- name: github.com/asticode/go-astilog
+  version: 4cf33948c164d333ae5af926301832f00bc47767
+- name: github.com/asticode/go-astitools
+  version: b66b923a0c4390c5b8e01126dd315a082ffad5cc
+  subpackages:
+  - archive
+  - context
+  - exec
+  - http
+  - io
+  - os
+  - ptr
+  - regexp
+  - url
+- name: github.com/asticode/go-bindata
+  version: a0ff2567cfb70903282db057e799fd826784d41d
 - name: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
 - name: github.com/BurntSushi/toml
@@ -45,6 +75,8 @@ imports:
   - json/token
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/julienschmidt/httprouter
+  version: 667c1dbb44f3b5528b874c3c9071b23702e3dd0f
 - name: github.com/kr/session
   version: 6f756089c21ec9a4ceb14473bf90d5e3a3e9e303
 - name: github.com/lechengfan/googleauth
@@ -58,6 +90,10 @@ imports:
   version: 7757cc9fdb852f7579b24170bcacda2c7471bb6a
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/mattn/go-colorable
+  version: 388941e3ea99c461d2bc2747eaf27741b6dda096
+- name: github.com/mattn/go-isatty
+  version: bf9a1dea1961e1d831824fb135332bfb8c10e8b8
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nikhilsaraf/go-tools
@@ -68,6 +104,8 @@ imports:
   version: 635c5ce271490fba94880e62cde4eea3c1c184b9
 - name: github.com/pelletier/go-toml
   version: 728039f679cbcd4f6a54e080d2219a4c4928c546
+- name: github.com/pkg/browser
+  version: 0a3d74bf9ce488f035cf5bc36f753a711bc74334
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib
@@ -76,6 +114,8 @@ imports:
   - difflib
 - name: github.com/rs/cors
   version: 9a47f48565a795472d43519dd49aac781f3034fb
+- name: github.com/sam-kamerer/go-plister
+  version: 30eae28cab5bef0e3c6876f2af87a5127b30c12c
 - name: github.com/segmentio/go-loggly
   version: 7a70408c3650c37ba8e58a934f686d0c44cb9b58
 - name: github.com/shurcooL/httpfs

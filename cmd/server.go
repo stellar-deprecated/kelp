@@ -1,24 +1,36 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	"image/png"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/asticode/go-astilectron"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizonclient"
+	"github.com/stellar/go/support/errors"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/prefs"
 )
+
+const urlOpenDelayMillis = 1500
+const kelpPrefsDirectory = ".kelp"
+const kelpAssetsPath = "/assets"
+const trayIconName = "kelp-icon@1-8x.png"
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
@@ -97,11 +109,11 @@ func init() {
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
 			runWithYarn(kos, options)
 			return
-		} else {
-			options.devAPIPort = nil
-			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
-			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 		}
+
+		options.devAPIPort = nil
+		// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
+		os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 
 		if env == envDev {
 			checkHomeDir()
@@ -116,8 +128,22 @@ func init() {
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
-		e = http.ListenAndServe(portString, r)
-		log.Fatal(e)
+		// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
+		go func() {
+			url := fmt.Sprintf("http://localhost:%d", *options.port)
+			log.Printf("A browser window will open up automatically to %s\n", url)
+			time.Sleep(urlOpenDelayMillis * time.Millisecond)
+			openBrowser(kos, url)
+		}()
+
+		if env == envDev {
+			e = http.ListenAndServe(portString, r)
+			if e != nil {
+				log.Fatal(e)
+			}
+		} else {
+			_ = http.ListenAndServe(portString, r)
+		}
 	}
 }
 
@@ -177,4 +203,105 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 
 	log.Printf("... finished generating contents of gui/web/build\n")
 	log.Println()
+}
+
+func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
+	binDirectory, e := getBinaryDirectory()
+	if e != nil {
+		return "", errors.Wrap(e, "could not get binary directory")
+	}
+	log.Printf("binDirectory: %s", binDirectory)
+	assetsDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, kelpAssetsPath)
+	log.Printf("assetsDirPath: %s", assetsDirPath)
+	trayIconPath := filepath.Join(assetsDirPath, trayIconName)
+	log.Printf("trayIconPath: %s", trayIconPath)
+	if _, e := os.Stat(trayIconPath); !os.IsNotExist(e) {
+		// file exists, don't write again
+		return trayIconPath, nil
+	}
+
+	trayIconBytes, e := resourcesKelpIcon18xPngBytes()
+	if e != nil {
+		return "", errors.Wrap(e, "could not fetch tray icon image bytes")
+	}
+
+	img, _, e := image.Decode(bytes.NewReader(trayIconBytes))
+	if e != nil {
+		return "", errors.Wrap(e, "could not decode bytes as image data")
+	}
+
+	// create dir if not exists
+	if _, e := os.Stat(assetsDirPath); os.IsNotExist(e) {
+		log.Printf("making assetsDirPath: %s ...", assetsDirPath)
+		e = kos.Mkdir(assetsDirPath)
+		if e != nil {
+			return "", errors.Wrap(e, "could not make directories for assetsDirPath: "+assetsDirPath)
+		}
+		log.Printf("... made assetsDirPath (%s)", assetsDirPath)
+	}
+
+	trayIconFile, e := os.Create(trayIconPath)
+	if e != nil {
+		return "", errors.Wrap(e, "could not create tray icon file")
+	}
+	defer trayIconFile.Close()
+
+	e = png.Encode(trayIconFile, img)
+	if e != nil {
+		return "", errors.Wrap(e, "could not write png encoded icon")
+	}
+
+	return trayIconPath, nil
+}
+
+func getBinaryDirectory() (string, error) {
+	return filepath.Abs(filepath.Dir(os.Args[0]))
+}
+
+func openBrowser(kos *kelpos.KelpOS, url string) {
+	trayIconPath, e := writeTrayIcon(kos)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "could not write tray icon"))
+	}
+
+	e = bootstrap.Run(bootstrap.Options{
+		AstilectronOptions: astilectron.Options{
+			AppName:            "Kelp",
+			AppIconDefaultPath: "resources/kelp-icon@2x.png",
+		},
+		Debug: false,
+		Windows: []*bootstrap.Window{&bootstrap.Window{
+			Homepage: url,
+			Options: &astilectron.WindowOptions{
+				Center:   astilectron.PtrBool(true),
+				Width:    astilectron.PtrInt(1280),
+				Height:   astilectron.PtrInt(960),
+				Closable: astilectron.PtrBool(false),
+			},
+		}},
+		TrayOptions: &astilectron.TrayOptions{
+			Image: astilectron.PtrStr(trayIconPath),
+		},
+		TrayMenuOptions: []*astilectron.MenuItemOptions{
+			&astilectron.MenuItemOptions{
+				Label:   astilectron.PtrStr("Quit"),
+				Visible: astilectron.PtrBool(true),
+				Enabled: astilectron.PtrBool(true),
+				OnClick: astilectron.Listener(func(e astilectron.Event) (deleteListener bool) {
+					quit()
+					return false
+				}),
+			},
+		},
+	})
+	if e != nil {
+		log.Fatal(e)
+	}
+
+	quit()
+}
+
+func quit() {
+	log.Printf("quitting...")
+	os.Exit(0)
 }
