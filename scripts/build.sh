@@ -125,6 +125,12 @@ check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
 
+echo -n "generating the bind file in /cmd to create missing files ... "
+astilectron-bundler bd -c $KELP/bundler.json
+check_build_result $?
+echo "done"
+echo ""
+
 if [[ $ENV == "dev" ]]
 then
     echo "GOOS: $(go env GOOS)"
