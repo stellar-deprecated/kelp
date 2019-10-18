@@ -13,6 +13,12 @@ commands:
       - run:
           name: Install dependencies using glide
           command: glide install
+      - run:
+          name: Fetch astilectron-bundler
+          command: go get -u github.com/asticode/go-astilectron-bundler/...
+      - run:
+          name: Install astilectron-bundler
+          command: go install github.com/asticode/go-astilectron-bundler
 
       - save_cache:
           key: v1-pkg-cache
