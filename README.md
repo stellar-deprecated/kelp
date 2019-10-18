@@ -98,6 +98,7 @@ To compile Kelp from source:
     * `git clone git@github.com:stellar/kelp.git`
 5. Change to the kelp directory and install the dependencies:
     * `glide install`
+6. Install the [astilectron-bundler][astilectron-bundler] binary in a folder that is in your `PATH`
 6. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
     * `./scripts/build.sh`
 7. Confirm one new binary file:
@@ -310,6 +311,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [glide-install]: https://github.com/Masterminds/glide#install
 [yarn-install]: https://yarnpkg.com/lang/en/docs/install/
 [nodejs-install]: https://nodejs.org/en/download/
+[astilectron-bundler]: https://github.com/asticode/go-astilectron-bundler
 [spread]: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
 [hedge]: https://en.wikipedia.org/wiki/Hedge_(finance)
 [cmc]: https://coinmarketcap.com/
