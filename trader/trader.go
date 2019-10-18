@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
@@ -151,7 +150,7 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), nil)
+		e := t.exchangeShim.SubmitOps(dOps, nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -194,7 +193,7 @@ func (t *Trader) update() bool {
 	}
 
 	// delete excess offers
-	var pruneOps []build.TransactionMutator
+	var pruneOps []txnbuild.Operation
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strategy.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
@@ -219,7 +218,7 @@ func (t *Trader) update() bool {
 		return false
 	}
 
-	opsOld, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
+	ops, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("liabilities at the end of a call to UpdateWithOps\n")
 	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
@@ -230,7 +229,6 @@ func (t *Trader) update() bool {
 		return false
 	}
 
-	ops := api.ConvertTM2Operation(opsOld)
 	for i, filter := range t.submitFilters {
 		ops, e = filter.Apply(ops, t.sellingAOffers, t.buyingAOffers)
 		if e != nil {
@@ -242,7 +240,7 @@ func (t *Trader) update() bool {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), nil)
+		e = t.exchangeShim.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()

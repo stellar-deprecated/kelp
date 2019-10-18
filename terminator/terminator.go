@@ -10,7 +10,6 @@ import (
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
-	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/utils"
@@ -106,7 +105,7 @@ func (t *Terminator) run() {
 		}
 
 		log.Printf("updating delete timestamp to %s\n", tsMillisStr)
-		e = t.sdex.SubmitOps(api.ConvertOperation2TM(ops), nil)
+		e = t.sdex.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 		}
@@ -175,7 +174,7 @@ func (t *Terminator) deleteOffers(sellOffers []hProtocol.Offer, buyOffers []hPro
 
 	log.Printf("deleting %d offers and 5 data entries, updating delete timestamp to %s\n", numOffers, tsMillisStr)
 	if len(ops) > 0 {
-		e := t.sdex.SubmitOps(api.ConvertOperation2TM(ops), nil)
+		e := t.sdex.SubmitOps(ops, nil)
 		if e != nil {
 			log.Println(e)
 			return
