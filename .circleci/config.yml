@@ -61,6 +61,7 @@ jobs:
 
     steps:
       - install_deps
+      - build_kelp
       - test_kelp
 
   test_1_11:
@@ -72,6 +73,7 @@ jobs:
 
     steps:
       - install_deps
+      - build_kelp
       - test_kelp
 
   test_1_12:
@@ -83,36 +85,8 @@ jobs:
 
     steps:
       - install_deps
+      - build_kelp
       - test_kelp
-
-
-  # build tries building Kelp
-  build_1_10:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.10-node
-
-    steps:
-      - install_deps
-      - build_kelp
-
-  build_1_11:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.11-node
-
-    steps:
-      - install_deps
-      - build_kelp
-
-  build_1_12:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.12-node
-
-    steps:
-      - install_deps
-      - build_kelp
 
 workflows:
   version: 2
@@ -121,6 +95,3 @@ workflows:
       - test_1_10
       - test_1_11
       - test_1_12
-      - build_1_10
-      - build_1_11
-      - build_1_12
