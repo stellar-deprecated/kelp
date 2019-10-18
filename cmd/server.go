@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	"image/png"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,6 +20,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizonclient"
+	"github.com/stellar/go/support/errors"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
@@ -23,6 +28,9 @@ import (
 )
 
 const urlOpenDelayMillis = 1500
+const kelpPrefsDirectory = ".kelp"
+const kelpAssetsPath = "/assets"
+const trayIconName = "kelp-icon@1-8x.png"
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
@@ -125,7 +133,7 @@ func init() {
 			url := fmt.Sprintf("http://localhost:%d", *options.port)
 			log.Printf("A browser window will open up automatically to %s\n", url)
 			time.Sleep(urlOpenDelayMillis * time.Millisecond)
-			openBrowser(url)
+			openBrowser(kos, url)
 		}()
 
 		if env == envDev {
@@ -197,10 +205,66 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 	log.Println()
 }
 
-func openBrowser(url string) {
-	e := bootstrap.Run(bootstrap.Options{
-		// Asset:         Asset,
-		// RestoreAssets: RestoreAssets,
+func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
+	binDirectory, e := getBinaryDirectory()
+	if e != nil {
+		return "", errors.Wrap(e, "could not get binary directory")
+	}
+	log.Printf("binDirectory: %s", binDirectory)
+	assetsDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, kelpAssetsPath)
+	log.Printf("assetsDirPath: %s", assetsDirPath)
+	trayIconPath := filepath.Join(assetsDirPath, trayIconName)
+	log.Printf("trayIconPath: %s", trayIconPath)
+	if _, e := os.Stat(trayIconPath); !os.IsNotExist(e) {
+		// file exists, don't write again
+		return trayIconPath, nil
+	}
+
+	trayIconBytes, e := resourcesKelpIcon18xPngBytes()
+	if e != nil {
+		return "", errors.Wrap(e, "could not fetch tray icon image bytes")
+	}
+
+	img, _, e := image.Decode(bytes.NewReader(trayIconBytes))
+	if e != nil {
+		return "", errors.Wrap(e, "could not decode bytes as image data")
+	}
+
+	// create dir if not exists
+	if _, e := os.Stat(assetsDirPath); os.IsNotExist(e) {
+		log.Printf("making assetsDirPath: %s ...", assetsDirPath)
+		e = kos.Mkdir(assetsDirPath)
+		if e != nil {
+			return "", errors.Wrap(e, "could not make directories for assetsDirPath: "+assetsDirPath)
+		}
+		log.Printf("... made assetsDirPath (%s)", assetsDirPath)
+	}
+
+	trayIconFile, e := os.Create(trayIconPath)
+	if e != nil {
+		return "", errors.Wrap(e, "could not create tray icon file")
+	}
+	defer trayIconFile.Close()
+
+	e = png.Encode(trayIconFile, img)
+	if e != nil {
+		return "", errors.Wrap(e, "could not write png encoded icon")
+	}
+
+	return trayIconPath, nil
+}
+
+func getBinaryDirectory() (string, error) {
+	return filepath.Abs(filepath.Dir(os.Args[0]))
+}
+
+func openBrowser(kos *kelpos.KelpOS, url string) {
+	trayIconPath, e := writeTrayIcon(kos)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "could not write tray icon"))
+	}
+
+	e = bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
 			AppIconDefaultPath: "resources/kelp-icon@2x.png",
@@ -216,8 +280,7 @@ func openBrowser(url string) {
 			},
 		}},
 		TrayOptions: &astilectron.TrayOptions{
-			Image:   astilectron.PtrStr("../resources/kelp-icon@1-8x.png"),
-			Tooltip: astilectron.PtrStr("Tray Tooltip"),
+			Image: astilectron.PtrStr(trayIconPath),
 		},
 		TrayMenuOptions: []*astilectron.MenuItemOptions{
 			&astilectron.MenuItemOptions{
@@ -231,7 +294,6 @@ func openBrowser(url string) {
 			},
 		},
 	})
-
 	if e != nil {
 		log.Fatal(e)
 	}
