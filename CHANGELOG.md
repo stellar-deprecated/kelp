@@ -10,12 +10,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Dockerize Kelp binary ([b61207012dd10b44220acf644703aa346834778c](https://github.com/stellar/kelp/commit/b61207012dd10b44220acf644703aa346834778c))
 - update instructions in README on how to compile Kelp from source ([c58982c25e8ead8c91ca17f09d4c96cc3705d772](https://github.com/stellar/kelp/commit/c58982c25e8ead8c91ca17f09d4c96cc3705d772))
+- Kelp UI: Wrap GUI as a standalone desktop application using Electron ([b725cbaf9c67e8d3b9aea29316c5ec22d168c81e](https://github.com/stellar/kelp/commit/b725cbaf9c67e8d3b9aea29316c5ec22d168c81e))
+- combine build and test tasks in circleci ([b725cbaf9c67e8d3b9aea29316c5ec22d168c81e](https://github.com/stellar/kelp/commit/b725cbaf9c67e8d3b9aea29316c5ec22d168c81e))
 
 ### Changed
 
 - Upgraded horizon types to use hProtocol package ([4af564dd9aeeb976685e381470f8a9fa0626b49e](https://github.com/stellar/kelp/commit/4af564dd9aeeb976685e381470f8a9fa0626b49e))
 - Upgraded Go SDK to use horizonclient package ([585080c76f173acd5a1348f3f662796d5aeda719](https://github.com/stellar/kelp/commit/585080c76f173acd5a1348f3f662796d5aeda719))
 - Upgraded Go SDK usage to `txnbuild` package instead of `build` package ([c18c97f388d3a605b9c48edb5085008791467a1c](https://github.com/stellar/kelp/commit/c18c97f388d3a605b9c48edb5085008791467a1c))
+- Multiple usability improvements to the Kelp UI ([f7db6c8430c834040020efa7c58ed860ff303abc through f765ae00d73f4a6a3d6eedf35de6d5528a5f455f](https://github.com/stellar/kelp/compare/f7db6c8430c834040020efa7c58ed860ff303abc~1...f765ae00d73f4a6a3d6eedf35de6d5528a5f455f))
+- Guarantee fixed number of successful runs of update cycle via the `--iter` cli param ([4845a6220a5091cd97c6833c359077c7a3afc291](https://github.com/stellar/kelp/commit/4845a6220a5091cd97c6833c359077c7a3afc291))
 
 ### Deprecated
 
