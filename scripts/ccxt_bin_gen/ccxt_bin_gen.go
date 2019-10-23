@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stellar/kelp/support/kelpos"
@@ -70,13 +71,45 @@ func downloadCcxtSource(kos *kelpos.KelpOS, downloadDir string) {
 	fmt.Printf("done\n")
 }
 
+func npmInstall(kos *kelpos.KelpOS, installDir string) {
+	fmt.Printf("running npm install on directory %s ...\n", installDir)
+	npmCmd := fmt.Sprintf("cd %s && npm install && cd -", installDir)
+	_, e := kos.Blocking("npm", npmCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "failed to run npm install"))
+	}
+	fmt.Printf("done\n")
+}
+
 // pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 build/downloads/ccxt/ccxt-rest-0.0.4
 func runPkgTool(kos *kelpos.KelpOS, sourceDir string, outDir string, pkgos string) {
 	target := fmt.Sprintf("node8-%s-x64", pkgos)
 
 	fmt.Printf("running pkg tool on source directory %s with output directory as %s on target platform %s ...\n", sourceDir, outDir, target)
 	pkgCommand := fmt.Sprintf("pkg --out-path %s --targets %s %s", outDir, target, sourceDir)
-	kos.Blocking("pkg", pkgCommand)
+	outputBytes, e := kos.Blocking("pkg", pkgCommand)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "failed to run pkg tool"))
+	}
+	fmt.Printf("done\n")
+
+	copyDependencyFiles(kos, outDir, string(outputBytes))
+}
+
+func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string) {
+	fmt.Printf("copying dependency files to the output directory %s ...\n", outDir)
+	for _, line := range strings.Split(pkgCmdOutput, "\n") {
+		if !strings.Contains(line, "node_modules") {
+			continue
+		}
+		filename := strings.TrimSpace(strings.ReplaceAll(line, "(MISSING)", ""))
+
+		cpCmd := fmt.Sprintf("cp %s %s", filename, outDir)
+		_, e := kos.Blocking("cp", cpCmd)
+		if e != nil {
+			log.Fatal(errors.Wrap(e, "failed to copy dependency file %s"+filename))
+		}
+	}
 	fmt.Printf("done\n")
 }
 
@@ -88,5 +121,6 @@ func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string) {
 	outDir := filepath.Join(downloadDir, ccxtBinOutputDir)
 
 	downloadCcxtSource(kos, downloadDir)
+	npmInstall(kos, sourceDir)
 	runPkgTool(kos, sourceDir, outDir, pkgos)
 }
