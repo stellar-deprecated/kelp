@@ -148,6 +148,12 @@ then
     OUTFILE=bin/kelp$EXTENSION
     mkdir -p bin
 
+    echo -n "preparing ccxt binary ... "
+    go run ./scripts/ccxt_bin_gen.go -goos $((go env GOOS))
+    check_build_result $?
+    echo "done"
+    echo ""
+
     echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
     check_build_result $?
@@ -185,6 +191,12 @@ do
     then
         BINARY="$OUTFILE.exe"
     fi
+
+    echo -n "preparing ccxt binary ... "
+    go run ./scripts/ccxt_bin_gen.go -goos $GOOS
+    check_build_result $?
+    echo "done"
+    echo ""
 
     # compile
     env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
