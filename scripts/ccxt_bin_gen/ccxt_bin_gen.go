@@ -42,7 +42,7 @@ func checkPkgTool(kos *kelpos.KelpOS) {
 	fmt.Printf("checking for presence of `pkg` tool ...\n")
 	_, e := kos.Blocking("pkg", "pkg -v")
 	if e != nil {
-		log.Fatal("ensure that the `pkg` tool is installed correctly. You can get it from here: https://github.com/zeit/pkg")
+		log.Fatal(errors.Wrap(e, "ensure that the `pkg` tool is installed correctly. You can get it from here: https://github.com/zeit/pkg"))
 	}
 	fmt.Printf("done\n")
 }
