@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,6 +18,7 @@ const ccxtDownloadURL = "https://github.com/ccxt-rest/ccxt-rest/archive/v0.0.4.t
 const ccxtDownloadFilename = "ccxt-rest_v0.0.4.tar.gz"
 const ccxtUntaredDirName = "ccxt-rest-0.0.4"
 const ccxtBinOutputDir = "bin"
+const nodeVersionMatchRegex = "v8.[0-9]+.[0-9]+"
 
 func main() {
 	goosP := flag.String("goos", "", "GOOS for which to build")
@@ -38,11 +40,30 @@ func main() {
 	generateCcxtBinary(kos, pkgos)
 }
 
+func checkNodeVersion(kos *kelpos.KelpOS) {
+	fmt.Printf("checking node version ...\n")
+
+	version, e := kos.Blocking("node", "node -v")
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "ensure that the `pkg` tool is installed correctly. You can get it from here https://github.com/zeit/pkg or by running `npm install -g pkg`"))
+	}
+
+	match, e := regexp.Match(nodeVersionMatchRegex, version)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "could not match regex against node version"))
+	}
+	if !match {
+		log.Fatal("node version will fail to compile a successful binary because of the requirements of ccxt-rest's dependencies, should use v8.x.x instead of " + string(version))
+	}
+
+	fmt.Printf("valid\n")
+}
+
 func checkPkgTool(kos *kelpos.KelpOS) {
 	fmt.Printf("checking for presence of `pkg` tool ...\n")
 	_, e := kos.Blocking("pkg", "pkg -v")
 	if e != nil {
-		log.Fatal(errors.Wrap(e, "ensure that the `pkg` tool is installed correctly. You can get it from here: https://github.com/zeit/pkg"))
+		log.Fatal(errors.Wrap(e, "ensure that the `pkg` tool is installed correctly. You can get it from here https://github.com/zeit/pkg or by running `npm install -g pkg`"))
 	}
 	fmt.Printf("done\n")
 }
@@ -104,16 +125,18 @@ func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string)
 		}
 		filename := strings.TrimSpace(strings.ReplaceAll(line, "(MISSING)", ""))
 
+		fmt.Printf("copying file %s to the output directory %s ...\n", filename, outDir)
 		cpCmd := fmt.Sprintf("cp %s %s", filename, outDir)
 		_, e := kos.Blocking("cp", cpCmd)
 		if e != nil {
-			log.Fatal(errors.Wrap(e, "failed to copy dependency file %s"+filename))
+			log.Fatal(errors.Wrap(e, "failed to copy dependency file "+filename))
 		}
 	}
 	fmt.Printf("done\n")
 }
 
 func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string) {
+	checkNodeVersion(kos)
 	checkPkgTool(kos)
 
 	downloadDir := filepath.Join(kelpPrefsDirectory, "downloads", "ccxt")
