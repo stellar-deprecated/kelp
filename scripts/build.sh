@@ -120,7 +120,7 @@ fi
 
 echo ""
 echo "embedding contents of gui/web/build into a .go file (env=$ENV) ..."
-go run ./scripts/fs_bin_gen.go -env $ENV
+go run ./scripts/fs_bin_gen/fs_bin_gen.go -env $ENV
 check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
@@ -148,10 +148,10 @@ then
     OUTFILE=bin/kelp$EXTENSION
     mkdir -p bin
 
-    echo -n "preparing ccxt binary ... "
-    go run ./scripts/ccxt_bin_gen.go -goos $((go env GOOS))
+    echo "preparing ccxt binary ... "
+    go run ./scripts/ccxt_bin_gen/ccxt_bin_gen.go -goos "$(go env GOOS)"
     check_build_result $?
-    echo "done"
+    echo "successful"
     echo ""
 
     echo -n "compiling ... "
@@ -192,10 +192,10 @@ do
         BINARY="$OUTFILE.exe"
     fi
 
-    echo -n "preparing ccxt binary ... "
-    go run ./scripts/ccxt_bin_gen.go -goos $GOOS
+    echo "preparing ccxt binary ... "
+    go run ./scripts/ccxt_bin_gen/ccxt_bin_gen.go -goos $GOOS
     check_build_result $?
-    echo "done"
+    echo "successful"
     echo ""
 
     # compile

@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 	goos := *goosP
 
-	pkgos = ""
+	pkgos := ""
 	if goos == "darwin" {
 		pkgos = "macos"
 	} else if goos == "linux" {
@@ -32,6 +32,7 @@ func main() {
 	} else {
 		panic("unsupported goos flag: " + goos)
 	}
+
 	kos := kelpos.GetKelpOS()
 	generateCcxtBinary(kos, pkgos)
 }
@@ -70,12 +71,10 @@ func downloadCcxtSource(kos *kelpos.KelpOS, downloadDir string) {
 }
 
 // pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 build/downloads/ccxt/ccxt-rest-0.0.4
-func runPkgTool(kos *kelpos.KelpOS, downloadDir string, pkgos string) {
-	sourceDir := filepath.Join(downloadDir, ccxtUntaredDirName)
-	outDir := filepath.Join(downloadDir, ccxtBinOutputDir)
+func runPkgTool(kos *kelpos.KelpOS, sourceDir string, outDir string, pkgos string) {
 	target := fmt.Sprintf("node8-%s-x64", pkgos)
 
-	fmt.Printf("running pkg tool on directory %s with output directory as %s on target platform %s ...\n", targetDir, outDir, target)
+	fmt.Printf("running pkg tool on source directory %s with output directory as %s on target platform %s ...\n", sourceDir, outDir, target)
 	pkgCommand := fmt.Sprintf("pkg --out-path %s --targets %s %s", outDir, target, sourceDir)
 	kos.Blocking("pkg", pkgCommand)
 	fmt.Printf("done\n")
@@ -85,7 +84,9 @@ func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string) {
 	checkPkgTool(kos)
 
 	downloadDir := filepath.Join(kelpPrefsDirectory, "downloads", "ccxt")
-	downloadCcxtSource(kos, downloadDir)
+	sourceDir := filepath.Join(downloadDir, ccxtUntaredDirName)
+	outDir := filepath.Join(downloadDir, ccxtBinOutputDir)
 
-	runPkgTool(kos, downloadDir, pkgos)
+	downloadCcxtSource(kos, downloadDir)
+	runPkgTool(kos, sourceDir, outDir, pkgos)
 }

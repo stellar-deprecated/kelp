@@ -9,7 +9,7 @@ import (
 	"github.com/shurcooL/vfsgen"
 )
 
-const fsDev_filename = "./scripts/fs_gen/filesystem_vfsdata_dev.go"
+const fsDev_filename = "./scripts/fs_bin_gen/filesystem_vfsdata_dev.go"
 const fs_filename = "./gui/filesystem_vfsdata.go"
 
 func main() {
