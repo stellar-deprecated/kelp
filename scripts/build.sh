@@ -16,6 +16,7 @@ function install_web_dependencies() {
     cd $CURRENT_DIR/gui/web
 
     yarn install
+    check_build_result $?
 
     cd $CURRENT_DIR
     echo "... finished installing web dependencies"
@@ -28,6 +29,7 @@ function generate_static_web_files() {
     cd $CURRENT_DIR/gui/web
 
     yarn build
+    check_build_result $?
 
     cd $CURRENT_DIR
     echo "... finished generating contents of gui/web/build"
