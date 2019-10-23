@@ -102,7 +102,7 @@ func npmInstall(kos *kelpos.KelpOS, installDir string) {
 	fmt.Printf("done\n")
 }
 
-// pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 build/downloads/ccxt/ccxt-rest-0.0.4
+// pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 build/ccxt/ccxt-rest-0.0.4
 func runPkgTool(kos *kelpos.KelpOS, sourceDir string, outDir string, pkgos string) {
 	target := fmt.Sprintf("node8-%s-x64", pkgos)
 
@@ -139,7 +139,7 @@ func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string) {
 	checkNodeVersion(kos)
 	checkPkgTool(kos)
 
-	downloadDir := filepath.Join(kelpPrefsDirectory, "downloads", "ccxt")
+	downloadDir := filepath.Join(kelpPrefsDirectory, "ccxt")
 	sourceDir := filepath.Join(downloadDir, ccxtUntaredDirName)
 	outDir := filepath.Join(downloadDir, ccxtBinOutputDir)
 
