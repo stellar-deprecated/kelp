@@ -48,7 +48,8 @@ function check_build_result() {
 
 # takes in the GOOS for which to build
 function gen_ccxt_binary() {
-    echo "generating ccxt binary for GOOS=$1 ... "
+    echo "generating ccxt binary for GOOS=$1"
+    echo ""
     go run ./scripts/ccxt_bin_gen/ccxt_bin_gen.go -goos $1
     echo "successful"
 }

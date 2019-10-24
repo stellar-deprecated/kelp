@@ -11,10 +11,16 @@ import (
 
 // KelpOS is a struct that manages all subprocesses started by this Kelp process
 type KelpOS struct {
-	processes   map[string]Process
-	processLock *sync.Mutex
-	bots        map[string]*BotInstance
-	botLock     *sync.Mutex
+	processes           map[string]Process
+	processLock         *sync.Mutex
+	bots                map[string]*BotInstance
+	botLock             *sync.Mutex
+	silentRegistrations bool
+}
+
+// SetSilentRegistrations does not log every time we register and unregister commands
+func (kos *KelpOS) SetSilentRegistrations() {
+	kos.silentRegistrations = true
 }
 
 // Process contains all the pieces that can be used to control a given process
