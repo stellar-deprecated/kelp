@@ -38,7 +38,9 @@ func main() {
 
 	kos := kelpos.GetKelpOS()
 	kos.SetSilentRegistrations()
-	generateCcxtBinary(kos, pkgos)
+
+	zipFilename := fmt.Sprintf("ccxt-rest_node8-%s-%s-x64.zip", goos, pkgos)
+	generateCcxtBinary(kos, pkgos, zipFilename)
 }
 
 func checkNodeVersion(kos *kelpos.KelpOS) {
@@ -139,15 +141,38 @@ func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string)
 	fmt.Println()
 }
 
-func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string) {
+func mkDir(kos *kelpos.KelpOS, zipDir string) {
+	fmt.Printf("making directory %s ... ", zipDir)
+	e := kos.Mkdir(zipDir)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "unable to make directory "+zipDir))
+	}
+	fmt.Printf("done\n")
+}
+
+func zipOutput(kos *kelpos.KelpOS, sourceDir string, zipPath string) {
+	fmt.Printf("zipping directory %s as file %s ... ", sourceDir, zipPath)
+	zipCmd := fmt.Sprintf("zip -q %s %s", zipPath, sourceDir)
+	_, e := kos.Blocking("zip", zipCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, "unable to zip folder with ccxt binary and dependencies"))
+	}
+	fmt.Printf("done\n")
+}
+
+func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string, zipFilename string) {
 	checkNodeVersion(kos)
 	checkPkgTool(kos)
 
-	downloadDir := filepath.Join(kelpPrefsDirectory, "ccxt")
-	sourceDir := filepath.Join(downloadDir, ccxtUntaredDirName)
-	outDir := filepath.Join(downloadDir, ccxtBinOutputDir)
+	ccxtDir := filepath.Join(kelpPrefsDirectory, "ccxt")
+	sourceDir := filepath.Join(ccxtDir, ccxtUntaredDirName)
+	outDir := filepath.Join(ccxtDir, ccxtBinOutputDir)
+	zipDir := filepath.Join(ccxtDir, "zipped")
+	zipPath := filepath.Join(zipDir, zipFilename)
 
-	downloadCcxtSource(kos, downloadDir)
+	downloadCcxtSource(kos, ccxtDir)
 	npmInstall(kos, sourceDir)
 	runPkgTool(kos, sourceDir, outDir, pkgos)
+	mkDir(kos, zipDir)
+	zipOutput(kos, outDir, zipPath)
 }
