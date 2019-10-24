@@ -39,8 +39,8 @@ func main() {
 	kos := kelpos.GetKelpOS()
 	kos.SetSilentRegistrations()
 
-	zipFilename := fmt.Sprintf("ccxt-rest_node8-%s-%s-x64.zip", goos, pkgos)
-	generateCcxtBinary(kos, pkgos, zipFilename)
+	zipFoldername := fmt.Sprintf("ccxt-rest_%s-x64", goos)
+	generateCcxtBinary(kos, pkgos, zipFoldername)
 }
 
 func checkNodeVersion(kos *kelpos.KelpOS) {
@@ -150,9 +150,10 @@ func mkDir(kos *kelpos.KelpOS, zipDir string) {
 	fmt.Printf("done\n")
 }
 
-func zipOutput(kos *kelpos.KelpOS, sourceDir string, zipPath string) {
-	fmt.Printf("zipping directory %s as file %s ... ", sourceDir, zipPath)
-	zipCmd := fmt.Sprintf("zip -q %s %s", zipPath, sourceDir)
+func zipOutput(kos *kelpos.KelpOS, ccxtDir string, sourceDir string, zipFoldername string, zipOutDir string) {
+	zipFilename := zipFoldername + ".zip"
+	fmt.Printf("zipping directory %s as file %s ... ", filepath.Join(ccxtDir, ccxtBinOutputDir), zipFilename)
+	zipCmd := fmt.Sprintf("cd %s && mv %s %s && zip -rq %s %s && cd - && mv %s %s", ccxtDir, ccxtBinOutputDir, zipFoldername, zipFilename, zipFoldername, filepath.Join(ccxtDir, zipFilename), zipOutDir)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, "unable to zip folder with ccxt binary and dependencies"))
@@ -160,19 +161,18 @@ func zipOutput(kos *kelpos.KelpOS, sourceDir string, zipPath string) {
 	fmt.Printf("done\n")
 }
 
-func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string, zipFilename string) {
+func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string, zipFoldername string) {
 	checkNodeVersion(kos)
 	checkPkgTool(kos)
 
 	ccxtDir := filepath.Join(kelpPrefsDirectory, "ccxt")
 	sourceDir := filepath.Join(ccxtDir, ccxtUntaredDirName)
 	outDir := filepath.Join(ccxtDir, ccxtBinOutputDir)
-	zipDir := filepath.Join(ccxtDir, "zipped")
-	zipPath := filepath.Join(zipDir, zipFilename)
+	zipOutDir := filepath.Join(ccxtDir, "zipped")
 
 	downloadCcxtSource(kos, ccxtDir)
 	npmInstall(kos, sourceDir)
 	runPkgTool(kos, sourceDir, outDir, pkgos)
-	mkDir(kos, zipDir)
-	zipOutput(kos, outDir, zipPath)
+	mkDir(kos, zipOutDir)
+	zipOutput(kos, ccxtDir, outDir, zipFoldername, zipOutDir)
 }
