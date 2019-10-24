@@ -159,6 +159,15 @@ func zipOutput(kos *kelpos.KelpOS, ccxtDir string, sourceDir string, zipFolderna
 		log.Fatal(errors.Wrap(e, "unable to zip folder with ccxt binary and dependencies"))
 	}
 	fmt.Printf("done\n")
+
+	zipDirPath := filepath.Join(ccxtDir, zipFoldername)
+	fmt.Printf("clean up zipped directory %s ... ", zipDirPath)
+	cleanupCmd := fmt.Sprintf("rm %s/* && rmdir %s", zipDirPath, zipDirPath)
+	_, e = kos.Blocking("zip", cleanupCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to cleanup zip folder %s with ccxt binary and dependencies", zipDirPath)))
+	}
+	fmt.Printf("done\n")
 }
 
 func generateCcxtBinary(kos *kelpos.KelpOS, pkgos string, zipFoldername string) {
