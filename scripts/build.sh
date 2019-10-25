@@ -55,11 +55,6 @@ function gen_ccxt_binary() {
     echo "successful"
 }
 
-function fetch_ccxt_binary() {
-    # TODO fetch pre-compiled version from GitHub
-    return
-}
-
 if [[ $(basename $("pwd")) != "kelp" ]]
 then
     echo "need to invoke from the root 'kelp' directory"
@@ -190,12 +185,6 @@ then
     OUTFILE=bin/kelp$EXTENSION
     mkdir -p bin
 
-    echo "fetching ccxt binary ... "
-    fetch_ccxt_binary "$(go env GOOS)"
-    check_build_result $?
-    echo "successful"
-    echo ""
-
     echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
     check_build_result $?
@@ -233,12 +222,6 @@ do
     then
         BINARY="$OUTFILE.exe"
     fi
-
-    echo "fetching ccxt binary ... "
-    fetch_ccxt_binary $GOOS
-    check_build_result $?
-    echo "successful"
-    echo ""
 
     # compile
     env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
