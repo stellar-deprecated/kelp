@@ -6,7 +6,7 @@ commands:
       - restore_cache:
           keys:
             - v2-pkg-cache
-            - v2-node-cache
+            - v3-node-cache
       - run:
           name: Install glide
           command: curl https://glide.sh/get | sh
@@ -37,16 +37,16 @@ commands:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
       - run:
-          name: Install yarn
-          command: curl -o- -L https://yarnpkg.com/install.sh | bash
-      - run:
           name: Use Node 10.5
           command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
+      - run:
+          name: Install yarn
+          command: curl -o- -L https://yarnpkg.com/install.sh | bash
       - run:
           name: Build Kelp
           command: ./scripts/build.sh
       - save_cache:
-          key: v2-node-cache
+          key: v3-node-cache
           paths:
             - "/go/src/github.com/stellar/kelp/gui/web/node_modules"
       - run:
