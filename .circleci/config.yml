@@ -5,8 +5,8 @@ commands:
       - checkout
       - restore_cache:
           keys:
-            - v2-pkg-cache
-            - v1-node-cache
+            - v3-pkg-cache
+            - v5-node-cache
       - run:
           name: Install glide
           command: curl https://glide.sh/get | sh
@@ -19,9 +19,20 @@ commands:
       - run:
           name: Install astilectron-bundler
           command: go install github.com/asticode/go-astilectron-bundler
-
+      - run:
+          name: Install nvm
+          command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+      - run:
+          name: Use Node 10.5
+          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.17 && nvm use 10.17
+      - run:
+          name: Install yarn
+          command: curl -o- -L https://yarnpkg.com/install.sh | bash
+      - run:
+          name: Use yarn
+          command: echo 'export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"' >> $BASH_ENV && source $BASH_ENV
       - save_cache:
-          key: v2-pkg-cache
+          key: v3-pkg-cache
           paths:
             - "/go/src/github.com/stellar/kelp/vendor"
 
@@ -34,16 +45,10 @@ commands:
   build_kelp:
     steps:
       - run:
-          name: Install nvm
-          command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-      - run:
-          name: Use Node 10.5
-          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
-      - run:
           name: Build Kelp
           command: ./scripts/build.sh
       - save_cache:
-          key: v1-node-cache
+          key: v5-node-cache
           paths:
             - "/go/src/github.com/stellar/kelp/gui/web/node_modules"
       - run:

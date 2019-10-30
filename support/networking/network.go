@@ -3,9 +3,11 @@ package networking
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"mime"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -76,5 +78,27 @@ func JSONRequest(
 		}
 	}
 
+	return nil
+}
+
+// DownloadFile downloads a URL to a file on the local disk as it downloads it.
+func DownloadFile(url string, filepath string) error {
+	outfile, e := os.Create(filepath)
+	if e != nil {
+		return fmt.Errorf("could not create file at filepath (%s): %s", filepath, e)
+	}
+	defer outfile.Close()
+
+	resp, e := http.Get(url)
+	if e != nil {
+		return fmt.Errorf("could not get file at URL (%s): %s", url, e)
+	}
+	defer resp.Body.Close()
+
+	// do the download and write to file on disk as we download
+	_, e = io.Copy(outfile, resp.Body)
+	if e != nil {
+		return fmt.Errorf("could not download from URL (%s) to file (%s) in a streaming manner: %s", url, filepath, e)
+	}
 	return nil
 }

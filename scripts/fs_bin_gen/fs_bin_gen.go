@@ -9,7 +9,7 @@ import (
 	"github.com/shurcooL/vfsgen"
 )
 
-const fsDev_filename = "./scripts/fs_gen/filesystem_vfsdata_dev.go"
+const fsDev_filename = "./scripts/fs_bin_gen/gui/filesystem_vfsdata_dev.go"
 const fs_filename = "./gui/filesystem_vfsdata.go"
 
 func main() {
@@ -18,15 +18,15 @@ func main() {
 	env := *envP
 
 	if env == "dev" {
-		generateDev()
+		generateWeb_Dev()
 	} else if env == "release" {
-		generateRelease()
+		generateWeb_Release()
 	} else {
 		panic("unrecognized env flag: " + env)
 	}
 }
 
-func generateRelease() {
+func generateWeb_Release() {
 	fs := http.Dir("./gui/web/build")
 	e := vfsgen.Generate(fs, vfsgen.Options{
 		Filename:        fs_filename,
@@ -39,7 +39,7 @@ func generateRelease() {
 	}
 }
 
-func generateDev() {
+func generateWeb_Dev() {
 	c := exec.Command("cp", fsDev_filename, fs_filename)
 	e := c.Run()
 	if e != nil {

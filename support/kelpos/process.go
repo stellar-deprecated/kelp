@@ -130,7 +130,9 @@ func (kos *KelpOS) register(namespace string, p *Process) error {
 	}
 
 	kos.processes[namespace] = *p
-	log.Printf("registered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
+	if !kos.silentRegistrations {
+		log.Printf("registered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
+	}
 	return nil
 }
 
@@ -141,7 +143,9 @@ func (kos *KelpOS) Unregister(namespace string) error {
 
 	if p, exists := kos.processes[namespace]; exists {
 		delete(kos.processes, namespace)
-		log.Printf("unregistered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
+		if !kos.silentRegistrations {
+			log.Printf("unregistered command under namespace '%s' with PID: %d, processes available: %v\n", namespace, p.Cmd.Process.Pid, kos.RegisteredProcesses())
+		}
 		return nil
 	}
 	return fmt.Errorf("process with namespace does not exist: %s", namespace)

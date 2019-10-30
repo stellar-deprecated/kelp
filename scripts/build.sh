@@ -1,13 +1,13 @@
 #!/bin/bash
 
 function usage() {
-    echo "Usage: $0 [flags]"
+    echo "Usage: $0 [flags] [flag-fields]"
     echo ""
     echo "Flags:"
-    echo "    -d, --deploy        prepare tar archives in build/, only works on a tagged commit in the format v1.0.0 or v1.0.0-rc1"
-    echo "    -t, --test-deploy   test prepare tar archives in build/ for your native platform only"
-    echo "    -h, --help          show this help info"
-    exit 1
+    echo "    -d,   --deploy        prepare tar archives in build/, only works on a tagged commit in the format v1.0.0 or v1.0.0-rc1"
+    echo "    -t,   --test-deploy   test prepare tar archives in build/ for your native platform only"
+    echo "    -g,   --gen-ccxt      generate binary for ccxt-rest executable for to be uploaded to GitHub for use in building kelp binary, takes in arguments (linux, darwin, windows)"
+    echo "    -h,   --help          show this help info"
 }
 
 function install_web_dependencies() {
@@ -16,6 +16,7 @@ function install_web_dependencies() {
     cd $CURRENT_DIR/gui/web
 
     yarn install
+    check_build_result $?
 
     cd $CURRENT_DIR
     echo "... finished installing web dependencies"
@@ -28,6 +29,7 @@ function generate_static_web_files() {
     cd $CURRENT_DIR/gui/web
 
     yarn build
+    check_build_result $?
 
     cd $CURRENT_DIR
     echo "... finished generating contents of gui/web/build"
@@ -44,7 +46,16 @@ function check_build_result() {
     fi
 }
 
-if [[ ($# -gt 1 || $(basename $("pwd")) != "kelp") ]]
+# takes in the GOOS for which to build
+function gen_ccxt_binary() {
+    echo "generating ccxt binary for GOOS=$1"
+    echo ""
+    go run ./scripts/ccxt_bin_gen/ccxt_bin_gen.go -goos $1
+    check_build_result $?
+    echo "successful"
+}
+
+if [[ $(basename $("pwd")) != "kelp" ]]
 then
     echo "need to invoke from the root 'kelp' directory"
     exit 1
@@ -60,10 +71,36 @@ elif [[ ($# -eq 1 && ("$1" == "-t" || "$1" == "--test-deploy")) ]]; then
     IS_TEST_MODE=1
 elif [[ ($# -eq 1 && ("$1" == "-h" || "$1" == "--help")) ]]; then
     usage
-elif [[ $# -eq 1 ]]; then
+    exit 0
+elif [[ (($# -eq 1 || $# -eq 2) && ("$1" == "-g" || "$1" == "--gen-ccxt")) ]]; then
+    if [[ $# -eq 1 ]]; then
+        echo "the $1 flag needs to be followed by the GOOS for which to build the ccxt binary"
+        echo ""
+        usage
+        exit 1
+    fi
+
+    if [[ $# -eq 2 ]]; then
+        if [[ "$2" == "linux" || "$2" == "darwin" || "$2" == "windows" ]]; then
+            gen_ccxt_binary $2
+            echo ""
+            echo "BUILD SUCCESSFUL"
+            exit 0
+        else
+            echo "invalid GOOS type passed in: $2"
+            echo ""
+            usage
+            exit 1
+        fi
+    fi
+
     usage
-else
+    exit 1
+elif [[ $# -eq 0 ]]; then
     ENV=dev
+else
+    usage
+    exit 1
 fi
 
 # version is git tag if it's available, otherwise git hash
@@ -120,7 +157,7 @@ fi
 
 echo ""
 echo "embedding contents of gui/web/build into a .go file (env=$ENV) ..."
-go run ./scripts/fs_bin_gen.go -env $ENV
+go run ./scripts/fs_bin_gen/fs_bin_gen.go -env $ENV
 check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
