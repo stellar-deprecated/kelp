@@ -24,7 +24,7 @@ commands:
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
       - run:
           name: Use Node 10.5
-          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.5 && nvm use 10.5
+          command: echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV && echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV && source $BASH_ENV && nvm install 10.17 && nvm use 10.17
       - run:
           name: Install yarn
           command: curl -o- -L https://yarnpkg.com/install.sh | bash
