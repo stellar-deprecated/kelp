@@ -127,7 +127,7 @@ func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string)
 		if !strings.Contains(line, "node_modules") {
 			continue
 		}
-		filename := strings.TrimSpace(strings.ReplaceAll(line, "(MISSING)", ""))
+		filename := strings.TrimSpace(strings.Replace(line, "(MISSING)", "", -1))
 
 		fmt.Printf("    copying file %s to the output directory %s ... ", filename, outDir)
 		cpCmd := fmt.Sprintf("cp %s %s", filename, outDir)
