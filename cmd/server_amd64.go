@@ -35,6 +35,7 @@ const kelpAssetsPath = "/assets"
 const trayIconName = "kelp-icon@1-8x.png"
 const kelpCcxtPath = "/ccxt"
 const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
+const ccxtBinaryName = "ccxt-rest"
 
 type serverInputs struct {
 	port              *uint16
@@ -98,12 +99,25 @@ func init() {
 				}
 			}
 		}
+
+		isLocalMode := env == envDev
+		isLocalDevMode := isLocalMode && *options.dev
+		// start ccxt before we make API server (which loads exchange list)
+		if !isLocalDevMode {
+			ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
+			ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
+			if e != nil {
+				panic(e)
+			}
+			runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
+		}
+
 		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, apiTestNet, *options.horizonPubnetURI, apiPubNet, *rootCcxtRestURL, *options.noHeaders)
 		if e != nil {
 			panic(e)
 		}
 
-		if env == envDev && *options.dev {
+		if isLocalDevMode {
 			checkHomeDir()
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
@@ -112,17 +126,11 @@ func init() {
 			return
 		}
 
-		ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
-		_, e = downloadCcxtBinary(kos, ccxtFilenameNoExt) // ccxtDirPath, e
-		if e != nil {
-			panic(e)
-		}
-
 		options.devAPIPort = nil
 		// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 		os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 
-		if env == envDev {
+		if isLocalMode {
 			checkHomeDir()
 			generateStaticFiles(kos)
 		}
@@ -143,7 +151,7 @@ func init() {
 			openBrowser(kos, url)
 		}()
 
-		if env == envDev {
+		if isLocalMode {
 			e = http.ListenAndServe(portString, r)
 			if e != nil {
 				log.Fatal(e)
@@ -178,12 +186,12 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 
 	filenameWithExt := fmt.Sprintf("%s.zip", filenameNoExt)
 	ccxtZipDownloadPath := filepath.Join(ccxtDirPath, filenameWithExt)
-	log.Printf("ccxtZipDownloadPath: %s", ccxtZipDownloadPath)
 	if _, e := os.Stat(ccxtZipDownloadPath); !os.IsNotExist(e) {
 		return ccxtDirPath, nil
 	}
 
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
+	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
 	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
 	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt)
 
@@ -199,6 +207,23 @@ func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string) {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
 	}
 	log.Printf("done\n")
+}
+
+func runCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath string, ccxtFilenameNoExt string) error {
+	ccxtBinPath := filepath.Join(ccxtDirPath, ccxtFilenameNoExt, ccxtBinaryName)
+	if _, e := os.Stat(ccxtBinPath); os.IsNotExist(e) {
+		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath)
+	}
+
+	log.Printf("running binary %s ... ", ccxtBinPath)
+	_, e := kos.Background("ccxt-rest", ccxtBinPath)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file %s", ccxtBinPath)))
+	}
+	// TODO check if localhost:3000 is up instead of using a timeout
+	time.Sleep(15 * time.Second)
+	log.Printf("done\n")
+	return nil
 }
 
 func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPort uint16) {
