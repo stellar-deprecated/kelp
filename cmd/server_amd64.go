@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 )
 
@@ -31,6 +33,8 @@ const urlOpenDelayMillis = 1500
 const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
 const trayIconName = "kelp-icon@1-8x.png"
+const kelpCcxtPath = "/ccxt"
+const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
 
 type serverInputs struct {
 	port              *uint16
@@ -108,6 +112,12 @@ func init() {
 			return
 		}
 
+		ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
+		_, e = downloadCcxtBinary(kos, ccxtFilenameNoExt) // ccxtDirPath, e
+		if e != nil {
+			panic(e)
+		}
+
 		options.devAPIPort = nil
 		// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 		os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
@@ -150,6 +160,45 @@ func setMiddleware(r *chi.Mux) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+}
+
+func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error) {
+	binDirectory, e := getBinaryDirectory()
+	if e != nil {
+		return "", errors.Wrap(e, "could not get binary directory")
+	}
+	log.Printf("binDirectory: %s", binDirectory)
+
+	ccxtDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, kelpCcxtPath)
+	log.Printf("making ccxtDirPath: %s ...", ccxtDirPath)
+	e = kos.Mkdir(ccxtDirPath)
+	if e != nil {
+		return "", errors.Wrap(e, "could not make directories for ccxtDirPath: "+ccxtDirPath)
+	}
+
+	filenameWithExt := fmt.Sprintf("%s.zip", filenameNoExt)
+	ccxtZipDownloadPath := filepath.Join(ccxtDirPath, filenameWithExt)
+	log.Printf("ccxtZipDownloadPath: %s", ccxtZipDownloadPath)
+	if _, e := os.Stat(ccxtZipDownloadPath); !os.IsNotExist(e) {
+		return ccxtDirPath, nil
+	}
+
+	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
+	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
+	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt)
+
+	return ccxtDirPath, nil
+}
+
+func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string) {
+	zipFilename := filenameNoExt + ".zip"
+	log.Printf("unzipping file %s ... ", zipFilename)
+	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd -", ccxtDir, zipFilename)
+	_, e := kos.Blocking("zip", zipCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
+	}
+	log.Printf("done\n")
 }
 
 func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPort uint16) {
