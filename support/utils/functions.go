@@ -355,3 +355,17 @@ func StringSet(list []string) map[string]bool {
 	}
 	return m
 }
+
+// Dedupe removes duplicates from the list
+func Dedupe(list []string) []string {
+	seen := map[string]bool{}
+	out := []string{}
+
+	for _, elem := range list {
+		if _, ok := seen[elem]; !ok {
+			out = append(out, elem)
+			seen[elem] = true
+		}
+	}
+	return out
+}

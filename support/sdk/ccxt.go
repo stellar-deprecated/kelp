@@ -162,10 +162,13 @@ func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey, params []api.ExchangeParam,
 	}
 	c.markets = markets
 
-	// TODO add in dynamic headers as params
 	headersMap := map[string]networking.HeaderFn{}
 	for _, header := range headers {
-		headersMap[header.Header] = networking.MakeStaticHeaderFn(header.Value)
+		headerFn, e := networking.MakeHeaderFn(header.Value, ccxtHeaderFnMappings)
+		if e != nil {
+			return fmt.Errorf("unable to make header function with key (%s) and value (%s): %s", header.Header, header.Value, e)
+		}
+		headersMap[header.Header] = headerFn
 	}
 	c.headersMap = headersMap
 
