@@ -39,7 +39,12 @@ func headerFnNames(maps ...map[string]HeaderFnFactory) []string {
 
 // MakeHeaderFn is a factory method that makes a HeaderFn
 func MakeHeaderFn(value string, primaryMappings map[string]HeaderFnFactory) (HeaderFn, error) {
-	if strings.Count(value, ":") != 1 {
+	numSeparators := strings.Count(value, ":")
+
+	if numSeparators == 0 {
+		// LOH-1 - support backward-compatible case of not having any pre-specified function
+		return makeStaticHeaderFn(value), nil
+	} else if numSeparators != 1 {
 		names := headerFnNames(primaryMappings, defaultMappings)
 		return nil, fmt.Errorf("invalid format of header value (%s), needs exactly one colon (:) to separate the header function from the input value to that function. list of available header functions: %s", value, names)
 	}
