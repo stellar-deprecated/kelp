@@ -180,7 +180,9 @@ func getExchanges() map[string]ExchangeContainer {
 func loadExchanges() {
 	// marked as tested if key exists in this map (regardless of bool value)
 	testedCcxtExchanges := map[string]bool{
-		"binance": true,
+		"kraken":      true,
+		"binance":     true,
+		"coinbasepro": true,
 	}
 
 	exchanges = &map[string]ExchangeContainer{
