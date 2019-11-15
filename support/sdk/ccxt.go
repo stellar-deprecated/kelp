@@ -163,8 +163,9 @@ func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey, params []api.ExchangeParam,
 	c.markets = markets
 
 	headersMap := map[string]networking.HeaderFn{}
+	ccxtHeaderMappings := makeHeaderMappingsFromNewTimestamp()
 	for _, header := range headers {
-		headerFn, e := networking.MakeHeaderFn(header.Value, ccxtHeaderFnMappings)
+		headerFn, e := networking.MakeHeaderFn(header.Value, ccxtHeaderMappings)
 		if e != nil {
 			return fmt.Errorf("unable to make header function with key (%s) and value (%s): %s", header.Header, header.Value, e)
 		}
