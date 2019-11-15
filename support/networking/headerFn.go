@@ -46,7 +46,7 @@ func MakeHeaderFn(value string, primaryMappings map[string]HeaderFnFactory) (Hea
 		return makeStaticHeaderFn(value)
 	} else if numSeparators != 1 {
 		names := headerFnNames(primaryMappings, defaultMappings)
-		return nil, fmt.Errorf("invalid format of header value (%s), needs exactly one colon (:) to separate the header function from the input value to that function. list of available header functions: %s", value, names)
+		return nil, fmt.Errorf("invalid format of header value (%s), needs exactly one colon (:) to separate the header function from the input value to that function. list of available header functions: [%s]", value, strings.Join(names, ", "))
 	}
 
 	valueParts := strings.Split(value, ":")
@@ -63,5 +63,6 @@ func MakeHeaderFn(value string, primaryMappings map[string]HeaderFnFactory) (Hea
 		return makeHeaderFn(fnInputValue)
 	}
 
-	return nil, fmt.Errorf("invalid function prefix (%s) as part of header value (%s)", fnType, value)
+	names := headerFnNames(primaryMappings, defaultMappings)
+	return nil, fmt.Errorf("invalid function prefix (%s) as part of header value (%s). list of available header functions: [%s]", fnType, value, strings.Join(names, ", "))
 }
