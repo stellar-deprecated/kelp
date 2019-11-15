@@ -23,8 +23,8 @@ func makeHeaderMappingsFromNewTimestamp() map[string]networking.HeaderFnFactory 
 	}
 
 	return map[string]networking.HeaderFnFactory{
-		"COINBASE__CB-ACCESS-SIGN": networking.HeaderFnFactory(c.coinbaseSignFn),
-		"TIMESTAMP":                networking.HeaderFnFactory(c.timestampFn),
+		"COINBASEPRO__CB-ACCESS-SIGN": networking.HeaderFnFactory(c.coinbaseSignFn),
+		"TIMESTAMP":                   networking.HeaderFnFactory(c.timestampFn),
 	}
 }
 
@@ -43,9 +43,9 @@ func (c *ccxtMapper) coinbaseSignFn(base64EncodedSigningKey string) (networking.
 		mac := hmac.New(sha256.New, base64DecodedSigningKey)
 		mac.Write([]byte(payload))
 		signature := mac.Sum(nil)
-		signatureString := string(signature)
+		base64EncodedSignature := base64.StdEncoding.EncodeToString(signature)
 
-		return signatureString
+		return base64EncodedSignature
 	}), nil
 }
 
