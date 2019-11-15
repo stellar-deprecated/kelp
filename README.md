@@ -208,11 +208,13 @@ For more details, check out the [examples section](#configuration-files-1) of th
 
 Exchange integrations provide data to trading strategies and allow you to [hedge][hedge] your positions on different exchanges. The following [exchange integrations](plugins) are available **out of the box** with Kelp:
 
-- sdex ([source](plugins/sdex.go)): The [Stellar Decentralized Exchange][sdex]
-- kraken ([source](plugins/krakenExchange.go)): [Kraken][kraken]
-- binance (_`"ccxt-binance"`_) ([source](plugins/ccxtExchange.go)): Binance via CCXT - only supports priceFeeds and mirroring (buysell, sell, and mirror strategy)
-- poloniex (_`"ccxt-poloniex"`_) ([source](plugins/ccxtExchange.go)): Poloniex via CCXT - only supports priceFeeds and mirroring (buysell, sell, and mirror strategy)
-- bittrex (_`"ccxt-bittrex"`_) ([source](plugins/ccxtExchange.go)): Bittrex via CCXT - only supports priceFeeds and mirroring (buysell, sell, and mirror strategy)
+- sdex (_`"sdex"`_) ([source](plugins/sdex.go)): The [Stellar Decentralized Exchange][sdex]
+- kraken (_`"kraken"`_) ([source](plugins/krakenExchange.go)): [Kraken][kraken] - recommended to use `ccxt-kraken` instead
+- kraken (via CCXT) (_`"ccxt-kraken"`_) ([source](plugins/ccxtExchange.go)): Kraken via CCXT - full two-way integration (tested)
+- binance (via CCXT) (_`"ccxt-binance"`_) ([source](plugins/ccxtExchange.go)): Binance via CCXT - full two-way integration (tested)
+- coinbasepro (via CCXT) (_`"ccxt-coinbasepro"`_) ([source](plugins/ccxtExchange.go)): Coinbase Pro via CCXT - full two-way integration (tested)
+- poloniex (via CCXT) (_`"ccxt-poloniex"`_) ([source](plugins/ccxtExchange.go)): Poloniex via CCXT - only tested on priceFeeds and one-way mirroring
+- bittrex (via CCXT) (_`"ccxt-bittrex"`_) ([source](plugins/ccxtExchange.go)): Bittrex via CCXT - only tested on priceFeeds and onw-way mirroring
 
 ## Plugins
 

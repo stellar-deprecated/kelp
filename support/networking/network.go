@@ -11,6 +11,32 @@ import (
 	"strings"
 )
 
+// JSONRequestDynamicHeaders submits an HTTP web request and parses the response into the responseData object as JSON
+func JSONRequestDynamicHeaders(
+	httpClient *http.Client,
+	method string,
+	reqURL string,
+	data string,
+	headers map[string]HeaderFn,
+	responseData interface{}, // the passed in responseData should be a pointer
+	errorKey string,
+) error {
+	headersMap := map[string]string{}
+	for header, fn := range headers {
+		headersMap[header] = fn(method, reqURL, data)
+	}
+
+	return JSONRequest(
+		httpClient,
+		method,
+		reqURL,
+		data,
+		headersMap,
+		responseData,
+		errorKey,
+	)
+}
+
 // JSONRequest submits an HTTP web request and parses the response into the responseData object as JSON
 func JSONRequest(
 	httpClient *http.Client,

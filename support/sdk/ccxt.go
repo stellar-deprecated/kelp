@@ -36,7 +36,7 @@ type Ccxt struct {
 	exchangeName string
 	instanceName string
 	markets      map[string]CcxtMarket
-	headersMap   map[string]string
+	headersMap   map[string]networking.HeaderFn
 }
 
 // CcxtMarket represents the result of a LoadMarkets call
@@ -162,9 +162,14 @@ func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey, params []api.ExchangeParam,
 	}
 	c.markets = markets
 
-	headersMap := map[string]string{}
+	headersMap := map[string]networking.HeaderFn{}
+	ccxtHeaderMappings := makeHeaderMappingsFromNewTimestamp()
 	for _, header := range headers {
-		headersMap[header.Header] = header.Value
+		headerFn, e := networking.MakeHeaderFn(header.Value, ccxtHeaderMappings)
+		if e != nil {
+			return fmt.Errorf("unable to make header function with key (%s) and value (%s): %s", header.Header, header.Value, e)
+		}
+		headersMap[header.Header] = headerFn
 	}
 	c.headersMap = headersMap
 
@@ -216,7 +221,7 @@ func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam
 	}
 
 	var newInstance map[string]interface{}
-	e = networking.JSONRequest(c.httpClient, "POST", ccxtBaseURL+pathExchanges+"/"+c.exchangeName, string(jsonData), c.headersMap, &newInstance, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", ccxtBaseURL+pathExchanges+"/"+c.exchangeName, string(jsonData), c.headersMap, &newInstance, "error")
 	if e != nil {
 		return fmt.Errorf("error in web request when creating new exchange instance for exchange '%s': %s", c.exchangeName, e)
 	}
@@ -233,7 +238,7 @@ func (c *Ccxt) symbolExists(tradingPair string) error {
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var exchangeOutput interface{}
-	e := networking.JSONRequest(c.httpClient, "GET", url, "", c.headersMap, &exchangeOutput, "error")
+	e := networking.JSONRequestDynamicHeaders(c.httpClient, "GET", url, "", c.headersMap, &exchangeOutput, "error")
 	if e != nil {
 		return fmt.Errorf("error fetching details of exchange instance (exchange=%s, instanceName=%s): %s", c.exchangeName, c.instanceName, e)
 	}
@@ -284,7 +289,7 @@ func (c *Ccxt) FetchTicker(tradingPair string) (map[string]interface{}, error) {
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchTicker"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching tickers for trading pair '%s': %s", tradingPair, e)
 	}
@@ -324,7 +329,7 @@ func (c *Ccxt) FetchOrderBook(tradingPair string, limit *int) (map[string][]Ccxt
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOrderBook"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching orderbook for trading pair '%s': %s", tradingPair, e)
 	}
@@ -385,7 +390,7 @@ func (c *Ccxt) FetchTrades(tradingPair string) ([]CcxtTrade, error) {
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchTrades"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	output := []CcxtTrade{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
 	}
@@ -418,7 +423,7 @@ func (c *Ccxt) FetchMyTrades(tradingPair string, limit int, maybeCursorStart int
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchMyTrades"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	output := []CcxtTrade{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching trades for trading pair '%s': %s", tradingPair, e)
 	}
@@ -437,7 +442,7 @@ func (c *Ccxt) FetchBalance() (map[string]CcxtBalance, error) {
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchBalance"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	e := networking.JSONRequest(c.httpClient, "POST", url, "", c.headersMap, &output, "error")
+	e := networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, "", c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching balance: %s", e)
 	}
@@ -503,7 +508,7 @@ func (c *Ccxt) FetchOpenOrders(tradingPairs []string) (map[string][]CcxtOpenOrde
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/fetchOpenOrders"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error fetching open orders: %s", e)
 	}
@@ -559,7 +564,7 @@ func (c *Ccxt) CreateLimitOrder(tradingPair string, side string, amount float64,
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/createOrder"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error creating order: %s", e)
 	}
@@ -598,7 +603,7 @@ func (c *Ccxt) CancelOrder(orderID string, tradingPair string) (*CcxtOpenOrder, 
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName + "/cancelOrder"
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
 	var output interface{}
-	e = networking.JSONRequest(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
+	e = networking.JSONRequestDynamicHeaders(c.httpClient, "POST", url, string(data), c.headersMap, &output, "error")
 	if e != nil {
 		return nil, fmt.Errorf("error canceling order: %s", e)
 	}
