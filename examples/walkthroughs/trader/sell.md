@@ -18,7 +18,7 @@ Use the [sample configuration file for the sell strategy](../../configs/trader/s
 
 ### Price Feeds
 
-BuySell requires two price feeds, `A` and `B`, and it computes its final trading price by dividing `A` by `B`.
+Sell requires two price feeds, `A` and `B`, and it computes its final trading price by dividing `A` by `B`.
 
 To give `COUPON` a stable price against USD, we're going to connect feed `A` to the **[priceFeed from Kraken](https://kraken.com)**, the popular custodial exchange. We set the `DATA_TYPE_A` to `"exchange"` and `DATA_FEED_A_URL` to `"kraken/XXLM/ZUSD"`. This points our bot to Kraken's price for 1 XLM, quoted in USD. 
 
