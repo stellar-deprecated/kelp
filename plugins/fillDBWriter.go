@@ -6,14 +6,15 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/utils"
 )
 
 const dateFormatString = "2006/01/02"
-const sqlDbCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc VARCHAR(10), timestamp_millis INTEGER, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
+const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc VARCHAR(10), timestamp_millis INTEGER, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
 const sqlInsert = "INSERT INTO trades (txid, date_utc, timestamp_millis, base, quote, action, type, counter_price, base_volume, counter_cost, fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 var sqlIndexes = []string{
@@ -28,13 +29,24 @@ type FillDBWriter struct {
 var _ api.FillHandler = &FillDBWriter{}
 
 // MakeFillDBWriter is a factory method
-func MakeFillDBWriter(sqlDbPath string) (api.FillHandler, error) {
-	db, e := sql.Open("sqlite3", sqlDbPath)
+func MakeFillDBWriter(postgresDbConfig *postgresdb.Config) (api.FillHandler, error) {
+	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
 	if e != nil {
-		return nil, fmt.Errorf("could not open sqlite3 database: %s", e)
+		return nil, fmt.Errorf("error when creating database from config (%+v), created=%v: %s", *postgresDbConfig, dbCreated, e)
+	}
+	if dbCreated {
+		log.Printf("created database '%s'", postgresDbConfig.GetDbName())
+	} else {
+		log.Printf("did not create db '%s' because it already exists", postgresDbConfig.GetDbName())
 	}
 
-	statement, e := db.Prepare(sqlDbCreate)
+	db, e := sql.Open("postgres", postgresDbConfig.MakeConnectString())
+	if e != nil {
+		return nil, fmt.Errorf("could not open database: %s", e)
+	}
+	// don't defer db.Close() here becuase we want it open for the life of the application for now
+
+	statement, e := db.Prepare(sqlTableCreate)
 	if e != nil {
 		return nil, fmt.Errorf("could not prepare sql statement: %s", e)
 	}
@@ -54,10 +66,9 @@ func MakeFillDBWriter(sqlDbPath string) (api.FillHandler, error) {
 		}
 	}
 
-	log.Printf("making FillDBWriter with db path: %s\n", sqlDbPath)
-	return &FillDBWriter{
-		db: db,
-	}, nil
+	fdbw := &FillDBWriter{db: db}
+	log.Printf("made FillDBWriter with db config: %s\n", postgresDbConfig.MakeConnectString())
+	return fdbw, nil
 }
 
 // HandleFill impl.

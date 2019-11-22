@@ -575,8 +575,8 @@ func startFillTracking(
 		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
-		if botConfig.SqlDbPath != "" {
-			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.SqlDbPath)
+		if botConfig.PostgresDbConfig != nil {
+			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.PostgresDbConfig)
 			if e != nil {
 				l.Info("")
 				l.Errorf("problem encountered while making the FillDBWriter: %s", e)
