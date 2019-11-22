@@ -13,9 +13,9 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-const dateFormatString = "2006/01/02"
-const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc VARCHAR(10), timestamp_millis BIGINT, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
-const sqlInsertTemplate = "INSERT INTO trades (txid, date_utc, timestamp_millis, base, quote, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', %d, '%s', '%s', '%s', '%s', %f, %f, %f, %f)"
+const dateFormatString = "2006/01/02 15:04:05 MST"
+const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc TIMESTAMP WITHOUT TIME ZONE, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
+const sqlInsertTemplate = "INSERT INTO trades (txid, date_utc, base, quote, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %f, %f, %f, %f)"
 
 var sqlIndexes = []string{
 	"CREATE INDEX IF NOT EXISTS date ON trades (date_utc, base, quote)",
@@ -81,7 +81,6 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	sqlInsert := fmt.Sprintf(sqlInsertTemplate,
 		txid,
 		dateString,
-		trade.Timestamp.AsInt64(),
 		string(trade.Pair.Base),
 		string(trade.Pair.Quote),
 		trade.OrderAction.String(),
