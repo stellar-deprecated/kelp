@@ -48,21 +48,21 @@ func MakeFillDBWriter(postgresDbConfig *postgresdb.Config) (api.FillHandler, err
 
 	statement, e := db.Prepare(sqlTableCreate)
 	if e != nil {
-		return nil, fmt.Errorf("could not prepare sql statement: %s", e)
+		return nil, fmt.Errorf("could not prepare sql create table statement (%s): %s", sqlTableCreate, e)
 	}
 	_, e = statement.Exec()
 	if e != nil {
-		return nil, fmt.Errorf("could not execute sql create table statement: %s", e)
+		return nil, fmt.Errorf("could not execute sql create table statement (%s): %s", sqlTableCreate, e)
 	}
 
 	for i, sqlIndexCreate := range sqlIndexes {
 		statement, e = db.Prepare(sqlIndexCreate)
 		if e != nil {
-			return nil, fmt.Errorf("could not prepare sql statement to create index (i=%d): %s", i, e)
+			return nil, fmt.Errorf("could not prepare sql statement to create index (%s) (i=%d): %s", sqlIndexCreate, i, e)
 		}
 		_, e = statement.Exec()
 		if e != nil {
-			return nil, fmt.Errorf("could not execute sql statement to create index (i=%d): %s", i, e)
+			return nil, fmt.Errorf("could not execute sql statement to create index (%s) (i=%d): %s", sqlIndexCreate, i, e)
 		}
 	}
 
@@ -75,7 +75,7 @@ func MakeFillDBWriter(postgresDbConfig *postgresdb.Config) (api.FillHandler, err
 func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	statement, e := f.db.Prepare(sqlInsert)
 	if e != nil {
-		return fmt.Errorf("could not prepare sql insert values statement: %s", e)
+		return fmt.Errorf("could not prepare sql insert values statement (%s): %s", sqlInsert, e)
 	}
 
 	txid := utils.CheckedString(trade.TransactionID)
@@ -97,8 +97,9 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		f.checkedFloat(trade.Fee),
 	)
 	if e != nil {
-		return fmt.Errorf("could not execute sql insert values statement: %s", e)
+		return fmt.Errorf("could not execute sql insert values statement (%s): %s", sqlInsert, e)
 	}
+
 	log.Printf("wrote trade (txid=%s) to db\n", txid)
 	return nil
 }
