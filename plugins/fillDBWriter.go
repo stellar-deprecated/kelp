@@ -14,8 +14,8 @@ import (
 )
 
 const dateFormatString = "2006/01/02"
-const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc VARCHAR(10), timestamp_millis INTEGER, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
-const sqlInsert = "INSERT INTO trades (txid, date_utc, timestamp_millis, base, quote, action, type, counter_price, base_volume, counter_cost, fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc VARCHAR(10), timestamp_millis BIGINT, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
+const sqlInsertTemplate = "INSERT INTO trades (txid, date_utc, timestamp_millis, base, quote, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', %d, '%s', '%s', '%s', '%s', %f, %f, %f, %f)"
 
 var sqlIndexes = []string{
 	"CREATE INDEX IF NOT EXISTS date ON trades (date_utc, base, quote)",
@@ -73,20 +73,15 @@ func MakeFillDBWriter(postgresDbConfig *postgresdb.Config) (api.FillHandler, err
 
 // HandleFill impl.
 func (f *FillDBWriter) HandleFill(trade model.Trade) error {
-	statement, e := f.db.Prepare(sqlInsert)
-	if e != nil {
-		return fmt.Errorf("could not prepare sql insert values statement (%s): %s", sqlInsert, e)
-	}
-
 	txid := utils.CheckedString(trade.TransactionID)
 	timeSeconds := trade.Timestamp.AsInt64() / 1000
 	date := time.Unix(timeSeconds, 0).UTC()
 	dateString := date.Format(dateFormatString)
 
-	_, e = statement.Exec(
+	sqlInsert := fmt.Sprintf(sqlInsertTemplate,
 		txid,
 		dateString,
-		utils.CheckedString(trade.Timestamp),
+		trade.Timestamp.AsInt64(),
 		string(trade.Pair.Base),
 		string(trade.Pair.Quote),
 		trade.OrderAction.String(),
@@ -96,6 +91,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		f.checkedFloat(trade.Cost),
 		f.checkedFloat(trade.Fee),
 	)
+	_, e := f.db.Exec(sqlInsert)
 	if e != nil {
 		return fmt.Errorf("could not execute sql insert values statement (%s): %s", sqlInsert, e)
 	}
