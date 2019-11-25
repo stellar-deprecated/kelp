@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -92,6 +93,12 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	)
 	_, e := f.db.Exec(sqlInsert)
 	if e != nil {
+		if strings.Contains(e.Error(), "duplicate key value violates unique constraint \"trades_pkey\"") {
+			log.Printf("trying to reinsert trade (txid=%s) to db, ignore and continue\n", txid)
+			return nil
+		}
+
+		// return an error on any other errors
 		return fmt.Errorf("could not execute sql insert values statement (%s): %s", sqlInsert, e)
 	}
 
