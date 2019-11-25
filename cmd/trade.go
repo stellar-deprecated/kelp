@@ -203,6 +203,7 @@ func makeExchangeShimSdex(
 	network string,
 	threadTracker *multithreading.ThreadTracker,
 	tradingPair *model.TradingPair,
+	sdexAssetMap map[model.Asset]hProtocol.Asset,
 ) (api.ExchangeShim, *plugins.SDEX) {
 	var e error
 	var exchangeShim api.ExchangeShim
@@ -261,10 +262,6 @@ func makeExchangeShimSdex(
 		}
 	}
 
-	sdexAssetMap := map[model.Asset]hProtocol.Asset{
-		tradingPair.Base:  botConfig.AssetBase(),
-		tradingPair.Quote: botConfig.AssetQuote(),
-	}
 	feeFn := makeFeeFn(l, botConfig, client)
 	sdex := plugins.MakeSDEX(
 		client,
@@ -432,6 +429,10 @@ func runTradeCmd(options inputs) {
 
 	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
 	network := utils.ParseNetwork(botConfig.HorizonURL)
+	sdexAssetMap := map[model.Asset]hProtocol.Asset{
+		tradingPair.Base:  botConfig.AssetBase(),
+		tradingPair.Quote: botConfig.AssetQuote(),
+	}
 	exchangeShim, sdex := makeExchangeShimSdex(
 		l,
 		botConfig,
@@ -441,6 +442,7 @@ func runTradeCmd(options inputs) {
 		network,
 		threadTracker,
 		tradingPair,
+		sdexAssetMap,
 	)
 	strategy := makeStrategy(
 		l,
@@ -493,6 +495,7 @@ func runTradeCmd(options inputs) {
 		sdex,
 		exchangeShim,
 		tradingPair,
+		sdexAssetMap,
 		threadTracker,
 	)
 	startQueryServer(
@@ -561,6 +564,7 @@ func startFillTracking(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
+	sdexAssetMap map[model.Asset]hProtocol.Asset,
 	threadTracker *multithreading.ThreadTracker,
 ) {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
@@ -576,7 +580,11 @@ func startFillTracking(
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
 		if botConfig.PostgresDbConfig != nil {
-			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.PostgresDbConfig)
+			assetDisplayFn := model.MakePassthroughAssetDisplayFn()
+			if botConfig.IsTradingSdex() {
+				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
+			}
+			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.PostgresDbConfig, assetDisplayFn)
 			if e != nil {
 				l.Info("")
 				l.Errorf("problem encountered while making the FillDBWriter: %s", e)

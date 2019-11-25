@@ -24,13 +24,14 @@ var sqlIndexes = []string{
 
 // FillDBWriter is a FillHandler that writes fills to a SQL database
 type FillDBWriter struct {
-	db *sql.DB
+	db             *sql.DB
+	assetDisplayFn model.AssetDisplayFn
 }
 
 var _ api.FillHandler = &FillDBWriter{}
 
 // MakeFillDBWriter is a factory method
-func MakeFillDBWriter(postgresDbConfig *postgresdb.Config) (api.FillHandler, error) {
+func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.AssetDisplayFn) (api.FillHandler, error) {
 	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
 	if e != nil {
 		return nil, fmt.Errorf("error when creating database from config (%+v), created=%v: %s", *postgresDbConfig, dbCreated, e)
@@ -67,7 +68,10 @@ func MakeFillDBWriter(postgresDbConfig *postgresdb.Config) (api.FillHandler, err
 		}
 	}
 
-	fdbw := &FillDBWriter{db: db}
+	fdbw := &FillDBWriter{
+		db:             db,
+		assetDisplayFn: assetDisplayFn,
+	}
 	log.Printf("made FillDBWriter with db config: %s\n", postgresDbConfig.MakeConnectString())
 	return fdbw, nil
 }
@@ -79,11 +83,19 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	date := time.Unix(timeSeconds, 0).UTC()
 	dateString := date.Format(dateFormatString)
 
+	baseAssetString, e := f.assetDisplayFn(trade.Pair.Base)
+	if e != nil {
+		return fmt.Errorf("bot is not configured to recognize the base asset from this trade (txid=%s), base asset = %s, error: %s", txid, string(trade.Pair.Base), e)
+	}
+	quoteAssetString, e := f.assetDisplayFn(trade.Pair.Quote)
+	if e != nil {
+		return fmt.Errorf("bot is not configured to recognize the quote asset from this trade (txid=%s), quote asset = %s, error: %s", txid, string(trade.Pair.Quote), e)
+	}
 	sqlInsert := fmt.Sprintf(sqlInsertTemplate,
 		txid,
 		dateString,
-		string(trade.Pair.Base),
-		string(trade.Pair.Quote),
+		baseAssetString,
+		quoteAssetString,
 		trade.OrderAction.String(),
 		trade.OrderType.String(),
 		f.checkedFloat(trade.Price),
@@ -91,7 +103,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		f.checkedFloat(trade.Cost),
 		f.checkedFloat(trade.Fee),
 	)
-	_, e := f.db.Exec(sqlInsert)
+	_, e = f.db.Exec(sqlInsert)
 	if e != nil {
 		if strings.Contains(e.Error(), "duplicate key value violates unique constraint \"trades_pkey\"") {
 			log.Printf("trying to reinsert trade (txid=%s) to db, ignore and continue\n", txid)
