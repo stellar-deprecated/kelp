@@ -584,7 +584,7 @@ func startFillTracking(
 			if botConfig.IsTradingSdex() {
 				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
 			}
-			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.PostgresDbConfig, assetDisplayFn)
+			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.PostgresDbConfig, assetDisplayFn, botConfig.TradingExchangeName())
 			if e != nil {
 				l.Info("")
 				l.Errorf("problem encountered while making the FillDBWriter: %s", e)

@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"fmt"
 	"log"
@@ -15,23 +16,54 @@ import (
 )
 
 const dateFormatString = "2006/01/02 15:04:05 MST"
-const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (txid TEXT PRIMARY KEY, date_utc TIMESTAMP WITHOUT TIME ZONE, base TEXT, quote TEXT, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
-const sqlInsertTemplate = "INSERT INTO trades (txid, date_utc, base, quote, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', %f, %f, %f, %f)"
+const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT, txid TEXT PRIMARY KEY, date_utc TIMESTAMP WITHOUT TIME ZONE, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
+const sqlInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', %f, %f, %f, %f)"
 
 var sqlIndexes = []string{
 	"CREATE INDEX IF NOT EXISTS date ON trades (date_utc, base, quote)",
+}
+
+type tradingMarket struct {
+	ID           string
+	exchangeName string
+	baseAsset    string
+	quoteAsset   string
 }
 
 // FillDBWriter is a FillHandler that writes fills to a SQL database
 type FillDBWriter struct {
 	db             *sql.DB
 	assetDisplayFn model.AssetDisplayFn
+	exchangeName   string
+
+	// uninitialized
+	market *tradingMarket
+}
+
+// makeTradingMarket makes a market along with the ID field
+func makeTradingMarket(exchangeName string, baseAsset string, quoteAsset string) *tradingMarket {
+	idString := fmt.Sprintf("%s_%s_%s", exchangeName, baseAsset, quoteAsset)
+	h := sha256.New()
+	h.Write([]byte(idString))
+	sha256Hash := fmt.Sprintf("%x", h.Sum(nil))
+
+	return &tradingMarket{
+		ID:           sha256Hash,
+		exchangeName: exchangeName,
+		baseAsset:    baseAsset,
+		quoteAsset:   quoteAsset,
+	}
+}
+
+// String is the Stringer method
+func (m *tradingMarket) String() string {
+	return fmt.Sprintf("tradingMarket[ID=%s, exchangeName=%s, baseAsset=%s, quoteAsset=%s]", m.ID, m.exchangeName, m.baseAsset, m.quoteAsset)
 }
 
 var _ api.FillHandler = &FillDBWriter{}
 
 // MakeFillDBWriter is a factory method
-func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.AssetDisplayFn) (api.FillHandler, error) {
+func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.AssetDisplayFn, exchangeName string) (api.FillHandler, error) {
 	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
 	if e != nil {
 		return nil, fmt.Errorf("error when creating database from config (%+v), created=%v: %s", *postgresDbConfig, dbCreated, e)
@@ -71,9 +103,41 @@ func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.
 	fdbw := &FillDBWriter{
 		db:             db,
 		assetDisplayFn: assetDisplayFn,
+		exchangeName:   exchangeName,
 	}
 	log.Printf("made FillDBWriter with db config: %s\n", postgresDbConfig.MakeConnectString())
 	return fdbw, nil
+}
+
+func (f *FillDBWriter) fetchOrRegisterMarket(trade model.Trade) (*tradingMarket, error) {
+	if f.market != nil {
+		return f.market, nil
+	}
+
+	txid := utils.CheckedString(trade.TransactionID)
+	baseAssetString, e := f.assetDisplayFn(trade.Pair.Base)
+	if e != nil {
+		return nil, fmt.Errorf("bot is not configured to recognize the base asset from this trade (txid=%s), base asset = %s, error: %s", txid, string(trade.Pair.Base), e)
+	}
+	quoteAssetString, e := f.assetDisplayFn(trade.Pair.Quote)
+	if e != nil {
+		return nil, fmt.Errorf("bot is not configured to recognize the quote asset from this trade (txid=%s), quote asset = %s, error: %s", txid, string(trade.Pair.Quote), e)
+	}
+
+	market := makeTradingMarket(f.exchangeName, baseAssetString, quoteAssetString)
+	e = f.registerMarket(market)
+	if e != nil {
+		return nil, fmt.Errorf("unable to register market: %s", market)
+	}
+
+	f.market = market
+	return market, nil
+}
+
+func (f *FillDBWriter) registerMarket(market *tradingMarket) error {
+	// TODO
+	log.Printf("registering market in db: %s", market)
+	return nil
 }
 
 // HandleFill impl.
@@ -83,19 +147,15 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	date := time.Unix(timeSeconds, 0).UTC()
 	dateString := date.Format(dateFormatString)
 
-	baseAssetString, e := f.assetDisplayFn(trade.Pair.Base)
+	market, e := f.fetchOrRegisterMarket(trade)
 	if e != nil {
-		return fmt.Errorf("bot is not configured to recognize the base asset from this trade (txid=%s), base asset = %s, error: %s", txid, string(trade.Pair.Base), e)
+		return fmt.Errorf("cannot fetch or register market for trade (txid=%s): %s", txid, e)
 	}
-	quoteAssetString, e := f.assetDisplayFn(trade.Pair.Quote)
-	if e != nil {
-		return fmt.Errorf("bot is not configured to recognize the quote asset from this trade (txid=%s), quote asset = %s, error: %s", txid, string(trade.Pair.Quote), e)
-	}
+
 	sqlInsert := fmt.Sprintf(sqlInsertTemplate,
+		market.ID,
 		txid,
 		dateString,
-		baseAssetString,
-		quoteAssetString,
 		trade.OrderAction.String(),
 		trade.OrderType.String(),
 		f.checkedFloat(trade.Price),

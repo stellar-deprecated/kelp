@@ -157,6 +157,14 @@ func (b *BotConfig) IsTradingSdex() bool {
 	return b.isTradingSdex
 }
 
+// TradingExchangeName returns the defaulted trading exchange name
+func (b *BotConfig) TradingExchangeName() string {
+	if b.IsTradingSdex() {
+		return "sdex"
+	}
+	return b.TradingExchange
+}
+
 // Init initializes this config
 func (b *BotConfig) Init() error {
 	b.isTradingSdex = b.TradingExchange == "" || b.TradingExchange == "sdex"
