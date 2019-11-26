@@ -82,6 +82,9 @@ var _ api.FillHandler = &FillDBWriter{}
 func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.AssetDisplayFn, exchangeName string) (api.FillHandler, error) {
 	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
 	if e != nil {
+		if strings.Contains(e.Error(), "connect: connection refused") {
+			utils.PrintErrorHintf("ensure your postgres database is available on %s:%d, or remove the 'POSTGRES_DB' config from your trader config file\n", postgresDbConfig.GetHost(), postgresDbConfig.GetPort())
+		}
 		return nil, fmt.Errorf("error when creating database from config (%+v), created=%v: %s", *postgresDbConfig, dbCreated, e)
 	}
 	if dbCreated {

@@ -4,12 +4,12 @@ import "fmt"
 
 // Config takes in the information needed to connect to a postgres database
 type Config struct {
-	Host      string  `toml:"HOST"`
-	Port      *uint16 `toml:"PORT"`
-	DbName    string  `toml:"DB_NAME"`
-	User      string  `toml:"USER"`
-	Password  string  `toml:"PASSWORD"`
-	SSLEnable bool    `toml:"SSL_ENABLE"`
+	Host      string `toml:"HOST"`
+	Port      uint16 `toml:"PORT"`
+	DbName    string `toml:"DB_NAME"`
+	User      string `toml:"USER"`
+	Password  string `toml:"PASSWORD"`
+	SSLEnable bool   `toml:"SSL_ENABLE"`
 }
 
 // GetHost returns the host of the database after defaulting if needed
@@ -19,10 +19,10 @@ func (c *Config) GetHost() string {
 
 // GetPort returns the port of the database after defaulting if needed
 func (c *Config) GetPort() uint16 {
-	if c.Port == nil || *c.Port == 0 {
+	if c.Port == 0 {
 		return 5432
 	}
-	return *c.Port
+	return c.Port
 }
 
 // GetDbName returns the name of the database after defaulting if needed

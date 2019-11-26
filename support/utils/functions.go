@@ -369,3 +369,15 @@ func Dedupe(list []string) []string {
 	}
 	return out
 }
+
+// PrintErrorHintf shows a helpful hint for the user when there is an error (likely recoverable)
+func PrintErrorHintf(message string, args ...interface{}) {
+	log.Printf("\n")
+	log.Printf("\n")
+	log.Printf("**************************************** HINT ****************************************\n")
+	log.Printf("\n")
+	log.Printf(message, args...)
+	log.Printf("\n")
+	log.Printf("*************************************** /HINT ****************************************\n")
+	log.Printf("\n")
+}
