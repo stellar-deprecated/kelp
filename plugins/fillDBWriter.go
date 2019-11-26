@@ -16,18 +16,33 @@ import (
 )
 
 const dateFormatString = "2006/01/02 15:04:05 MST"
-const sqlTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT, txid TEXT PRIMARY KEY, date_utc TIMESTAMP WITHOUT TIME ZONE, action TEXT, type TEXT, counter_price REAL, base_volume REAL, counter_cost REAL, fee REAL)"
-const sqlInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', %f, %f, %f, %f)"
+const sqlMarketsTableCreate = "CREATE TABLE IF NOT EXISTS markets (market_id TEXT PRIMARY KEY, exchange_name TEXT NOT NULL, base TEXT NOT NULL, quote TEXT NOT NULL)"
+const sqlMarketsInsertTemplate = "INSERT INTO markets (market_id, exchange_name, base, quote) VALUES ('%s', '%s', '%s', '%s')"
+const sqlFetchMarketById = "SELECT market_id, exchange_name, base, quote FROM markets WHERE market_id = $1 LIMIT 1"
+const sqlTradesTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT NOT NULL, txid TEXT PRIMARY KEY, date_utc TIMESTAMP WITHOUT TIME ZONE NOT NULL, action TEXT NOT NULL, type TEXT NOT NULL, counter_price DOUBLE PRECISION NOT NULL, base_volume DOUBLE PRECISION NOT NULL, counter_cost DOUBLE PRECISION NOT NULL, fee DOUBLE PRECISION NOT NULL)"
+const sqlTradesInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', %f, %f, %f, %.15f)"
+const marketIdHashLength = 10
 
 var sqlIndexes = []string{
-	"CREATE INDEX IF NOT EXISTS date ON trades (date_utc, base, quote)",
+	"CREATE INDEX IF NOT EXISTS date ON trades (market_id, date_utc)",
 }
 
 type tradingMarket struct {
 	ID           string
-	exchangeName string
-	baseAsset    string
-	quoteAsset   string
+	ExchangeName string
+	BaseAsset    string
+	QuoteAsset   string
+}
+
+func (t *tradingMarket) equals(other tradingMarket) bool {
+	if t.ExchangeName != other.ExchangeName {
+		return false
+	} else if t.BaseAsset != other.BaseAsset {
+		return false
+	} else if t.QuoteAsset != other.QuoteAsset {
+		return false
+	}
+	return true
 }
 
 // FillDBWriter is a FillHandler that writes fills to a SQL database
@@ -46,18 +61,19 @@ func makeTradingMarket(exchangeName string, baseAsset string, quoteAsset string)
 	h := sha256.New()
 	h.Write([]byte(idString))
 	sha256Hash := fmt.Sprintf("%x", h.Sum(nil))
+	sha256HashPrefix := sha256Hash[0:marketIdHashLength]
 
 	return &tradingMarket{
-		ID:           sha256Hash,
-		exchangeName: exchangeName,
-		baseAsset:    baseAsset,
-		quoteAsset:   quoteAsset,
+		ID:           sha256HashPrefix,
+		ExchangeName: exchangeName,
+		BaseAsset:    baseAsset,
+		QuoteAsset:   quoteAsset,
 	}
 }
 
 // String is the Stringer method
 func (m *tradingMarket) String() string {
-	return fmt.Sprintf("tradingMarket[ID=%s, exchangeName=%s, baseAsset=%s, quoteAsset=%s]", m.ID, m.exchangeName, m.baseAsset, m.quoteAsset)
+	return fmt.Sprintf("tradingMarket[ID=%s, ExchangeName=%s, BaseAsset=%s, QuoteAsset=%s]", m.ID, m.ExchangeName, m.BaseAsset, m.QuoteAsset)
 }
 
 var _ api.FillHandler = &FillDBWriter{}
@@ -80,16 +96,17 @@ func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.
 	}
 	// don't defer db.Close() here becuase we want it open for the life of the application for now
 
-	statement, e := db.Prepare(sqlTableCreate)
+	e = postgresdb.CreateTableIfNotExists(db, sqlTradesTableCreate)
 	if e != nil {
-		return nil, fmt.Errorf("could not prepare sql create table statement (%s): %s", sqlTableCreate, e)
+		return nil, fmt.Errorf("could not create trades table: %s", e)
 	}
-	_, e = statement.Exec()
+	e = postgresdb.CreateTableIfNotExists(db, sqlMarketsTableCreate)
 	if e != nil {
-		return nil, fmt.Errorf("could not execute sql create table statement (%s): %s", sqlTableCreate, e)
+		return nil, fmt.Errorf("could not create markets table: %s", e)
 	}
 
 	for i, sqlIndexCreate := range sqlIndexes {
+		var statement *sql.Stmt
 		statement, e = db.Prepare(sqlIndexCreate)
 		if e != nil {
 			return nil, fmt.Errorf("could not prepare sql statement to create index (%s) (i=%d): %s", sqlIndexCreate, i, e)
@@ -125,18 +142,60 @@ func (f *FillDBWriter) fetchOrRegisterMarket(trade model.Trade) (*tradingMarket,
 	}
 
 	market := makeTradingMarket(f.exchangeName, baseAssetString, quoteAssetString)
-	e = f.registerMarket(market)
+	fetchedMarket, e := f.fetchMarketFromDb(market.ID)
 	if e != nil {
-		return nil, fmt.Errorf("unable to register market: %s", market)
+		return nil, fmt.Errorf("error while fetching market (ID=%s) from db: %s", market.ID, e)
+	}
+
+	if fetchedMarket == nil {
+		e = f.registerMarket(market)
+		if e != nil {
+			return nil, fmt.Errorf("unable to register market: %s", market.String())
+		}
+		log.Printf("registered market in db: %s", market.String())
+	} else if !market.equals(*fetchedMarket) {
+		return nil, fmt.Errorf("fetched market (%s) was different from computed market (%s)", *fetchedMarket, *market)
 	}
 
 	f.market = market
 	return market, nil
 }
 
+func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error) {
+	rows, e := f.db.Query(sqlFetchMarketById, marketId)
+	if e != nil {
+		return nil, fmt.Errorf("could not execute sql select query (%s) for marketId (%s): %s", sqlFetchMarketById, marketId, e)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var market tradingMarket
+		e = rows.Scan(&market.ID, &market.ExchangeName, &market.BaseAsset, &market.QuoteAsset)
+		if e != nil {
+			return nil, fmt.Errorf("could not scan row into tradingMarket struct: %s", e)
+		}
+
+		log.Printf("fetched market from db: %s", market.String())
+		return &market, nil
+	}
+
+	return nil, nil
+}
+
 func (f *FillDBWriter) registerMarket(market *tradingMarket) error {
-	// TODO
-	log.Printf("registering market in db: %s", market)
+	sqlInsert := fmt.Sprintf(sqlMarketsInsertTemplate,
+		market.ID,
+		market.ExchangeName,
+		market.BaseAsset,
+		market.QuoteAsset,
+	)
+
+	_, e := f.db.Exec(sqlInsert)
+	if e != nil {
+		// duplicate insert should return an error
+		return fmt.Errorf("could not execute sql insert values statement (%s): %s", sqlInsert, e)
+	}
+
 	return nil
 }
 
@@ -152,7 +211,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		return fmt.Errorf("cannot fetch or register market for trade (txid=%s): %s", txid, e)
 	}
 
-	sqlInsert := fmt.Sprintf(sqlInsertTemplate,
+	sqlInsert := fmt.Sprintf(sqlTradesInsertTemplate,
 		market.ID,
 		txid,
 		dateString,

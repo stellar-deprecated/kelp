@@ -28,3 +28,18 @@ func CreateDatabaseIfNotExists(postgresDbConfig *Config) (bool, error) {
 	}
 	return true, nil
 }
+
+// CreateTableIfNotExists returns whether the table was created or not
+func CreateTableIfNotExists(db *sql.DB, sqlStatement string) error {
+	statement, e := db.Prepare(sqlStatement)
+	if e != nil {
+		return fmt.Errorf("could not prepare sql create table statement (%s): %s", sqlStatement, e)
+	}
+
+	_, e = statement.Exec()
+	if e != nil {
+		return fmt.Errorf("could not execute sql create table statement (%s): %s", sqlStatement, e)
+	}
+
+	return nil
+}
