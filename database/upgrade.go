@@ -90,6 +90,7 @@ func runUpgradeScripts(db *sql.DB, scripts []*UpgradeScript) error {
 		}
 
 		startTime := time.Now()
+		startTimeMillis := startTime.UnixNano() / int64(time.Millisecond)
 		for ci, command := range script.commands {
 			e = postgresdb.ExecuteStatement(db, command)
 			if e != nil {
@@ -97,7 +98,8 @@ func runUpgradeScripts(db *sql.DB, scripts []*UpgradeScript) error {
 			}
 			log.Printf("   executed sql statement at index %d for db version %d", ci, script.version)
 		}
-		elapsedMillis := time.Now().Sub(startTime).Milliseconds()
+		endTimeMillis := time.Now().UnixNano() / int64(time.Millisecond)
+		elapsedMillis := endTimeMillis - startTimeMillis
 
 		// add entry to db_version table
 		sqlInsertDbVersion := fmt.Sprintf(sqlDbVersionTableInsertTemplate,
