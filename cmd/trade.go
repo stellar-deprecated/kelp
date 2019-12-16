@@ -16,6 +16,7 @@ import (
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/database"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/query"
@@ -580,16 +581,19 @@ func startFillTracking(
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
 		if botConfig.PostgresDbConfig != nil {
+			db, e := database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
+			if e != nil {
+				l.Info("")
+				l.Errorf("problem encountered while initializing the db: %s", e)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			}
+			log.Printf("made db instance with config: %s\n", botConfig.PostgresDbConfig.MakeConnectString())
+
 			assetDisplayFn := model.MakePassthroughAssetDisplayFn()
 			if botConfig.IsTradingSdex() {
 				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
 			}
-			fillDBWriter, e := plugins.MakeFillDBWriter(botConfig.PostgresDbConfig, assetDisplayFn, botConfig.TradingExchangeName())
-			if e != nil {
-				l.Info("")
-				l.Errorf("problem encountered while making the FillDBWriter: %s", e)
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-			}
+			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName())
 			fillTracker.RegisterHandler(fillDBWriter)
 		}
 		if strategyFillHandlers != nil {

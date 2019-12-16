@@ -10,22 +10,13 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/database"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/utils"
 )
 
-const dateFormatString = "2006/01/02 15:04:05 MST"
-const sqlMarketsTableCreate = "CREATE TABLE IF NOT EXISTS markets (market_id TEXT PRIMARY KEY, exchange_name TEXT NOT NULL, base TEXT NOT NULL, quote TEXT NOT NULL)"
-const sqlMarketsInsertTemplate = "INSERT INTO markets (market_id, exchange_name, base, quote) VALUES ('%s', '%s', '%s', '%s')"
-const sqlFetchMarketById = "SELECT market_id, exchange_name, base, quote FROM markets WHERE market_id = $1 LIMIT 1"
-const sqlTradesTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT NOT NULL, txid TEXT NOT NULL, date_utc TIMESTAMP WITHOUT TIME ZONE NOT NULL, action TEXT NOT NULL, type TEXT NOT NULL, counter_price DOUBLE PRECISION NOT NULL, base_volume DOUBLE PRECISION NOT NULL, counter_cost DOUBLE PRECISION NOT NULL, fee DOUBLE PRECISION NOT NULL, PRIMARY KEY (market_id, txid))"
-const sqlTradesInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', %.15f, %.15f, %.15f, %.15f)"
 const marketIdHashLength = 10
-
-var sqlIndexes = []string{
-	"CREATE INDEX IF NOT EXISTS date ON trades (market_id, date_utc)",
-}
 
 type tradingMarket struct {
 	ID           string
@@ -79,54 +70,12 @@ func (m *tradingMarket) String() string {
 var _ api.FillHandler = &FillDBWriter{}
 
 // MakeFillDBWriter is a factory method
-func MakeFillDBWriter(postgresDbConfig *postgresdb.Config, assetDisplayFn model.AssetDisplayFn, exchangeName string) (api.FillHandler, error) {
-	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
-	if e != nil {
-		if strings.Contains(e.Error(), "connect: connection refused") {
-			utils.PrintErrorHintf("ensure your postgres database is available on %s:%d, or remove the 'POSTGRES_DB' config from your trader config file\n", postgresDbConfig.GetHost(), postgresDbConfig.GetPort())
-		}
-		return nil, fmt.Errorf("error when creating database from config (%+v), created=%v: %s", *postgresDbConfig, dbCreated, e)
-	}
-	if dbCreated {
-		log.Printf("created database '%s'", postgresDbConfig.GetDbName())
-	} else {
-		log.Printf("did not create db '%s' because it already exists", postgresDbConfig.GetDbName())
-	}
-
-	db, e := sql.Open("postgres", postgresDbConfig.MakeConnectString())
-	if e != nil {
-		return nil, fmt.Errorf("could not open database: %s", e)
-	}
-	// don't defer db.Close() here becuase we want it open for the life of the application for now
-
-	e = postgresdb.CreateTableIfNotExists(db, sqlTradesTableCreate)
-	if e != nil {
-		return nil, fmt.Errorf("could not create trades table: %s", e)
-	}
-	e = postgresdb.CreateTableIfNotExists(db, sqlMarketsTableCreate)
-	if e != nil {
-		return nil, fmt.Errorf("could not create markets table: %s", e)
-	}
-
-	for i, sqlIndexCreate := range sqlIndexes {
-		var statement *sql.Stmt
-		statement, e = db.Prepare(sqlIndexCreate)
-		if e != nil {
-			return nil, fmt.Errorf("could not prepare sql statement to create index (%s) (i=%d): %s", sqlIndexCreate, i, e)
-		}
-		_, e = statement.Exec()
-		if e != nil {
-			return nil, fmt.Errorf("could not execute sql statement to create index (%s) (i=%d): %s", sqlIndexCreate, i, e)
-		}
-	}
-
-	fdbw := &FillDBWriter{
+func MakeFillDBWriter(db *sql.DB, assetDisplayFn model.AssetDisplayFn, exchangeName string) api.FillHandler {
+	return &FillDBWriter{
 		db:             db,
 		assetDisplayFn: assetDisplayFn,
 		exchangeName:   exchangeName,
 	}
-	log.Printf("made FillDBWriter with db config: %s\n", postgresDbConfig.MakeConnectString())
-	return fdbw, nil
 }
 
 func (f *FillDBWriter) fetchOrRegisterMarket(trade model.Trade) (*tradingMarket, error) {
@@ -165,9 +114,9 @@ func (f *FillDBWriter) fetchOrRegisterMarket(trade model.Trade) (*tradingMarket,
 }
 
 func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error) {
-	rows, e := f.db.Query(sqlFetchMarketById, marketId)
+	rows, e := f.db.Query(database.SqlQueryMarketsById, marketId)
 	if e != nil {
-		return nil, fmt.Errorf("could not execute sql select query (%s) for marketId (%s): %s", sqlFetchMarketById, marketId, e)
+		return nil, fmt.Errorf("could not execute sql select query (%s) for marketId (%s): %s", database.SqlQueryMarketsById, marketId, e)
 	}
 	defer rows.Close()
 
@@ -186,7 +135,7 @@ func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error
 }
 
 func (f *FillDBWriter) registerMarket(market *tradingMarket) error {
-	sqlInsert := fmt.Sprintf(sqlMarketsInsertTemplate,
+	sqlInsert := fmt.Sprintf(database.SqlMarketsInsertTemplate,
 		market.ID,
 		market.ExchangeName,
 		market.BaseAsset,
@@ -207,14 +156,14 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	txid := utils.CheckedString(trade.TransactionID)
 	timeSeconds := trade.Timestamp.AsInt64() / 1000
 	date := time.Unix(timeSeconds, 0).UTC()
-	dateString := date.Format(dateFormatString)
+	dateString := date.Format(postgresdb.DateFormatString)
 
 	market, e := f.fetchOrRegisterMarket(trade)
 	if e != nil {
 		return fmt.Errorf("cannot fetch or register market for trade (txid=%s): %s", txid, e)
 	}
 
-	sqlInsert := fmt.Sprintf(sqlTradesInsertTemplate,
+	sqlInsert := fmt.Sprintf(database.SqlTradesInsertTemplate,
 		market.ID,
 		txid,
 		dateString,

@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// DateFormatString is the format to be used when inserting dates in the database
+const DateFormatString = "2006/01/02 15:04:05 MST"
+
 // CreateDatabaseIfNotExists returns whether the db was created and an error if creation failed
 func CreateDatabaseIfNotExists(postgresDbConfig *Config) (bool, error) {
 	dbName := postgresDbConfig.GetDbName()
@@ -29,16 +32,16 @@ func CreateDatabaseIfNotExists(postgresDbConfig *Config) (bool, error) {
 	return true, nil
 }
 
-// CreateTableIfNotExists returns whether the table was created or not
-func CreateTableIfNotExists(db *sql.DB, sqlStatement string) error {
+// ExecuteStatement runs a statement that does not return a result
+func ExecuteStatement(db *sql.DB, sqlStatement string) error {
 	statement, e := db.Prepare(sqlStatement)
 	if e != nil {
-		return fmt.Errorf("could not prepare sql create table statement (%s): %s", sqlStatement, e)
+		return fmt.Errorf("could not prepare sql statement (%s): %s", sqlStatement, e)
 	}
 
 	_, e = statement.Exec()
 	if e != nil {
-		return fmt.Errorf("could not execute sql create table statement (%s): %s", sqlStatement, e)
+		return fmt.Errorf("could not execute sql statement (%s): %s", sqlStatement, e)
 	}
 
 	return nil
