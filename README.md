@@ -31,6 +31,7 @@ To learn more about the Stellar protocol check out [this video created by Lumena
       * [Compile from Source](#compile-from-source)
       * [Running Kelp](#running-kelp)
       * [Using CCXT](#using-ccxt)
+      * [Using Postgres](#using-postgres)
       * [Be Smart and Go Slow](#be-smart-and-go-slow)
    * [Components](#components)
       * [Strategies](#strategies)
@@ -106,10 +107,6 @@ To compile Kelp from source:
 8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
 
-Optional dependencies based on features:
-
-1. [Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
-
 ## Running Kelp
 
 Kelp places orders on the [Stellar marketplace][stellarx] based on the selected strategy. Configuration files specify the Stellar account and strategy details.
@@ -144,6 +141,10 @@ You will need to run the CCXT REST server on `localhost:3000` so Kelp can connec
 You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
 
 _Note: this integration is still **experimental** and is also **incomplete**. Please use at your own risk._
+
+## Using Postgres
+
+[Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
 
 ## Be Smart and Go Slow
 
@@ -318,7 +319,6 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [yarn-install]: https://yarnpkg.com/lang/en/docs/install/
 [nodejs-install]: https://nodejs.org/en/download/
 [astilectron-bundler]: https://github.com/asticode/go-astilectron-bundler
-[postgres]: https://www.postgresql.org/
 [spread]: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
 [hedge]: https://en.wikipedia.org/wiki/Hedge_(finance)
 [cmc]: https://coinmarketcap.com/
@@ -327,6 +327,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [ccxt]: https://github.com/ccxt/ccxt
 [ccxt-rest]: https://github.com/franz-see/ccxt-rest
 [docker]: https://www.docker.com/
+[postgres]: https://www.postgresql.org/
 [kraken]: https://www.kraken.com/
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
