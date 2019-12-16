@@ -158,12 +158,12 @@ func TestGetTradeHistory(t *testing.T) {
 }
 
 func TestGetLatestTradeCursor(t *testing.T) {
-	startIntervalSecs := time.Now().Unix()
+	startIntervalSecs := time.Now().Unix() * 1000
 	cursor, e := testKrakenExchange.GetLatestTradeCursor()
 	if !assert.NoError(t, e) {
 		return
 	}
-	endIntervalSecs := time.Now().Unix()
+	endIntervalSecs := time.Now().Unix() * 1000
 
 	if !assert.IsType(t, "string", cursor) {
 		return
@@ -175,10 +175,10 @@ func TestGetLatestTradeCursor(t *testing.T) {
 		return
 	}
 
-	if !assert.True(t, startIntervalSecs <= cursorInt, fmt.Sprintf("returned cursor (%d) should gte the start time of the function call in seconds (%d)", cursorInt, startIntervalSecs)) {
+	if !assert.True(t, startIntervalSecs <= cursorInt, fmt.Sprintf("returned cursor (%d) should be gte the start time of the function call in millis (%d)", cursorInt, startIntervalSecs)) {
 		return
 	}
-	if !assert.True(t, endIntervalSecs >= cursorInt, fmt.Sprintf("returned cursor (%d) should lte the end time of the function call in seconds (%d)", cursorInt, endIntervalSecs)) {
+	if !assert.True(t, endIntervalSecs >= cursorInt, fmt.Sprintf("returned cursor (%d) should be lte the end time of the function call in millis (%d)", cursorInt, endIntervalSecs)) {
 		return
 	}
 }

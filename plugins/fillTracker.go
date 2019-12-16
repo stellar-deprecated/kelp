@@ -131,6 +131,7 @@ func (f *FillTracker) TrackFills() error {
 		}
 
 		lastCursor = tradeHistoryResult.Cursor
+		log.Printf("updated lastCursor value to %v\n", lastCursor)
 		f.fillTrackerDeleteCycles = 0
 		f.sleep()
 	}

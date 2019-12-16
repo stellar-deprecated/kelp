@@ -16,6 +16,7 @@ import (
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/database"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/query"
@@ -203,6 +204,7 @@ func makeExchangeShimSdex(
 	network string,
 	threadTracker *multithreading.ThreadTracker,
 	tradingPair *model.TradingPair,
+	sdexAssetMap map[model.Asset]hProtocol.Asset,
 ) (api.ExchangeShim, *plugins.SDEX) {
 	var e error
 	var exchangeShim api.ExchangeShim
@@ -261,10 +263,6 @@ func makeExchangeShimSdex(
 		}
 	}
 
-	sdexAssetMap := map[model.Asset]hProtocol.Asset{
-		tradingPair.Base:  botConfig.AssetBase(),
-		tradingPair.Quote: botConfig.AssetQuote(),
-	}
 	feeFn := makeFeeFn(l, botConfig, client)
 	sdex := plugins.MakeSDEX(
 		client,
@@ -432,6 +430,10 @@ func runTradeCmd(options inputs) {
 
 	ieif := plugins.MakeIEIF(botConfig.IsTradingSdex())
 	network := utils.ParseNetwork(botConfig.HorizonURL)
+	sdexAssetMap := map[model.Asset]hProtocol.Asset{
+		tradingPair.Base:  botConfig.AssetBase(),
+		tradingPair.Quote: botConfig.AssetQuote(),
+	}
 	exchangeShim, sdex := makeExchangeShimSdex(
 		l,
 		botConfig,
@@ -441,6 +443,7 @@ func runTradeCmd(options inputs) {
 		network,
 		threadTracker,
 		tradingPair,
+		sdexAssetMap,
 	)
 	strategy := makeStrategy(
 		l,
@@ -493,6 +496,7 @@ func runTradeCmd(options inputs) {
 		sdex,
 		exchangeShim,
 		tradingPair,
+		sdexAssetMap,
 		threadTracker,
 	)
 	startQueryServer(
@@ -561,6 +565,7 @@ func startFillTracking(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
+	sdexAssetMap map[model.Asset]hProtocol.Asset,
 	threadTracker *multithreading.ThreadTracker,
 ) {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
@@ -575,6 +580,22 @@ func startFillTracking(
 		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
+		if botConfig.PostgresDbConfig != nil {
+			db, e := database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
+			if e != nil {
+				l.Info("")
+				l.Errorf("problem encountered while initializing the db: %s", e)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			}
+			log.Printf("made db instance with config: %s\n", botConfig.PostgresDbConfig.MakeConnectString())
+
+			assetDisplayFn := model.MakePassthroughAssetDisplayFn()
+			if botConfig.IsTradingSdex() {
+				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
+			}
+			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName())
+			fillTracker.RegisterHandler(fillDBWriter)
+		}
 		if strategyFillHandlers != nil {
 			for _, h := range strategyFillHandlers {
 				fillTracker.RegisterHandler(h)

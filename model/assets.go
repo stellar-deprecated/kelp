@@ -181,3 +181,24 @@ func FromHorizonAsset(hAsset hProtocol.Asset) Asset {
 	}
 	return Asset(hAsset.Code)
 }
+
+// AssetDisplayFn is a convenient way to encapsulate the logic to display an Asset
+type AssetDisplayFn func(Asset) (string, error)
+
+// MakeSdexMappedAssetDisplayFn is a factory method for a commonly used AssetDisplayFn
+func MakeSdexMappedAssetDisplayFn(sdexAssetMap map[Asset]hProtocol.Asset) AssetDisplayFn {
+	return AssetDisplayFn(func(asset Asset) (string, error) {
+		assetString, ok := sdexAssetMap[asset]
+		if !ok {
+			return "", fmt.Errorf("cannot recognize the asset %s", string(asset))
+		}
+		return utils.Asset2String(assetString), nil
+	})
+}
+
+// MakePassthroughAssetDisplayFn is a factory method for a commonly used AssetDisplayFn
+func MakePassthroughAssetDisplayFn() AssetDisplayFn {
+	return AssetDisplayFn(func(asset Asset) (string, error) {
+		return string(asset), nil
+	})
+}

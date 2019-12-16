@@ -7,7 +7,6 @@ import (
 	"math"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -378,7 +377,7 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	for _txid, v := range krakenTrades {
 		m := v.(map[string]interface{})
 		_time := m["time"].(float64)
-		ts := model.MakeTimestamp(int64(_time))
+		ts := model.MakeTimestamp(int64(_time) * 1000)
 		_type := m["type"].(string)
 		_ordertype := m["ordertype"].(string)
 		_price := m["price"].(string)
@@ -420,9 +419,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 
 	// set correct value for cursor
 	if len(res.Trades) > 0 {
-		lastCursor := res.Trades[len(res.Trades)-1].Order.Timestamp.AsInt64()
-		// add 1 to lastCursor so we don't repeat the same cursor on the next run
-		res.Cursor = strconv.FormatInt(lastCursor+1, 10)
+		// use transaction IDs for updates to cursor
+		res.Cursor = res.Trades[len(res.Trades)-1].TransactionID.String()
 	} else if maybeCursorStart != nil {
 		res.Cursor = *maybeCursorStart
 	} else {
@@ -434,8 +432,8 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 
 // GetLatestTradeCursor impl.
 func (k *krakenExchange) GetLatestTradeCursor() (interface{}, error) {
-	timeNowSecs := time.Now().Unix()
-	latestTradeCursor := fmt.Sprintf("%d", timeNowSecs)
+	timeNowMillis := time.Now().Unix() * 1000
+	latestTradeCursor := fmt.Sprintf("%d", timeNowMillis)
 	return latestTradeCursor, nil
 }
 

@@ -106,6 +106,10 @@ To compile Kelp from source:
 8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
 
+Optional dependencies based on features:
+
+1. [Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
+
 ## Running Kelp
 
 Kelp places orders on the [Stellar marketplace][stellarx] based on the selected strategy. Configuration files specify the Stellar account and strategy details.
@@ -314,6 +318,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [yarn-install]: https://yarnpkg.com/lang/en/docs/install/
 [nodejs-install]: https://nodejs.org/en/download/
 [astilectron-bundler]: https://github.com/asticode/go-astilectron-bundler
+[postgres]: https://www.postgresql.org/
 [spread]: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
 [hedge]: https://en.wikipedia.org/wiki/Hedge_(finance)
 [cmc]: https://coinmarketcap.com/

@@ -53,3 +53,5 @@ import:
   version: 25b8572859996696903f9417598ebc94d5d61035
 - package: github.com/asticode/go-astilectron-bundler
   version: 155c2a10bbb1791fbafe89a9b64be05c64f16c81
+- package: github.com/lib/pq
+  version: v1.2.0
