@@ -162,7 +162,7 @@ check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
 
-echo -n "generating the bind file in /cmd to create missing files ... "
+echo -n "generating the bind file in /cmd to create missing files for current platform ... "
 astilectron-bundler bd -c $KELP/bundler.json
 check_build_result $?
 echo "done"
@@ -194,6 +194,12 @@ then
     exit 0
 fi
 # else, we are in deploy mode
+echo ""
+
+echo -n "generating the bind file in /cmd to create missing files for all remaining platforms ... "
+astilectron-bundler bd -c $KELP/bundler_all.json
+check_build_result $?
+echo "done"
 echo ""
 
 ARCHIVE_DIR=build/$DATE
