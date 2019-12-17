@@ -20,7 +20,6 @@ var env string
 
 const envRelease = "release"
 const envDev = "dev"
-
 const rootShort = "Kelp is a free and open-source trading bot for the Stellar universal marketplace."
 const rootLong = `Kelp is a free and open-source trading bot for the Stellar universal marketplace (https://stellar.org).
 
@@ -44,7 +43,15 @@ var RootCmd = &cobra.Command{
                                                                             ` + version + `
 `
 		fmt.Println(intro)
-		serverCmd.Run(ccmd, args)
+
+		if hasUICapability {
+			serverCmd.Run(ccmd, args)
+		} else {
+			e := ccmd.Help()
+			if e != nil {
+				panic(e)
+			}
+		}
 	},
 }
 

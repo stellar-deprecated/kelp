@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var hasUICapability = false
+
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Serves the Kelp GUI",
