@@ -162,6 +162,10 @@ check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
 
+echo -n "generating the bundler.json file in / to create missing files for current platform ... "
+go run ./scripts/gen_bundler_json/gen_bundler_json.go > $KELP/bundler.json
+check_build_result $?
+echo "done"
 echo -n "generating the bind file in /cmd to create missing files for current platform ... "
 astilectron-bundler bd -c $KELP/bundler.json
 check_build_result $?
@@ -196,8 +200,12 @@ fi
 # else, we are in deploy mode
 echo ""
 
+echo -n "generating the bundler.json file in / to create missing files for all remaining platforms ... "
+go run ./scripts/gen_bundler_json/gen_bundler_json.go -a > $KELP/bundler.json
+check_build_result $?
+echo "done"
 echo -n "generating the bind file in /cmd to create missing files for all remaining platforms ... "
-astilectron-bundler bd -c $KELP/bundler_all.json
+astilectron-bundler bd -c $KELP/bundler.json
 check_build_result $?
 echo "done"
 echo ""

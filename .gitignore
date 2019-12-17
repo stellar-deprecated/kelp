@@ -10,3 +10,4 @@ bin/
 gui/filesystem_vfsdata.go
 kelp.prefs
 bind_*.go
+bundler.json
