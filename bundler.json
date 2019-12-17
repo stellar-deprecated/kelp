@@ -6,5 +6,10 @@
     "bind": {
         "output_path": "./cmd",
         "package": "cmd"
-    }
+    },
+    "environments": [
+        {"os": "darwin", "arch": "amd64"},
+        {"os": "linux", "arch": "amd64"},
+        {"os": "windows", "arch": "amd64"}
+    ]
 }

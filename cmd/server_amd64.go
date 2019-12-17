@@ -32,11 +32,6 @@ const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
 const trayIconName = "kelp-icon@1-8x.png"
 
-var serverCmd = &cobra.Command{
-	Use:   "server",
-	Short: "Serves the Kelp GUI",
-}
-
 type serverInputs struct {
 	port              *uint16
 	dev               *bool
