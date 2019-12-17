@@ -198,7 +198,6 @@ then
     exit 0
 fi
 # else, we are in deploy mode
-echo ""
 
 echo -n "generating the bundler.json file in / to create missing files for all remaining platforms ... "
 go run ./scripts/gen_bundler_json/gen_bundler_json.go -a > $KELP/bundler.json
@@ -313,6 +312,15 @@ do
     echo -n "cleaning up UI: $ARCHIVE_DIR_SOURCE_UI ... "
     rm -rf $ARCHIVE_DIR_SOURCE_UI
     echo "successful"
+
+    if [[ "$GOOS" == "windows" ]]
+    then
+        echo -n "removing windows.syso file from the windows build ... "
+        rm $KELP/windows.syso
+        check_build_result $?
+        echo "successful"
+    fi
+
     echo ""
 done
 
