@@ -313,9 +313,9 @@ do
     rm -rf $ARCHIVE_DIR_SOURCE_UI
     echo "successful"
 
-    if [[ "$GOOS" == "windows" ]]
+    if [[ -f "$KELP/windows.syso" ]]
     then
-        echo -n "removing windows.syso file from the windows build ... "
+        echo -n "removing windows.syso file ... "
         rm $KELP/windows.syso
         check_build_result $?
         echo "successful"
