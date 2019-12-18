@@ -109,7 +109,7 @@ func loadExchangeList() {
 		if eMsg1 && eMsg2 && eMsg3 {
 			log.Printf("ccxt-rest is not running at %s so we cannot include those exchanges: %s", ccxtBaseURL, e.Error())
 		} else {
-			panic(fmt.Errorf("error getting list of supported exchanges by CCXT: %s", e))
+			log.Printf("error getting list of supported exchanges at URL %s by CCXT so we cannot include those exchanges: %s", ccxtBaseURL, e)
 		}
 	}
 	exchangeList = &output
