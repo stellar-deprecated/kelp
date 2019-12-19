@@ -50,33 +50,24 @@ type Trader struct {
 	sellingAOffers []hProtocol.Offer // quoted B/A
 }
 
-// MakeBot is the factory method for the Trader struct
-func MakeBot(
+// MakeTrader is the factory method for the Trader struct
+func MakeTrader(
 	api *horizonclient.Client,
 	ieif *plugins.IEIF,
 	assetBase hProtocol.Asset,
 	assetQuote hProtocol.Asset,
-	tradingPair *model.TradingPair,
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	strategy api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
-	submitMode api.SubmitMode,
+	submitFilters []plugins.SubmitFilter,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
 ) *Trader {
-	submitFilters := []plugins.SubmitFilter{
-		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
-	}
-	sdexSubmitFilter := plugins.MakeFilterMakerMode(submitMode, exchangeShim, sdex, tradingPair)
-	if sdexSubmitFilter != nil {
-		submitFilters = append(submitFilters, sdexSubmitFilter)
-	}
-
 	return &Trader{
 		api:                   api,
 		ieif:                  ieif,

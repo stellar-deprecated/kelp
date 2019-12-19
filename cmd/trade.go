@@ -344,30 +344,41 @@ func makeBot(
 		// we want to delete all the offers and exit here since there is something wrong with our setup
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
-	dataKey := model.MakeSortedBotKey(botConfig.AssetBase(), botConfig.AssetQuote())
+
+	assetBase := botConfig.AssetBase()
+	assetQuote := botConfig.AssetQuote()
+	dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 	alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
 	if e != nil {
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
-	bot := trader.MakeBot(
+
+	submitFilters := []plugins.SubmitFilter{
+		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
+	}
+	if submitMode == api.SubmitModeMakerOnly {
+		submitFilters = append(submitFilters,
+			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
+		)
+	}
+
+	return trader.MakeTrader(
 		client,
 		ieif,
-		botConfig.AssetBase(),
-		botConfig.AssetQuote(),
-		tradingPair,
+		assetBase,
+		assetQuote,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
 		strategy,
 		timeController,
 		botConfig.DeleteCyclesThreshold,
-		submitMode,
+		submitFilters,
 		threadTracker,
 		options.fixedIterations,
 		dataKey,
 		alert,
 	)
-	return bot
 }
 
 func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfig) trader.BotConfig {

@@ -19,15 +19,12 @@ type makerModeFilter struct {
 }
 
 // MakeFilterMakerMode makes a submit filter based on the passed in submitMode
-func MakeFilterMakerMode(submitMode api.SubmitMode, exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
-	if submitMode == api.SubmitModeMakerOnly {
-		return &makerModeFilter{
-			tradingPair:  tradingPair,
-			exchangeShim: exchangeShim,
-			sdex:         sdex,
-		}
+func MakeFilterMakerMode(exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
+	return &makerModeFilter{
+		tradingPair:  tradingPair,
+		exchangeShim: exchangeShim,
+		sdex:         sdex,
 	}
-	return nil
 }
 
 var _ SubmitFilter = &makerModeFilter{}
