@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -329,6 +330,7 @@ func makeBot(
 	exchangeShim api.ExchangeShim,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
+	db *sql.DB,
 	strategy api.Strategy,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
@@ -445,6 +447,16 @@ func runTradeCmd(options inputs) {
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
+
+	var db *sql.DB
+	if botConfig.PostgresDbConfig != nil {
+		var e error
+		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
+		if e != nil {
+			logger.Fatal(l, fmt.Errorf("problem encountered while initializing the db: %s", e))
+		}
+		log.Printf("made db instance with config: %s\n", botConfig.PostgresDbConfig.MakeConnectString())
+	}
 	exchangeShim, sdex := makeExchangeShimSdex(
 		l,
 		botConfig,
@@ -478,6 +490,7 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		ieif,
 		tradingPair,
+		db,
 		strategy,
 		threadTracker,
 		options,
@@ -508,6 +521,7 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		tradingPair,
 		sdexAssetMap,
+		db,
 		threadTracker,
 	)
 	startQueryServer(
@@ -577,6 +591,7 @@ func startFillTracking(
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
 	sdexAssetMap map[model.Asset]hProtocol.Asset,
+	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 ) {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
@@ -591,15 +606,7 @@ func startFillTracking(
 		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
-		if botConfig.PostgresDbConfig != nil {
-			db, e := database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
-			if e != nil {
-				l.Info("")
-				l.Errorf("problem encountered while initializing the db: %s", e)
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-			}
-			log.Printf("made db instance with config: %s\n", botConfig.PostgresDbConfig.MakeConnectString())
-
+		if db != nil {
 			assetDisplayFn := model.MakePassthroughAssetDisplayFn()
 			if botConfig.IsTradingSdex() {
 				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
