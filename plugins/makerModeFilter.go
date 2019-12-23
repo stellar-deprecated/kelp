@@ -51,7 +51,7 @@ func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 
 		return f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, op)
 	}
-	ops, e = filterOps(ops, sellingOffers, buyingOffers, innerFn)
+	ops, e = filterOps(ops, innerFn)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}

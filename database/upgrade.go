@@ -104,7 +104,7 @@ func runUpgradeScripts(db *sql.DB, scripts []*UpgradeScript) error {
 		// add entry to db_version table
 		sqlInsertDbVersion := fmt.Sprintf(sqlDbVersionTableInsertTemplate,
 			script.version,
-			startTime.Format(postgresdb.DateFormatString),
+			startTime.Format(postgresdb.TimestampFormatString),
 			len(script.commands),
 			elapsedMillis,
 		)

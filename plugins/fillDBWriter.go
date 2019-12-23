@@ -156,7 +156,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	txid := utils.CheckedString(trade.TransactionID)
 	timeSeconds := trade.Timestamp.AsInt64() / 1000
 	date := time.Unix(timeSeconds, 0).UTC()
-	dateString := date.Format(postgresdb.DateFormatString)
+	dateString := date.Format(postgresdb.TimestampFormatString)
 
 	market, e := f.fetchOrRegisterMarket(trade)
 	if e != nil {
