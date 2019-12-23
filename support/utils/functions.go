@@ -381,3 +381,16 @@ func PrintErrorHintf(message string, args ...interface{}) {
 	log.Printf("*************************************** /HINT ****************************************\n")
 	log.Printf("\n")
 }
+
+// ParseMaybeFloat parses an optional string value as a float pointer
+func ParseMaybeFloat(valueString string) (*float64, error) {
+	if valueString == "" {
+		return nil, nil
+	}
+
+	valueFloat, e := strconv.ParseFloat(valueString, 64)
+	if e != nil {
+		return nil, fmt.Errorf("unable to parse value '%s' as float: %s", valueString, e)
+	}
+	return &valueFloat, nil
+}
