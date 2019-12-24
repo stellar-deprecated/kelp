@@ -16,8 +16,9 @@ const sqlTradesTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT 
 /*
 	indexes
 */
-// TODO need index on date only not full timestamp
 const sqlTradesIndexCreate = "CREATE INDEX IF NOT EXISTS date ON trades (market_id, date_utc)"
+const sqlTradesIndexDrop = "DROP INDEX IF EXISTS date"
+const sqlTradesIndexCreate2 = "CREATE INDEX IF NOT EXISTS trades_mdd ON trades (market_id, DATE(date_utc), date_utc)"
 
 /*
 	insert statements
