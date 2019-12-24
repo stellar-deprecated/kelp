@@ -10,6 +10,7 @@ import (
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/database"
+	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -64,6 +65,9 @@ func MakeVolumeFilterConfig(
 
 // MakeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
 func MakeFilterVolume(
+	exchangeName string,
+	tradingPair *model.TradingPair,
+	assetDisplayFn model.AssetDisplayFn,
 	baseAsset hProtocol.Asset,
 	quoteAsset hProtocol.Asset,
 	config *volumeFilterConfig,
@@ -73,8 +77,17 @@ func MakeFilterVolume(
 		return nil, fmt.Errorf("the provided db should be non-nil")
 	}
 
-	// TODO fetch marketID for the baseAsset and quoteAsset market
-	marketID := ""
+	// use assetDisplayFn to make baseAssetString and quoteAssetString because it is issuer independent for non-sdex exchanges keeping a consistent marketID
+	baseAssetString, e := assetDisplayFn(tradingPair.Base)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert base asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Base), e)
+	}
+	quoteAssetString, e := assetDisplayFn(tradingPair.Quote)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
+	}
+	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
+
 	return &volumeFilter{
 		baseAsset:  baseAsset,
 		quoteAsset: quoteAsset,
@@ -100,7 +113,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 	}
 
 	log.Printf("dailyValuesByDate for today (%s): baseSoldUnits = %.8f %s, quoteCostUnits = %.8f %s (config = %+v)\n",
-		dateString, dailyValuesBaseSold.baseVol, f.baseAsset, dailyValuesBaseSold.quoteVol, f.quoteAsset, f.config)
+		dateString, dailyValuesBaseSold.baseVol, utils.Asset2String(f.baseAsset), dailyValuesBaseSold.quoteVol, utils.Asset2String(f.quoteAsset), f.config)
 
 	// daily on-the-books
 	dailyOTB := &volumeFilterConfig{
