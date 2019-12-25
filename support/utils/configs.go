@@ -25,8 +25,9 @@ func LogConfig(cfg fmt.Stringer) {
 	}
 }
 
-// StructString is a helper method that
-func StructString(s interface{}, transforms map[string]func(interface{}) interface{}) string {
+// StructString is a helper method that serizlies configs; the transform keys are always flattened,
+// i.e specify the key meant to be on an inner object at a top level key on the transform map
+func StructString(s interface{}, indentLevel uint8, transforms map[string]func(interface{}) interface{}) string {
 	var buf bytes.Buffer
 	numFields := reflect.TypeOf(s).NumField()
 	for i := 0; i < numFields; i++ {
@@ -46,13 +47,32 @@ func StructString(s interface{}, transforms map[string]func(interface{}) interfa
 
 		if reflect.ValueOf(s).Field(i).CanInterface() {
 			if !isDeprecated || !reflect.ValueOf(s).Field(i).IsNil() {
-				value := reflect.ValueOf(s).Field(i).Interface()
-				transformedValue := transformFn(value)
 				deprecatedWarning := ""
 				if isDeprecated {
 					deprecatedWarning = " (deprecated)"
 				}
-				buf.WriteString(fmt.Sprintf("%s: %+v%s\n", fieldDisplayName, transformedValue, deprecatedWarning))
+
+				currentField := reflect.ValueOf(s).Field(i)
+				value := currentField.Interface()
+				kind := currentField.Kind()
+				if kind == reflect.Ptr {
+					derefField := reflect.Indirect(currentField)
+					if !currentField.IsZero() {
+						value = derefField.Interface()
+						kind = derefField.Kind()
+					}
+				}
+
+				for indentIdx := 0; indentIdx < int(indentLevel); indentIdx++ {
+					buf.WriteString("    ")
+				}
+				if kind == reflect.Struct {
+					subString := StructString(value, indentLevel+1, transforms)
+					buf.WriteString(fmt.Sprintf("%s: %s\n%s", fieldDisplayName, deprecatedWarning, subString))
+				} else {
+					transformedValue := transformFn(value)
+					buf.WriteString(fmt.Sprintf("%s: %+v%s\n", fieldDisplayName, transformedValue, deprecatedWarning))
+				}
 			}
 		}
 	}
@@ -85,22 +105,4 @@ func passthrough(i interface{}) interface{} {
 // Hide returns an empty string
 func Hide(i interface{}) interface{} {
 	return ""
-}
-
-// UnwrapFloat64Pointer unwraps a float64 pointer
-func UnwrapFloat64Pointer(i interface{}) interface{} {
-	p := i.(*float64)
-	if p == nil {
-		return ""
-	}
-	return *p
-}
-
-// UnwrapInt8Pointer unwraps a int8 pointer
-func UnwrapInt8Pointer(i interface{}) interface{} {
-	p := i.(*int8)
-	if p == nil {
-		return ""
-	}
-	return *p
 }

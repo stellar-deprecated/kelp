@@ -26,7 +26,7 @@ type balancedConfig struct {
 
 // String impl.
 func (c balancedConfig) String() string {
-	return utils.StructString(c, nil)
+	return utils.StructString(c, 0, nil)
 }
 
 // makeBalancedStrategy is a factory method for balancedStrategy

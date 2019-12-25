@@ -27,7 +27,7 @@ type sellConfig struct {
 
 // String impl.
 func (c sellConfig) String() string {
-	return utils.StructString(c, nil)
+	return utils.StructString(c, 0, nil)
 }
 
 // makeSellStrategy is a factory method for SellStrategy
