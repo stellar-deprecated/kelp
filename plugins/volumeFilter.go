@@ -99,7 +99,12 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		SellBaseAssetCapInQuoteUnits: &dailyValuesBaseSold.quoteVol,
 	}
 	// daily to-be-booked starts out as empty and accumulates the values of the operations
-	dailyTBB := &VolumeFilterConfig{}
+	dailyTbbSellBase := 0.0
+	dailyTbbSellQuote := 0.0
+	dailyTBB := &VolumeFilterConfig{
+		SellBaseAssetCapInBaseUnits:  &dailyTbbSellBase,
+		SellBaseAssetCapInQuoteUnits: &dailyTbbSellQuote,
+	}
 
 	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
 		return f.volumeFilterFn(dailyOTB, dailyTBB, op)
