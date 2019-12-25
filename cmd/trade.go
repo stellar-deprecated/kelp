@@ -332,6 +332,7 @@ func makeBot(
 	tradingPair *model.TradingPair,
 	db *sql.DB,
 	strategy api.Strategy,
+	assetDisplayFn model.AssetDisplayFn,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 ) *trader.Trader {
@@ -362,6 +363,32 @@ func makeBot(
 		submitFilters = append(submitFilters,
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
 		)
+	}
+	if botConfig.VolumeFilterConfig != nil {
+		if e := botConfig.VolumeFilterConfig.Validate(); e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		volFilter, e := plugins.MakeFilterVolume(
+			botConfig.TradingExchangeName(),
+			tradingPair,
+			assetDisplayFn,
+			assetBase,
+			assetQuote,
+			botConfig.VolumeFilterConfig,
+			db,
+		)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		submitFilters = append(submitFilters, volFilter)
 	}
 
 	return trader.MakeTrader(
@@ -447,6 +474,10 @@ func runTradeCmd(options inputs) {
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
+	assetDisplayFn := model.MakePassthroughAssetDisplayFn()
+	if botConfig.IsTradingSdex() {
+		assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
+	}
 
 	var db *sql.DB
 	if botConfig.PostgresDbConfig != nil {
@@ -492,6 +523,7 @@ func runTradeCmd(options inputs) {
 		tradingPair,
 		db,
 		strategy,
+		assetDisplayFn,
 		threadTracker,
 		options,
 	)
@@ -520,7 +552,7 @@ func runTradeCmd(options inputs) {
 		sdex,
 		exchangeShim,
 		tradingPair,
-		sdexAssetMap,
+		assetDisplayFn,
 		db,
 		threadTracker,
 	)
@@ -590,7 +622,7 @@ func startFillTracking(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
-	sdexAssetMap map[model.Asset]hProtocol.Asset,
+	assetDisplayFn model.AssetDisplayFn,
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 ) {
@@ -607,10 +639,6 @@ func startFillTracking(
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
 		if db != nil {
-			assetDisplayFn := model.MakePassthroughAssetDisplayFn()
-			if botConfig.IsTradingSdex() {
-				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
-			}
 			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName())
 			fillTracker.RegisterHandler(fillDBWriter)
 		}
