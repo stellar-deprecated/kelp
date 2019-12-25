@@ -251,6 +251,14 @@ func CheckedString(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
+// CheckedFloatPtr returns "<nil>" if the object is nil, otherwise calls the String() function on the object
+func CheckedFloatPtr(v *float64) string {
+	if v == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%.10f", *v)
+}
+
 // ParseAsset returns a horizon asset a string
 func ParseAsset(code string, issuer string) (*hProtocol.Asset, error) {
 	if code != "XLM" && issuer == "" {

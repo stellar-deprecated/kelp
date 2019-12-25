@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -75,6 +76,12 @@ func (c *VolumeFilterConfig) Validate() error {
 	return nil
 }
 
+// String is the stringer method
+func (c *VolumeFilterConfig) String() string {
+	return fmt.Sprintf("VolumeFilterConfig[SellBaseAssetCapInBaseUnits=%s, SellBaseAssetCapInQuoteUnits=%s]",
+		utils.CheckedFloatPtr(c.SellBaseAssetCapInBaseUnits), utils.CheckedFloatPtr(c.SellBaseAssetCapInQuoteUnits))
+}
+
 func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
 	dateString := time.Now().UTC().Format(postgresdb.DateFormatString)
 	// TODO do for buying base and also for a flipped marketID
@@ -83,7 +90,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		return nil, fmt.Errorf("could not load dailyValuesByDate for today (%s): %s", dateString, e)
 	}
 
-	log.Printf("dailyValuesByDate for today (%s): baseSoldUnits = %.8f %s, quoteCostUnits = %.8f %s (config = %+v)\n",
+	log.Printf("dailyValuesByDate for today (%s): baseSoldUnits = %.8f %s, quoteCostUnits = %.8f %s (%s)\n",
 		dateString, dailyValuesBaseSold.baseVol, utils.Asset2String(f.baseAsset), dailyValuesBaseSold.quoteVol, utils.Asset2String(f.quoteAsset), f.config)
 
 	// daily on-the-books
@@ -197,6 +204,12 @@ func (f *volumeFilter) dailyValuesByDate(marketID string, dateUTC string, action
 	var quoteVol sql.NullFloat64
 	e := row.Scan(&baseVol, &quoteVol)
 	if e != nil {
+		if strings.Contains(e.Error(), "no rows in result set") {
+			return &dailyValues{
+				baseVol:  0,
+				quoteVol: 0,
+			}, nil
+		}
 		return nil, fmt.Errorf("could not read data from SqlQueryDailyValues query: %s", e)
 	}
 
