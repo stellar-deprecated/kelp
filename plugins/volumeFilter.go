@@ -144,14 +144,14 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 		var keepSellingQuote bool
 		if f.config.SellBaseAssetCapInBaseUnits != nil {
 			projectedSoldInBaseUnits := *dailyOTB.SellBaseAssetCapInBaseUnits + *dailyTBB.SellBaseAssetCapInBaseUnits + amountValueUnitsBeingSold
-			keepSellingBase = projectedSoldInBaseUnits < *f.config.SellBaseAssetCapInBaseUnits
-			log.Printf("volumeFilter: selling (base units), keep = (projectedSoldInBaseUnits) %.7f < %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v", projectedSoldInBaseUnits, *f.config.SellBaseAssetCapInBaseUnits, keepSellingBase)
+			keepSellingBase = projectedSoldInBaseUnits <= *f.config.SellBaseAssetCapInBaseUnits
+			log.Printf("volumeFilter: selling (base units), keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v", projectedSoldInBaseUnits, *f.config.SellBaseAssetCapInBaseUnits, keepSellingBase)
 		}
 
 		if f.config.SellBaseAssetCapInQuoteUnits != nil {
 			projectedSoldInQuoteUnits := *dailyOTB.SellBaseAssetCapInQuoteUnits + *dailyTBB.SellBaseAssetCapInQuoteUnits + amountValueUnitsBeingBought
-			keepSellingQuote = projectedSoldInQuoteUnits < *f.config.SellBaseAssetCapInQuoteUnits
-			log.Printf("volumeFilter: selling (quote units), keep = (projectedSoldInQuoteUnits) %.7f < %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v", projectedSoldInQuoteUnits, *f.config.SellBaseAssetCapInQuoteUnits, keepSellingQuote)
+			keepSellingQuote = projectedSoldInQuoteUnits <= *f.config.SellBaseAssetCapInQuoteUnits
+			log.Printf("volumeFilter: selling (quote units), keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v", projectedSoldInQuoteUnits, *f.config.SellBaseAssetCapInQuoteUnits, keepSellingQuote)
 		}
 
 		keep = keepSellingBase && keepSellingQuote
