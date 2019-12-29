@@ -11,7 +11,7 @@ import (
 
 // MaxPriceFilterConfig ensures that any one constraint that is hit will result in deleting all offers and pausing until limits are no longer constrained
 type MaxPriceFilterConfig struct {
-	MaxPrice *float64 `valid:"-" toml:"MAX_PRICE" json:"max_price"`
+	MaxPrice *float64
 }
 
 type maxPriceFilter struct {
@@ -22,7 +22,7 @@ type maxPriceFilter struct {
 }
 
 // MakeFilterMaxPrice makes a submit filter that limits orders placed based on the price
-func MakeFilterMaxPrice(config *MaxPriceFilterConfig, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) (SubmitFilter, error) {
+func MakeFilterMaxPrice(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, config *MaxPriceFilterConfig) (SubmitFilter, error) {
 	return &maxPriceFilter{
 		name:       "maxPriceFilter",
 		config:     config,

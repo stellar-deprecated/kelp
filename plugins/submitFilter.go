@@ -210,7 +210,7 @@ func filterOps(
 		buyCounter.idx++
 	}
 
-	log.Printf("filter \"%s\" result A: dropped %d, transformed %d, kept %d ops from original %d ops\n", filterName, opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
+	log.Printf("filter \"%s\" result A: dropped %d, transformed %d, kept %d ops from the %d ops passed in\n", filterName, opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
 	log.Printf("filter \"%s\" result B: dropped %d, transformed %d, kept %d, ignored %d sell offers from original %d sell offers\n", filterName, sellCounter.dropped, sellCounter.transformed, sellCounter.kept, ignoredSellOffers, len(sellingOffers))
 	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, ignoredBuyOffers, len(buyingOffers))
 	log.Printf("filter \"%s\" result D: len(filteredOps) = %d\n", filterName, len(filteredOps))

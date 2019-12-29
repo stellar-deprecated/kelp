@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
-	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
@@ -40,25 +39,23 @@ type BotConfig struct {
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE" json:"centralized_price_precision_override"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE" json:"centralized_volume_precision_override"`
 	// Deprecated: use CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE instead
-	MinCentralizedBaseVolumeDeprecated *float64                      `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true" json:"min_centralized_base_volume"`
-	CentralizedMinBaseVolumeOverride   *float64                      `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE" json:"centralized_min_base_volume_override"`
-	CentralizedMinQuoteVolumeOverride  *float64                      `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE" json:"centralized_min_quote_volume_override"`
-	PostgresDbConfig                   *postgresdb.Config            `valid:"-" toml:"POSTGRES_DB" json:"postgres_db"`
-	VolumeFilterConfig                 *plugins.VolumeFilterConfig   `valid:"-" toml:"VOLUME_FILTER" json:"volume_filter"`
-	MinPriceFilterConfig               *plugins.MinPriceFilterConfig `valid:"-" toml:"MIN_PRICE_FILTER" json:"min_price_filter"`
-	MaxPriceFilterConfig               *plugins.MaxPriceFilterConfig `valid:"-" toml:"MAX_PRICE_FILTER" json:"max_price_filter"`
-	AlertType                          string                        `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
-	AlertAPIKey                        string                        `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
-	MonitoringPort                     uint16                        `valid:"-" toml:"MONITORING_PORT" json:"monitoring_port"`
-	MonitoringTLSCert                  string                        `valid:"-" toml:"MONITORING_TLS_CERT" json:"monitoring_tls_cert"`
-	MonitoringTLSKey                   string                        `valid:"-" toml:"MONITORING_TLS_KEY" json:"monitoring_tls_key"`
-	GoogleClientID                     string                        `valid:"-" toml:"GOOGLE_CLIENT_ID" json:"google_client_id"`
-	GoogleClientSecret                 string                        `valid:"-" toml:"GOOGLE_CLIENT_SECRET" json:"google_client_secret"`
-	AcceptableEmails                   string                        `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS" json:"acceptable_google_emails"`
-	TradingExchange                    string                        `valid:"-" toml:"TRADING_EXCHANGE" json:"trading_exchange"`
-	ExchangeAPIKeys                    toml.ExchangeAPIKeysToml      `valid:"-" toml:"EXCHANGE_API_KEYS" json:"exchange_api_keys"`
-	ExchangeParams                     toml.ExchangeParamsToml       `valid:"-" toml:"EXCHANGE_PARAMS" json:"exchange_params"`
-	ExchangeHeaders                    toml.ExchangeHeadersToml      `valid:"-" toml:"EXCHANGE_HEADERS" json:"exchange_headers"`
+	MinCentralizedBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true" json:"min_centralized_base_volume"`
+	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE" json:"centralized_min_base_volume_override"`
+	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE" json:"centralized_min_quote_volume_override"`
+	PostgresDbConfig                   *postgresdb.Config       `valid:"-" toml:"POSTGRES_DB" json:"postgres_db"`
+	Filters                            []string                 `valid:"-" toml:"FILTERS" json:"filters"`
+	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
+	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
+	MonitoringPort                     uint16                   `valid:"-" toml:"MONITORING_PORT" json:"monitoring_port"`
+	MonitoringTLSCert                  string                   `valid:"-" toml:"MONITORING_TLS_CERT" json:"monitoring_tls_cert"`
+	MonitoringTLSKey                   string                   `valid:"-" toml:"MONITORING_TLS_KEY" json:"monitoring_tls_key"`
+	GoogleClientID                     string                   `valid:"-" toml:"GOOGLE_CLIENT_ID" json:"google_client_id"`
+	GoogleClientSecret                 string                   `valid:"-" toml:"GOOGLE_CLIENT_SECRET" json:"google_client_secret"`
+	AcceptableEmails                   string                   `valid:"-" toml:"ACCEPTABLE_GOOGLE_EMAILS" json:"acceptable_google_emails"`
+	TradingExchange                    string                   `valid:"-" toml:"TRADING_EXCHANGE" json:"trading_exchange"`
+	ExchangeAPIKeys                    toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS" json:"exchange_api_keys"`
+	ExchangeParams                     toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS" json:"exchange_params"`
+	ExchangeHeaders                    toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS" json:"exchange_headers"`
 
 	// initialized later
 	tradingAccount *string

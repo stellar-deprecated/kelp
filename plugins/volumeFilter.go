@@ -18,8 +18,8 @@ import (
 
 // VolumeFilterConfig ensures that any one constraint that is hit will result in deleting all offers and pausing until limits are no longer constrained
 type VolumeFilterConfig struct {
-	SellBaseAssetCapInBaseUnits  *float64 `valid:"-" toml:"SELL_BASE_ASSET_CAP_IN_BASE_UNITS" json:"sell_base_asset_cap_in_base_units"`
-	SellBaseAssetCapInQuoteUnits *float64 `valid:"-" toml:"SELL_BASE_ASSET_CAP_IN_QUOTE_UNITS" json:"sell_base_asset_cap_in_quote_units"`
+	SellBaseAssetCapInBaseUnits  *float64
+	SellBaseAssetCapInQuoteUnits *float64
 	// buyBaseAssetCapInBaseUnits   *float64
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
@@ -33,15 +33,15 @@ type volumeFilter struct {
 	db         *sql.DB
 }
 
-// MakeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
-func MakeFilterVolume(
+// makeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
+func makeFilterVolume(
 	exchangeName string,
 	tradingPair *model.TradingPair,
 	assetDisplayFn model.AssetDisplayFn,
 	baseAsset hProtocol.Asset,
 	quoteAsset hProtocol.Asset,
-	config *VolumeFilterConfig,
 	db *sql.DB,
+	config *VolumeFilterConfig,
 ) (SubmitFilter, error) {
 	if db == nil {
 		return nil, fmt.Errorf("the provided db should be non-nil")
@@ -148,12 +148,16 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 			projectedSoldInBaseUnits := *dailyOTB.SellBaseAssetCapInBaseUnits + *dailyTBB.SellBaseAssetCapInBaseUnits + amountValueUnitsBeingSold
 			keepSellingBase = projectedSoldInBaseUnits <= *f.config.SellBaseAssetCapInBaseUnits
 			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *f.config.SellBaseAssetCapInBaseUnits, keepSellingBase)
+		} else {
+			keepSellingBase = true
 		}
 
 		if f.config.SellBaseAssetCapInQuoteUnits != nil {
 			projectedSoldInQuoteUnits := *dailyOTB.SellBaseAssetCapInQuoteUnits + *dailyTBB.SellBaseAssetCapInQuoteUnits + amountValueUnitsBeingBought
 			keepSellingQuote = projectedSoldInQuoteUnits <= *f.config.SellBaseAssetCapInQuoteUnits
 			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *f.config.SellBaseAssetCapInQuoteUnits, keepSellingQuote)
+		} else {
+			keepSellingQuote = true
 		}
 
 		keep = keepSellingBase && keepSellingQuote

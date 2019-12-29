@@ -364,67 +364,23 @@ func makeBot(
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
 		)
 	}
-	if botConfig.MinPriceFilterConfig != nil {
-		if e := botConfig.MinPriceFilterConfig.Validate(); e != nil {
-			log.Println()
-			log.Println(e)
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-		}
-
-		minPriceFilter, e := plugins.MakeFilterMinPrice(botConfig.MinPriceFilterConfig, assetBase, assetQuote)
-		if e != nil {
-			log.Println()
-			log.Println(e)
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-		}
-
-		submitFilters = append(submitFilters, minPriceFilter)
+	filterFactory := plugins.FilterFactory{
+		ExchangeName:   botConfig.TradingExchangeName(),
+		TradingPair:    tradingPair,
+		AssetDisplayFn: assetDisplayFn,
+		BaseAsset:      assetBase,
+		QuoteAsset:     assetQuote,
+		DB:             db,
 	}
-	if botConfig.MaxPriceFilterConfig != nil {
-		if e := botConfig.MaxPriceFilterConfig.Validate(); e != nil {
-			log.Println()
-			log.Println(e)
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-		}
-
-		maxPriceFilter, e := plugins.MakeFilterMaxPrice(botConfig.MaxPriceFilterConfig, assetBase, assetQuote)
+	for _, filterString := range botConfig.Filters {
+		filter, e := filterFactory.MakeFilter(filterString)
 		if e != nil {
 			log.Println()
 			log.Println(e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
 			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 		}
-
-		submitFilters = append(submitFilters, maxPriceFilter)
-	}
-	if botConfig.VolumeFilterConfig != nil {
-		if e := botConfig.VolumeFilterConfig.Validate(); e != nil {
-			log.Println()
-			log.Println(e)
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-		}
-
-		volFilter, e := plugins.MakeFilterVolume(
-			botConfig.TradingExchangeName(),
-			tradingPair,
-			assetDisplayFn,
-			assetBase,
-			assetQuote,
-			botConfig.VolumeFilterConfig,
-			db,
-		)
-		if e != nil {
-			log.Println()
-			log.Println(e)
-			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-		}
-
-		submitFilters = append(submitFilters, volFilter)
+		submitFilters = append(submitFilters, filter)
 	}
 
 	return trader.MakeTrader(

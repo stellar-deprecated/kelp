@@ -11,7 +11,7 @@ import (
 
 // MinPriceFilterConfig ensures that any one constraint that is hit will result in deleting all offers and pausing until limits are no longer constrained
 type MinPriceFilterConfig struct {
-	MinPrice *float64 `valid:"-" toml:"MIN_PRICE" json:"min_price"`
+	MinPrice *float64
 }
 
 type minPriceFilter struct {
@@ -22,7 +22,7 @@ type minPriceFilter struct {
 }
 
 // MakeFilterMinPrice makes a submit filter that limits orders placed based on the price
-func MakeFilterMinPrice(config *MinPriceFilterConfig, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) (SubmitFilter, error) {
+func MakeFilterMinPrice(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, config *MinPriceFilterConfig) (SubmitFilter, error) {
 	return &minPriceFilter{
 		name:       "minPriceFilter",
 		config:     config,
