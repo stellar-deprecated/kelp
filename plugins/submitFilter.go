@@ -42,6 +42,7 @@ func ignoreOfferIDs(ops []txnbuild.Operation) map[int64]bool {
 	return ignoreOfferIDs
 }
 
+// TODO - simplify filterOps by separating out logic to convert into a single list of operations from transforming the operations
 /*
 What filterOps() does and why:
 
