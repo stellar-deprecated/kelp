@@ -35,11 +35,12 @@ func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 		return nil, fmt.Errorf("could not fetch orderbook: %s", e)
 	}
 
+	baseAsset, quoteAsset, e := f.sdex.Assets()
+	if e != nil {
+		return nil, fmt.Errorf("could not get assets: %s", e)
+	}
+
 	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
-		baseAsset, quoteAsset, e := f.sdex.Assets()
-		if e != nil {
-			return nil, false, fmt.Errorf("could not get assets: %s", e)
-		}
 		topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
 		if e != nil {
 			return nil, false, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
@@ -51,7 +52,7 @@ func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 
 		return f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, op)
 	}
-	ops, e = filterOps(ops, innerFn)
+	ops, e = filterOps(baseAsset, quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}
