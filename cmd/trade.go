@@ -364,6 +364,24 @@ func makeBot(
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
 		)
 	}
+	if botConfig.MinPriceFilterConfig != nil {
+		if e := botConfig.MinPriceFilterConfig.Validate(); e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		minPriceFilter, e := plugins.MakeFilterMinPrice(botConfig.MinPriceFilterConfig, assetBase, assetQuote)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		submitFilters = append(submitFilters, minPriceFilter)
+	}
 	if botConfig.VolumeFilterConfig != nil {
 		if e := botConfig.VolumeFilterConfig.Validate(); e != nil {
 			log.Println()
