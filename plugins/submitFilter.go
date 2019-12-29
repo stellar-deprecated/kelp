@@ -77,6 +77,7 @@ Solution: We first "dedupe" the offers and operations, by removing any offers th
 	update based on offerID. This has an additional overhead on runtime complexity of O(N).
 */
 func filterOps(
+	filterName string,
 	baseAsset hProtocol.Asset,
 	quoteAsset hProtocol.Asset,
 	sellingOffers []hProtocol.Offer,
@@ -209,10 +210,10 @@ func filterOps(
 		buyCounter.idx++
 	}
 
-	log.Printf("filter result A: dropped %d, transformed %d, kept %d ops from original %d ops\n", opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
-	log.Printf("filter result B: dropped %d, transformed %d, kept %d, ignored %d sell offers from original %d sell offers\n", sellCounter.dropped, sellCounter.transformed, sellCounter.kept, ignoredSellOffers, len(sellingOffers))
-	log.Printf("filter result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", buyCounter.dropped, buyCounter.transformed, buyCounter.kept, ignoredBuyOffers, len(buyingOffers))
-	log.Printf("filter result D: len(filteredOps) = %d\n", len(filteredOps))
+	log.Printf("filter \"%s\" result A: dropped %d, transformed %d, kept %d ops from original %d ops\n", filterName, opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
+	log.Printf("filter \"%s\" result B: dropped %d, transformed %d, kept %d, ignored %d sell offers from original %d sell offers\n", filterName, sellCounter.dropped, sellCounter.transformed, sellCounter.kept, ignoredSellOffers, len(sellingOffers))
+	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, ignoredBuyOffers, len(buyingOffers))
+	log.Printf("filter \"%s\" result D: len(filteredOps) = %d\n", filterName, len(filteredOps))
 	return filteredOps, nil
 }
 

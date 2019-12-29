@@ -13,6 +13,7 @@ import (
 )
 
 type makerModeFilter struct {
+	name         string
 	tradingPair  *model.TradingPair
 	exchangeShim api.ExchangeShim
 	sdex         *SDEX
@@ -21,6 +22,7 @@ type makerModeFilter struct {
 // MakeFilterMakerMode makes a submit filter based on the passed in submitMode
 func MakeFilterMakerMode(exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
 	return &makerModeFilter{
+		name:         "makeModeFilter",
 		tradingPair:  tradingPair,
 		exchangeShim: exchangeShim,
 		sdex:         sdex,
@@ -52,7 +54,7 @@ func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 
 		return f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, op)
 	}
-	ops, e = filterOps(baseAsset, quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
+	ops, e = filterOps(f.name, baseAsset, quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}

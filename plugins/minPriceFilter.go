@@ -15,6 +15,7 @@ type MinPriceFilterConfig struct {
 }
 
 type minPriceFilter struct {
+	name       string
 	config     *MinPriceFilterConfig
 	baseAsset  hProtocol.Asset
 	quoteAsset hProtocol.Asset
@@ -23,6 +24,7 @@ type minPriceFilter struct {
 // MakeFilterMinPrice makes a submit filter that limits orders placed based on the price
 func MakeFilterMinPrice(config *MinPriceFilterConfig, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) (SubmitFilter, error) {
 	return &minPriceFilter{
+		name:       "minPriceFilter",
 		config:     config,
 		baseAsset:  baseAsset,
 		quoteAsset: quoteAsset,
@@ -45,7 +47,7 @@ func (c *MinPriceFilterConfig) String() string {
 }
 
 func (f *minPriceFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
-	ops, e := filterOps(f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, f.minPriceFilterFn)
+	ops, e := filterOps(f.name, f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, f.minPriceFilterFn)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}

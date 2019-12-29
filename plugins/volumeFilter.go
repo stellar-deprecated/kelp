@@ -25,6 +25,7 @@ type VolumeFilterConfig struct {
 }
 
 type volumeFilter struct {
+	name       string
 	baseAsset  hProtocol.Asset
 	quoteAsset hProtocol.Asset
 	marketID   string
@@ -58,6 +59,7 @@ func MakeFilterVolume(
 	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
 
 	return &volumeFilter{
+		name:       "volumeFilter",
 		baseAsset:  baseAsset,
 		quoteAsset: quoteAsset,
 		marketID:   marketID,
@@ -109,7 +111,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
 		return f.volumeFilterFn(dailyOTB, dailyTBB, op)
 	}
-	ops, e = filterOps(f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
+	ops, e = filterOps(f.name, f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}
