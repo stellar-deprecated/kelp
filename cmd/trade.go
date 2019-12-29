@@ -382,6 +382,24 @@ func makeBot(
 
 		submitFilters = append(submitFilters, minPriceFilter)
 	}
+	if botConfig.MaxPriceFilterConfig != nil {
+		if e := botConfig.MaxPriceFilterConfig.Validate(); e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		maxPriceFilter, e := plugins.MakeFilterMaxPrice(botConfig.MaxPriceFilterConfig, assetBase, assetQuote)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		submitFilters = append(submitFilters, maxPriceFilter)
+	}
 	if botConfig.VolumeFilterConfig != nil {
 		if e := botConfig.VolumeFilterConfig.Validate(); e != nil {
 			log.Println()

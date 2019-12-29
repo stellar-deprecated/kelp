@@ -46,6 +46,7 @@ type BotConfig struct {
 	PostgresDbConfig                   *postgresdb.Config            `valid:"-" toml:"POSTGRES_DB" json:"postgres_db"`
 	VolumeFilterConfig                 *plugins.VolumeFilterConfig   `valid:"-" toml:"VOLUME_FILTER" json:"volume_filter"`
 	MinPriceFilterConfig               *plugins.MinPriceFilterConfig `valid:"-" toml:"MIN_PRICE_FILTER" json:"min_price_filter"`
+	MaxPriceFilterConfig               *plugins.MaxPriceFilterConfig `valid:"-" toml:"MAX_PRICE_FILTER" json:"max_price_filter"`
 	AlertType                          string                        `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
 	AlertAPIKey                        string                        `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
 	MonitoringPort                     uint16                        `valid:"-" toml:"MONITORING_PORT" json:"monitoring_port"`
