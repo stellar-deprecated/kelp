@@ -94,5 +94,5 @@ func filterPrice(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		config := MaxPriceFilterConfig{MaxPrice: &limit}
 		return MakeFilterMaxPrice(f.BaseAsset, f.QuoteAsset, &config)
 	}
-	return nil, fmt.Errorf("invalid price filter type in second argument (%s)", configInput, e)
+	return nil, fmt.Errorf("invalid price filter type in second argument (%s)", configInput)
 }
