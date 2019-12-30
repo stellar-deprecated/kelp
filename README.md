@@ -91,7 +91,7 @@ _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps
 
 To compile Kelp from source:
 
-1. [Download][golang-download] and [setup][golang-setup] Golang.
+1. [Download][golang-download] and [setup][golang-setup] Golang _v1.13 or later_.
 2. [Install Glide][glide-install] for dependency management
     * `curl https://glide.sh/get | sh`
 3. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] to build the Kelp GUI
