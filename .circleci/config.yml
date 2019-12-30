@@ -57,34 +57,10 @@ commands:
 
 jobs:
   # test performs all package tests from Kelp
-  test_1_10:
+  test_1_13:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
-      - image: circleci/golang:1.10
-      - image: franzsee/ccxt-rest:v0.0.4
-        command: ["node", "/usr/local/bin/ccxt-rest"]
-
-    steps:
-      - install_deps
-      - build_kelp
-      - test_kelp
-
-  test_1_11:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.11
-      - image: franzsee/ccxt-rest:v0.0.4
-        command: ["node", "/usr/local/bin/ccxt-rest"]
-
-    steps:
-      - install_deps
-      - build_kelp
-      - test_kelp
-
-  test_1_12:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
 
@@ -97,6 +73,4 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - test_1_10
-      - test_1_11
-      - test_1_12
+      - test_1_13
