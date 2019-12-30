@@ -13,21 +13,20 @@ import (
 )
 
 type makerModeFilter struct {
+	name         string
 	tradingPair  *model.TradingPair
 	exchangeShim api.ExchangeShim
 	sdex         *SDEX
 }
 
 // MakeFilterMakerMode makes a submit filter based on the passed in submitMode
-func MakeFilterMakerMode(submitMode api.SubmitMode, exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
-	if submitMode == api.SubmitModeMakerOnly {
-		return &makerModeFilter{
-			tradingPair:  tradingPair,
-			exchangeShim: exchangeShim,
-			sdex:         sdex,
-		}
+func MakeFilterMakerMode(exchangeShim api.ExchangeShim, sdex *SDEX, tradingPair *model.TradingPair) SubmitFilter {
+	return &makerModeFilter{
+		name:         "makeModeFilter",
+		tradingPair:  tradingPair,
+		exchangeShim: exchangeShim,
+		sdex:         sdex,
 	}
-	return nil
 }
 
 var _ SubmitFilter = &makerModeFilter{}
@@ -38,7 +37,24 @@ func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 		return nil, fmt.Errorf("could not fetch orderbook: %s", e)
 	}
 
-	ops, e = f.filterOps(ops, ob, sellingOffers, buyingOffers)
+	baseAsset, quoteAsset, e := f.sdex.Assets()
+	if e != nil {
+		return nil, fmt.Errorf("could not get assets: %s", e)
+	}
+
+	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+		topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
+		if e != nil {
+			return nil, false, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
+		}
+		topAskPrice, e := f.topOrderPriceExcludingTrader(ob.Asks(), sellingOffers, true)
+		if e != nil {
+			return nil, false, fmt.Errorf("could not get topOrderPriceExcludingTrader for asks: %s", e)
+		}
+
+		return f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, op)
+	}
+	ops, e = filterOps(f.name, baseAsset, quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}
@@ -107,65 +123,6 @@ func (f *makerModeFilter) topOrderPriceExcludingTrader(obSide []model.Order, tra
 
 	// orderbook only had trader's orders
 	return nil, nil
-}
-
-func (f *makerModeFilter) filterOps(
-	ops []txnbuild.Operation,
-	ob *model.OrderBook,
-	sellingOffers []hProtocol.Offer,
-	buyingOffers []hProtocol.Offer,
-) ([]txnbuild.Operation, error) {
-	baseAsset, quoteAsset, e := f.sdex.Assets()
-	if e != nil {
-		return nil, fmt.Errorf("could not get assets: %s", e)
-	}
-
-	topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
-	if e != nil {
-		return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
-	}
-	topAskPrice, e := f.topOrderPriceExcludingTrader(ob.Asks(), sellingOffers, true)
-	if e != nil {
-		return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for asks: %s", e)
-	}
-
-	numKeep := 0
-	numDropped := 0
-	numTransformed := 0
-	filteredOps := []txnbuild.Operation{}
-	for _, op := range ops {
-		var newOp txnbuild.Operation
-		var keep bool
-		switch o := op.(type) {
-		case *txnbuild.ManageSellOffer:
-			newOp, keep, e = f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, o)
-			if e != nil {
-				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
-			}
-		default:
-			newOp = o
-			keep = true
-		}
-
-		isNewOpNil := newOp == nil || fmt.Sprintf("%v", newOp) == "<nil>"
-		if keep {
-			if isNewOpNil {
-				return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
-			}
-			filteredOps = append(filteredOps, newOp)
-			numKeep++
-		} else {
-			if !isNewOpNil {
-				// newOp can be a transformed op to change the op to an effectively "dropped" state
-				filteredOps = append(filteredOps, newOp)
-				numTransformed++
-			} else {
-				numDropped++
-			}
-		}
-	}
-	log.Printf("makerModeFilter: dropped %d, transformed %d, kept %d ops from original %d ops, len(filteredOps) = %d\n", numDropped, numTransformed, numKeep, len(ops), len(filteredOps))
-	return filteredOps, nil
 }
 
 func (f *makerModeFilter) transformOfferMakerMode(

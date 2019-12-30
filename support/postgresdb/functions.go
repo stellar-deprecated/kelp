@@ -6,8 +6,11 @@ import (
 	"strings"
 )
 
-// DateFormatString is the format to be used when inserting dates in the database
-const DateFormatString = "2006/01/02 15:04:05 MST"
+// TimestampFormatString is the format to be used when inserting timestamps in the database
+const TimestampFormatString = "2006/01/02 15:04:05 MST"
+
+// DateFormatString is the format to be used when converting a timestamp to a date
+const DateFormatString = "2006/01/02"
 
 // CreateDatabaseIfNotExists returns whether the db was created and an error if creation failed
 func CreateDatabaseIfNotExists(postgresDbConfig *Config) (bool, error) {

@@ -55,7 +55,7 @@ func MakeBuysellConfig(
 
 // String impl.
 func (c BuySellConfig) String() string {
-	return utils.StructString(c, nil)
+	return utils.StructString(c, 0, nil)
 }
 
 // makeBuySellStrategy is a factory method

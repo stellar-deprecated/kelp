@@ -42,7 +42,8 @@ type BotConfig struct {
 	MinCentralizedBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_CENTRALIZED_BASE_VOLUME" deprecated:"true" json:"min_centralized_base_volume"`
 	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE" json:"centralized_min_base_volume_override"`
 	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE" json:"centralized_min_quote_volume_override"`
-	PostgresDbConfig                   *postgresdb.Config       `valid:"-" toml:"POSTGRES_DB"`
+	PostgresDbConfig                   *postgresdb.Config       `valid:"-" toml:"POSTGRES_DB" json:"postgres_db"`
+	Filters                            []string                 `valid:"-" toml:"FILTERS" json:"filters"`
 	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
 	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
 	MonitoringPort                     uint16                   `valid:"-" toml:"MONITORING_PORT" json:"monitoring_port"`
@@ -111,21 +112,16 @@ func MakeBotConfig(
 
 // String impl.
 func (b BotConfig) String() string {
-	return utils.StructString(b, map[string]func(interface{}) interface{}{
-		"EXCHANGE_API_KEYS":                     utils.Hide,
-		"EXCHANGE_PARAMS":                       utils.Hide,
-		"EXCHANGE_HEADERS":                      utils.Hide,
-		"SOURCE_SECRET_SEED":                    utils.SecretKey2PublicKey,
-		"TRADING_SECRET_SEED":                   utils.SecretKey2PublicKey,
-		"ALERT_API_KEY":                         utils.Hide,
-		"GOOGLE_CLIENT_ID":                      utils.Hide,
-		"GOOGLE_CLIENT_SECRET":                  utils.Hide,
-		"ACCEPTABLE_GOOGLE_EMAILS":              utils.Hide,
-		"CENTRALIZED_PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
-		"CENTRALIZED_VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
-		"MIN_CENTRALIZED_BASE_VOLUME":           utils.UnwrapFloat64Pointer,
-		"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
-		"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
+	return utils.StructString(b, 0, map[string]func(interface{}) interface{}{
+		"EXCHANGE_API_KEYS":        utils.Hide,
+		"EXCHANGE_PARAMS":          utils.Hide,
+		"EXCHANGE_HEADERS":         utils.Hide,
+		"SOURCE_SECRET_SEED":       utils.SecretKey2PublicKey,
+		"TRADING_SECRET_SEED":      utils.SecretKey2PublicKey,
+		"ALERT_API_KEY":            utils.Hide,
+		"GOOGLE_CLIENT_ID":         utils.Hide,
+		"GOOGLE_CLIENT_SECRET":     utils.Hide,
+		"ACCEPTABLE_GOOGLE_EMAILS": utils.Hide,
 	})
 }
 

@@ -36,15 +36,10 @@ type mirrorConfig struct {
 
 // String impl.
 func (c mirrorConfig) String() string {
-	return utils.StructString(c, map[string]func(interface{}) interface{}{
-		"EXCHANGE_API_KEYS":         utils.Hide,
-		"EXCHANGE_PARAMS":           utils.Hide,
-		"EXCHANGE_HEADERS":          utils.Hide,
-		"PRICE_PRECISION_OVERRIDE":  utils.UnwrapInt8Pointer,
-		"VOLUME_PRECISION_OVERRIDE": utils.UnwrapInt8Pointer,
-		"MIN_BASE_VOLUME":           utils.UnwrapFloat64Pointer,
-		"MIN_BASE_VOLUME_OVERRIDE":  utils.UnwrapFloat64Pointer,
-		"MIN_QUOTE_VOLUME_OVERRIDE": utils.UnwrapFloat64Pointer,
+	return utils.StructString(c, 0, map[string]func(interface{}) interface{}{
+		"EXCHANGE_API_KEYS": utils.Hide,
+		"EXCHANGE_PARAMS":   utils.Hide,
+		"EXCHANGE_HEADERS":  utils.Hide,
 	})
 }
 

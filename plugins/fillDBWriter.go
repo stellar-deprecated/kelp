@@ -46,14 +46,17 @@ type FillDBWriter struct {
 	market *tradingMarket
 }
 
-// makeTradingMarket makes a market along with the ID field
-func makeTradingMarket(exchangeName string, baseAsset string, quoteAsset string) *tradingMarket {
+func makeMarketID(exchangeName string, baseAsset string, quoteAsset string) string {
 	idString := fmt.Sprintf("%s_%s_%s", exchangeName, baseAsset, quoteAsset)
 	h := sha256.New()
 	h.Write([]byte(idString))
 	sha256Hash := fmt.Sprintf("%x", h.Sum(nil))
-	sha256HashPrefix := sha256Hash[0:marketIdHashLength]
+	return sha256Hash[0:marketIdHashLength]
+}
 
+// makeTradingMarket makes a market along with the ID field
+func makeTradingMarket(exchangeName string, baseAsset string, quoteAsset string) *tradingMarket {
+	sha256HashPrefix := makeMarketID(exchangeName, baseAsset, quoteAsset)
 	return &tradingMarket{
 		ID:           sha256HashPrefix,
 		ExchangeName: exchangeName,
@@ -156,7 +159,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 	txid := utils.CheckedString(trade.TransactionID)
 	timeSeconds := trade.Timestamp.AsInt64() / 1000
 	date := time.Unix(timeSeconds, 0).UTC()
-	dateString := date.Format(postgresdb.DateFormatString)
+	dateString := date.Format(postgresdb.TimestampFormatString)
 
 	market, e := f.fetchOrRegisterMarket(trade)
 	if e != nil {

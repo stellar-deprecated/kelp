@@ -18,6 +18,10 @@ var upgradeScripts = []*UpgradeScript{
 		sqlTradesTableCreate,
 		sqlTradesIndexCreate,
 	),
+	makeUpgradeScript(3,
+		sqlTradesIndexDrop,
+		sqlTradesIndexCreate2,
+	),
 }
 
 // UpgradeScript encapsulates a script to be run to upgrade the database from one version to the next
@@ -104,7 +108,7 @@ func runUpgradeScripts(db *sql.DB, scripts []*UpgradeScript) error {
 		// add entry to db_version table
 		sqlInsertDbVersion := fmt.Sprintf(sqlDbVersionTableInsertTemplate,
 			script.version,
-			startTime.Format(postgresdb.DateFormatString),
+			startTime.Format(postgresdb.TimestampFormatString),
 			len(script.commands),
 			elapsedMillis,
 		)

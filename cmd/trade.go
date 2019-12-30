@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -329,7 +330,9 @@ func makeBot(
 	exchangeShim api.ExchangeShim,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
+	db *sql.DB,
 	strategy api.Strategy,
+	assetDisplayFn model.AssetDisplayFn,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 ) *trader.Trader {
@@ -344,30 +347,67 @@ func makeBot(
 		// we want to delete all the offers and exit here since there is something wrong with our setup
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
-	dataKey := model.MakeSortedBotKey(botConfig.AssetBase(), botConfig.AssetQuote())
+
+	assetBase := botConfig.AssetBase()
+	assetQuote := botConfig.AssetQuote()
+	dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
 	alert, e := monitoring.MakeAlert(botConfig.AlertType, botConfig.AlertAPIKey)
 	if e != nil {
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
-	bot := trader.MakeBot(
+
+	// start make filters
+	submitFilters := []plugins.SubmitFilter{
+		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
+	}
+	if submitMode == api.SubmitModeMakerOnly {
+		submitFilters = append(submitFilters,
+			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
+		)
+	}
+	if len(botConfig.Filters) > 0 && *options.strategy != "sell" && *options.strategy != "delete" {
+		log.Println()
+		utils.PrintErrorHintf("FILTERS currently only supported on 'sell' and 'delete' strategies, remove FILTERS from the trader config file")
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+	}
+	filterFactory := plugins.FilterFactory{
+		ExchangeName:   botConfig.TradingExchangeName(),
+		TradingPair:    tradingPair,
+		AssetDisplayFn: assetDisplayFn,
+		BaseAsset:      assetBase,
+		QuoteAsset:     assetQuote,
+		DB:             db,
+	}
+	for _, filterString := range botConfig.Filters {
+		filter, e := filterFactory.MakeFilter(filterString)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+		submitFilters = append(submitFilters, filter)
+	}
+	// end make filters
+
+	return trader.MakeTrader(
 		client,
 		ieif,
-		botConfig.AssetBase(),
-		botConfig.AssetQuote(),
-		tradingPair,
+		assetBase,
+		assetQuote,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
 		strategy,
 		timeController,
 		botConfig.DeleteCyclesThreshold,
-		submitMode,
+		submitFilters,
 		threadTracker,
 		options.fixedIterations,
 		dataKey,
 		alert,
 	)
-	return bot
 }
 
 func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfig) trader.BotConfig {
@@ -434,6 +474,20 @@ func runTradeCmd(options inputs) {
 		tradingPair.Base:  botConfig.AssetBase(),
 		tradingPair.Quote: botConfig.AssetQuote(),
 	}
+	assetDisplayFn := model.MakePassthroughAssetDisplayFn()
+	if botConfig.IsTradingSdex() {
+		assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
+	}
+
+	var db *sql.DB
+	if botConfig.PostgresDbConfig != nil {
+		var e error
+		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
+		if e != nil {
+			logger.Fatal(l, fmt.Errorf("problem encountered while initializing the db: %s", e))
+		}
+		log.Printf("made db instance with config: %s\n", botConfig.PostgresDbConfig.MakeConnectString())
+	}
 	exchangeShim, sdex := makeExchangeShimSdex(
 		l,
 		botConfig,
@@ -467,7 +521,9 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		ieif,
 		tradingPair,
+		db,
 		strategy,
+		assetDisplayFn,
 		threadTracker,
 		options,
 	)
@@ -496,7 +552,8 @@ func runTradeCmd(options inputs) {
 		sdex,
 		exchangeShim,
 		tradingPair,
-		sdexAssetMap,
+		assetDisplayFn,
+		db,
 		threadTracker,
 	)
 	startQueryServer(
@@ -565,7 +622,8 @@ func startFillTracking(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	tradingPair *model.TradingPair,
-	sdexAssetMap map[model.Asset]hProtocol.Asset,
+	assetDisplayFn model.AssetDisplayFn,
+	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 ) {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
@@ -580,19 +638,7 @@ func startFillTracking(
 		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
-		if botConfig.PostgresDbConfig != nil {
-			db, e := database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
-			if e != nil {
-				l.Info("")
-				l.Errorf("problem encountered while initializing the db: %s", e)
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-			}
-			log.Printf("made db instance with config: %s\n", botConfig.PostgresDbConfig.MakeConnectString())
-
-			assetDisplayFn := model.MakePassthroughAssetDisplayFn()
-			if botConfig.IsTradingSdex() {
-				assetDisplayFn = model.MakeSdexMappedAssetDisplayFn(sdexAssetMap)
-			}
+		if db != nil {
 			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName())
 			fillTracker.RegisterHandler(fillDBWriter)
 		}
