@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/stellar/kelp/api"
@@ -57,34 +58,33 @@ func makeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase floa
 
 // GetLevels impl.
 func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	centerPrice, e := p.pf.GetCenterPrice()
+	midPrice, e := p.pf.GetMidPrice()
 	if e != nil {
-		log.Printf("error: center price couldn't be loaded! | %s\n", e)
-		return nil, e
+		return nil, fmt.Errorf("mid price couldn't be loaded: %s", e)
 	}
 	if p.offset.percent != 0.0 || p.offset.absolute != 0 {
 		// if inverted, we want to invert before we compute the adjusted price, and then invert back
 		if p.offset.invert {
-			centerPrice = 1 / centerPrice
+			midPrice = 1 / midPrice
 		}
 		scaleFactor := 1 + p.offset.percent
 		if p.offset.percentFirst {
-			centerPrice = (centerPrice * scaleFactor) + p.offset.absolute
+			midPrice = (midPrice * scaleFactor) + p.offset.absolute
 		} else {
-			centerPrice = (centerPrice + p.offset.absolute) * scaleFactor
+			midPrice = (midPrice + p.offset.absolute) * scaleFactor
 		}
 		if p.offset.invert {
-			centerPrice = 1 / centerPrice
+			midPrice = 1 / midPrice
 		}
-		log.Printf("center price (adjusted): %.7f\n", centerPrice)
+		log.Printf("mid price (adjusted): %.7f\n", midPrice)
 	}
 
 	levels := []api.Level{}
 	for _, sl := range p.staticLevels {
-		absoluteSpread := centerPrice * sl.SPREAD
+		absoluteSpread := midPrice * sl.SPREAD
 		levels = append(levels, api.Level{
 			// we always add here because it is only used in the context of selling so we always charge a higher price to include a spread
-			Price:  *model.NumberFromFloat(centerPrice+absoluteSpread, p.orderConstraints.PricePrecision),
+			Price:  *model.NumberFromFloat(midPrice+absoluteSpread, p.orderConstraints.PricePrecision),
 			Amount: *model.NumberFromFloat(sl.AMOUNT*p.amountOfBase, p.orderConstraints.VolumePrecision),
 		})
 	}

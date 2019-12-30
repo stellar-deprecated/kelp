@@ -106,6 +106,6 @@ func (s *sdexFeed) GetPrice() (float64, error) {
 	topBidPrice := orderBook.Bids()[0].Price
 	topAskPrice := orderBook.Asks()[0].Price
 
-	centerPrice := topBidPrice.Add(*topAskPrice).Scale(0.5).AsFloat()
-	return centerPrice, nil
+	midPrice := topBidPrice.Add(*topAskPrice).Scale(0.5).AsFloat()
+	return midPrice, nil
 }

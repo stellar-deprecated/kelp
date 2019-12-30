@@ -41,7 +41,7 @@ A level defines a [layer](https://en.wikipedia.org/wiki/Layering_(finance)) that
 `AMOUNT_OF_A_BASE` allows you to scale the order size levels explained below. Trade amounts are specified in **units of the [base asset](https://en.wikipedia.org/wiki/Currency_pair#Base_currency)** (i.e. `ASSET_CODE_A`).
 
 - **AMOUNT**: specifies the order size in multiples of the base unit described above. This `AMOUNT` is multiplied by the `AMOUNT_OF_A_BASE` field to give the final amount. The amount for the quote asset is derived using this value and the computed price at the indicated `SPREAD` level.
-- **SPREAD**: represents the distance from center price as a percentage specified as a decimal number (0 < spread < 1.00). The [bid/ask spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) will be 2x what is specified at each level in the config.
+- **SPREAD**: represents the distance from the mid price as a percentage specified as a decimal number (0 < spread < 1.00). The [bid/ask spread](https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread) will be 2x what is specified at each level in the config.
 
 ## Run Kelp
 
