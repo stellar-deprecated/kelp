@@ -356,6 +356,7 @@ func makeBot(
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
 
+	// start make filters
 	submitFilters := []plugins.SubmitFilter{
 		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
 	}
@@ -363,6 +364,12 @@ func makeBot(
 		submitFilters = append(submitFilters,
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
 		)
+	}
+	if len(botConfig.Filters) > 0 && *options.strategy != "sell" && *options.strategy != "delete" {
+		log.Println()
+		utils.PrintErrorHintf("FILTERS currently only supported on 'sell' and 'delete' strategies, remove FILTERS from the trader config file")
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
 	filterFactory := plugins.FilterFactory{
 		ExchangeName:   botConfig.TradingExchangeName(),
@@ -382,6 +389,7 @@ func makeBot(
 		}
 		submitFilters = append(submitFilters, filter)
 	}
+	// end make filters
 
 	return trader.MakeTrader(
 		client,
