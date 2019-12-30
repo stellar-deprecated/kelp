@@ -41,16 +41,15 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 		return 0, fmt.Errorf("could not get price for trading pair: %s", f.pairs[0].String())
 	}
 
+	midPrice := (p.BidPrice.AsFloat() + p.AskPrice.AsFloat()) / 2
+	var price float64
 	if f.modifier == "ask" {
-		price := p.AskPrice.AsFloat()
-		log.Printf("(modifier: ask) price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, askPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), price)
-		return price, nil
+		price = p.AskPrice.AsFloat()
 	} else if f.modifier == "bid" {
-		price := p.BidPrice.AsFloat()
-		log.Printf("(modifier: bid) price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, bidPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), price)
-		return price, nil
+		price = p.BidPrice.AsFloat()
+	} else {
+		price = midPrice
 	}
-	centerPrice := (p.BidPrice.AsFloat() + p.AskPrice.AsFloat()) / 2
-	log.Printf("(modifier: mid) price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, centerPrice=%.7f", f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), centerPrice)
-	return centerPrice, nil
+	log.Printf("(modifier: %s) price from exchange feed (%s): bidPrice=%.7f, askPrice=%.7f, midPrice=%.7f; price=%.7f", f.modifier, f.name, p.BidPrice.AsFloat(), p.AskPrice.AsFloat(), midPrice, price)
+	return price, nil
 }
