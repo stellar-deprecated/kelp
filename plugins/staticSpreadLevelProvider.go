@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/stellar/kelp/api"
@@ -59,8 +60,7 @@ func makeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase floa
 func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	midPrice, e := p.pf.GetMidPrice()
 	if e != nil {
-		log.Printf("error: mid price couldn't be loaded! | %s\n", e)
-		return nil, e
+		return nil, fmt.Errorf("mid price couldn't be loaded: %s", e)
 	}
 	if p.offset.percent != 0.0 || p.offset.absolute != 0 {
 		// if inverted, we want to invert before we compute the adjusted price, and then invert back
