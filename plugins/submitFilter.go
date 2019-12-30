@@ -147,9 +147,14 @@ func filterOps(
 				}
 			}
 
-			newOp, keep, e = fn(opToTransform)
-			if e != nil {
-				return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
+			// delete operations should never be dropped
+			if opToTransform.Amount == "0" {
+				newOp, keep = opToTransform, true
+			} else {
+				newOp, keep, e = fn(opToTransform)
+				if e != nil {
+					return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
+				}
 			}
 		default:
 			newOp = o

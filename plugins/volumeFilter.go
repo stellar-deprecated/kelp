@@ -119,11 +119,6 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 }
 
 func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
-	// delete operations should never be dropped
-	if op.Amount == "0" {
-		return op, true, nil
-	}
-
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
 	if e != nil {
 		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
