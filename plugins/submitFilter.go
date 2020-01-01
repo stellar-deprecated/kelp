@@ -206,6 +206,7 @@ func filterOps(
 		default:
 			filteredOps = append(filteredOps, o)
 			opCounter.kept++
+			opCounter.idx++
 		}
 	}
 
