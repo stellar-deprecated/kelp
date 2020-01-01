@@ -97,10 +97,14 @@ func filterOps(
 		var offerList []hProtocol.Offer
 		var offerCounter *filterCounter
 		var originalOffer *txnbuild.ManageSellOffer
+		var originalOpAmount string
+		var originalOpPrice string
 		var newOp txnbuild.Operation
 		var keep bool
 		switch o := op.(type) {
 		case *txnbuild.ManageSellOffer:
+			originalOpAmount = o.Amount
+			originalOpPrice = o.Price
 			isSellOp, e := utils.IsSelling(baseAsset, quoteAsset, o.Selling, o.Buying)
 			if e != nil {
 				return nil, fmt.Errorf("could not check whether the ManageSellOffer was selling or buying: %s", e)
@@ -167,6 +171,7 @@ func filterOps(
 				return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
 			}
 
+			// TODO this forces the bot to panic if an op is not a manageSellOffer which needs to be fixed
 			newOpMSO := newOp.(*txnbuild.ManageSellOffer)
 			if originalOffer != nil && originalOffer.Price == newOpMSO.Price && originalOffer.Amount == newOpMSO.Amount {
 				// do not append to filteredOps because this is an existing offer that we want to keep as-is
@@ -178,7 +183,11 @@ func filterOps(
 			} else {
 				// we were dealing with an operation
 				filteredOps = append(filteredOps, newOp)
-				opCounter.kept++
+				if originalOpPrice != newOpMSO.Price || originalOpAmount != newOpMSO.Amount {
+					opCounter.transformed++
+				} else {
+					opCounter.kept++
+				}
 			}
 		} else {
 			if !isNewOpNil {
@@ -190,6 +199,8 @@ func filterOps(
 					offerCounter.dropped++
 				} else {
 					// we are dealing with an operation that had updated an offer which now needs dropping
+					// using the transformed counter here because we are changing the actual intent of the operation
+					// from an update existing offer to delete existing offer logic
 					opCounter.transformed++
 				}
 			} else {
