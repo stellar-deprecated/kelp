@@ -43,11 +43,15 @@ func (f *FilterFactory) MakeFilter(configInput string) (SubmitFilter, error) {
 
 func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	parts := strings.Split(configInput, "/")
-	if len(parts) != 4 {
-		return nil, fmt.Errorf("invalid input (%s), needs 4 parts separated by the delimiter (/)", configInput)
+	if len(parts) != 5 {
+		return nil, fmt.Errorf("invalid input (%s), needs 5 parts separated by the delimiter (/)", configInput)
 	}
 
-	config := &VolumeFilterConfig{}
+	mode, e := parseVolumeFilterMode(parts[4])
+	if e != nil {
+		return nil, fmt.Errorf("could not parse volume filter mode from input (%s): %s", configInput, e)
+	}
+	config := &VolumeFilterConfig{mode: mode}
 	if parts[1] != "sell" {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"sell\"", configInput)
 	}

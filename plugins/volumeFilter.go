@@ -16,10 +16,28 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
+type volumeFilterMode string
+
+// type of volumeFilterMode
+const (
+	volumeFilterModeExact  volumeFilterMode = "exact"
+	volumeFilterModeIgnore volumeFilterMode = "ignore"
+)
+
+func parseVolumeFilterMode(mode string) (volumeFilterMode, error) {
+	if mode == string(volumeFilterModeExact) {
+		return volumeFilterModeExact, nil
+	} else if mode == string(volumeFilterModeIgnore) {
+		return volumeFilterModeIgnore, nil
+	}
+	return volumeFilterModeExact, fmt.Errorf("invalid input mode '%s'", mode)
+}
+
 // VolumeFilterConfig ensures that any one constraint that is hit will result in deleting all offers and pausing until limits are no longer constrained
 type VolumeFilterConfig struct {
 	SellBaseAssetCapInBaseUnits  *float64
 	SellBaseAssetCapInQuoteUnits *float64
+	mode                         volumeFilterMode
 	// buyBaseAssetCapInBaseUnits   *float64
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
