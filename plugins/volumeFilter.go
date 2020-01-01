@@ -203,7 +203,6 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 		// TODO buying side
 	}
 
-	// TODO - reduce amount in offer so we can just meet the capacity limit, instead of dropping
 	// convert the offer to a dropped state
 	if op.OfferID == 0 {
 		// new offers can be dropped
