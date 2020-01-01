@@ -199,7 +199,7 @@ func filterOps(
 						opCounter.transformed++
 					}
 				} else {
-					// newOp will never be nil for an original offer since it has an offerID
+					// newOp will never be nil for an original offer so the case will be handled in the if clause (!isNewOpNil)
 					opCounter.dropped++
 				}
 			}
