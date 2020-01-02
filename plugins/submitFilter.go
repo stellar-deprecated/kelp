@@ -75,6 +75,14 @@ Problem: If we increase the price off a sell offer (or decrease price of a buy o
 	worse than O(N).
 Solution: We first "dedupe" the offers and operations, by removing any offers that have a corresponding operation
 	update based on offerID. This has an additional overhead on runtime complexity of O(N).
+
+Solving the "no update operations problem":
+Problem: if our trading strategy produces no operations for a given update cycle, indicating that the state of the
+	orderbook is correct, then we will not enter the for-loop which is conditioned on operations. This would result
+	in control going straight to the post-operations logic which should correctly consider the existing offers. This
+	logic would be the same as what happens inside the for loop and we should ensure there is no repetition.
+Solution: Refactor the code inside the for loop to clearly allow for reuse of functions and evaluation of existing
+	offers outside the for loop.
 */
 func filterOps(
 	filterName string,
