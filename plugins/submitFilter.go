@@ -95,7 +95,6 @@ func filterOps(
 	fn filterFn,
 ) ([]txnbuild.Operation, error) {
 	ignoreOfferIds := ignoreOfferIDs(ops)
-
 	opCounter := filterCounter{}
 	buyCounter := filterCounter{}
 	sellCounter := filterCounter{}
@@ -110,49 +109,34 @@ func filterOps(
 			var originalOffer *txnbuild.ManageSellOffer
 			originalMSO := *o
 			var newOp *txnbuild.ManageSellOffer
-			var offerList []hProtocol.Offer
-			var offerCounter *filterCounter
 
-			isSellOp, e := utils.IsSelling(baseAsset, quoteAsset, o.Selling, o.Buying)
+			offerList, offerCounter, e := selectBuySellList(
+				baseAsset,
+				quoteAsset,
+				o,
+				sellingOffers,
+				buyingOffers,
+				&sellCounter,
+				&buyCounter,
+			)
 			if e != nil {
-				return nil, fmt.Errorf("could not check whether the ManageSellOffer was selling or buying: %s", e)
-			}
-			if isSellOp {
-				offerList = sellingOffers
-				offerCounter = &sellCounter
-			} else {
-				offerList = buyingOffers
-				offerCounter = &buyCounter
+				return nil, fmt.Errorf("unable to pick between whether the op was a buy or sell op: %s", e)
 			}
 
-			opPrice, e := strconv.ParseFloat(o.Price, 64)
+			opToTransform, originalOffer, filterCounterToIncrement, isIgnoredOffer, e := selectOpOrOffer(
+				offerList,
+				offerCounter,
+				o,
+				&opCounter,
+				ignoreOfferIds,
+			)
 			if e != nil {
-				return nil, fmt.Errorf("could not parse price as float64: %s", e)
+				return nil, fmt.Errorf("error while picking op or offer: %s", e)
 			}
-
-			var opToTransform *txnbuild.ManageSellOffer
-			if offerCounter.idx >= len(offerList) {
-				opToTransform = o
-				opCounter.idx++
-			} else {
-				existingOffer := offerList[offerCounter.idx]
-				if _, ignoreOffer := ignoreOfferIds[existingOffer.ID]; ignoreOffer {
-					// we want to only compare against valid offers so go to the next offer in the list
-					offerCounter.idx++
-					offerCounter.ignored++
-					continue
-				}
-
-				offerPrice := float64(existingOffer.PriceR.N) / float64(existingOffer.PriceR.D)
-				// use the existing offer if the price is the same so we don't recreate an offer unnecessarily
-				if opPrice < offerPrice {
-					opToTransform = o
-					opCounter.idx++
-				} else {
-					opToTransform = convertOffer2MSO(existingOffer)
-					offerCounter.idx++
-					originalOffer = convertOffer2MSO(existingOffer)
-				}
+			filterCounterToIncrement.idx++
+			if isIgnoredOffer {
+				filterCounterToIncrement.ignored++
+				continue
 			}
 
 			// delete operations should never be dropped
@@ -234,6 +218,65 @@ func filterOps(
 	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, buyCounter.ignored, len(buyingOffers))
 	log.Printf("filter \"%s\" result D: len(filteredOps) = %d\n", filterName, len(filteredOps))
 	return filteredOps, nil
+}
+
+func selectBuySellList(
+	baseAsset hProtocol.Asset,
+	quoteAsset hProtocol.Asset,
+	mso *txnbuild.ManageSellOffer,
+	sellingOffers []hProtocol.Offer,
+	buyingOffers []hProtocol.Offer,
+	sellCounter *filterCounter,
+	buyCounter *filterCounter,
+) ([]hProtocol.Offer, *filterCounter, error) {
+	isSellOp, e := utils.IsSelling(baseAsset, quoteAsset, mso.Selling, mso.Buying)
+	if e != nil {
+		return nil, nil, fmt.Errorf("could not check whether the ManageSellOffer was selling or buying: %s", e)
+	}
+
+	if isSellOp {
+		return sellingOffers, sellCounter, nil
+	}
+	return buyingOffers, buyCounter, nil
+}
+
+func selectOpOrOffer(
+	offerList []hProtocol.Offer,
+	offerCounter *filterCounter,
+	mso *txnbuild.ManageSellOffer,
+	opCounter *filterCounter,
+	ignoreOfferIds map[int64]bool,
+) (
+	opToTransform *txnbuild.ManageSellOffer,
+	originalOfferAsOp *txnbuild.ManageSellOffer,
+	c *filterCounter,
+	isIgnoredOffer bool,
+	err error,
+) {
+	if offerCounter.idx >= len(offerList) {
+		return mso, nil, opCounter, false, nil
+	}
+
+	existingOffer := offerList[offerCounter.idx]
+	if _, ignoreOffer := ignoreOfferIds[existingOffer.ID]; ignoreOffer {
+		// we want to only compare against valid offers so skip this offer by returning ignored = true
+		return nil, nil, offerCounter, true, nil
+	}
+
+	offerPrice := float64(existingOffer.PriceR.N) / float64(existingOffer.PriceR.D)
+	opPrice, e := strconv.ParseFloat(mso.Price, 64)
+	if e != nil {
+		return nil, nil, nil, false, fmt.Errorf("could not parse price as float64: %s", e)
+	}
+
+	// use the existing offer if the price is the same so we don't recreate an offer unnecessarily
+	if opPrice < offerPrice {
+		return mso, nil, opCounter, false, nil
+	}
+
+	offerAsOp := convertOffer2MSO(existingOffer)
+	offerAsOpCopy := *offerAsOp
+	return offerAsOp, &offerAsOpCopy, offerCounter, false, nil
 }
 
 func convertOffer2MSO(offer hProtocol.Offer) *txnbuild.ManageSellOffer {
