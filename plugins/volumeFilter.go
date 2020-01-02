@@ -16,10 +16,28 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
+type volumeFilterMode string
+
+// type of volumeFilterMode
+const (
+	volumeFilterModeExact  volumeFilterMode = "exact"
+	volumeFilterModeIgnore volumeFilterMode = "ignore"
+)
+
+func parseVolumeFilterMode(mode string) (volumeFilterMode, error) {
+	if mode == string(volumeFilterModeExact) {
+		return volumeFilterModeExact, nil
+	} else if mode == string(volumeFilterModeIgnore) {
+		return volumeFilterModeIgnore, nil
+	}
+	return volumeFilterModeExact, fmt.Errorf("invalid input mode '%s'", mode)
+}
+
 // VolumeFilterConfig ensures that any one constraint that is hit will result in deleting all offers and pausing until limits are no longer constrained
 type VolumeFilterConfig struct {
 	SellBaseAssetCapInBaseUnits  *float64
 	SellBaseAssetCapInQuoteUnits *float64
+	mode                         volumeFilterMode
 	// buyBaseAssetCapInBaseUnits   *float64
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
@@ -133,41 +151,58 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 	if e != nil {
 		return nil, false, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
-	amountValueUnitsBeingBought := amountValueUnitsBeingSold * sellPrice
 
-	var keep bool
 	if isSell {
+		opToReturn := op
+		newAmountBeingSold := amountValueUnitsBeingSold
 		var keepSellingBase bool
 		var keepSellingQuote bool
 		if f.config.SellBaseAssetCapInBaseUnits != nil {
 			projectedSoldInBaseUnits := *dailyOTB.SellBaseAssetCapInBaseUnits + *dailyTBB.SellBaseAssetCapInBaseUnits + amountValueUnitsBeingSold
 			keepSellingBase = projectedSoldInBaseUnits <= *f.config.SellBaseAssetCapInBaseUnits
-			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *f.config.SellBaseAssetCapInBaseUnits, keepSellingBase)
+			newAmountString := ""
+			if f.config.mode == volumeFilterModeExact && !keepSellingBase {
+				newAmount := *f.config.SellBaseAssetCapInBaseUnits - *dailyOTB.SellBaseAssetCapInBaseUnits - *dailyTBB.SellBaseAssetCapInBaseUnits
+				if newAmount > 0 {
+					newAmountBeingSold = newAmount
+					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
+					keepSellingBase = true
+					newAmountString = ", newAmountString = " + opToReturn.Amount
+				}
+			}
+			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *f.config.SellBaseAssetCapInBaseUnits, keepSellingBase, newAmountString)
 		} else {
 			keepSellingBase = true
 		}
 
 		if f.config.SellBaseAssetCapInQuoteUnits != nil {
-			projectedSoldInQuoteUnits := *dailyOTB.SellBaseAssetCapInQuoteUnits + *dailyTBB.SellBaseAssetCapInQuoteUnits + amountValueUnitsBeingBought
+			projectedSoldInQuoteUnits := *dailyOTB.SellBaseAssetCapInQuoteUnits + *dailyTBB.SellBaseAssetCapInQuoteUnits + (newAmountBeingSold * sellPrice)
 			keepSellingQuote = projectedSoldInQuoteUnits <= *f.config.SellBaseAssetCapInQuoteUnits
-			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *f.config.SellBaseAssetCapInQuoteUnits, keepSellingQuote)
+			newAmountString := ""
+			if f.config.mode == volumeFilterModeExact && !keepSellingQuote {
+				newAmount := (*f.config.SellBaseAssetCapInQuoteUnits - *dailyOTB.SellBaseAssetCapInQuoteUnits - *dailyTBB.SellBaseAssetCapInQuoteUnits) / sellPrice
+				if newAmount > 0 {
+					newAmountBeingSold = newAmount
+					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
+					keepSellingQuote = true
+					newAmountString = ", newAmountString = " + opToReturn.Amount
+				}
+			}
+			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *f.config.SellBaseAssetCapInQuoteUnits, keepSellingQuote, newAmountString)
 		} else {
 			keepSellingQuote = true
 		}
 
-		keep = keepSellingBase && keepSellingQuote
+		if keepSellingBase && keepSellingQuote {
+			// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
+			*dailyTBB.SellBaseAssetCapInBaseUnits += newAmountBeingSold
+			*dailyTBB.SellBaseAssetCapInQuoteUnits += (newAmountBeingSold * sellPrice)
+			return opToReturn, true, nil
+		}
 	} else {
 		// TODO buying side
 	}
 
-	if keep {
-		// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
-		*dailyTBB.SellBaseAssetCapInBaseUnits += amountValueUnitsBeingSold
-		*dailyTBB.SellBaseAssetCapInQuoteUnits += amountValueUnitsBeingBought
-		return op, true, nil
-	}
-
-	// TODO - reduce amount in offer so we can just meet the capacity limit, instead of dropping
 	// convert the offer to a dropped state
 	if op.OfferID == 0 {
 		// new offers can be dropped
@@ -178,7 +213,7 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 		opCopy.Amount = "0"
 		return &opCopy, false, nil
 	}
-	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
+	return nil, false, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
 }
 
 func (c *VolumeFilterConfig) isEmpty() bool {

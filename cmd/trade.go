@@ -357,9 +357,7 @@ func makeBot(
 	}
 
 	// start make filters
-	submitFilters := []plugins.SubmitFilter{
-		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
-	}
+	submitFilters := []plugins.SubmitFilter{}
 	if submitMode == api.SubmitModeMakerOnly {
 		submitFilters = append(submitFilters,
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
@@ -389,6 +387,11 @@ func makeBot(
 		}
 		submitFilters = append(submitFilters, filter)
 	}
+	// exchange constraints filter is last so we catch any modifications made by previous filters. this ensures that the exchange is
+	// less likely to reject our updates
+	submitFilters = append(submitFilters,
+		plugins.MakeFilterOrderConstraints(exchangeShim.GetOrderConstraints(tradingPair), assetBase, assetQuote),
+	)
 	// end make filters
 
 	return trader.MakeTrader(
