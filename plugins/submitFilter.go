@@ -108,11 +108,10 @@ func filterOps(
 		case *txnbuild.ManageSellOffer:
 			var keep bool
 			var originalOffer *txnbuild.ManageSellOffer
+			originalMSO := *o
 			var newOp *txnbuild.ManageSellOffer
 			var offerList []hProtocol.Offer
 			var offerCounter *filterCounter
-			originalOpAmount := o.Amount
-			originalOpPrice := o.Price
 
 			isSellOp, e := utils.IsSelling(baseAsset, quoteAsset, o.Selling, o.Buying)
 			if e != nil {
@@ -182,7 +181,7 @@ func filterOps(
 				} else {
 					// we were dealing with an operation
 					filteredOps = append(filteredOps, newOp)
-					if originalOpPrice != newOp.Price || originalOpAmount != newOp.Amount {
+					if originalMSO.Price != newOp.Price || originalMSO.Amount != newOp.Amount {
 						opCounter.transformed++
 					} else {
 						opCounter.kept++
