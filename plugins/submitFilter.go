@@ -170,19 +170,27 @@ func filterOps(
 	}
 
 	// convert all remaining buy and sell offers to delete offers
-	for sellCounter.idx < len(sellingOffers) {
-		dropOp := convertOffer2MSO(sellingOffers[sellCounter.idx])
-		dropOp.Amount = "0"
-		filteredOps = append([]txnbuild.Operation{dropOp}, filteredOps...)
-		sellCounter.dropped++
-		sellCounter.idx++
+	filteredOps, e := handleRemainingOffers(
+		&sellCounter,
+		sellingOffers,
+		&opCounter,
+		ignoreOfferIds,
+		filteredOps,
+		fn,
+	)
+	if e != nil {
+		return nil, fmt.Errorf("error when handling remaining sell offers: %s", e)
 	}
-	for buyCounter.idx < len(buyingOffers) {
-		dropOp := convertOffer2MSO(buyingOffers[buyCounter.idx])
-		dropOp.Amount = "0"
-		filteredOps = append([]txnbuild.Operation{dropOp}, filteredOps...)
-		buyCounter.dropped++
-		buyCounter.idx++
+	filteredOps, e = handleRemainingOffers(
+		&buyCounter,
+		buyingOffers,
+		&opCounter,
+		ignoreOfferIds,
+		filteredOps,
+		fn,
+	)
+	if e != nil {
+		return nil, fmt.Errorf("error when handling remaining buy offers: %s", e)
 	}
 
 	log.Printf("filter \"%s\" result A: dropped %d, transformed %d, kept %d ops from the %d ops passed in\n", filterName, opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
@@ -313,6 +321,48 @@ func runInnerFilterFn(
 			return nil, newOp, opCounter, &filterCounter{transformed: 1}, nil
 		}
 	}
+}
+
+func handleRemainingOffers(
+	offerCounter *filterCounter,
+	offers []hProtocol.Offer,
+	opCounter *filterCounter,
+	ignoreOfferIds map[int64]bool,
+	filteredOps []txnbuild.Operation,
+	fn filterFn,
+) ([]txnbuild.Operation, error) {
+	for offerCounter.idx < len(offers) {
+		if _, ignoreOffer := ignoreOfferIds[offers[offerCounter.idx].ID]; ignoreOffer {
+			// we want to only compare against valid offers so ignore this offer
+			offerCounter.ignored++
+			offerCounter.idx++
+			continue
+		}
+
+		originalOfferAsOp := convertOffer2MSO(offers[offerCounter.idx])
+		newOpToAppend, newOpToPrepend, filterCounterToIncrement, incrementValues, e := runInnerFilterFn(
+			*originalOfferAsOp, // pass copy
+			fn,
+			originalOfferAsOp,
+			*originalOfferAsOp, // pass copy
+			offerCounter,
+			opCounter,
+		)
+		if e != nil {
+			return nil, fmt.Errorf("error while running inner filter function for remaining offers: %s", e)
+		}
+		if newOpToAppend != nil {
+			filteredOps = append(filteredOps, newOpToAppend)
+		}
+		if newOpToPrepend != nil {
+			filteredOps = append([]txnbuild.Operation{newOpToPrepend}, filteredOps...)
+		}
+		if filterCounterToIncrement != nil && incrementValues != nil {
+			filterCounterToIncrement.add(*incrementValues)
+		}
+		offerCounter.idx++
+	}
+	return filteredOps, nil
 }
 
 func convertOffer2MSO(offer hProtocol.Offer) *txnbuild.ManageSellOffer {
