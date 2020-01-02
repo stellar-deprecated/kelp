@@ -29,6 +29,14 @@ type filterCounter struct {
 	ignored     uint8
 }
 
+func (f *filterCounter) add(other filterCounter) {
+	f.idx += other.idx
+	f.kept += other.kept
+	f.dropped += other.dropped
+	f.transformed += other.transformed
+	f.ignored += other.ignored
+}
+
 // build a list of the existing offers that have a corresponding operation so we ignore these offers and only consider the operation version
 func ignoreOfferIDs(ops []txnbuild.Operation) map[int64]bool {
 	ignoreOfferIDs := map[int64]bool{}
@@ -105,11 +113,6 @@ func filterOps(
 
 		switch o := op.(type) {
 		case *txnbuild.ManageSellOffer:
-			var keep bool
-			var originalOffer *txnbuild.ManageSellOffer
-			originalMSO := *o
-			var newOp *txnbuild.ManageSellOffer
-
 			offerList, offerCounter, e := selectBuySellList(
 				baseAsset,
 				quoteAsset,
@@ -139,56 +142,25 @@ func filterOps(
 				continue
 			}
 
-			// delete operations should never be dropped
-			if opToTransform.Amount == "0" {
-				newOp, keep = opToTransform, true
-			} else {
-				newOp, keep, e = fn(opToTransform)
-				if e != nil {
-					return nil, fmt.Errorf("could not transform offer (pointer case): %s", e)
-				}
+			newOpToAppend, newOpToPrepend, filterCounterToIncrement, incrementValues, e := runInnerFilterFn(
+				opToTransform,
+				fn,
+				originalOffer,
+				o,
+				offerCounter,
+				&opCounter,
+			)
+			if e != nil {
+				return nil, fmt.Errorf("error while running inner filter function: %s", e)
 			}
-
-			isNewOpNil := newOp == nil || fmt.Sprintf("%v", newOp) == "<nil>"
-			if keep {
-				if isNewOpNil {
-					return nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
-				}
-
-				if originalOffer != nil && originalOffer.Price == newOp.Price && originalOffer.Amount == newOp.Amount {
-					// do not append to filteredOps because this is an existing offer that we want to keep as-is
-					offerCounter.kept++
-				} else if originalOffer != nil {
-					// we were dealing with an existing offer that was changed
-					filteredOps = append(filteredOps, newOp)
-					offerCounter.transformed++
-				} else {
-					// we were dealing with an operation
-					filteredOps = append(filteredOps, newOp)
-					if originalMSO.Price != newOp.Price || originalMSO.Amount != newOp.Amount {
-						opCounter.transformed++
-					} else {
-						opCounter.kept++
-					}
-				}
-			} else {
-				if !isNewOpNil {
-					// newOp can be a transformed op to change the op to an effectively "dropped" state
-					// prepend this so we always have delete commands at the beginning of the operation list
-					filteredOps = append([]txnbuild.Operation{newOp}, filteredOps...)
-					if originalOffer != nil {
-						// we are dealing with an existing offer that needs dropping
-						offerCounter.dropped++
-					} else {
-						// we are dealing with an operation that had updated an offer which now needs dropping
-						// using the transformed counter here because we are changing the actual intent of the operation
-						// from an update existing offer to delete existing offer logic
-						opCounter.transformed++
-					}
-				} else {
-					// newOp will never be nil for an original offer so the case will be handled in the if clause (!isNewOpNil)
-					opCounter.dropped++
-				}
+			if newOpToAppend != nil {
+				filteredOps = append(filteredOps, newOpToAppend)
+			}
+			if newOpToPrepend != nil {
+				filteredOps = append([]txnbuild.Operation{newOpToPrepend}, filteredOps...)
+			}
+			if filterCounterToIncrement != nil && incrementValues != nil {
+				filterCounterToIncrement.add(*incrementValues)
 			}
 		default:
 			filteredOps = append(filteredOps, o)
@@ -277,6 +249,70 @@ func selectOpOrOffer(
 	offerAsOp := convertOffer2MSO(existingOffer)
 	offerAsOpCopy := *offerAsOp
 	return offerAsOp, &offerAsOpCopy, offerCounter, false, nil
+}
+
+func runInnerFilterFn(
+	opToTransform *txnbuild.ManageSellOffer,
+	fn filterFn,
+	originalOfferAsOp *txnbuild.ManageSellOffer,
+	originalMSO *txnbuild.ManageSellOffer,
+	offerCounter *filterCounter,
+	opCounter *filterCounter,
+) (
+	newOpToAppend *txnbuild.ManageSellOffer,
+	newOpToPrepend *txnbuild.ManageSellOffer,
+	filterCounterToIncrement *filterCounter,
+	incrementValues *filterCounter,
+	err error,
+) {
+	var keep bool
+	var newOp *txnbuild.ManageSellOffer
+	var e error
+
+	// delete operations should never be dropped
+	if opToTransform.Amount == "0" {
+		newOp, keep = opToTransform, true
+	} else {
+		newOp, keep, e = fn(opToTransform)
+		if e != nil {
+			return nil, nil, nil, nil, fmt.Errorf("error in inner filter fn: %s", e)
+		}
+	}
+
+	isNewOpNil := newOp == nil || fmt.Sprintf("%v", newOp) == "<nil>"
+	if keep && isNewOpNil {
+		return nil, nil, nil, nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
+	} else if keep {
+		if originalOfferAsOp != nil && originalOfferAsOp.Price == newOp.Price && originalOfferAsOp.Amount == newOp.Amount {
+			// do not append to filteredOps because this is an existing offer that we want to keep as-is
+			return nil, nil, offerCounter, &filterCounter{kept: 1}, nil
+		} else if originalOfferAsOp != nil {
+			// we were dealing with an existing offer that was modified
+			return newOp, nil, offerCounter, &filterCounter{transformed: 1}, nil
+		} else {
+			// we were dealing with an operation
+			opModified := originalMSO.Price != newOp.Price || originalMSO.Amount != newOp.Amount
+			if opModified {
+				return newOp, nil, opCounter, &filterCounter{transformed: 1}, nil
+			}
+			return newOp, nil, opCounter, &filterCounter{kept: 1}, nil
+		}
+	} else if isNewOpNil {
+		// newOp will never be nil for an original offer since we will return the original non-nil offer
+		return nil, nil, opCounter, &filterCounter{dropped: 1}, nil
+	} else {
+		// newOp can be a transformed op to change the op to an effectively "dropped" state
+		// prepend this so we always have delete commands at the beginning of the operation list
+		if originalOfferAsOp != nil {
+			// we are dealing with an existing offer that needs dropping
+			return nil, newOp, offerCounter, &filterCounter{dropped: 1}, nil
+		} else {
+			// we are dealing with an operation that had updated an offer which now needs dropping
+			// using the transformed counter here because we are changing the actual intent of the operation
+			// from an update existing offer to delete existing offer logic
+			return nil, newOp, opCounter, &filterCounter{transformed: 1}, nil
+		}
+	}
 }
 
 func convertOffer2MSO(offer hProtocol.Offer) *txnbuild.ManageSellOffer {
