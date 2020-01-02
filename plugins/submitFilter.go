@@ -143,10 +143,10 @@ func filterOps(
 			}
 
 			newOpToAppend, newOpToPrepend, filterCounterToIncrement, incrementValues, e := runInnerFilterFn(
-				opToTransform,
+				*opToTransform, // pass copy
 				fn,
 				originalOffer,
-				o,
+				*o, // pass copy
 				offerCounter,
 				&opCounter,
 			)
@@ -186,8 +186,8 @@ func filterOps(
 	}
 
 	log.Printf("filter \"%s\" result A: dropped %d, transformed %d, kept %d ops from the %d ops passed in\n", filterName, opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
-	log.Printf("filter \"%s\" result B: dropped %d, transformed %d, kept %d, ignored %d sell offers from original %d sell offers\n", filterName, sellCounter.dropped, sellCounter.transformed, sellCounter.kept, sellCounter.ignored, len(sellingOffers))
-	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, buyCounter.ignored, len(buyingOffers))
+	log.Printf("filter \"%s\" result B: dropped %d, transformed %d, kept %d, ignored %d sell offers (corresponding op update) from original %d sell offers\n", filterName, sellCounter.dropped, sellCounter.transformed, sellCounter.kept, sellCounter.ignored, len(sellingOffers))
+	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers (corresponding op update) from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, buyCounter.ignored, len(buyingOffers))
 	log.Printf("filter \"%s\" result D: len(filteredOps) = %d\n", filterName, len(filteredOps))
 	return filteredOps, nil
 }
@@ -252,10 +252,10 @@ func selectOpOrOffer(
 }
 
 func runInnerFilterFn(
-	opToTransform *txnbuild.ManageSellOffer,
+	opToTransform txnbuild.ManageSellOffer, // passed by value so it doesn't change
 	fn filterFn,
 	originalOfferAsOp *txnbuild.ManageSellOffer,
-	originalMSO *txnbuild.ManageSellOffer,
+	originalMSO txnbuild.ManageSellOffer, // passed by value so it doesn't change
 	offerCounter *filterCounter,
 	opCounter *filterCounter,
 ) (
@@ -271,9 +271,9 @@ func runInnerFilterFn(
 
 	// delete operations should never be dropped
 	if opToTransform.Amount == "0" {
-		newOp, keep = opToTransform, true
+		newOp, keep = &opToTransform, true
 	} else {
-		newOp, keep, e = fn(opToTransform)
+		newOp, keep, e = fn(&opToTransform)
 		if e != nil {
 			return nil, nil, nil, nil, fmt.Errorf("error in inner filter fn: %s", e)
 		}
