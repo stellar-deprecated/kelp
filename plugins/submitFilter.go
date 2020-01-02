@@ -26,6 +26,7 @@ type filterCounter struct {
 	kept        uint8
 	dropped     uint8
 	transformed uint8
+	ignored     uint8
 }
 
 // build a list of the existing offers that have a corresponding operation so we ignore these offers and only consider the operation version
@@ -98,7 +99,6 @@ func filterOps(
 	opCounter := filterCounter{}
 	buyCounter := filterCounter{}
 	sellCounter := filterCounter{}
-	ignoredSellOffers, ignoredBuyOffers := 0, 0
 	filteredOps := []txnbuild.Operation{}
 
 	for opCounter.idx < len(ops) {
@@ -140,11 +140,7 @@ func filterOps(
 				if _, ignoreOffer := ignoreOfferIds[existingOffer.ID]; ignoreOffer {
 					// we want to only compare against valid offers so go to the next offer in the list
 					offerCounter.idx++
-					if isSellOp {
-						ignoredSellOffers++
-					} else {
-						ignoredBuyOffers++
-					}
+					offerCounter.ignored++
 					continue
 				}
 
@@ -235,8 +231,8 @@ func filterOps(
 	}
 
 	log.Printf("filter \"%s\" result A: dropped %d, transformed %d, kept %d ops from the %d ops passed in\n", filterName, opCounter.dropped, opCounter.transformed, opCounter.kept, len(ops))
-	log.Printf("filter \"%s\" result B: dropped %d, transformed %d, kept %d, ignored %d sell offers from original %d sell offers\n", filterName, sellCounter.dropped, sellCounter.transformed, sellCounter.kept, ignoredSellOffers, len(sellingOffers))
-	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, ignoredBuyOffers, len(buyingOffers))
+	log.Printf("filter \"%s\" result B: dropped %d, transformed %d, kept %d, ignored %d sell offers from original %d sell offers\n", filterName, sellCounter.dropped, sellCounter.transformed, sellCounter.kept, sellCounter.ignored, len(sellingOffers))
+	log.Printf("filter \"%s\" result C: dropped %d, transformed %d, kept %d, ignored %d buy offers from original %d buy offers\n", filterName, buyCounter.dropped, buyCounter.transformed, buyCounter.kept, buyCounter.ignored, len(buyingOffers))
 	log.Printf("filter \"%s\" result D: len(filteredOps) = %d\n", filterName, len(filteredOps))
 	return filteredOps, nil
 }
