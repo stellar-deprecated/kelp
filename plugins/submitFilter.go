@@ -19,7 +19,7 @@ type SubmitFilter interface {
 	) ([]txnbuild.Operation, error)
 }
 
-type filterFn func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error)
+type filterFn func(op *txnbuild.ManageSellOffer) (newOp *txnbuild.ManageSellOffer, keep bool, e error)
 
 type filterCounter struct {
 	idx         int
@@ -306,8 +306,13 @@ func runInnerFilterFn(
 			return newOp, nil, opCounter, &filterCounter{kept: 1}, nil
 		}
 	} else if isNewOpNil {
-		// newOp will never be nil for an original offer since we will return the original non-nil offer
-		return nil, nil, opCounter, &filterCounter{dropped: 1}, nil
+		if originalOfferAsOp != nil {
+			// if newOp is nil for an original offer it means we want to keep that offer.
+			return nil, nil, offerCounter, &filterCounter{kept: 1}, nil
+		} else {
+			// if newOp is nil and it is not an original offer it means we want to drop the operation.
+			return nil, nil, opCounter, &filterCounter{dropped: 1}, nil
+		}
 	} else {
 		// newOp can be a transformed op to change the op to an effectively "dropped" state
 		// prepend this so we always have delete commands at the beginning of the operation list
