@@ -387,6 +387,9 @@ func makeBot(
 		}
 		submitFilters = append(submitFilters, filter)
 	}
+	// always add the dedupeRedundantUpdatesFilter as the second-last filter
+	dedupeRedundantUpdatesFilter := plugins.MakeFilterDedupeRedundantUpdates(assetBase, assetQuote)
+	submitFilters = append(submitFilters, dedupeRedundantUpdatesFilter)
 	// exchange constraints filter is last so we catch any modifications made by previous filters. this ensures that the exchange is
 	// less likely to reject our updates
 	submitFilters = append(submitFilters,
