@@ -36,7 +36,7 @@ func (n Number) Precision() int8 {
 
 // AsString gives a string representation
 func (n Number) AsString() string {
-	return strconv.FormatFloat(n.AsFloat(), 'f', int(n.Precision()), 64)
+	return fmt.Sprintf(fmt.Sprintf("%%.%df", n.Precision()), n.AsFloat())
 }
 
 // AsRatio returns an integer numerator and denominator
