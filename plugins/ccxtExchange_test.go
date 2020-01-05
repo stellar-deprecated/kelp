@@ -102,7 +102,8 @@ func TestGetTrades_Ccxt(t *testing.T) {
 			if !assert.NoError(t, e) {
 				return
 			}
-			assert.Equal(t, nil, tradeResult.Cursor)
+			wantCursorInt64 := tradeResult.Trades[len(tradeResult.Trades)-1].Timestamp.AsInt64() + 1
+			assert.Equal(t, strconv.FormatInt(wantCursorInt64, 10), tradeResult.Cursor)
 
 			validateTrades(t, pair, tradeResult.Trades)
 		})
