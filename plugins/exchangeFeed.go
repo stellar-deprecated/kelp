@@ -50,6 +50,7 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 	} else if f.modifier == "last" {
 		price = p.LastPrice
 	} else {
+		// LOH-2 - support backward-compatible case of defaulting to "mid" price when left unspecified
 		price = midPrice
 	}
 
