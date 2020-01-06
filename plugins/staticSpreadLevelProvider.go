@@ -58,7 +58,7 @@ func makeStaticSpreadLevelProvider(staticLevels []StaticLevel, amountOfBase floa
 
 // GetLevels impl.
 func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	midPrice, e := p.pf.GetMidPrice()
+	midPrice, e := p.pf.GetFeedPairPrice()
 	if e != nil {
 		return nil, fmt.Errorf("mid price couldn't be loaded: %s", e)
 	}

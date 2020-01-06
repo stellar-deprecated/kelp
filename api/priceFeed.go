@@ -7,14 +7,15 @@ type PriceFeed interface {
 	GetPrice() (float64, error)
 }
 
+// TODO this should be structured as a specific impl. of the PriceFeed interface
 // FeedPair is the struct representing a price feed for a trading pair
 type FeedPair struct {
 	FeedA PriceFeed
 	FeedB PriceFeed
 }
 
-// GetMidPrice fetches the mid price from this feed pair
-func (p *FeedPair) GetMidPrice() (float64, error) {
+// GetFeedPairPrice fetches the price by dividing FeedA by FeedB
+func (p *FeedPair) GetFeedPairPrice() (float64, error) {
 	pA, err := p.FeedA.GetPrice()
 	if err != nil {
 		return 0, err
@@ -26,7 +27,7 @@ func (p *FeedPair) GetMidPrice() (float64, error) {
 		return 0, err
 	}
 
-	midPrice := pA / pB
-	log.Printf("feedPair prices: feedA=%.7f, feedB=%.7f; midPrice=%.7f\n", pA, pB, midPrice)
-	return midPrice, nil
+	price := pA / pB
+	log.Printf("feedPair prices: feedA=%.8f, feedB=%.8f; price=%.8f\n", pA, pB, price)
+	return price, nil
 }
