@@ -322,8 +322,9 @@ func (k *krakenExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tr
 		orderConstraints := k.GetOrderConstraints(&p)
 		pairTickerInfo := resp.GetPairTickerInfo(pairsMap[p])
 		priceResult[p] = api.Ticker{
-			AskPrice: model.MustNumberFromString(pairTickerInfo.Ask[0], orderConstraints.PricePrecision),
-			BidPrice: model.MustNumberFromString(pairTickerInfo.Bid[0], orderConstraints.PricePrecision),
+			AskPrice:  model.MustNumberFromString(pairTickerInfo.Ask[0], orderConstraints.PricePrecision),
+			BidPrice:  model.MustNumberFromString(pairTickerInfo.Bid[0], orderConstraints.PricePrecision),
+			LastPrice: model.MustNumberFromString(pairTickerInfo.Close[0], orderConstraints.PricePrecision),
 		}
 	}
 
