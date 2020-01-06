@@ -47,6 +47,8 @@ func (f *exchangeFeed) GetPrice() (float64, error) {
 		price = p.AskPrice
 	} else if f.modifier == "bid" {
 		price = p.BidPrice
+	} else if f.modifier == "last" {
+		price = p.LastPrice
 	} else {
 		price = midPrice
 	}
