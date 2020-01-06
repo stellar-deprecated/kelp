@@ -102,7 +102,8 @@ func TestGetTrades_Ccxt(t *testing.T) {
 			if !assert.NoError(t, e) {
 				return
 			}
-			assert.Equal(t, nil, tradeResult.Cursor)
+			wantCursorInt64 := tradeResult.Trades[len(tradeResult.Trades)-1].Timestamp.AsInt64() + 1
+			assert.Equal(t, strconv.FormatInt(wantCursorInt64, 10), tradeResult.Cursor)
 
 			validateTrades(t, pair, tradeResult.Trades)
 		})
@@ -158,6 +159,9 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 		if !assert.NotNil(t, trade.TransactionID) {
 			return
 		}
+		if !assert.NotNil(t, trade.Cost) {
+			return
+		}
 		if !assert.NotNil(t, trade.Fee) {
 			return
 		}
@@ -165,7 +169,7 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 			assert.Fail(t, "trade.OrderAction should be either OrderActionBuy or OrderActionSell: %v", trade.OrderAction)
 			return
 		}
-		if trade.Cost != nil && !assert.True(t, trade.Cost.AsFloat() > 0, fmt.Sprintf("%s x %s = %s", trade.Price.AsString(), trade.Volume.AsString(), trade.Cost.AsString())) {
+		if !assert.True(t, trade.Cost.AsFloat() > 0, fmt.Sprintf("(price) %s x (volume) %s = (cost) %s", trade.Price.AsString(), trade.Volume.AsString(), trade.Cost.AsString())) {
 			return
 		}
 	}

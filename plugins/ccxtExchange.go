@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"math"
 	"sort"
 	"strconv"
 	"time"
@@ -300,6 +301,7 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 			Timestamp: model.MakeTimestamp(rawTrade.Timestamp),
 		},
 		TransactionID: model.MakeTransactionID(rawTrade.ID),
+		Cost:          model.NumberFromFloat(rawTrade.Cost, int8(math.Max(float64(pricePrecision), float64(volumePrecision)))),
 		Fee:           model.NumberFromFloat(rawTrade.Fee.Cost, feecCostPrecision),
 	}
 
