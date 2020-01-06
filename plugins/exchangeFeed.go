@@ -19,13 +19,17 @@ type exchangeFeed struct {
 // ensure that it implements PriceFeed
 var _ api.PriceFeed = &exchangeFeed{}
 
-func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair, modifier string) *exchangeFeed {
+func newExchangeFeed(name string, tickerAPI *api.TickerAPI, pair *model.TradingPair, modifier string) (*exchangeFeed, error) {
+	if modifier != "mid" && modifier != "ask" && modifier != "bid" && modifier != "last" {
+		return nil, fmt.Errorf("unsupported modifier '%s' on exchange type URL", modifier)
+	}
+
 	return &exchangeFeed{
 		name:      name,
 		tickerAPI: tickerAPI,
 		pairs:     []model.TradingPair{*pair},
 		modifier:  modifier,
-	}
+	}, nil
 }
 
 // GetPrice impl
