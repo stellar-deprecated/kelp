@@ -35,12 +35,18 @@ func TestGetTickerPrice(t *testing.T) {
 	assert.Equal(t, 1, len(m))
 
 	ticker := m[pair]
-	fmt.Printf("ticker price: bid=%.8f, ask=%.8f\n", ticker.BidPrice.AsFloat(), ticker.AskPrice.AsFloat())
+	fmt.Printf("ticker price: bid=%s, ask=%s, last=%s\n", ticker.BidPrice.AsString(), ticker.AskPrice.AsString(), ticker.LastPrice.AsString())
 
 	if !assert.True(t, ticker.AskPrice.AsFloat() < 1, ticker.AskPrice.AsString()) {
 		return
 	}
 	if !assert.True(t, ticker.BidPrice.AsFloat() < 1, ticker.BidPrice.AsString()) {
+		return
+	}
+	if !assert.True(t, ticker.BidPrice.AsFloat() < ticker.AskPrice.AsFloat(), fmt.Sprintf("bid price (%s) should be less than ask price (%s)", ticker.BidPrice.AsString(), ticker.AskPrice.AsString())) {
+		return
+	}
+	if !assert.True(t, ticker.LastPrice.AsFloat() < 1, ticker.LastPrice.AsString()) {
 		return
 	}
 }

@@ -80,16 +80,22 @@ func (c ccxtExchange) GetTickerPrice(pairs []model.TradingPair) (map[model.Tradi
 
 		askPrice, e := utils.CheckFetchFloat(tickerMap, "ask")
 		if e != nil {
-			return nil, fmt.Errorf("unable to correctly fetch value from tickerMap: %s", e)
+			return nil, fmt.Errorf("unable to correctly fetch 'ask' value from tickerMap: %s", e)
 		}
 		bidPrice, e := utils.CheckFetchFloat(tickerMap, "bid")
 		if e != nil {
-			return nil, fmt.Errorf("unable to correctly fetch value from tickerMap: %s", e)
+			return nil, fmt.Errorf("unable to correctly fetch 'bid' value from tickerMap: %s", e)
+		}
+		lastPrice, e := utils.CheckFetchFloat(tickerMap, "last")
+		if e != nil {
+			return nil, fmt.Errorf("unable to correctly fetch 'last' value from tickerMap: %s", e)
 		}
 
+		pricePrecision := c.GetOrderConstraints(&p).PricePrecision
 		priceResult[p] = api.Ticker{
-			AskPrice: model.NumberFromFloat(askPrice, c.GetOrderConstraints(&p).PricePrecision),
-			BidPrice: model.NumberFromFloat(bidPrice, c.GetOrderConstraints(&p).PricePrecision),
+			AskPrice:  model.NumberFromFloat(askPrice, pricePrecision),
+			BidPrice:  model.NumberFromFloat(bidPrice, pricePrecision),
+			LastPrice: model.NumberFromFloat(lastPrice, pricePrecision),
 		}
 	}
 
@@ -114,7 +120,11 @@ func (c ccxtExchange) GetOrderConstraints(pair *model.TradingPair) *model.OrderC
 	if ccxtMarket == nil {
 		panic(fmt.Errorf("CCXT does not have precision and limit data for the passed in market: %s", pairString))
 	}
-	oc := model.MakeOrderConstraintsWithCost(ccxtMarket.Precision.Price, ccxtMarket.Precision.Amount, ccxtMarket.Limits.Amount.Min, ccxtMarket.Limits.Cost.Min)
+	volumePrecision := ccxtMarket.Precision.Amount
+	if volumePrecision == 0 {
+		volumePrecision = ccxtMarket.Precision.Price
+	}
+	oc := model.MakeOrderConstraintsWithCost(ccxtMarket.Precision.Price, volumePrecision, ccxtMarket.Limits.Amount.Min, ccxtMarket.Limits.Cost.Min)
 
 	return c.ocOverridesHandler.Apply(pair, oc)
 }

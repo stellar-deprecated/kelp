@@ -49,13 +49,10 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 			return nil, fmt.Errorf("invalid format of exchange type URL, needs either 3 or 4 parts after splitting URL by '/', has %d: %s", len(urlParts), url)
 		}
 
-		// default to "mid" for backwards compatibility
+		// LOH-2 - support backward-compatible case of defaulting to "mid" price when left unspecified
 		exchangeModifier := "mid"
 		if len(urlParts) == 4 {
 			exchangeModifier = urlParts[3]
-			if exchangeModifier != "mid" && exchangeModifier != "ask" && exchangeModifier != "bid" {
-				return nil, fmt.Errorf("unsupported exchange modifier '%s' on exchange type URL", exchangeModifier)
-			}
 		}
 
 		exchange, e := MakeExchange(urlParts[0], true)
@@ -75,7 +72,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 			Quote: quoteAsset,
 		}
 		tickerAPI := api.TickerAPI(exchange)
-		return newExchangeFeed(url, &tickerAPI, &tradingPair, exchangeModifier), nil
+		return newExchangeFeed(url, &tickerAPI, &tradingPair, exchangeModifier)
 	case "sdex":
 		sdex, e := makeSDEXFeed(url)
 		if e != nil {
