@@ -86,6 +86,9 @@ func TestFetchTickers(t *testing.T) {
 	}
 
 	assert.Equal(t, "BTC/USDT", m["symbol"].(string))
+	assert.True(t, m["ask"].(float64) > 0)
+	assert.True(t, m["bid"].(float64) > 0)
+	assert.True(t, m["bid"].(float64) < m["ask"].(float64), fmt.Sprintf("bid price (%f) should be less than ask price (%f)", m["bid"].(float64), m["ask"].(float64)))
 	assert.True(t, m["last"].(float64) > 0)
 }
 
