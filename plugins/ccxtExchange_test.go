@@ -159,6 +159,9 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 		if !assert.NotNil(t, trade.TransactionID) {
 			return
 		}
+		if !assert.NotNil(t, trade.Cost) {
+			return
+		}
 		if !assert.NotNil(t, trade.Fee) {
 			return
 		}
@@ -166,7 +169,7 @@ func validateTrades(t *testing.T, pair model.TradingPair, trades []model.Trade) 
 			assert.Fail(t, "trade.OrderAction should be either OrderActionBuy or OrderActionSell: %v", trade.OrderAction)
 			return
 		}
-		if trade.Cost != nil && !assert.True(t, trade.Cost.AsFloat() > 0, fmt.Sprintf("%s x %s = %s", trade.Price.AsString(), trade.Volume.AsString(), trade.Cost.AsString())) {
+		if !assert.True(t, trade.Cost.AsFloat() > 0, fmt.Sprintf("(price) %s x (volume) %s = (cost) %s", trade.Price.AsString(), trade.Volume.AsString(), trade.Cost.AsString())) {
 			return
 		}
 	}
