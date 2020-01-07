@@ -17,7 +17,7 @@ const (
 	comparisonModeOutsideInclude                       // gte for sell, lte for buy
 )
 
-func (c comparisonMode) passesSell(threshold float64, price float64) bool {
+func (c comparisonMode) keepSellOp(threshold float64, price float64) bool {
 	if c == comparisonModeOutsideExclude {
 		return price > threshold
 	} else if c == comparisonModeOutsideInclude {
@@ -77,14 +77,14 @@ func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnb
 		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
-	feedPrice, e := f.pf.GetPrice()
+	thresholdFeedPrice, e := f.pf.GetPrice()
 	if e != nil {
 		return nil, false, fmt.Errorf("could not get price from priceFeed: %s", e)
 	}
 
 	// for the sell side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
 	if isSell {
-		if f.cm.passesSell(feedPrice, sellPrice) {
+		if f.cm.keepSellOp(thresholdFeedPrice, sellPrice) {
 			return op, true, nil
 		}
 		return nil, false, nil
