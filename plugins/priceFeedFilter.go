@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -82,15 +83,20 @@ func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnb
 		return nil, false, fmt.Errorf("could not get price from priceFeed: %s", e)
 	}
 
+	var opRet *txnbuild.ManageSellOffer
+	var keepRet bool
 	// for the sell side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
 	if isSell {
 		if f.cm.keepSellOp(thresholdFeedPrice, sellPrice) {
-			return op, true, nil
+			opRet, keepRet = op, true
+		} else {
+			opRet, keepRet = nil, false
 		}
-		return nil, false, nil
+	} else {
+		// for the buy side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
+		// TODO for buy side (after considering whether sellPrice needs to be inverted or not)
+		opRet, keepRet = op, true
 	}
-
-	// for the buy side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
-	// TODO for buy side (after considering whether sellPrice needs to be inverted or not)
-	return op, true, nil
+	log.Printf("priceFeedFilter: isSell=%v, sellPrice=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, sellPrice, thresholdFeedPrice, keepRet)
+	return opRet, keepRet, nil
 }
