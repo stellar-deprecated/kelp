@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/stellar/go/clients/horizon"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/support/utils"
@@ -59,6 +60,14 @@ func ignoreOfferIDs(ops []txnbuild.Operation) map[int64]bool {
 	return ignoreOfferIDs
 }
 
+func makeOfferMap(offers []horizon.Offer) map[int64]horizon.Offer {
+	offerMap := map[int64]horizon.Offer{}
+	for _, o := range offers {
+		offerMap[o.ID] = o
+	}
+	return offerMap
+}
+
 // TODO - simplify filterOps by separating out logic to convert into a single list of operations from transforming the operations
 /*
 What filterOps() does and why:
@@ -111,6 +120,7 @@ func filterOps(
 	fn filterFn,
 ) ([]txnbuild.Operation, error) {
 	ignoreOfferIds := ignoreOfferIDs(ops)
+	offerMap := makeOfferMap(append(sellingOffers, buyingOffers...))
 	opCounter := filterCounter{}
 	buyCounter := filterCounter{}
 	sellCounter := filterCounter{}
@@ -134,7 +144,7 @@ func filterOps(
 				return nil, fmt.Errorf("unable to pick between whether the op was a buy or sell op: %s", e)
 			}
 
-			opToTransform, originalOffer, filterCounterToIncrement, isIgnoredOffer, e := selectOpOrOffer(
+			opToTransform, filterCounterToIncrement, isIgnoredOffer, e := selectOpOrOffer(
 				offerList,
 				offerCounter,
 				o,
@@ -149,6 +159,7 @@ func filterOps(
 				filterCounterToIncrement.ignored++
 				continue
 			}
+			originalOffer := fetchOfferAsOpByID(opToTransform.OfferID, offerMap)
 
 			newOpToAppend, newOpToPrepend, filterCounterToIncrement, incrementValues, e := runInnerFilterFn(
 				*opToTransform, // pass copy
@@ -236,35 +247,40 @@ func selectOpOrOffer(
 	ignoreOfferIds map[int64]bool,
 ) (
 	opToTransform *txnbuild.ManageSellOffer,
-	originalOfferAsOp *txnbuild.ManageSellOffer,
 	c *filterCounter,
 	isIgnoredOffer bool,
 	err error,
 ) {
 	if offerCounter.idx >= len(offerList) {
-		return mso, nil, opCounter, false, nil
+		return mso, opCounter, false, nil
 	}
 
-	existingOffer := offerList[offerCounter.idx]
-	if _, ignoreOffer := ignoreOfferIds[existingOffer.ID]; ignoreOffer {
+	nextOffer := offerList[offerCounter.idx]
+	if _, ignoreOffer := ignoreOfferIds[nextOffer.ID]; ignoreOffer {
 		// we want to only compare against valid offers so skip this offer by returning ignored = true
-		return nil, nil, offerCounter, true, nil
+		return nil, offerCounter, true, nil
 	}
 
-	offerPrice := float64(existingOffer.PriceR.N) / float64(existingOffer.PriceR.D)
+	offerPrice := float64(nextOffer.PriceR.N) / float64(nextOffer.PriceR.D)
 	opPrice, e := strconv.ParseFloat(mso.Price, 64)
 	if e != nil {
-		return nil, nil, nil, false, fmt.Errorf("could not parse price as float64: %s", e)
+		return nil, nil, false, fmt.Errorf("could not parse price as float64: %s", e)
 	}
 
 	// use the existing offer if the price is the same so we don't recreate an offer unnecessarily
+	offerAsOp := convertOffer2MSO(nextOffer)
 	if opPrice < offerPrice {
-		return mso, nil, opCounter, false, nil
+		return mso, opCounter, false, nil
 	}
+	return offerAsOp, offerCounter, false, nil
+}
 
-	offerAsOp := convertOffer2MSO(existingOffer)
-	offerAsOpCopy := *offerAsOp
-	return offerAsOp, &offerAsOpCopy, offerCounter, false, nil
+// fetchOfferAsOpByID returns the offer as an op if it exists otherwise nil
+func fetchOfferAsOpByID(offerID int64, offerMap map[int64]horizon.Offer) *txnbuild.ManageSellOffer {
+	if offer, exists := offerMap[offerID]; exists {
+		return convertOffer2MSO(offer)
+	}
+	return nil
 }
 
 func runInnerFilterFn(
