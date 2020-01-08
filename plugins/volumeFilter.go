@@ -203,15 +203,8 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 		// TODO buying side
 	}
 
-	// convert the offer to a dropped state
-	if op.OfferID == 0 {
-		// new offers can be dropped
-		return nil, nil
-	} else if op.Amount != "0" {
-		// modify offers should be converted to delete offers (happens automatically in filterOps)
-		return nil, nil
-	}
-	return nil, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
+	// we don't want to keep it so return the dropped command
+	return nil, nil
 }
 
 func (c *VolumeFilterConfig) isEmpty() bool {
