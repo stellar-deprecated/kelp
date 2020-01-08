@@ -161,7 +161,7 @@ func filterOps(
 			}
 			originalOfferAsOp := fetchOfferAsOpByID(opToTransform.OfferID, offerMap)
 
-			newOpToAppend, newOpToPrepend, incrementValues, e := runInnerFilterFn(
+			newOpToPrepend, newOpToAppend, incrementValues, e := runInnerFilterFn(
 				*opToTransform, // pass copy
 				fn,
 				originalOfferAsOp,
@@ -292,8 +292,8 @@ func runInnerFilterFn(
 	originalOfferAsOp *txnbuild.ManageSellOffer,
 	originalMSO txnbuild.ManageSellOffer, // passed by value so it doesn't change
 ) (
-	newOpToAppend *txnbuild.ManageSellOffer,
 	newOpToPrepend *txnbuild.ManageSellOffer,
+	newOpToAppend *txnbuild.ManageSellOffer,
 	incrementValues filterCounter,
 	err error,
 ) {
@@ -317,21 +317,21 @@ func runInnerFilterFn(
 			return nil, nil, filterCounter{kept: 1}, nil
 		} else if originalOfferAsOp != nil {
 			// we were dealing with an existing offer that was modified
-			return newOp, nil, filterCounter{transformed: 1}, nil
+			return nil, newOp, filterCounter{transformed: 1}, nil
 		} else {
 			// we were dealing with an operation
 			opModified := originalMSO.Price != newOp.Price || originalMSO.Amount != newOp.Amount
 			if opModified {
-				return newOp, nil, filterCounter{transformed: 1}, nil
+				return nil, newOp, filterCounter{transformed: 1}, nil
 			}
-			return newOp, nil, filterCounter{kept: 1}, nil
+			return nil, newOp, filterCounter{kept: 1}, nil
 		}
 	} else {
 		if originalOfferAsOp != nil {
 			// if newOp is nil for an original offer it means we want to explicitly delete that offer
 			opCopy := *originalOfferAsOp
 			opCopy.Amount = "0"
-			return nil, &opCopy, filterCounter{dropped: 1}, nil
+			return &opCopy, nil, filterCounter{dropped: 1}, nil
 		} else {
 			// if newOp is nil and it is not an original offer it means we want to drop the operation.
 			return nil, nil, filterCounter{dropped: 1}, nil
@@ -355,7 +355,7 @@ func handleRemainingOffers(
 		}
 
 		originalOfferAsOp := convertOffer2MSO(offers[offerCounter.idx])
-		newOpToAppend, newOpToPrepend, incrementValues, e := runInnerFilterFn(
+		newOpToPrepend, newOpToAppend, incrementValues, e := runInnerFilterFn(
 			*originalOfferAsOp, // pass copy
 			fn,
 			originalOfferAsOp,
