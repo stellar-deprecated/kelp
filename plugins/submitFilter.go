@@ -19,7 +19,15 @@ type SubmitFilter interface {
 	) ([]txnbuild.Operation, error)
 }
 
-type filterFn func(op *txnbuild.ManageSellOffer) (newOp *txnbuild.ManageSellOffer, keep bool, e error)
+// filterFn returns a non-nil op to indicate the op that we want to append to the update. the newOp can do one of the following:
+//     - modify an existing offer
+//     - create a new offer
+//     - update an offer that was created by a previous filterFn
+// filterFn has no knowledge of whether the passed in op is an existing offer or a new op and therefore is not responsible for
+// deleting existing offers.
+// If the newOp returned is nil and it was spawned from an existingOffer then the filterOps function here will automatically delete
+// the existing offer. i.e. if filterFn returns a nil newOp value then we will "drop" that operation or delete the existing offer.
+type filterFn func(op *txnbuild.ManageSellOffer) (newOp *txnbuild.ManageSellOffer, e error)
 
 type filterCounter struct {
 	idx         int
@@ -273,24 +281,21 @@ func runInnerFilterFn(
 	incrementValues *filterCounter,
 	err error,
 ) {
-	var keep bool
 	var newOp *txnbuild.ManageSellOffer
 	var e error
 
 	// delete operations should never be dropped
 	if opToTransform.Amount == "0" {
-		newOp, keep = &opToTransform, true
+		newOp = &opToTransform
 	} else {
-		newOp, keep, e = fn(&opToTransform)
+		newOp, e = fn(&opToTransform)
 		if e != nil {
 			return nil, nil, nil, nil, fmt.Errorf("error in inner filter fn: %s", e)
 		}
 	}
 
 	isNewOpNil := newOp == nil || fmt.Sprintf("%v", newOp) == "<nil>"
-	if keep && isNewOpNil {
-		return nil, nil, nil, nil, fmt.Errorf("we want to keep op but newOp was nil (programmer error?)")
-	} else if keep {
+	if !isNewOpNil {
 		if originalOfferAsOp != nil && originalOfferAsOp.Price == newOp.Price && originalOfferAsOp.Amount == newOp.Amount {
 			// do not append to filteredOps because this is an existing offer that we want to keep as-is
 			return nil, nil, offerCounter, &filterCounter{kept: 1}, nil
@@ -305,25 +310,15 @@ func runInnerFilterFn(
 			}
 			return newOp, nil, opCounter, &filterCounter{kept: 1}, nil
 		}
-	} else if isNewOpNil {
+	} else {
 		if originalOfferAsOp != nil {
-			// if newOp is nil for an original offer it means we want to keep that offer.
-			return nil, nil, offerCounter, &filterCounter{kept: 1}, nil
+			// if newOp is nil for an original offer it means we want to explicitly delete that offer
+			opCopy := *newOp
+			opCopy.Amount = "0"
+			return nil, &opCopy, offerCounter, &filterCounter{dropped: 1}, nil
 		} else {
 			// if newOp is nil and it is not an original offer it means we want to drop the operation.
 			return nil, nil, opCounter, &filterCounter{dropped: 1}, nil
-		}
-	} else {
-		// newOp can be a transformed op to change the op to an effectively "dropped" state
-		// prepend this so we always have delete commands at the beginning of the operation list
-		if originalOfferAsOp != nil {
-			// we are dealing with an existing offer that needs dropping
-			return nil, newOp, offerCounter, &filterCounter{dropped: 1}, nil
-		} else {
-			// we are dealing with an operation that had updated an offer which now needs dropping
-			// using the transformed counter here because we are changing the actual intent of the operation
-			// from an update existing offer to delete existing offer logic
-			return nil, newOp, opCounter, &filterCounter{transformed: 1}, nil
 		}
 	}
 }

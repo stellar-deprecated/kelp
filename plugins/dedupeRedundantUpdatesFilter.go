@@ -30,18 +30,18 @@ func (f *dedupeRedundantUpdatesFilter) Apply(ops []txnbuild.Operation, sellingOf
 		offersMap[offer.ID] = offer
 	}
 
-	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 		existingOffer, hasOffer := offersMap[op.OfferID]
 		isDupe := hasOffer && existingOffer.Amount == op.Amount && existingOffer.Price == op.Price
 
 		if isDupe {
 			// do not return an op because this is spawned from an offer (hasOffer = true) and we do not want to drop the offer nor do we want to create
 			// a new operation to delete the offer and re-update the offer to the same values, so the returned Operation is nil with keep = false
-			return nil, false, nil
+			return nil, nil
 		}
 
 		// this an actual update of either the offer or a new operation, we dont want to make any changes to that so we return the original op with keep = true
-		return op, true, nil
+		return op, nil
 	}
 	ops, e := filterOps(f.name, f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {

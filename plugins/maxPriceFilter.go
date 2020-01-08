@@ -54,24 +54,24 @@ func (f *maxPriceFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtoc
 	return ops, nil
 }
 
-func (f *maxPriceFilter) maxPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+func (f *maxPriceFilter) maxPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
-		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
+		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
 	if isSell {
 		if sellPrice > *f.config.MaxPrice {
-			return nil, false, nil
+			return nil, nil
 		}
-		return op, true, nil
+		return op, nil
 	}
 
 	// TODO for buy side
-	return op, true, nil
+	return op, nil
 }

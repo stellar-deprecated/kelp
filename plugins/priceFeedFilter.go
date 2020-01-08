@@ -67,36 +67,35 @@ func (f *priceFeedFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 	return ops, nil
 }
 
-func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
-		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
+		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
 	thresholdFeedPrice, e := f.pf.GetPrice()
 	if e != nil {
-		return nil, false, fmt.Errorf("could not get price from priceFeed: %s", e)
+		return nil, fmt.Errorf("could not get price from priceFeed: %s", e)
 	}
 
 	var opRet *txnbuild.ManageSellOffer
-	var keepRet bool
 	// for the sell side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
 	if isSell {
 		if f.cm.keepSellOp(thresholdFeedPrice, sellPrice) {
-			opRet, keepRet = op, true
+			opRet = op
 		} else {
-			opRet, keepRet = nil, false
+			opRet = nil
 		}
 	} else {
 		// for the buy side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
 		// TODO for buy side (after considering whether sellPrice needs to be inverted or not)
-		opRet, keepRet = op, true
+		opRet = op
 	}
-	log.Printf("priceFeedFilter: isSell=%v, sellPrice=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, sellPrice, thresholdFeedPrice, keepRet)
-	return opRet, keepRet, nil
+	log.Printf("priceFeedFilter: isSell=%v, sellPrice=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, sellPrice, thresholdFeedPrice, opRet != nil)
+	return opRet, nil
 }
