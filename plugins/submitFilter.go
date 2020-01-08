@@ -313,7 +313,7 @@ func runInnerFilterFn(
 	} else {
 		if originalOfferAsOp != nil {
 			// if newOp is nil for an original offer it means we want to explicitly delete that offer
-			opCopy := *newOp
+			opCopy := *originalOfferAsOp
 			opCopy.Amount = "0"
 			return nil, &opCopy, offerCounter, &filterCounter{dropped: 1}, nil
 		} else {
