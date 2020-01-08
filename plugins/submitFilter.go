@@ -310,8 +310,8 @@ func runInnerFilterFn(
 		}
 	}
 
-	isNewOpNil := newOp == nil || fmt.Sprintf("%v", newOp) == "<nil>"
-	if !isNewOpNil {
+	keep := newOp != nil && fmt.Sprintf("%v", newOp) != "<nil>"
+	if keep {
 		if originalOfferAsOp != nil && originalOfferAsOp.Price == newOp.Price && originalOfferAsOp.Amount == newOp.Amount {
 			// do not append to filteredOps because this is an existing offer that we want to keep as-is
 			return nil, nil, filterCounter{kept: 1}, nil
