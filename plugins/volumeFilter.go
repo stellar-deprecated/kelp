@@ -126,7 +126,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		SellBaseAssetCapInQuoteUnits: &dailyTbbSellQuote,
 	}
 
-	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 		return f.volumeFilterFn(dailyOTB, dailyTBB, op)
 	}
 	ops, e = filterOps(f.name, f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
@@ -136,20 +136,20 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 	return ops, nil
 }
 
-func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
-		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
+		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
 	amountValueUnitsBeingSold, e := strconv.ParseFloat(op.Amount, 64)
 	if e != nil {
-		return nil, false, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
+		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
 
 	if isSell {
@@ -197,23 +197,14 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 			// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
 			*dailyTBB.SellBaseAssetCapInBaseUnits += newAmountBeingSold
 			*dailyTBB.SellBaseAssetCapInQuoteUnits += (newAmountBeingSold * sellPrice)
-			return opToReturn, true, nil
+			return opToReturn, nil
 		}
 	} else {
 		// TODO buying side
 	}
 
-	// convert the offer to a dropped state
-	if op.OfferID == 0 {
-		// new offers can be dropped
-		return nil, false, nil
-	} else if op.Amount != "0" {
-		// modify offers should be converted to delete offers
-		opCopy := *op
-		opCopy.Amount = "0"
-		return &opCopy, false, nil
-	}
-	return nil, false, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
+	// we don't want to keep it so return the dropped command
+	return nil, nil
 }
 
 func (c *VolumeFilterConfig) isEmpty() bool {

@@ -11,8 +11,9 @@ import (
 )
 
 var filterMap = map[string]func(f *FilterFactory, configInput string) (SubmitFilter, error){
-	"volume": filterVolume,
-	"price":  filterPrice,
+	"volume":    filterVolume,
+	"price":     filterPrice,
+	"priceFeed": filterPriceFeed,
 }
 
 // FilterFactory is a struct that handles creating all the filters
@@ -99,4 +100,27 @@ func filterPrice(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		return MakeFilterMaxPrice(f.BaseAsset, f.QuoteAsset, &config)
 	}
 	return nil, fmt.Errorf("invalid price filter type in second argument (%s)", configInput)
+}
+
+func filterPriceFeed(f *FilterFactory, configInput string) (SubmitFilter, error) {
+	// parts[0] = "priceFeed", parts[1] = comparisonMode, parts[2] = feedDataType, parts[3] = feedURL which can have more "/" chars
+	parts := strings.Split(configInput, "/")
+	if len(parts) < 4 {
+		return nil, fmt.Errorf("\"priceFeed\" filter needs at least 4 parts separated by the '/' delimiter (priceFeed/<comparisonMode>/<feedDataType>/<feedURL>) but we received %s", configInput)
+	}
+
+	cmString := parts[1]
+	feedType := parts[2]
+	feedURL := strings.Join(parts[3:len(parts)], "/")
+	pf, e := MakePriceFeed(feedType, feedURL)
+	if e != nil {
+		return nil, fmt.Errorf("could not make price feed for config input string '%s': %s", configInput, e)
+	}
+
+	filter, e := MakeFilterPriceFeed(f.BaseAsset, f.QuoteAsset, cmString, pf)
+	if e != nil {
+		return nil, fmt.Errorf("could not make price feed filter for config input string '%s': %s", configInput, e)
+	}
+
+	return filter, nil
 }

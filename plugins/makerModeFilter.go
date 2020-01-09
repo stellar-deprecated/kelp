@@ -42,14 +42,14 @@ func (f *makerModeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProto
 		return nil, fmt.Errorf("could not get assets: %s", e)
 	}
 
-	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, bool, error) {
+	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 		topBidPrice, e := f.topOrderPriceExcludingTrader(ob.Bids(), buyingOffers, false)
 		if e != nil {
-			return nil, false, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
+			return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for bids: %s", e)
 		}
 		topAskPrice, e := f.topOrderPriceExcludingTrader(ob.Asks(), sellingOffers, true)
 		if e != nil {
-			return nil, false, fmt.Errorf("could not get topOrderPriceExcludingTrader for asks: %s", e)
+			return nil, fmt.Errorf("could not get topOrderPriceExcludingTrader for asks: %s", e)
 		}
 
 		return f.transformOfferMakerMode(baseAsset, quoteAsset, topBidPrice, topAskPrice, op)
@@ -131,20 +131,20 @@ func (f *makerModeFilter) transformOfferMakerMode(
 	topBidPrice *model.Number,
 	topAskPrice *model.Number,
 	op *txnbuild.ManageSellOffer,
-) (*txnbuild.ManageSellOffer, bool, error) {
+) (*txnbuild.ManageSellOffer, error) {
 	// delete operations should never be dropped
 	if op.Amount == "0" {
-		return op, true, nil
+		return op, nil
 	}
 
 	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return nil, false, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
-		return nil, false, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
+		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
 	var keep bool
@@ -167,18 +167,9 @@ func (f *makerModeFilter) transformOfferMakerMode(
 	}
 
 	if keep {
-		return op, true, nil
+		return op, nil
 	}
 
-	// figure out how to convert the offer to a dropped state
-	if op.OfferID == 0 {
-		// new offers can be dropped
-		return nil, false, nil
-	} else if op.Amount != "0" {
-		// modify offers should be converted to delete offers
-		opCopy := *op
-		opCopy.Amount = "0"
-		return &opCopy, false, nil
-	}
-	return nil, keep, fmt.Errorf("unable to transform manageOffer operation: offerID=%d, amount=%s, price=%.7f", op.OfferID, op.Amount, sellPrice)
+	// we don't want to keep it so return the dropped command
+	return nil, nil
 }
