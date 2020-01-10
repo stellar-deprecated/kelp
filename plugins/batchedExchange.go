@@ -467,7 +467,12 @@ func op2CommandsHack(
 		return nil, fmt.Errorf("error converting from manageOffer op to Order: %s", e)
 	}
 
-	if manageOffer.Amount == "0" {
+	amtFloat, e := strconv.ParseFloat(manageOffer.Amount, 64)
+	if e != nil {
+		return nil, fmt.Errorf("error parsing offer amount (%s): %s", manageOffer.Amount, e)
+	}
+
+	if amtFloat == 0 {
 		// cancel
 		// fetch real orderID here (hoops we have to jump through because of the hacked approach to using centralized exchanges)
 		var orderID string
