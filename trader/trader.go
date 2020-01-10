@@ -155,7 +155,12 @@ func (t *Trader) deleteAllOffers() {
 func (t *Trader) update() bool {
 	var e error
 	t.load()
-	t.loadExistingOffers()
+	e = t.loadExistingOffers()
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers()
+		return false
+	}
 
 	pair := &model.TradingPair{
 		Base:  model.FromHorizonAsset(t.assetBase),
@@ -284,14 +289,14 @@ func (t *Trader) load() {
 	log.Printf("(quote) assetB=%s, maxB=%.8f, trustB=%s\n", utils.Asset2String(t.assetQuote), t.maxAssetB, trustBString)
 }
 
-func (t *Trader) loadExistingOffers() {
+func (t *Trader) loadExistingOffers() error {
 	offers, e := t.exchangeShim.LoadOffersHack()
 	if e != nil {
-		log.Println(e)
-		return
+		return fmt.Errorf("unable to load existing offers: %s", e)
 	}
 	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)
 
 	sort.Sort(utils.ByPrice(t.buyingAOffers))
 	sort.Sort(utils.ByPrice(t.sellingAOffers)) // don't reverse since prices are inverse
+	return nil
 }
