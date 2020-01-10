@@ -44,11 +44,11 @@ func (f *FilterFactory) MakeFilter(configInput string) (SubmitFilter, error) {
 
 func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	parts := strings.Split(configInput, "/")
-	if len(parts) != 5 {
-		return nil, fmt.Errorf("invalid input (%s), needs 5 parts separated by the delimiter (/)", configInput)
+	if len(parts) != 6 {
+		return nil, fmt.Errorf("invalid input (%s), needs 6 parts separated by the delimiter (/)", configInput)
 	}
 
-	mode, e := parseVolumeFilterMode(parts[4])
+	mode, e := parseVolumeFilterMode(parts[5])
 	if e != nil {
 		return nil, fmt.Errorf("could not parse volume filter mode from input (%s): %s", configInput, e)
 	}
@@ -56,13 +56,16 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	if parts[1] != "sell" {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"sell\"", configInput)
 	}
-	limit, e := strconv.ParseFloat(parts[3], 64)
+	if parts[2] != "daily" {
+		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"daily\"", configInput)
+	}
+	limit, e := strconv.ParseFloat(parts[4], 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not parse the fourth part as a float value from config value (%s): %s", configInput, e)
 	}
-	if parts[2] == "base" {
+	if parts[3] == "base" {
 		config.SellBaseAssetCapInBaseUnits = &limit
-	} else if parts[2] == "quote" {
+	} else if parts[3] == "quote" {
 		config.SellBaseAssetCapInQuoteUnits = &limit
 	} else {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"base\" or \"quote\"", configInput)
