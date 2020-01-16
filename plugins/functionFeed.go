@@ -57,11 +57,11 @@ func extractFunctionParts(url string) (name string, args string, e error) {
 	}
 
 	submatches := fnNameRegex.FindStringSubmatch(url)
-	if len(submatches) != 4 {
-		return "", "", fmt.Errorf("incorrect number of matches, expected only 2 matches (two entries in returned array), but found: %v", submatches)
+	if len(submatches) != 3 {
+		return "", "", fmt.Errorf("incorrect number of matches, expected 3 entries in the returned array (matchedString, subgroup1, subgroup2), but found %v", submatches)
 	}
 
-	return submatches[1], submatches[3], nil
+	return submatches[1], submatches[2], nil
 }
 
 func makeFeedsArray(feedsStringCSV string) ([]api.PriceFeed, error) {
