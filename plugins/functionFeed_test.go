@@ -20,6 +20,10 @@ func TestExtractFunctionParts(t *testing.T) {
 			inputURL: "invert(max(test))",
 			wantName: "invert",
 			wantArgs: "max(test)",
+		}, {
+			inputURL: "max(fixed/0.02,crypto/https://api.coinmarketcap.com/v1/ticker/stellar/)",
+			wantName: "max",
+			wantArgs: "fixed/0.02,crypto/https://api.coinmarketcap.com/v1/ticker/stellar/",
 		},
 	}
 

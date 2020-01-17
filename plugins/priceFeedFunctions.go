@@ -22,7 +22,7 @@ func max(feeds []api.PriceFeed) (api.PriceFeed, error) {
 		for i, f := range feeds {
 			innerPrice, e := f.GetPrice()
 			if e != nil {
-				return 0.0, fmt.Errorf("error fetching price from feed in 'max' function feed: %s", e)
+				return 0.0, fmt.Errorf("error fetching price from feed (index=%d) in 'max' function feed: %s", i, e)
 			}
 
 			if innerPrice <= 0.0 {
