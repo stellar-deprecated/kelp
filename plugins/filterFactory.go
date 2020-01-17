@@ -53,11 +53,11 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		return nil, fmt.Errorf("could not parse volume filter mode from input (%s): %s", configInput, e)
 	}
 	config := &VolumeFilterConfig{mode: mode}
-	if parts[1] != "sell" {
-		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"sell\"", configInput)
+	if parts[1] != "daily" {
+		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\"", configInput)
 	}
-	if parts[2] != "daily" {
-		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"daily\"", configInput)
+	if parts[2] != "sell" {
+		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"sell\"", configInput)
 	}
 	limit, e := strconv.ParseFloat(parts[4], 64)
 	if e != nil {
