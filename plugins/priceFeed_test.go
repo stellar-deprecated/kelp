@@ -62,6 +62,11 @@ func TestMakePriceFeed(t *testing.T) {
 			url:                    "max(fixed/0.02,exchange/ccxt-kraken/XLM/USD/last)",
 			wantLowerOrEqualBound:  wantLowerBoundXLM,
 			wantHigherOrEqualBound: wantUpperBoundXLM,
+		}, {
+			typ:                    "function",
+			url:                    "invert(fixed/0.02)",
+			wantLowerOrEqualBound:  50.0,
+			wantHigherOrEqualBound: 50.0,
 		},
 		// not testing fiat here because it requires an access key
 		// not testing crypto here because it's returning an error when passed an actual URL but works in practice
