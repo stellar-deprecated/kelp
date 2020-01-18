@@ -638,7 +638,14 @@ func startFillTracking(
 	}
 
 	if botConfig.FillTrackerSleepMillis != 0 {
-		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold)
+		var lastTradeCursorOverride interface{}
+		if botConfig.FillTrackerLastTradeCursorOverride == "" {
+			lastTradeCursorOverride = nil
+		} else {
+			lastTradeCursorOverride = botConfig.FillTrackerLastTradeCursorOverride
+		}
+
+		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold, lastTradeCursorOverride)
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
 		if db != nil {
