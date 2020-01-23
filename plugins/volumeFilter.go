@@ -38,6 +38,7 @@ type VolumeFilterConfig struct {
 	SellBaseAssetCapInBaseUnits  *float64
 	SellBaseAssetCapInQuoteUnits *float64
 	mode                         volumeFilterMode
+	additionalMarketIDs          []string
 	// buyBaseAssetCapInBaseUnits   *float64
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
@@ -46,7 +47,8 @@ type volumeFilter struct {
 	name       string
 	baseAsset  hProtocol.Asset
 	quoteAsset hProtocol.Asset
-	marketID   string
+	marketIDs  []string
+	action     string
 	config     *VolumeFilterConfig
 	db         *sql.DB
 }
@@ -75,12 +77,14 @@ func makeFilterVolume(
 		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
 	}
 	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
+	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
 
 	return &volumeFilter{
 		name:       "volumeFilter",
 		baseAsset:  baseAsset,
 		quoteAsset: quoteAsset,
-		marketID:   marketID,
+		marketIDs:  marketIDs,
+		action:     "sell",
 		config:     config,
 		db:         db,
 	}, nil
@@ -104,8 +108,8 @@ func (c *VolumeFilterConfig) String() string {
 
 func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
 	dateString := time.Now().UTC().Format(postgresdb.DateFormatString)
-	// TODO do for buying base and also for a flipped marketID
-	dailyValuesBaseSold, e := f.dailyValuesByDate(f.marketID, dateString, "sell")
+	// TODO do for buying base and also for flipped marketIDs
+	dailyValuesBaseSold, e := f.dailyValuesByDate(dateString)
 	if e != nil {
 		return nil, fmt.Errorf("could not load dailyValuesByDate for today (%s): %s", dateString, e)
 	}
@@ -229,8 +233,8 @@ type dailyValues struct {
 	quoteVol float64
 }
 
-func (f *volumeFilter) dailyValuesByDate(marketID string, dateUTC string, action string) (*dailyValues, error) {
-	row := f.db.QueryRow(database.SqlQueryDailyValues, marketID, dateUTC, action)
+func (f *volumeFilter) dailyValuesByDate(dateUTC string) (*dailyValues, error) {
+	row := f.db.QueryRow(database.SqlQueryDailyValues, f.marketIDs, dateUTC, f.action)
 
 	var baseVol sql.NullFloat64
 	var quoteVol sql.NullFloat64
