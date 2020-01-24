@@ -59,9 +59,9 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	if limitWindowParts[0] != "daily" {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to equal or start with \"daily\"", configInput)
 	} else if len(limitWindowParts) == 2 {
-		errInvalid := fmt.Errorf("invalid input (%s), the modifier for \"daily\" can only be \"market_ids\" like so 'daily:markets_ids=[4c19915f47,db4531d586]'", configInput)
+		errInvalid := fmt.Errorf("invalid input (%s), the modifier for \"daily\" can only be \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
 		if !strings.HasPrefix(limitWindowParts[1], "market_ids=") {
-			return nil, fmt.Errorf("%s: invalid prefix market_ids=", errInvalid)
+			return nil, fmt.Errorf("%s: invalid modifier prefix in '%s'", errInvalid, limitWindowParts[1])
 		}
 		modifierParts := strings.Split(limitWindowParts[1], "=")
 		if len(modifierParts) != 2 {
@@ -75,7 +75,7 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		}
 		config.additionalMarketIDs = marketIds
 	} else if len(limitWindowParts) != 1 {
-		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:markets_ids=[4c19915f47,db4531d586]'", configInput)
+		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
 	}
 
 	if parts[2] != "sell" {
