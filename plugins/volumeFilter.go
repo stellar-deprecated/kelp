@@ -234,11 +234,7 @@ type dailyValues struct {
 }
 
 func (f *volumeFilter) dailyValuesByDate(dateUTC string) (*dailyValues, error) {
-	marketIDsQuoted := []string{}
-	for _, mid := range f.marketIDs {
-		marketIDsQuoted = append(marketIDsQuoted, fmt.Sprintf("'%s'", mid))
-	}
-	marketIdsSqlValue := strings.Join(marketIDsQuoted, ",")
+	marketIdsSqlValue := strings.Join(f.marketIDs, ",")
 	row := f.db.QueryRow(database.SqlQueryDailyValues, marketIdsSqlValue, dateUTC, f.action)
 
 	var baseVol sql.NullFloat64
