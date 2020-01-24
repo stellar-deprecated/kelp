@@ -74,7 +74,7 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 			return nil, fmt.Errorf("%s: unable to unmarshal marketIds array '%s': %s", errInvalid, marketIdsArrayString, e)
 		}
 		config.additionalMarketIDs = marketIds
-	} else {
+	} else if len(limitWindowParts) != 1 {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:markets_ids=[4c19915f47,db4531d586]'", configInput)
 	}
 
