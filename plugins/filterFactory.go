@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -63,16 +62,17 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		if !strings.HasPrefix(limitWindowParts[1], "market_ids=") {
 			return nil, fmt.Errorf("%s: invalid modifier prefix in '%s'", errInvalid, limitWindowParts[1])
 		}
+
 		modifierParts := strings.Split(limitWindowParts[1], "=")
 		if len(modifierParts) != 2 {
 			return nil, fmt.Errorf("%s: invalid parts for modifier with length %d, should have been 2", errInvalid, len(modifierParts))
 		}
-		marketIdsArrayString := modifierParts[1]
-		var marketIds []string
-		e := json.Unmarshal([]byte(marketIdsArrayString), &marketIds)
+
+		marketIds, e := parseMarketIdsArray(modifierParts[1])
 		if e != nil {
-			return nil, fmt.Errorf("%s: unable to unmarshal marketIds array '%s': %s", errInvalid, marketIdsArrayString, e)
+			return nil, fmt.Errorf("%s: %s", errInvalid, e)
 		}
+
 		config.additionalMarketIDs = marketIds
 	} else if len(limitWindowParts) != 1 {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
@@ -105,6 +105,28 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		f.DB,
 		config,
 	)
+}
+
+func parseMarketIdsArray(marketIdsArrayString string) ([]string, error) {
+	if !strings.HasPrefix(marketIdsArrayString, "[") {
+		return nil, fmt.Errorf("market_ids array should begin with '['")
+	}
+
+	if !strings.HasSuffix(marketIdsArrayString, "]") {
+		return nil, fmt.Errorf("market_ids array should end with ']'")
+	}
+
+	arrayStringCleaned := marketIdsArrayString[:len(marketIdsArrayString)-1][1:]
+	marketIds := strings.Split(arrayStringCleaned, ",")
+	if len(marketIds) == 0 {
+		return nil, fmt.Errorf("market_ids array length should be greater than 0")
+	}
+
+	marketIdsTrimmed := []string{}
+	for _, mid := range marketIds {
+		marketIdsTrimmed = append(marketIdsTrimmed, strings.TrimSpace(mid))
+	}
+	return marketIdsTrimmed, nil
 }
 
 func filterPrice(f *FilterFactory, configInput string) (SubmitFilter, error) {
