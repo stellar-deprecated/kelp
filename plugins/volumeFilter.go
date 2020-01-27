@@ -44,13 +44,14 @@ type VolumeFilterConfig struct {
 }
 
 type volumeFilter struct {
-	name       string
-	baseAsset  hProtocol.Asset
-	quoteAsset hProtocol.Asset
-	marketIDs  []string
-	action     string
-	config     *VolumeFilterConfig
-	db         *sql.DB
+	name                string
+	baseAsset           hProtocol.Asset
+	quoteAsset          hProtocol.Asset
+	sqlQueryDailyValues string
+	marketIDs           []string
+	action              string
+	config              *VolumeFilterConfig
+	db                  *sql.DB
 }
 
 // makeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
@@ -78,16 +79,29 @@ func makeFilterVolume(
 	}
 	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
+	sqlQueryDailyValues := makeSqlQueryDailyValues(marketIDs)
 
 	return &volumeFilter{
-		name:       "volumeFilter",
-		baseAsset:  baseAsset,
-		quoteAsset: quoteAsset,
-		marketIDs:  marketIDs,
-		action:     "sell",
-		config:     config,
-		db:         db,
+		name:                "volumeFilter",
+		baseAsset:           baseAsset,
+		quoteAsset:          quoteAsset,
+		sqlQueryDailyValues: sqlQueryDailyValues,
+		marketIDs:           marketIDs,
+		action:              "sell",
+		config:              config,
+		db:                  db,
 	}, nil
+}
+
+func makeSqlQueryDailyValues(marketIDs []string) string {
+	inClauseParts := []string{}
+	for _, mid := range marketIDs {
+		inValue := fmt.Sprintf("'%s'", mid)
+		inClauseParts = append(inClauseParts, inValue)
+	}
+	inClause := strings.Join(inClauseParts, ", ")
+
+	return fmt.Sprintf(database.SqlQueryDailyValuesTemplate, inClause)
 }
 
 var _ SubmitFilter = &volumeFilter{}
@@ -234,8 +248,7 @@ type dailyValues struct {
 }
 
 func (f *volumeFilter) dailyValuesByDate(dateUTC string) (*dailyValues, error) {
-	marketIdsSqlValue := strings.Join(f.marketIDs, ",")
-	row := f.db.QueryRow(database.SqlQueryDailyValues, marketIdsSqlValue, dateUTC, f.action)
+	row := f.db.QueryRow(f.sqlQueryDailyValues, dateUTC, f.action)
 
 	var baseVol sql.NullFloat64
 	var quoteVol sql.NullFloat64

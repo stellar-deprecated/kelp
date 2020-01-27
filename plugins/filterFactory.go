@@ -3,12 +3,23 @@ package plugins
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 )
+
+var marketIDRegex *regexp.Regexp
+
+func init() {
+	midRxp, e := regexp.Compile("^[a-zA-Z0-9]{10}$")
+	if e != nil {
+		panic("unable to compile marketID regexp")
+	}
+	marketIDRegex = midRxp
+}
 
 var filterMap = map[string]func(f *FilterFactory, configInput string) (SubmitFilter, error){
 	"volume":    filterVolume,
@@ -124,7 +135,11 @@ func parseMarketIdsArray(marketIdsArrayString string) ([]string, error) {
 
 	marketIdsTrimmed := []string{}
 	for _, mid := range marketIds {
-		marketIdsTrimmed = append(marketIdsTrimmed, strings.TrimSpace(mid))
+		trimmedMid := strings.TrimSpace(mid)
+		if !marketIDRegex.MatchString(trimmedMid) {
+			return nil, fmt.Errorf("invalid market_id entry '%s'", trimmedMid)
+		}
+		marketIdsTrimmed = append(marketIdsTrimmed, trimmedMid)
 	}
 	return marketIdsTrimmed, nil
 }
