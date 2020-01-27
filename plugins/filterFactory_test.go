@@ -12,14 +12,14 @@ func TestParseMarketIdsArray(t *testing.T) {
 		want                 []string
 	}{
 		{
-			marketIdsArrayString: "[abcde,gfhij]",
-			want:                 []string{"abcde", "gfhij"},
+			marketIdsArrayString: "[abcde1234Z,01234gFHij]",
+			want:                 []string{"abcde1234Z", "01234gFHij"},
 		}, {
-			marketIdsArrayString: "[abcde, afhij]",
-			want:                 []string{"abcde", "afhij"},
+			marketIdsArrayString: "[abcde1234Z, 01234gFHij]",
+			want:                 []string{"abcde1234Z", "01234gFHij"},
 		}, {
-			marketIdsArrayString: "[abcde]",
-			want:                 []string{"abcde"},
+			marketIdsArrayString: "[abcde1234Z]",
+			want:                 []string{"abcde1234Z"},
 		},
 	}
 
