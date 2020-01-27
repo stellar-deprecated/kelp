@@ -38,17 +38,20 @@ type VolumeFilterConfig struct {
 	SellBaseAssetCapInBaseUnits  *float64
 	SellBaseAssetCapInQuoteUnits *float64
 	mode                         volumeFilterMode
+	additionalMarketIDs          []string
 	// buyBaseAssetCapInBaseUnits   *float64
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
 
 type volumeFilter struct {
-	name       string
-	baseAsset  hProtocol.Asset
-	quoteAsset hProtocol.Asset
-	marketID   string
-	config     *VolumeFilterConfig
-	db         *sql.DB
+	name                string
+	baseAsset           hProtocol.Asset
+	quoteAsset          hProtocol.Asset
+	sqlQueryDailyValues string
+	marketIDs           []string
+	action              string
+	config              *VolumeFilterConfig
+	db                  *sql.DB
 }
 
 // makeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
@@ -75,15 +78,30 @@ func makeFilterVolume(
 		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
 	}
 	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
+	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
+	sqlQueryDailyValues := makeSqlQueryDailyValues(marketIDs)
 
 	return &volumeFilter{
-		name:       "volumeFilter",
-		baseAsset:  baseAsset,
-		quoteAsset: quoteAsset,
-		marketID:   marketID,
-		config:     config,
-		db:         db,
+		name:                "volumeFilter",
+		baseAsset:           baseAsset,
+		quoteAsset:          quoteAsset,
+		sqlQueryDailyValues: sqlQueryDailyValues,
+		marketIDs:           marketIDs,
+		action:              "sell",
+		config:              config,
+		db:                  db,
 	}, nil
+}
+
+func makeSqlQueryDailyValues(marketIDs []string) string {
+	inClauseParts := []string{}
+	for _, mid := range marketIDs {
+		inValue := fmt.Sprintf("'%s'", mid)
+		inClauseParts = append(inClauseParts, inValue)
+	}
+	inClause := strings.Join(inClauseParts, ", ")
+
+	return fmt.Sprintf(database.SqlQueryDailyValuesTemplate, inClause)
 }
 
 var _ SubmitFilter = &volumeFilter{}
@@ -98,14 +116,14 @@ func (c *VolumeFilterConfig) Validate() error {
 
 // String is the stringer method
 func (c *VolumeFilterConfig) String() string {
-	return fmt.Sprintf("VolumeFilterConfig[SellBaseAssetCapInBaseUnits=%s, SellBaseAssetCapInQuoteUnits=%s]",
-		utils.CheckedFloatPtr(c.SellBaseAssetCapInBaseUnits), utils.CheckedFloatPtr(c.SellBaseAssetCapInQuoteUnits))
+	return fmt.Sprintf("VolumeFilterConfig[SellBaseAssetCapInBaseUnits=%s, SellBaseAssetCapInQuoteUnits=%s, mode=%s, additionalMarketIDs=%v]",
+		utils.CheckedFloatPtr(c.SellBaseAssetCapInBaseUnits), utils.CheckedFloatPtr(c.SellBaseAssetCapInQuoteUnits), c.mode, c.additionalMarketIDs)
 }
 
 func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
 	dateString := time.Now().UTC().Format(postgresdb.DateFormatString)
-	// TODO do for buying base and also for a flipped marketID
-	dailyValuesBaseSold, e := f.dailyValuesByDate(f.marketID, dateString, "sell")
+	// TODO do for buying base and also for flipped marketIDs
+	dailyValuesBaseSold, e := f.dailyValuesByDate(dateString)
 	if e != nil {
 		return nil, fmt.Errorf("could not load dailyValuesByDate for today (%s): %s", dateString, e)
 	}
@@ -229,8 +247,8 @@ type dailyValues struct {
 	quoteVol float64
 }
 
-func (f *volumeFilter) dailyValuesByDate(marketID string, dateUTC string, action string) (*dailyValues, error) {
-	row := f.db.QueryRow(database.SqlQueryDailyValues, marketID, dateUTC, action)
+func (f *volumeFilter) dailyValuesByDate(dateUTC string) (*dailyValues, error) {
+	row := f.db.QueryRow(f.sqlQueryDailyValues, dateUTC, f.action)
 
 	var baseVol sql.NullFloat64
 	var quoteVol sql.NullFloat64

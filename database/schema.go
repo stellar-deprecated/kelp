@@ -41,8 +41,8 @@ const SqlQueryMarketsById = "SELECT market_id, exchange_name, base, quote FROM m
 // sqlQueryDbVersion queries the db_version table
 const sqlQueryDbVersion = "SELECT version FROM db_version ORDER BY version desc LIMIT 1"
 
-// SqlQueryDailyValues queries the trades table to get the values for a given day
-const SqlQueryDailyValues = "SELECT SUM(base_volume) as total_base_volume, SUM(counter_cost) as total_counter_volume FROM trades WHERE market_id = $1 AND DATE(date_utc) = $2 and action = $3 group by DATE(date_utc)"
+// SqlQueryDailyValuesTemplate queries the trades table to get the values for a given day
+const SqlQueryDailyValuesTemplate = "SELECT SUM(base_volume) as total_base_volume, SUM(counter_cost) as total_counter_volume FROM trades WHERE market_id IN (%s) AND DATE(date_utc) = $1 and action = $2 group by DATE(date_utc)"
 
 /*
 	query helper functions

@@ -3,12 +3,23 @@ package plugins
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 )
+
+var marketIDRegex *regexp.Regexp
+
+func init() {
+	midRxp, e := regexp.Compile("^[a-zA-Z0-9]{10}$")
+	if e != nil {
+		panic("unable to compile marketID regexp")
+	}
+	marketIDRegex = midRxp
+}
 
 var filterMap = map[string]func(f *FilterFactory, configInput string) (SubmitFilter, error){
 	"volume":    filterVolume,
@@ -53,9 +64,31 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		return nil, fmt.Errorf("could not parse volume filter mode from input (%s): %s", configInput, e)
 	}
 	config := &VolumeFilterConfig{mode: mode}
-	if parts[1] != "daily" {
-		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\"", configInput)
+
+	limitWindowParts := strings.Split(parts[1], ":")
+	if limitWindowParts[0] != "daily" {
+		return nil, fmt.Errorf("invalid input (%s), the second part needs to equal or start with \"daily\"", configInput)
+	} else if len(limitWindowParts) == 2 {
+		errInvalid := fmt.Errorf("invalid input (%s), the modifier for \"daily\" can only be \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
+		if !strings.HasPrefix(limitWindowParts[1], "market_ids=") {
+			return nil, fmt.Errorf("%s: invalid modifier prefix in '%s'", errInvalid, limitWindowParts[1])
+		}
+
+		modifierParts := strings.Split(limitWindowParts[1], "=")
+		if len(modifierParts) != 2 {
+			return nil, fmt.Errorf("%s: invalid parts for modifier with length %d, should have been 2", errInvalid, len(modifierParts))
+		}
+
+		marketIds, e := parseMarketIdsArray(modifierParts[1])
+		if e != nil {
+			return nil, fmt.Errorf("%s: %s", errInvalid, e)
+		}
+
+		config.additionalMarketIDs = marketIds
+	} else if len(limitWindowParts) != 1 {
+		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
 	}
+
 	if parts[2] != "sell" {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"sell\"", configInput)
 	}
@@ -83,6 +116,32 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		f.DB,
 		config,
 	)
+}
+
+func parseMarketIdsArray(marketIdsArrayString string) ([]string, error) {
+	if !strings.HasPrefix(marketIdsArrayString, "[") {
+		return nil, fmt.Errorf("market_ids array should begin with '['")
+	}
+
+	if !strings.HasSuffix(marketIdsArrayString, "]") {
+		return nil, fmt.Errorf("market_ids array should end with ']'")
+	}
+
+	arrayStringCleaned := marketIdsArrayString[:len(marketIdsArrayString)-1][1:]
+	marketIds := strings.Split(arrayStringCleaned, ",")
+	if len(marketIds) == 0 {
+		return nil, fmt.Errorf("market_ids array length should be greater than 0")
+	}
+
+	marketIdsTrimmed := []string{}
+	for _, mid := range marketIds {
+		trimmedMid := strings.TrimSpace(mid)
+		if !marketIDRegex.MatchString(trimmedMid) {
+			return nil, fmt.Errorf("invalid market_id entry '%s'", trimmedMid)
+		}
+		marketIdsTrimmed = append(marketIdsTrimmed, trimmedMid)
+	}
+	return marketIdsTrimmed, nil
 }
 
 func filterPrice(f *FilterFactory, configInput string) (SubmitFilter, error) {
