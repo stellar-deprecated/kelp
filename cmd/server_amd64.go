@@ -17,6 +17,7 @@ import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
+	"github.com/stellar/kelp/support/logger"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -58,6 +59,32 @@ func init() {
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		isLocalMode := env == envDev
+		isLocalDevMode := isLocalMode && *options.dev
+		kos := kelpos.GetKelpOS()
+		if !isLocalDevMode {
+			l := logger.MakeBasicLogger()
+			t := time.Now().Format("20060102T150405MST")
+			logDir := "/logs"
+			logFilename := fmt.Sprintf("kelp-ui_%s", t)
+
+			binDirectory, e := getBinaryDirectory()
+			if e != nil {
+				panic(errors.Wrap(e, "could not get binary directory"))
+			}
+			log.Printf("binDirectory: %s", binDirectory)
+
+			logDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logDir)
+			log.Printf("making logDirPath: %s ...", logDirPath)
+			e = kos.Mkdir(logDirPath)
+			if e != nil {
+				panic(errors.Wrap(e, "could not make directories for logDirPath: "+logDirPath))
+			}
+
+			logFilepath := filepath.Join(logDirPath, logFilename)
+			setLogFile(l, logFilepath)
+		}
+
 		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
 
 		checkInitRootFlags()
@@ -68,7 +95,6 @@ func init() {
 			panic("'horizon-pubnet-uri' argument must not contain the word 'test'")
 		}
 
-		kos := kelpos.GetKelpOS()
 		horizonTestnetURI := strings.TrimSuffix(*options.horizonTestnetURI, "/")
 		horizonPubnetURI := strings.TrimSuffix(*options.horizonPubnetURI, "/")
 		log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
@@ -100,8 +126,6 @@ func init() {
 			}
 		}
 
-		isLocalMode := env == envDev
-		isLocalDevMode := isLocalMode && *options.dev
 		// start ccxt before we make API server (which loads exchange list)
 		if !isLocalDevMode {
 			ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)

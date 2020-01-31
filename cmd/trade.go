@@ -182,7 +182,8 @@ func readBotConfig(l logger.Logger, options inputs) trader.BotConfig {
 	}
 
 	if *options.logPrefix != "" {
-		setLogFile(l, options, botConfig)
+		logFilename := makeLogFilename(*options.logPrefix, botConfig)
+		setLogFile(l, logFilename)
 	}
 
 	l.Info(makeStartupMessage(options))
@@ -802,14 +803,8 @@ func deleteAllOffersAndExit(
 	}
 }
 
-func setLogFile(l logger.Logger, options inputs, botConfig trader.BotConfig) {
-	t := time.Now().Format("20060102T150405MST")
-	fileName := fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", *options.logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
-	if !botConfig.IsTradingSdex() {
-		fileName = fmt.Sprintf("%s_%s_%s_%s.log", *options.logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
-	}
-
-	f, e := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+func setLogFile(l logger.Logger, filename string) {
+	f, e := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("failed to set log file: %s", e))
 		return
@@ -817,7 +812,15 @@ func setLogFile(l logger.Logger, options inputs, botConfig trader.BotConfig) {
 	mw := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(mw)
 
-	l.Infof("logging to file: %s\n", fileName)
+	l.Infof("logging to file: %s\n", filename)
 	// we want to create a deferred recovery function here that will log panics to the log file and then exit
 	defer logPanic(l, false)
+}
+
+func makeLogFilename(logPrefix string, botConfig trader.BotConfig) string {
+	t := time.Now().Format("20060102T150405MST")
+	if botConfig.IsTradingSdex() {
+		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
+	}
+	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
 }
