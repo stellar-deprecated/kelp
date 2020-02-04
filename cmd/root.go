@@ -77,7 +77,7 @@ func checkInitRootFlags() {
 			panic("'ccxt-rest-url' argument must start with either `http://` or `https://`")
 		}
 
-		e := testCcxtURL(*rootCcxtRestURL)
+		e := isCcxtUp(*rootCcxtRestURL)
 		if e != nil {
 			panic(e)
 		}
@@ -87,6 +87,7 @@ func checkInitRootFlags() {
 			panic(fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *rootCcxtRestURL, e))
 		}
 	}
+	// do not set rootCcxtRestURL if not specified in config so each command can handle defaults accordingly
 }
 
 func validateBuild() {
@@ -96,10 +97,10 @@ func validateBuild() {
 	}
 }
 
-func testCcxtURL(ccxtURL string) error {
+func isCcxtUp(ccxtURL string) error {
 	e := networking.JSONRequest(http.DefaultClient, "GET", ccxtURL, "", map[string]string{}, nil, "")
 	if e != nil {
-		return fmt.Errorf("unable to connect to ccxt at the URL: %s", ccxtURL)
+		return fmt.Errorf("unable to connect to ccxt at the URL %s: %s", ccxtURL, e)
 	}
 	return nil
 }

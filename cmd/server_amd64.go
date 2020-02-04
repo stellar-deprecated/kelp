@@ -10,12 +10,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
+	"github.com/stellar/kelp/support/logger"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -24,13 +26,19 @@ import (
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
+	"github.com/stellar/kelp/support/sdk"
 )
 
 const urlOpenDelayMillis = 1500
 const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
 const trayIconName = "kelp-icon@1-8x.png"
+const kelpCcxtPath = "/ccxt"
+const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
+const ccxtBinaryName = "ccxt-rest"
+const ccxtWaitSeconds = 60
 
 type serverInputs struct {
 	port              *uint16
@@ -53,6 +61,32 @@ func init() {
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		isLocalMode := env == envDev
+		isLocalDevMode := isLocalMode && *options.dev
+		kos := kelpos.GetKelpOS()
+		if !isLocalDevMode {
+			l := logger.MakeBasicLogger()
+			t := time.Now().Format("20060102T150405MST")
+			logDir := "/logs"
+			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
+
+			binDirectory, e := getBinaryDirectory()
+			if e != nil {
+				panic(errors.Wrap(e, "could not get binary directory"))
+			}
+			log.Printf("binDirectory: %s", binDirectory)
+
+			logDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logDir)
+			log.Printf("making logDirPath: %s ...", logDirPath)
+			e = kos.Mkdir(logDirPath)
+			if e != nil {
+				panic(errors.Wrap(e, "could not make directories for logDirPath: "+logDirPath))
+			}
+
+			logFilepath := filepath.Join(logDirPath, logFilename)
+			setLogFile(l, logFilepath)
+		}
+
 		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
 
 		checkInitRootFlags()
@@ -63,11 +97,18 @@ func init() {
 			panic("'horizon-pubnet-uri' argument must not contain the word 'test'")
 		}
 
-		kos := kelpos.GetKelpOS()
 		horizonTestnetURI := strings.TrimSuffix(*options.horizonTestnetURI, "/")
 		horizonPubnetURI := strings.TrimSuffix(*options.horizonPubnetURI, "/")
 		log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
 		log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
+
+		if *rootCcxtRestURL == "" {
+			*rootCcxtRestURL = "http://localhost:3000"
+			e := sdk.SetBaseURL(*rootCcxtRestURL)
+			if e != nil {
+				panic(fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *rootCcxtRestURL, e))
+			}
+		}
 		log.Printf("using ccxtRestUrl: %s\n", *rootCcxtRestURL)
 		apiTestNet := &horizonclient.Client{
 			HorizonURL: horizonTestnetURI,
@@ -94,12 +135,36 @@ func init() {
 				}
 			}
 		}
+
+		if isLocalDevMode {
+			log.Printf("not checking ccxt in local dev mode")
+		} else {
+			// we need to check twice because sometimes the ccxt process lingers between runs so we can get a false positive on the first check
+			e := checkIsCcxtUpTwice(*rootCcxtRestURL)
+			ccxtRunning := e == nil
+			log.Printf("checked if CCXT is already running, ccxtRunning = %v", ccxtRunning)
+
+			if !ccxtRunning {
+				// start ccxt before we make API server (which loads exchange list)
+				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
+				ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
+				if e != nil {
+					panic(e)
+				}
+		
+				e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
+				if e != nil {
+					panic(e)
+				}
+			}
+		}
+
 		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, apiTestNet, *options.horizonPubnetURI, apiPubNet, *rootCcxtRestURL, *options.noHeaders)
 		if e != nil {
 			panic(e)
 		}
 
-		if env == envDev && *options.dev {
+		if isLocalDevMode {
 			checkHomeDir()
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
@@ -112,7 +177,7 @@ func init() {
 		// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 		os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 
-		if env == envDev {
+		if isLocalMode {
 			checkHomeDir()
 			generateStaticFiles(kos)
 		}
@@ -133,7 +198,7 @@ func init() {
 			openBrowser(kos, url)
 		}()
 
-		if env == envDev {
+		if isLocalMode {
 			e = http.ListenAndServe(portString, r)
 			if e != nil {
 				log.Fatal(e)
@@ -144,12 +209,99 @@ func init() {
 	}
 }
 
+func checkIsCcxtUpTwice(ccxtURL string) error {
+	e := isCcxtUp(ccxtURL)
+	if e != nil {
+		return fmt.Errorf("ccxt-rest was not running on first check: %s", e)
+	}
+	
+	// tiny pause before second check
+	time.Sleep(100 * time.Millisecond)
+	e = isCcxtUp(ccxtURL)
+	if e != nil {
+		return fmt.Errorf("ccxt-rest was not running on second check: %s", e)
+	}
+
+	// return nil for no error when it is running
+	return nil
+}
+
 func setMiddleware(r *chi.Mux) {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+}
+
+func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error) {
+	binDirectory, e := getBinaryDirectory()
+	if e != nil {
+		return "", errors.Wrap(e, "could not get binary directory")
+	}
+	log.Printf("binDirectory: %s", binDirectory)
+
+	ccxtDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, kelpCcxtPath)
+	log.Printf("making ccxtDirPath: %s ...", ccxtDirPath)
+	e = kos.Mkdir(ccxtDirPath)
+	if e != nil {
+		return "", errors.Wrap(e, "could not make directories for ccxtDirPath: "+ccxtDirPath)
+	}
+
+	filenameWithExt := fmt.Sprintf("%s.zip", filenameNoExt)
+	ccxtZipDownloadPath := filepath.Join(ccxtDirPath, filenameWithExt)
+	if _, e := os.Stat(ccxtZipDownloadPath); !os.IsNotExist(e) {
+		return ccxtDirPath, nil
+	}
+
+	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
+	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
+	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
+	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt)
+
+	return ccxtDirPath, nil
+}
+
+func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string) {
+	zipFilename := filenameNoExt + ".zip"
+	log.Printf("unzipping file %s ... ", zipFilename)
+	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd -", ccxtDir, zipFilename)
+	_, e := kos.Blocking("zip", zipCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
+	}
+	log.Printf("done\n")
+}
+
+func runCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath string, ccxtFilenameNoExt string) error {
+	ccxtBinPath := filepath.Join(ccxtDirPath, ccxtFilenameNoExt, ccxtBinaryName)
+	if _, e := os.Stat(ccxtBinPath); os.IsNotExist(e) {
+		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath)
+	}
+
+	log.Printf("running binary %s", ccxtBinPath)
+	// TODO CCXT should be run at the port specified by rootCcxtRestURL, currently it will default to port 3000 even if the config file specifies otherwise
+	_, e := kos.Background("ccxt-rest", ccxtBinPath)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file %s", ccxtBinPath)))
+	}
+
+	log.Printf("waiting up to %d seconds for ccxt-rest to start up ...", ccxtWaitSeconds)
+	for i := 0; i < ccxtWaitSeconds; i++ {
+		e := isCcxtUp(*rootCcxtRestURL)
+		ccxtRunning := e == nil
+
+		if ccxtRunning {
+			log.Printf("done, waited for ~%d seconds before CCXT was running\n", i)
+			return nil
+		}
+
+		// wait
+		log.Printf("ccxt is not up, sleeping for 1 second (waited so far = %d seconds)\n", i)
+		time.Sleep(1 * time.Second)
+	}
+
+	return fmt.Errorf("waited for %d seconds but CCXT was still not running at URL %s", ccxtWaitSeconds, *rootCcxtRestURL)
 }
 
 func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPort uint16) {
