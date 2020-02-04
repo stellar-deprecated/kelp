@@ -68,7 +68,7 @@ func init() {
 			l := logger.MakeBasicLogger()
 			t := time.Now().Format("20060102T150405MST")
 			logDir := "/logs"
-			logFilename := fmt.Sprintf("kelp-ui_%s", t)
+			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
 			binDirectory, e := getBinaryDirectory()
 			if e != nil {
