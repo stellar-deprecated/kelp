@@ -136,7 +136,8 @@ func init() {
 			}
 		}
 
-		e := isCcxtUp(*rootCcxtRestURL)
+		// we need to check twice because sometimes the ccxt process lingers between runs so we can get a false positive on the first check
+		e := checkIsCcxtUpTwice(*rootCcxtRestURL)
 		ccxtRunning := e == nil
 
 		// start ccxt before we make API server (which loads exchange list)
@@ -201,6 +202,23 @@ func init() {
 			_ = http.ListenAndServe(portString, r)
 		}
 	}
+}
+
+func checkIsCcxtUpTwice(ccxtURL string) error {
+	e := isCcxtUp(ccxtURL)
+	if e != nil {
+		return fmt.Errorf("ccxt-rest was not running on first check: %s", e)
+	}
+	
+	// tiny pause before second check
+	time.Sleep(100 * time.Millisecond)
+	e = isCcxtUp(ccxtURL)
+	if e != nil {
+		return fmt.Errorf("ccxt-rest was not running on second check: %s", e)
+	}
+
+	// return nil for no error when it is running
+	return nil
 }
 
 func setMiddleware(r *chi.Mux) {
