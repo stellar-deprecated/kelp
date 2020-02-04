@@ -87,6 +87,7 @@ func checkInitRootFlags() {
 			panic(fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *rootCcxtRestURL, e))
 		}
 	}
+	// do not set rootCcxtRestURL if not specified in config so each command can handle defaults accordingly
 }
 
 func validateBuild() {

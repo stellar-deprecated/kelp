@@ -28,6 +28,7 @@ import (
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
+	"github.com/stellar/kelp/support/sdk"
 )
 
 const urlOpenDelayMillis = 1500
@@ -100,6 +101,14 @@ func init() {
 		horizonPubnetURI := strings.TrimSuffix(*options.horizonPubnetURI, "/")
 		log.Printf("using horizonTestnetURI: %s\n", horizonTestnetURI)
 		log.Printf("using horizonPubnetURI: %s\n", horizonPubnetURI)
+
+		if *rootCcxtRestURL == "" {
+			*rootCcxtRestURL = "http://localhost:3000"
+			e := sdk.SetBaseURL(*rootCcxtRestURL)
+			if e != nil {
+				panic(fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *rootCcxtRestURL, e))
+			}
+		}
 		log.Printf("using ccxtRestUrl: %s\n", *rootCcxtRestURL)
 		apiTestNet := &horizonclient.Client{
 			HorizonURL: horizonTestnetURI,
