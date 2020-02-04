@@ -37,6 +37,7 @@ const trayIconName = "kelp-icon@1-8x.png"
 const kelpCcxtPath = "/ccxt"
 const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
 const ccxtBinaryName = "ccxt-rest"
+const ccxtWaitSeconds = 60
 
 type serverInputs struct {
 	port              *uint16
@@ -126,14 +127,21 @@ func init() {
 			}
 		}
 
+		e := isCcxtUp(*rootCcxtRestURL)
+		ccxtRunning := e == nil
+
 		// start ccxt before we make API server (which loads exchange list)
-		if !isLocalDevMode {
+		if !isLocalDevMode && !ccxtRunning {
 			ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
 			ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
 			if e != nil {
 				panic(e)
 			}
-			runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
+
+			e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
+			if e != nil {
+				panic(e)
+			}
 		}
 
 		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, apiTestNet, *options.horizonPubnetURI, apiPubNet, *rootCcxtRestURL, *options.noHeaders)
@@ -239,15 +247,29 @@ func runCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath string, ccxtFilenameNoExt str
 		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath)
 	}
 
-	log.Printf("running binary %s ... ", ccxtBinPath)
+	log.Printf("running binary %s", ccxtBinPath)
+	// TODO CCXT should be run at the port specified by rootCcxtRestURL, currently it will default to port 3000 even if the config file specifies otherwise
 	_, e := kos.Background("ccxt-rest", ccxtBinPath)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file %s", ccxtBinPath)))
 	}
-	// TODO check if localhost:3000 is up instead of using a timeout
-	time.Sleep(15 * time.Second)
-	log.Printf("done\n")
-	return nil
+
+	log.Printf("waiting up to %d seconds for ccxt-rest to start up ...", ccxtWaitSeconds)
+	for i := 0; i < ccxtWaitSeconds; i++ {
+		e := isCcxtUp(*rootCcxtRestURL)
+		ccxtRunning := e == nil
+
+		if ccxtRunning {
+			log.Printf("done, waited for ~%d seconds before CCXT was running\n", i)
+			return nil
+		}
+
+		// wait
+		log.Printf("ccxt is not up, sleeping for 1 second (waited so far = %d seconds)\n", i)
+		time.Sleep(1 * time.Second)
+	}
+
+	return fmt.Errorf("waited for %d seconds but CCXT was still not running at URL %s", ccxtWaitSeconds, *rootCcxtRestURL)
 }
 
 func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPort uint16) {
