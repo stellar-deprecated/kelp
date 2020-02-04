@@ -136,21 +136,26 @@ func init() {
 			}
 		}
 
-		// we need to check twice because sometimes the ccxt process lingers between runs so we can get a false positive on the first check
-		e := checkIsCcxtUpTwice(*rootCcxtRestURL)
-		ccxtRunning := e == nil
+		if isLocalDevMode {
+			log.Printf("not checking ccxt in local dev mode")
+		} else {
+			// we need to check twice because sometimes the ccxt process lingers between runs so we can get a false positive on the first check
+			e := checkIsCcxtUpTwice(*rootCcxtRestURL)
+			ccxtRunning := e == nil
+			log.Printf("checked if CCXT is already running, ccxtRunning = %v", ccxtRunning)
 
-		// start ccxt before we make API server (which loads exchange list)
-		if !isLocalDevMode && !ccxtRunning {
-			ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
-			ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
-			if e != nil {
-				panic(e)
-			}
-
-			e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
-			if e != nil {
-				panic(e)
+			if !ccxtRunning {
+				// start ccxt before we make API server (which loads exchange list)
+				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
+				ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
+				if e != nil {
+					panic(e)
+				}
+		
+				e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
+				if e != nil {
+					panic(e)
+				}
 			}
 		}
 
