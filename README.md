@@ -27,10 +27,13 @@ To learn more about the Stellar protocol check out [this video created by Lumena
 # Table of Contents
 
    * [Getting Started](#getting-started)
-      * [Download Binary](#download-binary)
-      * [Compile from Source](#compile-from-source)
+      * [How To Get Kelp](#how-to-get-kelp)
+         * [Download Kelp Binary](#download-kelp-binary)
+         * [Compile from Source](#compile-from-source)
       * [Running Kelp](#running-kelp)
       * [Using CCXT](#using-ccxt)
+         * [Download CCXT Binary](#download-ccxt-binary)
+         * [Run CCXT using Docker](#run-ccxt-using-docker)
       * [Using Postgres](#using-postgres)
       * [Be Smart and Go Slow](#be-smart-and-go-slow)
    * [Components](#components)
@@ -53,11 +56,13 @@ To learn more about the Stellar protocol check out [this video created by Lumena
 
 # Getting Started
 
-To get started with Kelp, either download the pre-compiled binary for your platform from the [Github Releases Page][github-releases] or [compile Kelp from source](#compile-from-source).
+## How To Get Kelp
+
+To get started with Kelp, _either_ download the pre-compiled binary for your platform from the [Github Releases Page][github-releases] _or_ [compile Kelp from source](#compile-from-source).
 
 There is **one** binary associated with this project: `kelp`. Once the binary is downloaded, run the bot by following the instructions in [Running Kelp](#running-kelp).
 
-## Download Binary
+### Download Kelp Binary
 
 You can find the pre-compiled binary for your platform from the [Github Releases Page][github-releases].
 
@@ -85,7 +90,7 @@ To run the bot in simulation mode, try this command:
 
     ./kelp trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim
 
-## Compile from Source
+### Compile from Source
 
 _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
 
@@ -134,13 +139,24 @@ If you are ever stuck, just run the `kelp` binary directly to bring up the help 
 
 ## Using CCXT
 
-You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices and orderbooks from a larger number of exchanges.
+You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices and orderbooks from a larger number of exchanges. You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it.
 
-You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it. In order to run CCXT you should install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`). You can find more details on the [CCXT_REST github page][ccxt-rest]. The CCXT-REST server **must** be running on port `3000` _before_ you start up the Kelp bot.
-
-You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
+The CCXT-REST server **must** be running on port `3000` _before_ you start up the Kelp bot. You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
 
 _Note: this integration is still **experimental** and is also **incomplete**. Please use at your own risk._
+
+CCXT-rest can be run in any one of the following ways.
+
+### Download CCXT Binary
+
+We have compiled the ccxt-rest v0.0.4 server as a binary for all x86 platforms (linux, darwin, windows). This is the version that Kelp currently uses.
+
+You can find these pre-compiled binaries of the CCXT-rest server in the [releases tab here](https://github.com/stellar/kelp/releases/tag/ccxt-rest_v0.0.4).
+
+### Run CCXT using Docker
+
+Install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`).
+You can find more details on the [CCXT_REST github page][ccxt-rest].
 
 ## Using Postgres
 
