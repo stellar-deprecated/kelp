@@ -102,11 +102,15 @@ func init() {
 
 			// kick off the desktop window for UI feedback to the user
 			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
+			trayIconPath, e := writeTrayIcon(kos)
+			if e != nil {
+				log.Fatal(errors.Wrap(e, "could not write tray icon"))
+			}
 			go func() {
 				// url := fmt.Sprintf("http://localhost:%d", *options.port)
 				url := tailFilepath
 				log.Printf("opening up the desktop window to URL '%s'\n", url)
-				openBrowser(kos, url)
+				openBrowser(kos, trayIconPath, url)
 			}()
 		}
 
@@ -422,13 +426,8 @@ func getBinaryDirectory() (string, error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
-func openBrowser(kos *kelpos.KelpOS, url string) {
-	trayIconPath, e := writeTrayIcon(kos)
-	if e != nil {
-		log.Fatal(errors.Wrap(e, "could not write tray icon"))
-	}
-
-	e = bootstrap.Run(bootstrap.Options{
+func openBrowser(kos *kelpos.KelpOS, trayIconPath string, url string) {
+	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
 			AppIconDefaultPath: "resources/kelp-icon@2x.png",
