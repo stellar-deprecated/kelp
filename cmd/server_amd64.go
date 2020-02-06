@@ -17,7 +17,6 @@ import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
-	"github.com/stellar/kelp/support/logger"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -26,12 +25,12 @@ import (
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
 )
 
-const urlOpenDelayMillis = 1500
 const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
 const trayIconName = "kelp-icon@1-8x.png"
@@ -85,6 +84,16 @@ func init() {
 
 			logFilepath := filepath.Join(logDirPath, logFilename)
 			setLogFile(l, logFilepath)
+		}
+
+		if !isLocalDevMode {
+			// kick off the desktop window for UI feedback to the user
+			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
+			go func() {
+				url := fmt.Sprintf("http://localhost:%d", *options.port)
+				log.Printf("opening up the desktop window to URL '%s'\n", url)
+				openBrowser(kos, url)
+			}()
 		}
 
 		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
@@ -151,7 +160,7 @@ func init() {
 				if e != nil {
 					panic(e)
 				}
-		
+
 				e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
 				if e != nil {
 					panic(e)
@@ -190,14 +199,6 @@ func init() {
 
 		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
-		// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
-		go func() {
-			url := fmt.Sprintf("http://localhost:%d", *options.port)
-			log.Printf("A browser window will open up automatically to %s\n", url)
-			time.Sleep(urlOpenDelayMillis * time.Millisecond)
-			openBrowser(kos, url)
-		}()
-
 		if isLocalMode {
 			e = http.ListenAndServe(portString, r)
 			if e != nil {
@@ -214,7 +215,7 @@ func checkIsCcxtUpTwice(ccxtURL string) error {
 	if e != nil {
 		return fmt.Errorf("ccxt-rest was not running on first check: %s", e)
 	}
-	
+
 	// tiny pause before second check
 	time.Sleep(100 * time.Millisecond)
 	e = isCcxtUp(ccxtURL)
