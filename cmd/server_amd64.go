@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
-	"github.com/stellar/kelp/support/logger"
 	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -26,12 +26,12 @@ import (
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
 )
 
-const urlOpenDelayMillis = 1500
 const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
 const trayIconName = "kelp-icon@1-8x.png"
@@ -39,6 +39,11 @@ const kelpCcxtPath = "/ccxt"
 const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
 const ccxtBinaryName = "ccxt-rest"
 const ccxtWaitSeconds = 60
+const versionPlaceholder = "VERSION_PLACEHOLDER"
+const stringPlaceholder = "PLACEHOLDER_URL"
+const redirectPlaceholder = "REDIRECT_URL"
+const readyPlaceholder = "READY_STRING"
+const readyStringIndicator = "Serving frontend and API server on HTTP port"
 
 type serverInputs struct {
 	port              *uint16
@@ -61,20 +66,21 @@ func init() {
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		binDirectory, e := getBinaryDirectory()
+		if e != nil {
+			panic(errors.Wrap(e, "could not get binary directory"))
+		}
+		log.Printf("binDirectory: %s", binDirectory)
+
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
+		logFilepath := ""
 		if !isLocalDevMode {
 			l := logger.MakeBasicLogger()
 			t := time.Now().Format("20060102T150405MST")
 			logDir := "/logs"
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
-
-			binDirectory, e := getBinaryDirectory()
-			if e != nil {
-				panic(errors.Wrap(e, "could not get binary directory"))
-			}
-			log.Printf("binDirectory: %s", binDirectory)
 
 			logDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logDir)
 			log.Printf("making logDirPath: %s ...", logDirPath)
@@ -83,8 +89,35 @@ func init() {
 				panic(errors.Wrap(e, "could not make directories for logDirPath: "+logDirPath))
 			}
 
-			logFilepath := filepath.Join(logDirPath, logFilename)
+			logFilepath = filepath.Join(logDirPath, logFilename)
 			setLogFile(l, logFilepath)
+		}
+
+		if !isLocalDevMode {
+			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
+			// write out tail.html after setting the file to be tailed
+			tailFileCompiled1 := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
+			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
+			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
+			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
+			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
+			fileContents := []byte(tailFileCompiled4)
+			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
+			if e != nil {
+				panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
+			}
+
+			// kick off the desktop window for UI feedback to the user
+			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
+			trayIconPath, e := writeTrayIcon(kos)
+			if e != nil {
+				log.Fatal(errors.Wrap(e, "could not write tray icon"))
+			}
+			go func() {
+				url := tailFilepath
+				log.Printf("opening up the desktop window to URL '%s'\n", url)
+				openBrowser(kos, trayIconPath, url)
+			}()
 		}
 
 		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
@@ -151,7 +184,7 @@ func init() {
 				if e != nil {
 					panic(e)
 				}
-		
+
 				e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
 				if e != nil {
 					panic(e)
@@ -189,15 +222,7 @@ func init() {
 		gui.FileServer(r, "/", gui.FS)
 
 		portString := fmt.Sprintf(":%d", *options.port)
-		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
-		// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
-		go func() {
-			url := fmt.Sprintf("http://localhost:%d", *options.port)
-			log.Printf("A browser window will open up automatically to %s\n", url)
-			time.Sleep(urlOpenDelayMillis * time.Millisecond)
-			openBrowser(kos, url)
-		}()
-
+		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
 		if isLocalMode {
 			e = http.ListenAndServe(portString, r)
 			if e != nil {
@@ -214,7 +239,7 @@ func checkIsCcxtUpTwice(ccxtURL string) error {
 	if e != nil {
 		return fmt.Errorf("ccxt-rest was not running on first check: %s", e)
 	}
-	
+
 	// tiny pause before second check
 	time.Sleep(100 * time.Millisecond)
 	e = isCcxtUp(ccxtURL)
@@ -407,13 +432,8 @@ func getBinaryDirectory() (string, error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
-func openBrowser(kos *kelpos.KelpOS, url string) {
-	trayIconPath, e := writeTrayIcon(kos)
-	if e != nil {
-		log.Fatal(errors.Wrap(e, "could not write tray icon"))
-	}
-
-	e = bootstrap.Run(bootstrap.Options{
+func openBrowser(kos *kelpos.KelpOS, trayIconPath string, url string) {
+	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
 			AppIconDefaultPath: "resources/kelp-icon@2x.png",
@@ -454,3 +474,95 @@ func quit() {
 	log.Printf("quitting...")
 	os.Exit(0)
 }
+
+const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/javascript/tail-dash-f.html with minor modifications -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <title>Kelp GUI VERSION_PLACEHOLDER</title>
+
+    <script type="text/javascript">
+        var lastByte = 0;
+
+        if (typeof XMLHttpRequest == "undefined") {
+            // this is only for really ancient browsers
+            XMLHttpRequest = function () {
+                try { return new ActiveXObject("Msxml2.xmlHttp.6.0"); }
+                catch (e1) { }
+                try { return new ActiveXObject("Msxml2.xmlHttp.3.0"); }
+                catch (e2) { }
+                try { return new ActiveXObject("Msxml2.xmlHttp"); }
+                catch (e3) { }
+                throw new Error("This browser does not support xmlHttpRequest.");
+            };
+        }
+
+        // Substitute the URL for your server log file here...
+        //
+        var url = "PLACEHOLDER_URL";
+
+        function tailf() {
+            var ajax = new XMLHttpRequest();
+            ajax.open("POST", url, true);
+
+            if (lastByte == 0) {
+                // First request - get everything
+            } else {
+                //
+                // All subsequent requests - add the Range header
+                //
+                ajax.setRequestHeader("Range", "bytes=" + parseInt(lastByte) + "-");
+            }
+
+            ajax.onreadystatechange = function () {
+                if (ajax.readyState == 4) {
+                    if (ajax.status == 200) {
+                        // only the first request
+                        lastByte = parseInt(ajax.getResponseHeader("Content-length"));
+                        document.getElementById("thePlace").innerHTML = ajax.responseText;
+                        document.getElementById("theEnd").scrollIntoView();
+
+                    } else if (ajax.status == 206) {
+                        lastByte += parseInt(ajax.getResponseHeader("Content-length"));
+                        document.getElementById("thePlace").innerHTML += ajax.responseText;
+                        document.getElementById("theEnd").scrollIntoView();
+
+                    } else if (ajax.status == 416) {
+                        // no new data, so do nothing
+
+                    } else {
+                        //  Some error occurred - just display the status code and response
+                        alert("Ajax status: " + ajax.status + "\n" + ajax.getAllResponseHeaders());
+                    }
+                    
+                    if (ajax.status == 200 || ajax.status == 206) {
+                        if (ajax.responseText.includes("READY_STRING")) {
+                            var redirectURL = "REDIRECT_URL";
+							document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
+							document.getElementById("theEnd").scrollIntoView();
+							// sleep for 2 seconds so the user sees that we are being redirected
+							setTimeout(() => { window.location.href = redirectURL; }, 2000)
+                        }
+                    }
+                }// ready state 4
+            }//orsc function def
+
+            ajax.send(null);
+
+        }// function tailf
+
+    </script>
+
+</head>
+
+
+<body onLoad='tailf(); setInterval("tailf()", 250)'>
+    <div>
+        <pre id="thePlace"></pre>
+        <div id="theEnd"></div>
+    </div>
+</body>
+
+</html>
+`
