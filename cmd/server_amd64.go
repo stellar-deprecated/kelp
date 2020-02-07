@@ -539,7 +539,8 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
                             var redirectURL = "REDIRECT_URL";
 							document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
 							document.getElementById("theEnd").scrollIntoView();
-                            window.location.href = redirectURL;
+							// sleep for 2 seconds so the user sees that we are being redirected
+							setTimeout(() => { window.location.href = redirectURL; }, 2000)
                         }
                     }
                 }// ready state 4
