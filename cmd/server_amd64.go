@@ -39,6 +39,7 @@ const kelpCcxtPath = "/ccxt"
 const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
 const ccxtBinaryName = "ccxt-rest"
 const ccxtWaitSeconds = 60
+const versionPlaceholder = "VERSION_PLACEHOLDER"
 const stringPlaceholder = "PLACEHOLDER_URL"
 const redirectPlaceholder = "REDIRECT_URL"
 const readyPlaceholder = "READY_STRING"
@@ -98,8 +99,9 @@ func init() {
 			tailFileCompiled1 := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
 			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
 			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
+			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
 			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
-			fileContents := []byte(tailFileCompiled3)
+			fileContents := []byte(tailFileCompiled4)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 			if e != nil {
 				panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
@@ -478,7 +480,7 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 <html>
 
 <head>
-    <title>Javascript tail -f</title>
+    <title>Kelp GUI VERSION_PLACEHOLDER</title>
 
     <script type="text/javascript">
         var lastByte = 0;
