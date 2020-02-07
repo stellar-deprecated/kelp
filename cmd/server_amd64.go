@@ -40,6 +40,8 @@ const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/c
 const ccxtBinaryName = "ccxt-rest"
 const ccxtWaitSeconds = 60
 const stringPlaceholder = "PLACEHOLDER_URL"
+const redirectPlaceholder = "REDIRECT_URL"
+const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
 
 type serverInputs struct {
@@ -91,10 +93,13 @@ func init() {
 		}
 
 		if !isLocalDevMode {
+			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
 			// write out tail.html after setting the file to be tailed
-			tailFileCompiled := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
+			tailFileCompiled1 := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
+			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
+			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
 			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
-			fileContents := []byte(tailFileCompiled)
+			fileContents := []byte(tailFileCompiled3)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 			if e != nil {
 				panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
@@ -107,7 +112,6 @@ func init() {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
 			go func() {
-				// url := fmt.Sprintf("http://localhost:%d", *options.port)
 				url := tailFilepath
 				log.Printf("opening up the desktop window to URL '%s'\n", url)
 				openBrowser(kos, trayIconPath, url)
@@ -216,7 +220,7 @@ func init() {
 		gui.FileServer(r, "/", gui.FS)
 
 		portString := fmt.Sprintf(":%d", *options.port)
-		log.Printf("Serving frontend and API server on HTTP port: %d\n", *options.port)
+		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
 		if isLocalMode {
 			e = http.ListenAndServe(portString, r)
 			if e != nil {
@@ -511,17 +515,16 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 
             ajax.onreadystatechange = function () {
                 if (ajax.readyState == 4) {
-
                     if (ajax.status == 200) {
                         // only the first request
                         lastByte = parseInt(ajax.getResponseHeader("Content-length"));
                         document.getElementById("thePlace").innerHTML = ajax.responseText;
-                        document.getElementById("theEnd").scrollIntoView()
+                        document.getElementById("theEnd").scrollIntoView();
 
                     } else if (ajax.status == 206) {
                         lastByte += parseInt(ajax.getResponseHeader("Content-length"));
                         document.getElementById("thePlace").innerHTML += ajax.responseText;
-                        document.getElementById("theEnd").scrollIntoView()
+                        document.getElementById("theEnd").scrollIntoView();
 
                     } else if (ajax.status == 416) {
                         // no new data, so do nothing
@@ -529,6 +532,15 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
                     } else {
                         //  Some error occurred - just display the status code and response
                         alert("Ajax status: " + ajax.status + "\n" + ajax.getAllResponseHeaders());
+                    }
+                    
+                    if (ajax.status == 200 || ajax.status == 206) {
+                        if (ajax.responseText.includes("READY_STRING")) {
+                            var redirectURL = "REDIRECT_URL";
+							document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
+							document.getElementById("theEnd").scrollIntoView();
+                            window.location.href = redirectURL;
+                        }
                     }
                 }// ready state 4
             }//orsc function def
