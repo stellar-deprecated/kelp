@@ -71,44 +71,44 @@ func getFeeFromStats(horizonClient horizonclient.ClientInterface, capacityTrigge
 	}
 
 	// parse percentile value
-	acceptedFee, e := getAcceptedFee(&feeStats, percentile)
+	maxFee, e := getMaxFee(&feeStats, percentile)
 	if e != nil {
-		return 0, fmt.Errorf("could not fetch accepted fee: %s", e)
+		return 0, fmt.Errorf("could not fetch max fee: %s", e)
 	}
-	acceptedFeeInt64 := uint64(acceptedFee)
+	maxFeeInt64 := uint64(maxFee)
 
-	if acceptedFeeInt64 <= maxOpFeeStroops {
-		log.Printf("acceptedFeeInt64 <= maxOpFeeStroops; using acceptedFee of %d stroops at percentile=%d (maxOpFeeStroops=%d)\n", acceptedFeeInt64, percentile, maxOpFeeStroops)
-		return acceptedFeeInt64, nil
+	if maxFeeInt64 <= maxOpFeeStroops {
+		log.Printf("maxFeeInt64 <= maxOpFeeStroops; using maxFee of %d stroops at percentile=%d (maxOpFeeStroops=%d)\n", maxFeeInt64, percentile, maxOpFeeStroops)
+		return maxFeeInt64, nil
 	}
-	log.Printf("acceptedFeeInt64 > maxOpFeeStroops; using maxOpFeeStroops of %d stroops (percentile=%d, acceptedFee=%d stroops)\n", maxOpFeeStroops, percentile, acceptedFeeInt64)
+	log.Printf("maxFeeInt64 > maxOpFeeStroops; using maxOpFeeStroops of %d stroops (percentile=%d, maxFee=%d stroops)\n", maxOpFeeStroops, percentile, maxFeeInt64)
 	return maxOpFeeStroops, nil
 }
 
-func getAcceptedFee(fs *hProtocol.FeeStats, percentile uint8) (int, error) {
+func getMaxFee(fs *hProtocol.FeeStats, percentile uint8) (int64, error) {
 	switch percentile {
 	case 10:
-		return fs.P10AcceptedFee, nil
+		return fs.MaxFee.P10, nil
 	case 20:
-		return fs.P20AcceptedFee, nil
+		return fs.MaxFee.P20, nil
 	case 30:
-		return fs.P30AcceptedFee, nil
+		return fs.MaxFee.P30, nil
 	case 40:
-		return fs.P40AcceptedFee, nil
+		return fs.MaxFee.P40, nil
 	case 50:
-		return fs.P50AcceptedFee, nil
+		return fs.MaxFee.P50, nil
 	case 60:
-		return fs.P60AcceptedFee, nil
+		return fs.MaxFee.P60, nil
 	case 70:
-		return fs.P70AcceptedFee, nil
+		return fs.MaxFee.P70, nil
 	case 80:
-		return fs.P80AcceptedFee, nil
+		return fs.MaxFee.P80, nil
 	case 90:
-		return fs.P90AcceptedFee, nil
+		return fs.MaxFee.P90, nil
 	case 95:
-		return fs.P95AcceptedFee, nil
+		return fs.MaxFee.P95, nil
 	case 99:
-		return fs.P99AcceptedFee, nil
+		return fs.MaxFee.P99, nil
 	}
-	return 0, fmt.Errorf("unable to get accepted fee for percentile: %d", percentile)
+	return 0, fmt.Errorf("unable to get max fee for percentile: %d", percentile)
 }

@@ -33,6 +33,7 @@ type BotConfig struct {
 	SubmitMode                         string     `valid:"-" toml:"SUBMIT_MODE" json:"submit_mode"`
 	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS" json:"fill_tracker_sleep_millis"`
 	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD" json:"fill_tracker_delete_cycles_threshold"`
+	FillTrackerLastTradeCursorOverride string     `valid:"-" toml:"FILL_TRACKER_LAST_TRADE_CURSOR_OVERRIDE"`
 	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL" json:"horizon_url"`
 	CcxtRestURL                        *string    `valid:"-" toml:"CCXT_REST_URL" json:"ccxt_rest_url"`
 	Fee                                *FeeConfig `valid:"-" toml:"FEE" json:"fee"`
