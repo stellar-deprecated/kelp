@@ -99,7 +99,7 @@ func init() {
 			tailFileCompiled1 := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
 			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
 			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
-			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
+			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, guiVersion, -1)
 			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
 			fileContents := []byte(tailFileCompiled4)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
@@ -120,7 +120,7 @@ func init() {
 			}()
 		}
 
-		log.Printf("Starting Kelp GUI Server: %s [%s]\n", version, gitHash)
+		log.Printf("Starting Kelp GUI Server, gui=%s, cli=%s [%s]\n", guiVersion, version, gitHash)
 
 		checkInitRootFlags()
 		if !strings.Contains(*options.horizonTestnetURI, "test") {

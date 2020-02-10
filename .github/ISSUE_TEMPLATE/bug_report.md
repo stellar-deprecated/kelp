@@ -43,7 +43,8 @@ This bug can be fixed by ...
 
 ## Your Environment
 // Run `kelp version` to get the version and build information and paste it here
-//   version: v1.0.0-rc1
+//   cli version: v1.0.0-rc1
+//   gui version: v0.0.1
 //   git hash: 1bcc4e9fa4012867a549472dbdf61cb008041305
 //   build date: 20180813T013016Z
 //   GOOS: linux
