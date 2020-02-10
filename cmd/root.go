@@ -13,6 +13,7 @@ import (
 
 // build flags
 var version string
+var guiVersion string = "v0.0.1-alpha"
 var gitBranch string
 var gitHash string
 var buildDate string
@@ -40,7 +41,8 @@ var RootCmd = &cobra.Command{
    \ \ /\ / /|  _| | |  | |  | | | | |\/| |  _|      | || | | |   | ' /|  _| | |   | |_) |
     \ V  V / | |___| |__| |__| |_| | |  | | |___     | || |_| |   | . \| |___| |___|  __/ 
      \_/\_/  |_____|_____\____\___/|_|  |_|_____|    |_| \___/    |_|\_\_____|_____|_|    
-                                                                            ` + version + `
+																			cli=` + version + `
+																			gui=` + guiVersion + `
 `
 		fmt.Println(intro)
 
@@ -91,7 +93,7 @@ func checkInitRootFlags() {
 }
 
 func validateBuild() {
-	if version == "" || buildDate == "" || gitBranch == "" || gitHash == "" {
+	if version == "" || guiVersion == "" || buildDate == "" || gitBranch == "" || gitHash == "" {
 		fmt.Println("version information not included, please build using the build script (scripts/build.sh)")
 		os.Exit(1)
 	}
