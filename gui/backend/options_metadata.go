@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/sdk"
@@ -177,35 +178,47 @@ func loadOptionsMetadata() (metadata, error) {
 	log.Printf("loaded %d currencies from coinmarketcap\n", len(cmcSlug2Name))
 
 	ccxtOptions := optionsBuilder()
+	threadTracker := multithreading.MakeThreadTracker()
 	for _, ccxtExchangeName := range sdk.GetExchangeList() {
 		if _, ok := ccxtBlacklist[ccxtExchangeName]; ok {
 			continue
 		}
 
-		displayName := strings.Title(ccxtExchangeName)
-		if name, ok := ccxtExchangeNames[ccxtExchangeName]; ok {
-			displayName = name
-		}
-		displayName = displayName + " (via CCXT)"
+		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			ccxtExchangeName = inputs[0].(string)
 
-		c, e := sdk.MakeInitializedCcxtExchange(ccxtExchangeName, api.ExchangeAPIKey{}, []api.ExchangeParam{}, []api.ExchangeHeader{})
-		if e != nil {
-			// don't block if we are unable to load an exchange
-			log.Printf("unable to make ccxt exchange '%s' when trying to load options metadata, continuing: %s\n", ccxtExchangeName, e)
-			continue
-		}
+			displayName := strings.Title(ccxtExchangeName)
+			if name, ok := ccxtExchangeNames[ccxtExchangeName]; ok {
+				displayName = name
+			}
+			displayName = displayName + " (via CCXT)"
 
-		marketsBuilder := optionsBuilder()
-		for tradingPair := range c.GetMarkets() {
-			if strings.Count(tradingPair, "/") != 1 {
-				log.Printf("ignoring ccxt exchange market for tradingPair on '%s' exchange because there was not exactly one '/' in the tradingPair: %s", ccxtExchangeName, tradingPair)
-				continue
+			c, e := sdk.MakeInitializedCcxtExchange(ccxtExchangeName, api.ExchangeAPIKey{}, []api.ExchangeParam{}, []api.ExchangeHeader{})
+			if e != nil {
+				// don't block if we are unable to load an exchange
+				log.Printf("unable to make ccxt exchange '%s' when trying to load options metadata, continuing: %s\n", ccxtExchangeName, e)
+				return
 			}
 
-			marketsBuilder.ccxtMarket(tradingPair)
+			marketsBuilder := optionsBuilder()
+			for tradingPair := range c.GetMarkets() {
+				if strings.Count(tradingPair, "/") != 1 {
+					log.Printf("ignoring ccxt exchange market for tradingPair on '%s' exchange because there was not exactly one '/' in the tradingPair: %s", ccxtExchangeName, tradingPair)
+					return
+				}
+
+				marketsBuilder.ccxtMarket(tradingPair)
+			}
+
+			ccxtOptions.option("ccxt-"+ccxtExchangeName, displayName, dropdown(marketsBuilder))
+		}, []interface{}{ccxtExchangeName})
+		if e != nil {
+			log.Printf("error loading ccxt exchange '%s': %s", ccxtExchangeName, e)
 		}
-		ccxtOptions.option("ccxt-"+ccxtExchangeName, displayName, dropdown(marketsBuilder))
 	}
+	log.Printf("kicked off initialization of all CCXT instances, waiting for all threads to finish ...")
+	threadTracker.Wait()
+	log.Printf("... all CCXT instances initialized")
 
 	builder := optionsBuilder().
 		option("crypto", "Crypto (CMC)", dropdown(
