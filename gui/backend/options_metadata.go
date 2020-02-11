@@ -177,15 +177,19 @@ func loadOptionsMetadata() (metadata, error) {
 	}
 	log.Printf("loaded %d currencies from coinmarketcap\n", len(cmcSlug2Name))
 
-	ccxtOptions := optionsBuilder()
+	totalCcxtExchanges := len(sdk.GetExchangeList())
+	log.Printf("loading %d exchanges from ccxt\n", totalCcxtExchanges)
+	ccxtOptionsChan := make(chan *dropdownOption, totalCcxtExchanges)
 	threadTracker := multithreading.MakeThreadTracker()
 	for _, ccxtExchangeName := range sdk.GetExchangeList() {
 		if _, ok := ccxtBlacklist[ccxtExchangeName]; ok {
+			ccxtOptionsChan <- nil
 			continue
 		}
 
 		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			ccxtExchangeName = inputs[0].(string)
+			ccxtExchangeName := inputs[0].(string)
+			ccxtOptionsChan := inputs[1].(chan *dropdownOption)
 
 			displayName := strings.Title(ccxtExchangeName)
 			if name, ok := ccxtExchangeNames[ccxtExchangeName]; ok {
@@ -197,6 +201,7 @@ func loadOptionsMetadata() (metadata, error) {
 			if e != nil {
 				// don't block if we are unable to load an exchange
 				log.Printf("unable to make ccxt exchange '%s' when trying to load options metadata, continuing: %s\n", ccxtExchangeName, e)
+				ccxtOptionsChan <- nil
 				return
 			}
 
@@ -205,20 +210,36 @@ func loadOptionsMetadata() (metadata, error) {
 				if strings.Count(tradingPair, "/") != 1 {
 					// ignore because the trading pair does not have exactly one '/'
 					// do not log because that gets too noisy and is not something that we can fix either
+					ccxtOptionsChan <- nil
 					return
 				}
 
 				marketsBuilder.ccxtMarket(tradingPair)
 			}
 
-			ccxtOptions.option("ccxt-"+ccxtExchangeName, displayName, dropdown(marketsBuilder))
-		}, []interface{}{ccxtExchangeName})
+			ccxtOptionsChan <- &dropdownOption{
+				Value:   "ccxt-" + ccxtExchangeName,
+				Text:    displayName,
+				Subtype: dropdown(marketsBuilder),
+			}
+		}, []interface{}{ccxtExchangeName, ccxtOptionsChan})
 		if e != nil {
 			log.Printf("error loading ccxt exchange '%s': %s", ccxtExchangeName, e)
 		}
 	}
 	log.Printf("kicked off initialization of all CCXT instances, waiting for all threads to finish ...")
 	threadTracker.Wait()
+
+	ccxtOptions := optionsBuilder()
+	for i := 0; i < totalCcxtExchanges; i++ {
+		dop := <-ccxtOptionsChan
+		if dop == nil {
+			continue
+		}
+
+		ccxtOptions.option(dop.Value, dop.Text, dop.Subtype)
+		log.Printf("added ccxt exchange option '%s' for '%s'", dop.Value, dop.Text)
+	}
 	log.Printf("... all CCXT instances initialized")
 
 	builder := optionsBuilder().
