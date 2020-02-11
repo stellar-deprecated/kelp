@@ -230,6 +230,7 @@ func loadOptionsMetadata() (metadata, error) {
 	log.Printf("kicked off initialization of all CCXT instances, waiting for all threads to finish ...")
 	threadTracker.Wait()
 
+	close(ccxtOptionsChan)
 	ccxtOptions := optionsBuilder()
 	for i := 0; i < totalCcxtExchanges; i++ {
 		dop := <-ccxtOptionsChan
