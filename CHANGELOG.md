@@ -8,18 +8,47 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+
+## [v1.8.0] - 2020-02-11
+
+### Added
+
 - Dockerize Kelp binary ([b61207012dd10b44220acf644703aa346834778c](https://github.com/stellar/kelp/commit/b61207012dd10b44220acf644703aa346834778c))
-- update instructions in README on how to compile Kelp from source ([c58982c25e8ead8c91ca17f09d4c96cc3705d772](https://github.com/stellar/kelp/commit/c58982c25e8ead8c91ca17f09d4c96cc3705d772))
 - Kelp UI: Wrap GUI as a standalone desktop application using Electron ([b725cbaf9c67e8d3b9aea29316c5ec22d168c81e](https://github.com/stellar/kelp/commit/b725cbaf9c67e8d3b9aea29316c5ec22d168c81e))
 - combine build and test tasks in circleci ([b725cbaf9c67e8d3b9aea29316c5ec22d168c81e](https://github.com/stellar/kelp/commit/b725cbaf9c67e8d3b9aea29316c5ec22d168c81e))
+- script to build pre-compiled binaries for CCXT-rest ([b0d608f092b7dd461ec14b350c5e6d4789c7fa01](https://github.com/stellar/kelp/commit/b0d608f092b7dd461ec14b350c5e6d4789c7fa01))
+- add support for dynamic headers in CCXT for exchanges such as coinbase ([335d191e6d5b4cadc738454023eb65450a008d8b](https://github.com/stellar/kelp/commit/335d191e6d5b4cadc738454023eb65450a008d8b))
+- allow bot to write its trades to a postgres SQL database via a config param ([493b4b004c7363634141723e40350dae0edb9fad](https://github.com/stellar/kelp/commit/493b4b004c7363634141723e40350dae0edb9fad), [a6ffc8c770b03999c58fd2f589b58622fa80ac00](https://github.com/stellar/kelp/commit/a6ffc8c770b03999c58fd2f589b58622fa80ac00))
+- new filter system for risk management along with a set of some basic filters: 'volume', 'price', 'priceFeed' ([11d4927770b2fbbade2dc8f61055f4faa504af17](https://github.com/stellar/kelp/commit/11d4927770b2fbbade2dc8f61055f4faa504af17), [66ea6105938434c090b28d3b7cb65d32d5100a62](https://github.com/stellar/kelp/commit/66ea6105938434c090b28d3b7cb65d32d5100a62), [3e0c240c7c1aabd618f45634589237c3dcd91cd3](https://github.com/stellar/kelp/commit/3e0c240c7c1aabd618f45634589237c3dcd91cd3), [9062d7d01904990ff8690932f3702023b27e491e](https://github.com/stellar/kelp/commit/9062d7d01904990ff8690932f3702023b27e491e), [391d3fbcc20e53e4daf556db4617f59e0f9a98e9](https://github.com/stellar/kelp/commit/391d3fbcc20e53e4daf556db4617f59e0f9a98e9))
+- modifiers to price feed: 'mid', 'ask', 'bid', 'last' ([116f7d1c1762b23c93389d13120e37111a3d6ef7](https://github.com/stellar/kelp/commit/116f7d1c1762b23c93389d13120e37111a3d6ef7), [afb56289b86cf5412580a0b0536b8230e3a3a37c](https://github.com/stellar/kelp/commit/afb56289b86cf5412580a0b0536b8230e3a3a37c))
+- new type of 'function' price feed with the following functions out-of-the-box: 'max', 'invert' ([412b81cdf925b4d2c498a8d691e86411f3ba6b4a](https://github.com/stellar/kelp/commit/412b81cdf925b4d2c498a8d691e86411f3ba6b4a))
+- allow custom starting point from where to load trades into db using FILL_TRACKER_LAST_TRADE_CURSOR_OVERRIDE config param ([4c19915f4795732c75a76eeff07160be29f426d6](https://github.com/stellar/kelp/commit/4c19915f4795732c75a76eeff07160be29f426d6))
+- Kelp GUI should use pre-compiled CCXT binary to expand access to exchanges ([fba752f99fff79a10a2a308efb6794b251ff0d03](https://github.com/stellar/kelp/commit/fba752f99fff79a10a2a308efb6794b251ff0d03))
+- UI feedback during Kelp GUI app startup ([12eccd2a566e68a707e5777d9b2759c239f10cb5](https://github.com/stellar/kelp/commit/12eccd2a566e68a707e5777d9b2759c239f10cb5))
+- Kelp GUI should have a different version number from the Kelp CLI ([ba297f6d6c0f21da12a93f373bbcf16868d86958](https://github.com/stellar/kelp/commit/ba297f6d6c0f21da12a93f373bbcf16868d86958))
+- Kelp GUI: Parallelize loading of CCXT instances ([0aa5700c75eb4cc1af2b817eef3961ad6aef63f7](https://github.com/stellar/kelp/commit/0aa5700c75eb4cc1af2b817eef3961ad6aef63f7))
 
 ### Changed
 
 - Upgraded horizon types to use hProtocol package ([4af564dd9aeeb976685e381470f8a9fa0626b49e](https://github.com/stellar/kelp/commit/4af564dd9aeeb976685e381470f8a9fa0626b49e))
+- Upgrade horizonclient to v2 to support API of horizon v1 API ([ba198426b99e7919a16ec998503ec5d0143d38bf](https://github.com/stellar/kelp/commit/ba198426b99e7919a16ec998503ec5d0143d38bf))
 - Upgraded Go SDK to use horizonclient package ([585080c76f173acd5a1348f3f662796d5aeda719](https://github.com/stellar/kelp/commit/585080c76f173acd5a1348f3f662796d5aeda719))
 - Upgraded Go SDK usage to `txnbuild` package instead of `build` package ([c18c97f388d3a605b9c48edb5085008791467a1c](https://github.com/stellar/kelp/commit/c18c97f388d3a605b9c48edb5085008791467a1c))
 - Multiple usability improvements to the Kelp UI ([f7db6c8430c834040020efa7c58ed860ff303abc through f765ae00d73f4a6a3d6eedf35de6d5528a5f455f](https://github.com/stellar/kelp/compare/f7db6c8430c834040020efa7c58ed860ff303abc~1...f765ae00d73f4a6a3d6eedf35de6d5528a5f455f))
 - Guarantee fixed number of successful runs of update cycle via the `--iter` cli param ([4845a6220a5091cd97c6833c359077c7a3afc291](https://github.com/stellar/kelp/commit/4845a6220a5091cd97c6833c359077c7a3afc291))
+- updated README ([c58982c25e8ead8c91ca17f09d4c96cc3705d772](https://github.com/stellar/kelp/commit/c58982c25e8ead8c91ca17f09d4c96cc3705d772), [2cb57326f37b7f68ed9d58710eaca4fec0111113](https://github.com/stellar/kelp/commit/2cb57326f37b7f68ed9d58710eaca4fec0111113), [dddd9707b6c20e259595979fb96c8b95eb634757](https://github.com/stellar/kelp/commit/dddd9707b6c20e259595979fb96c8b95eb634757))
+- current official support for only go1.13 ([45d80334c5772a139c1066731d5937977e590fee](https://github.com/stellar/kelp/commit/45d80334c5772a139c1066731d5937977e590fee))
 
 ### Deprecated
 
@@ -31,8 +60,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - git bash windows compatibility, replace `rev` command in build.sh and clean.sh ([8ea336c379e6770a7ee4646aa3750ca51ed6f203](https://github.com/stellar/kelp/commit/8ea336c379e6770a7ee4646aa3750ca51ed6f203))
 - improve number.AsRatio() conversion using stellar/go/price for more accurate pricing on centralized exchanges ([59cabd6bf81e61a237f33c25e319530937941d76](https://github.com/stellar/kelp/commit/59cabd6bf81e61a237f33c25e319530937941d76))
+- fix number.AsString() method ([f942cf8f24f65d54e9aa9c232594c73fef236e5f](https://github.com/stellar/kelp/commit/f942cf8f24f65d54e9aa9c232594c73fef236e5f))
+- fix cursor and cost param in trade parsing and ccxtExchange_test ([b6eb0411aa8f01dd1c4acd07d28d2886f75bfc49](https://github.com/stellar/kelp/commit/b6eb0411aa8f01dd1c4acd07d28d2886f75bfc49))
+- return an error when loading existing offers fails instead of ignoring ([95503d943d1152c6524d1fae5efde762adbaf9a6](https://github.com/stellar/kelp/commit/95503d943d1152c6524d1fae5efde762adbaf9a6))
+- ccxtExchange should correctly populate cost of trade ([db4531d5866853681d3dc71c222e42b0416c044d](https://github.com/stellar/kelp/commit/db4531d5866853681d3dc71c222e42b0416c044d))
 
 ### Security
+
+- upgrade yarn.lock js dependencies to address any security concerns in js dependency libraries used by Kelp GUI ([a6c03336f0d9f1bc6874eabe2887171a4dd4a369](https://github.com/stellar/kelp/commit/a6c03336f0d9f1bc6874eabe2887171a4dd4a369), [77ec937e2175082969aae7b133daf9ea0cf9a350](https://github.com/stellar/kelp/commit/77ec937e2175082969aae7b133daf9ea0cf9a350))
 
 
 ## [v1.7.2] - 2019-08-26
@@ -208,7 +243,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.7.2...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.8.0...HEAD
+[v1.8.0]: https://github.com/stellar/kelp/compare/v1.7.2...v1.8.0
 [v1.7.2]: https://github.com/stellar/kelp/compare/v1.7.1...v1.7.2
 [v1.7.1]: https://github.com/stellar/kelp/compare/v1.7.0...v1.7.1
 [v1.7.0]: https://github.com/stellar/kelp/compare/v1.6.1...v1.7.0
