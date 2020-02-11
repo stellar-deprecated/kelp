@@ -203,7 +203,8 @@ func loadOptionsMetadata() (metadata, error) {
 			marketsBuilder := optionsBuilder()
 			for tradingPair := range c.GetMarkets() {
 				if strings.Count(tradingPair, "/") != 1 {
-					log.Printf("ignoring ccxt exchange market for tradingPair on '%s' exchange because there was not exactly one '/' in the tradingPair: %s", ccxtExchangeName, tradingPair)
+					// ignore because the trading pair does not have exactly one '/'
+					// do not log because that gets too noisy and is not something that we can fix either
 					return
 				}
 
