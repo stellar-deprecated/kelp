@@ -1,5 +1,5 @@
-hash: a3a3ed95ee4c286f4e20c82a0022bb8a1c732aa2386b39b72f1e7ab390978e7c
-updated: 2020-02-12T13:30:10.133122-08:00
+hash: ac5c02628254fe68f54eaf0be48f599ff450bdf8db9f364915d1d4e7dfa6c100
+updated: 2020-02-12T15:50:24.554216-08:00
 imports:
 - name: cloud.google.com/go
   version: 83a0b8742b4d7302c26d3b71bfdcbd9224f6b951
@@ -143,7 +143,9 @@ imports:
 - name: github.com/spf13/viper
   version: 01d7d76eb0020ae2fd1275899065ddfdd9f6a528
 - name: github.com/stellar/go
-  version: 7c97ad6c5d423c33499e6c42576ffa988105368b
+  version: 9d3be6abcdb2f690ffd9cea2477c22190696125a
+  repo: git@github.com:nikhilsaraf/go.git
+  vcs: git
   subpackages:
   - amount
   - build
