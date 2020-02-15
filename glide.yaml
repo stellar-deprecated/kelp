@@ -11,7 +11,7 @@ import:
 - package: github.com/stellar/go
   repo: git@github.com:nikhilsaraf/go.git
   vcs: git
-  version: horizonclient-v2.0.0/1_export_offerBase
+  version: horizonclient-v2.0.0/2_max_fee_stats
   subpackages:
   - build
   - clients/horizonclient
