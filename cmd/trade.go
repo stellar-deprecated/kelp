@@ -485,6 +485,12 @@ func runTradeCmd(options inputs) {
 
 	var db *sql.DB
 	if botConfig.PostgresDbConfig != nil {
+		if botConfig.FillTrackerSleepMillis == 0 {
+			log.Println()
+			utils.PrintErrorHintf("FILL_TRACKER_SLEEP_MILLIS needs to be set in the trader.cfg file when the POSTGRES_DB is enabled so we can fetch trades to be saved in the db")
+			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set FILL_TRACKER_SLEEP_MILLIS"))
+		}
+
 		var e error
 		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
 		if e != nil {
