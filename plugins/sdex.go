@@ -561,6 +561,25 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 					Trades: trades,
 				}, nil
 			}
+
+			if strings.Contains(e.Error(), "Resource Missing") {
+				eAsset := sdex.checkAssetExists(baseAsset)
+				if eAsset != nil {
+					return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s (baseAssetError: %s)", e, eAsset)
+				}
+
+				eAsset = sdex.checkAssetExists(quoteAsset)
+				if eAsset != nil {
+					return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s (quoteAssetError: %s)", e, eAsset)
+				}
+
+				log.Printf("received a Resource Missing error while fetching trades, treating as if no trades exist for this trading pair and continuing: %s", e)
+				return &api.TradeHistoryResult{
+					Cursor: cursorStart,
+					Trades: trades,
+				}, nil
+			}
+
 			return nil, fmt.Errorf("error while fetching trades in SDEX (cursor=%s): %s", cursorStart, e)
 		}
 
@@ -782,7 +801,7 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 	baseAsset, quoteAsset, e := sdex.Assets()
 	if e != nil {
-		return nil, fmt.Errorf("error while convertig pair to base and quote asset: %s", e)
+		return nil, fmt.Errorf("error while converting pair to base and quote asset: %s", e)
 	}
 
 	tradeReq := horizonclient.TradeRequest{
@@ -798,6 +817,20 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 
 	tradesPage, e := sdex.API.Trades(tradeReq)
 	if e != nil {
+		if strings.Contains(e.Error(), "Resource Missing") {
+			eAsset := sdex.checkAssetExists(baseAsset)
+			if eAsset != nil {
+				return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s (baseAssetError: %s)", e, eAsset)
+			}
+
+			eAsset = sdex.checkAssetExists(quoteAsset)
+			if eAsset != nil {
+				return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s (quoteAssetError: %s)", e, eAsset)
+			}
+
+			log.Printf("received a Resource Missing error while fetching trades, treating as if no trades exist for this trading pair and continuing: %s", e)
+			return nil, nil
+		}
 		return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s", e)
 	}
 
@@ -808,6 +841,25 @@ func (sdex *SDEX) GetLatestTradeCursor() (interface{}, error) {
 	}
 
 	return records[0].PT, nil
+}
+
+func (sdex *SDEX) checkAssetExists(asset hProtocol.Asset) error {
+	req := horizonclient.AssetRequest{
+		ForAssetCode:   asset.Code,
+		ForAssetIssuer: asset.Issuer,
+		Limit:          uint(1),
+	}
+
+	baseAssetPage, e := sdex.API.Assets(req)
+	if e != nil {
+		return fmt.Errorf("error fetching asset '%s:%s': %s", asset.Code, asset.Issuer, e)
+	}
+
+	if len(baseAssetPage.Embedded.Records) == 0 {
+		return fmt.Errorf("asset '%s:%s' did not exist", asset.Code, asset.Issuer)
+	}
+
+	return nil
 }
 
 // GetOrderBook gets the SDEX orderbook
