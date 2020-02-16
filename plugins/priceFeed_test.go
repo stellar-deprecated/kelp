@@ -8,7 +8,7 @@ import (
 )
 
 const wantLowerBoundXLM = 0.04
-const wantUpperBoundXLM = 0.08
+const wantUpperBoundXLM = 0.50
 
 func TestMakePriceFeed(t *testing.T) {
 	testCases := []struct {
