@@ -1,5 +1,5 @@
-hash: fe2cef8cdfc3bbdd1aff4bf40700c445c2e5f8dd33e3199e95717c8faedaa498
-updated: 2020-02-07T16:46:11.373155-08:00
+hash: 3e5f125dc8eba7cd579904822cc559c6343e2e7011297debcff3ef42aa07b9f3
+updated: 2020-02-14T16:34:33.546987-08:00
 imports:
 - name: cloud.google.com/go
   version: 83a0b8742b4d7302c26d3b71bfdcbd9224f6b951
@@ -61,8 +61,6 @@ imports:
   version: c8c88dbee036db4e4808d1f2ec8c2e15e11c3f80
   subpackages:
   - query
-- name: github.com/gorilla/schema
-  version: 61751c9687439bf8cd824ad7eec0d21db1a1b804
 - name: github.com/hashicorp/hcl
   version: 914dc3f8dd7c463188c73fc47e9ced82a6e421ca
   subpackages:
@@ -145,7 +143,9 @@ imports:
 - name: github.com/spf13/viper
   version: 01d7d76eb0020ae2fd1275899065ddfdd9f6a528
 - name: github.com/stellar/go
-  version: 7e6a2fc068c82638b19f4ce4fdfb23ad28ec6709
+  version: 6fed6295e962ee8c3798de6c18eccd48f418a8fe
+  repo: git@github.com:nikhilsaraf/go.git
+  vcs: git
   subpackages:
   - amount
   - build
@@ -165,7 +165,6 @@ imports:
   - support/clock
   - support/config
   - support/errors
-  - support/http/httpdecode
   - support/log
   - support/render/hal
   - support/render/httpjson

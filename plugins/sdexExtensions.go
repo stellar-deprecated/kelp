@@ -85,7 +85,7 @@ func getFeeFromStats(horizonClient horizonclient.ClientInterface, capacityTrigge
 	return maxOpFeeStroops, nil
 }
 
-func getMaxFee(fs *hProtocol.FeeStats, percentile uint8) (int64, error) {
+func getMaxFee(fs *hProtocol.FeeStats, percentile uint8) (int, error) {
 	switch percentile {
 	case 10:
 		return fs.MaxFee.P10, nil
