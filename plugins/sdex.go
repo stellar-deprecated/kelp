@@ -561,6 +561,25 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 					Trades: trades,
 				}, nil
 			}
+
+			if strings.Contains(e.Error(), "Resource Missing") {
+				eAsset := sdex.checkAssetExists(baseAsset)
+				if eAsset != nil {
+					return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s (baseAssetError: %s)", e, eAsset)
+				}
+
+				eAsset = sdex.checkAssetExists(quoteAsset)
+				if eAsset != nil {
+					return nil, fmt.Errorf("error while fetching latest trade cursor in SDEX: %s (quoteAssetError: %s)", e, eAsset)
+				}
+
+				log.Printf("received a Resource Missing error while fetching trades, treating as if no trades exist for this trading pair and continuing: %s", e)
+				return &api.TradeHistoryResult{
+					Cursor: cursorStart,
+					Trades: trades,
+				}, nil
+			}
+
 			return nil, fmt.Errorf("error while fetching trades in SDEX (cursor=%s): %s", cursorStart, e)
 		}
 
