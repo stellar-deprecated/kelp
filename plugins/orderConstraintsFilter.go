@@ -94,7 +94,7 @@ func (f *orderConstraintsFilter) shouldKeepOffer(op *txnbuild.ManageSellOffer) (
 
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return false, fmt.Errorf("error when running the isSelling check: %s", e)
+		return false, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)

@@ -157,7 +157,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)

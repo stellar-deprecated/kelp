@@ -139,7 +139,7 @@ func (f *makerModeFilter) transformOfferMakerMode(
 
 	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
 	if e != nil {
-		return nil, fmt.Errorf("error when running the isSelling check: %s", e)
+		return nil, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
 	}
 
 	sellPrice, e := strconv.ParseFloat(op.Price, 64)
