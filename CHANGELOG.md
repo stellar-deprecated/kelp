@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Security
 
 
+## [v1.8.1] - 2020-02-17
+
+### Changed
+
+- throw error on startup when FILL_TRACKER_SLEEP_MILLIS is not set but POSTGRES_DB is set ([99799da07bd2afafc061d410f9fa72b0b0332d75](https://github.com/stellar/kelp/commit/99799da07bd2afafc061d410f9fa72b0b0332d75))
+- log offer if isSelling check fails ([ea505bdfd6c41ecf71eb1b13e3c5f0c1cb7666a3](https://github.com/stellar/kelp/commit/ea505bdfd6c41ecf71eb1b13e3c5f0c1cb7666a3))
+
+### Fixed
+
+- upgrade horizonclient to patched version to fix load offers issues ([c0a4e3ac4eadfd34b31081ff911169a37d26d7d5](https://github.com/stellar/kelp/commit/c0a4e3ac4eadfd34b31081ff911169a37d26d7d5))
+- upgrade horizonclient to patched version to fix delete offer op issue ([2cbfb6782915f1bfd949aa2821d94e9bbf735d6f](https://github.com/stellar/kelp/2cbfb6782915f1bfd949aa2821d94e9bbf735d6f))
+- workaround empty trades error ([f6d31c2587c3bc7fb4a68a7e7ed6c1777021f001](https://github.com/stellar/kelp/commit/f6d31c2587c3bc7fb4a68a7e7ed6c1777021f001))
+- update priceFeed_test#wantUpperBoundXLM ([a8dbcf4afbdb896e7fe5fa85de611a48b3112db9](https://github.com/stellar/kelp/commit/a8dbcf4afbdb896e7fe5fa85de611a48b3112db9))
 
 ## [v1.8.0] - 2020-02-11
 
@@ -68,7 +81,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Security
 
 - upgrade yarn.lock js dependencies to address any security concerns in js dependency libraries used by Kelp GUI ([a6c03336f0d9f1bc6874eabe2887171a4dd4a369](https://github.com/stellar/kelp/commit/a6c03336f0d9f1bc6874eabe2887171a4dd4a369), [77ec937e2175082969aae7b133daf9ea0cf9a350](https://github.com/stellar/kelp/commit/77ec937e2175082969aae7b133daf9ea0cf9a350))
-
 
 ## [v1.7.2] - 2019-08-26
 
@@ -243,7 +255,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.8.1...HEAD
+[v1.8.1]: https://github.com/stellar/kelp/compare/v1.8.0...v1.8.1
 [v1.8.0]: https://github.com/stellar/kelp/compare/v1.7.2...v1.8.0
 [v1.7.2]: https://github.com/stellar/kelp/compare/v1.7.1...v1.7.2
 [v1.7.1]: https://github.com/stellar/kelp/compare/v1.7.0...v1.7.1
