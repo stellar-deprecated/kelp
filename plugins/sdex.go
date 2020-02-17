@@ -199,10 +199,12 @@ func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []txnbuild.Operation
 func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 	var result txnbuild.ManageSellOffer
 	var e error
+
+	txOffer := utils.Offer2TxnBuildSellOffer(offer)
 	if sdex.SourceAccount == sdex.TradingAccount {
-		result, e = txnbuild.DeleteOfferOp(offer.ID)
+		result, e = txnbuild.DeleteOfferOp2(txOffer)
 	} else {
-		result, e = txnbuild.DeleteOfferOp(offer.ID, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
+		result, e = txnbuild.DeleteOfferOp2(txOffer, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
 	}
 
 	if e != nil {
