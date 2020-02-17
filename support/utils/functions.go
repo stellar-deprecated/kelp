@@ -402,3 +402,14 @@ func ParseMaybeFloat(valueString string) (*float64, error) {
 	}
 	return &valueFloat, nil
 }
+
+// Offer2TxnBuildSellOffer converts an hProtocol.Offer to a txnbuild.ManageSellOffer
+func Offer2TxnBuildSellOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
+	return txnbuild.ManageSellOffer{
+		Selling: Asset2Asset(offer.Selling),
+		Buying:  Asset2Asset(offer.Buying),
+		Amount:  offer.Amount,
+		Price:   offer.Price,
+		OfferID: offer.ID,
+	}
+}
