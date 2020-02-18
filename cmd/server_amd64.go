@@ -483,6 +483,18 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 <head>
     <title>Kelp GUI VERSION_PLACEHOLDER</title>
 
+    <style>
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+    </style>
     <script type="text/javascript">
         var lastByte = 0;
 
@@ -503,6 +515,7 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
         //
         var url = "PLACEHOLDER_URL";
 
+        var visible = false;
         function tailf() {
             var ajax = new XMLHttpRequest();
             ajax.open("POST", url, true);
@@ -522,12 +535,16 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
                         // only the first request
                         lastByte = parseInt(ajax.getResponseHeader("Content-length"));
                         document.getElementById("thePlace").innerHTML = ajax.responseText;
-                        document.getElementById("theEnd").scrollIntoView();
+                        if (visible) {
+						    document.getElementById("theEnd").scrollIntoView();
+                        }
 
                     } else if (ajax.status == 206) {
                         lastByte += parseInt(ajax.getResponseHeader("Content-length"));
                         document.getElementById("thePlace").innerHTML += ajax.responseText;
-                        document.getElementById("theEnd").scrollIntoView();
+                        if (visible) {
+						    document.getElementById("theEnd").scrollIntoView();
+                        }
 
                     } else if (ajax.status == 416) {
                         // no new data, so do nothing
@@ -554,14 +571,33 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
         }// function tailf
 
     </script>
+	
+	<script type="text/javascript">
+        function onInit() {
+            document.getElementById("overHood").style.visibility = "visible";
+            document.getElementById("underHood").style.visibility = "hidden";
+        }
+
+        function liftHood() {
+            document.getElementById("overHood").style.visibility = "hidden";
+            document.getElementById("underHood").style.visibility = "visible";
+            visible = true;
+            document.getElementById("theEnd").scrollIntoView();
+        }
+    </script>
 
 </head>
 
 
-<body onLoad='tailf(); setInterval("tailf()", 250)'>
+<body onLoad='onInit(); tailf(); setInterval("tailf()", 250);' bgcolor="black" text="green">
     <div>
-        <pre id="thePlace"></pre>
-        <div id="theEnd"></div>
+        <div id="overHood">
+            <button class="button" onclick='liftHood();'>Show Me What's Under The Hood</button>
+        </div>
+        <div id="underHood">
+			<pre id="thePlace"/>
+		</div>
+		<div id="theEnd"/>
     </div>
 </body>
 
