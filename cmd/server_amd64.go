@@ -479,91 +479,121 @@ func quit() {
 const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/javascript/tail-dash-f.html with minor modifications -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+	<head>
+		<title>Kelp GUI VERSION_PLACEHOLDER</title>
 
-<head>
-    <title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<style>
+			.button {
+				background-color: #003B00; /* Dark Green */
+				color: #00FF41;
+				border: 2px solid #00FF41;
+				padding: 15px 32px;
+				text-align: center;
+				text-decoration: none;
+				font-size: 16px;
+				cursor: pointer;
+			}
+		</style>
+		<script type="text/javascript">
+			var lastByte = 0;
 
-    <script type="text/javascript">
-        var lastByte = 0;
+			if (typeof XMLHttpRequest == "undefined") {
+				// this is only for really ancient browsers
+				XMLHttpRequest = function () {
+					try { return new ActiveXObject("Msxml2.xmlHttp.6.0"); }
+					catch (e1) { }
+					try { return new ActiveXObject("Msxml2.xmlHttp.3.0"); }
+					catch (e2) { }
+					try { return new ActiveXObject("Msxml2.xmlHttp"); }
+					catch (e3) { }
+					throw new Error("This browser does not support xmlHttpRequest.");
+				};
+			}
 
-        if (typeof XMLHttpRequest == "undefined") {
-            // this is only for really ancient browsers
-            XMLHttpRequest = function () {
-                try { return new ActiveXObject("Msxml2.xmlHttp.6.0"); }
-                catch (e1) { }
-                try { return new ActiveXObject("Msxml2.xmlHttp.3.0"); }
-                catch (e2) { }
-                try { return new ActiveXObject("Msxml2.xmlHttp"); }
-                catch (e3) { }
-                throw new Error("This browser does not support xmlHttpRequest.");
-            };
-        }
+			// Substitute the URL for your server log file here...
+			//
+			var url = "PLACEHOLDER_URL";
 
-        // Substitute the URL for your server log file here...
-        //
-        var url = "PLACEHOLDER_URL";
+			var visible = false;
+			function tailf() {
+				var ajax = new XMLHttpRequest();
+				ajax.open("POST", url, true);
 
-        function tailf() {
-            var ajax = new XMLHttpRequest();
-            ajax.open("POST", url, true);
+				if (lastByte == 0) {
+					// First request - get everything
+				} else {
+					//
+					// All subsequent requests - add the Range header
+					//
+					ajax.setRequestHeader("Range", "bytes=" + parseInt(lastByte) + "-");
+				}
 
-            if (lastByte == 0) {
-                // First request - get everything
-            } else {
-                //
-                // All subsequent requests - add the Range header
-                //
-                ajax.setRequestHeader("Range", "bytes=" + parseInt(lastByte) + "-");
-            }
+				ajax.onreadystatechange = function () {
+					if (ajax.readyState == 4) {
+						if (ajax.status == 200) {
+							// only the first request
+							lastByte = parseInt(ajax.getResponseHeader("Content-length"));
+							document.getElementById("thePlace").innerHTML = ajax.responseText;
+							if (visible) {
+								document.getElementById("theEnd").scrollIntoView();
+							}
+						} else if (ajax.status == 206) {
+							lastByte += parseInt(ajax.getResponseHeader("Content-length"));
+							document.getElementById("thePlace").innerHTML += ajax.responseText;
+							if (visible) {
+								document.getElementById("theEnd").scrollIntoView();
+							}
+						} else if (ajax.status == 416) {
+							// no new data, so do nothing
+						} else {
+							//  Some error occurred - just display the status code and response
+							alert("Ajax status: " + ajax.status + "\n" + ajax.getAllResponseHeaders());
+						}
+						
+						if (ajax.status == 200 || ajax.status == 206) {
+							if (ajax.responseText.includes("READY_STRING")) {
+								var redirectURL = "REDIRECT_URL";
+								document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
+								document.getElementById("theEnd").scrollIntoView();
+								// sleep for 2 seconds so the user sees that we are being redirected
+								setTimeout(() => { window.location.href = redirectURL; }, 2000)
+							}
+						}
+					}// ready state 4
+				}//orsc function def
 
-            ajax.onreadystatechange = function () {
-                if (ajax.readyState == 4) {
-                    if (ajax.status == 200) {
-                        // only the first request
-                        lastByte = parseInt(ajax.getResponseHeader("Content-length"));
-                        document.getElementById("thePlace").innerHTML = ajax.responseText;
-                        document.getElementById("theEnd").scrollIntoView();
+				ajax.send(null);
 
-                    } else if (ajax.status == 206) {
-                        lastByte += parseInt(ajax.getResponseHeader("Content-length"));
-                        document.getElementById("thePlace").innerHTML += ajax.responseText;
-                        document.getElementById("theEnd").scrollIntoView();
+			}// function tailf
+		</script>
+	
+		<script type="text/javascript">
+			function onInit() {
+				document.getElementById("overHood").style.visibility = "visible";
+				document.getElementById("underHood").style.visibility = "hidden";
+			}
 
-                    } else if (ajax.status == 416) {
-                        // no new data, so do nothing
+			function liftHood() {
+				document.getElementById("overHood").style.visibility = "hidden";
+				document.getElementById("underHood").style.visibility = "visible";
+				visible = true;
+				document.getElementById("theEnd").scrollIntoView();
+			}
+		</script>
+	</head>
 
-                    } else {
-                        //  Some error occurred - just display the status code and response
-                        alert("Ajax status: " + ajax.status + "\n" + ajax.getAllResponseHeaders());
-                    }
-                    
-                    if (ajax.status == 200 || ajax.status == 206) {
-                        if (ajax.responseText.includes("READY_STRING")) {
-                            var redirectURL = "REDIRECT_URL";
-							document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
-							document.getElementById("theEnd").scrollIntoView();
-							// sleep for 2 seconds so the user sees that we are being redirected
-							setTimeout(() => { window.location.href = redirectURL; }, 2000)
-                        }
-                    }
-                }// ready state 4
-            }//orsc function def
-
-            ajax.send(null);
-
-        }// function tailf
-
-    </script>
-
-</head>
-
-
-<body onLoad='tailf(); setInterval("tailf()", 250)'>
-    <div>
-        <pre id="thePlace"></pre>
-        <div id="theEnd"></div>
-    </div>
-</body>
-
+	<body onLoad='onInit(); tailf(); setInterval("tailf()", 250);' bgcolor="#0D0208" text="#00FF41">
+		<div>
+			<div id="overHood">
+				<center>
+					<button class="button" onclick='liftHood();'>Show Me What's Under The Hood</button>
+				</center>
+			</div>
+			<div id="underHood">
+				<pre id="thePlace"/>
+			</div>
+			<div id="theEnd"/>
+		</div>
+	</body>
 </html>
 `
