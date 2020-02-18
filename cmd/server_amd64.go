@@ -485,14 +485,14 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 
     <style>
         .button {
-            background-color: #4CAF50; /* Green */
-            border: none;
-            color: white;
+            background-color: #003B00; /* Dark Green */
+            color: #00FF41;
+            border: 2px solid #00FF41;
             padding: 15px 32px;
             text-align: center;
             text-decoration: none;
-            display: inline-block;
             font-size: 16px;
+            cursor: pointer;
         }
     </style>
     <script type="text/javascript">
@@ -589,10 +589,12 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 </head>
 
 
-<body onLoad='onInit(); tailf(); setInterval("tailf()", 250);' bgcolor="black" text="green">
+<body onLoad='onInit(); tailf(); setInterval("tailf()", 250);' bgcolor="#0D0208" text="#00FF41">
     <div>
         <div id="overHood">
-            <button class="button" onclick='liftHood();'>Show Me What's Under The Hood</button>
+            <center>
+                <button class="button" onclick='liftHood();'>Show Me What's Under The Hood</button>
+            </center>
         </div>
         <div id="underHood">
 			<pre id="thePlace"/>
