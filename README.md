@@ -53,6 +53,7 @@ To learn more about the Stellar protocol check out [this video created by Lumena
       * [Communication](#communication)
       * [Code of Conduct](#code-of-conduct)
       * [Project Improvements](#project-improvements)
+   * [Public Assets](#public-assets)
 
 # Getting Started
 
@@ -314,6 +315,11 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 - [Submit a Feature Request][github-feature-request]
 - [Raise an issue][github-new-issue] that is not a bug report or a feature request
 - [Contribute a PR][github-pulls]
+
+# Public Assets
+
+`TEST1` and `TEST2` issued by the `GCL4KBYTRA3QYI4JTN4FWVYVYNI67W2M6XMDUB2V6ZLWFASIYHWEJPHU` account are test assets used to test Kelp on the production Stellar Network. **These assets have no value** and are marked as `auth_required` with the intent to close them off from the rest of the Stellar ecosystem. No trustlines will be accepted against these assets. As part of our testing process, you may observe a market and trades between these two tokens. It is not intended for any of these assets to represent any meaningful volume on the Stellar Network.
+
 
 [github-last-commit]: https://github.com/stellar/kelp/commit/HEAD
 [github-releases]: https://github.com/stellar/kelp/releases
