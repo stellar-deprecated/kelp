@@ -318,11 +318,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 # Public Assets
 
-We created the assets `TEST1` and `TEST2` issued by the `GCL4KBYTRA3QYI4JTN4FWVYVYNI67W2M6XMDUB2V6ZLWFASIYHWEJPHU` account to test Kelp on the main Stellar network as and when needed. **These assets have no value** and should not be traded by the public. These assets are marked as `auth_required` with the intent to close them off from the rest of the Stellar ecosystem. No trustlines will be accepted against these assets.
-
-There will exist a market and also trades between these two tokens as a result of our testing. However, we do not intend to make a market between any any of these assets and the native asset.
-
-It is not intended for any of these assets to represent any meaningful volume on the Stellar Network since these assets are expressly used for testing purposes only. 
+`TEST1` and `TEST2` issued by the `GCL4KBYTRA3QYI4JTN4FWVYVYNI67W2M6XMDUB2V6ZLWFASIYHWEJPHU` account are test assets used to test Kelp on the production Stellar Network. **These assets have no value** and are marked as `auth_required` with the intent to close them off from the rest of the Stellar ecosystem. No trustlines will be accepted against these assets. As part of our testing process, you may observe a market and trades between these two tokens. It is not intended for any of these assets to represent any meaningful volume on the Stellar Network.
 
 
 [github-last-commit]: https://github.com/stellar/kelp/commit/HEAD
