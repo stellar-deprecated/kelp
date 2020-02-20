@@ -98,12 +98,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:            simMode,
-		pair:               pair,
-		assetMap:           assetMap,
-		opFeeStroopsFn:     opFeeStroopsFn,
-		tradingOnSdex:      exchangeShim == nil,
-		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
+		opFeeStroopsFn:                opFeeStroopsFn,
+		tradingOnSdex:                 exchangeShim == nil,
+		ocOverridesHandler:            MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
@@ -195,6 +195,17 @@ func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []txnbuild.Operation
 	return ops
 }
 
+func newDeleteOffer(selling, buying txnbuild.Asset, amount string, price string, offerID int64, sourceAccount txnbuild.Account) txnbuild.ManageSellOffer {
+	return txnbuild.ManageSellOffer{
+		Selling:       selling,
+		Buying:        buying,
+		Amount:        "0",
+		Price:         price,
+		OfferID:       offerID,
+		SourceAccount: sourceAccount,
+	}
+}
+
 // DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
 func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 	var result txnbuild.ManageSellOffer
@@ -202,9 +213,9 @@ func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 
 	txOffer := utils.Offer2TxnBuildSellOffer(offer)
 	if sdex.SourceAccount == sdex.TradingAccount {
-		result, e = txnbuild.DeleteOfferOp2(txOffer)
+		result = newDeleteOffer(txOffer.Selling, txOffer.Buying, txOffer.Amount, txOffer.Price, txOffer.OfferID, txOffer.SourceAccount)
 	} else {
-		result, e = txnbuild.DeleteOfferOp2(txOffer, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
+		result = newDeleteOffer(txOffer.Selling, txOffer.Buying, txOffer.Amount, txOffer.Price, txOffer.OfferID, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
 	}
 
 	if e != nil {
