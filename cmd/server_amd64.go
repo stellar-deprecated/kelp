@@ -19,6 +19,7 @@ import (
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizonclient"
@@ -42,6 +43,7 @@ const ccxtWaitSeconds = 60
 const versionPlaceholder = "VERSION_PLACEHOLDER"
 const stringPlaceholder = "PLACEHOLDER_URL"
 const redirectPlaceholder = "REDIRECT_URL"
+const sleepNumSecondsBeforeReadyString = 1
 const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
 
@@ -223,15 +225,28 @@ func init() {
 		gui.FileServer(r, "/", gui.FS)
 
 		portString := fmt.Sprintf(":%d", *options.port)
-		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
-		if isLocalMode {
-			e = http.ListenAndServe(portString, r)
-			if e != nil {
-				log.Fatal(e)
+		log.Printf("starting server on port %d\n", *options.port)
+
+		threadTracker := multithreading.MakeThreadTracker()
+		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			if isLocalMode {
+				e1 := http.ListenAndServe(portString, r)
+				if e1 != nil {
+					log.Fatal(e1)
+				}
+			} else {
+				_ = http.ListenAndServe(portString, r)
 			}
-		} else {
-			_ = http.ListenAndServe(portString, r)
+		}, nil)
+		if e != nil {
+			log.Fatal(e)
 		}
+
+		log.Printf("sleeping for %d seconds before showing the ready string indicator...\n", sleepNumSecondsBeforeReadyString)
+		time.Sleep(sleepNumSecondsBeforeReadyString * time.Second)
+
+		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
+		threadTracker.Wait()
 	}
 }
 
