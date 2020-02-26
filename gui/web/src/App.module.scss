@@ -7,3 +7,11 @@
     vertical-align: middle;
     color: $color-contrast-2;
 }
+
+.quit {
+    height: 8px;
+    background-color: $color-primary;
+    vertical-align: middle;
+    color: $color-danger;
+    float: left;
+}

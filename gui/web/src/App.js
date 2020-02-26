@@ -2,14 +2,15 @@ import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import styles from './App.module.scss';
 import Header from './components/molecules/Header/Header';
+import Button from './components/atoms/Button/Button';
 import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
+import version from './kelp-ops-api/version';
+import quit from './kelp-ops-api/quit';
 // import Welcome from './components/molecules/Welcome/Welcome';
 // import Modal from './components/molecules/Modal/Modal';
 
-import version from './kelp-ops-api/version';
-
-let baseUrl = function() {
+let baseUrl = function () {
   let origin = window.location.origin
   if (process.env.REACT_APP_API_PORT) {
     let parts = origin.split(":")
@@ -26,6 +27,7 @@ class App extends Component {
     };
 
     this.setVersion = this.setVersion.bind(this);
+    this.quit = this.quit.bind(this);
     this._asyncRequests = {};
   }
 
@@ -43,9 +45,24 @@ class App extends Component {
 
       delete _this._asyncRequests["version"];
       if (!resp.includes("error")) {
-        _this.setState({version: resp});
+        _this.setState({ version: resp });
       } else {
         setTimeout(_this.setVersion, 30000);
+      }
+    });
+  }
+
+  quit() {
+    var _this = this
+    this._asyncRequests["quit"] = quit(baseUrl).then(resp => {
+      if (!_this._asyncRequests["quit"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+      delete _this._asyncRequests["quit"];
+
+      if (resp.status === 200) {
+        window.close();
       }
     });
   }
@@ -57,7 +74,16 @@ class App extends Component {
   }
 
   render() {
-    let banner = (<div className={styles.banner}>Kelp UI is only available on the Stellar Test Network</div>);
+    let banner = (<div className={styles.banner}>
+      <Button
+        className={styles.quit}
+        size="small"
+        onClick={this.quit}
+      >
+        Quit
+      </Button>
+      Kelp UI is only available on the Stellar Test Network
+    </div>);
 
     return (
       <div>

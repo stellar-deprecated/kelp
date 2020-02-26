@@ -26,6 +26,7 @@ type APIServer struct {
 	apiTestNet        *horizonclient.Client
 	apiPubNet         *horizonclient.Client
 	noHeaders         bool
+	quitFn            func()
 
 	cachedOptionsMetadata metadata
 }
@@ -39,6 +40,7 @@ func MakeAPIServer(
 	apiPubNet *horizonclient.Client,
 	ccxtRestUrl string,
 	noHeaders bool,
+	quitFn func(),
 ) (*APIServer, error) {
 	binPath, e := filepath.Abs(os.Args[0])
 	if e != nil {
@@ -67,6 +69,7 @@ func MakeAPIServer(
 		apiPubNet:             apiPubNet,
 		noHeaders:             noHeaders,
 		cachedOptionsMetadata: optionsMetadata,
+		quitFn:                quitFn,
 	}, nil
 }
 
