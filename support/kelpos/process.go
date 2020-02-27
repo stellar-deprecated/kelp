@@ -57,24 +57,36 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 		return nil, fmt.Errorf("could not run bash command in background '%s': %s", cmd, e)
 	}
 
-	var outputBytes []byte
-	var err error
-	go func() {
-		outputBytes, err = ioutil.ReadAll(p.Stdout)
-	}()
-
+	// defer unregistration of process because regardless of whether it succeeds or fails it will not be active on the system anymore
 	defer func() {
 		eInner := kos.Unregister(namespace)
 		if eInner != nil {
 			log.Fatalf("error unregistering bash command '%s': %s", cmd, eInner)
 		}
 	}()
-	e = p.Cmd.Wait()
-	if e != nil {
-		return nil, fmt.Errorf("error waiting for bash command '%s': %s (outputBytes=%s, err=%v)", cmd, e, string(outputBytes), err)
+
+	var outputBytes []byte
+	var eRead error
+	go func() {
+		outputBytes, eRead = ioutil.ReadAll(p.Stdout)
+	}()
+
+	// wait for process to finish
+	eWait := p.Cmd.Wait()
+
+	// close pipes after wait is over so we don't leave streams open
+	eCloseStdin := p.Stdin.Close()
+	eCloseStdout := p.Stdout.Close()
+	eClosePipeIn := p.PipeIn.Close()
+	eClosePipeOut := p.PipeOut.Close()
+
+	// now check for errors
+	if eWait != nil || eRead != nil || eCloseStdin != nil || eCloseStdout != nil || eClosePipeIn != nil || eClosePipeOut != nil {
+		return nil, fmt.Errorf("error in bash command '%s' for namespace '%s': (eWait=%s, outputBytes=%s, eRead=%v, eCloseStdin=%s, eCloseStdout=%s, eClosePipeIn=%s, eClosePipeOut=%s)",
+			cmd, namespace, eWait, string(outputBytes), eRead, eCloseStdin, eCloseStdout, eClosePipeIn, eClosePipeOut)
 	}
 
-	return outputBytes, err
+	return outputBytes, nil
 }
 
 // Background runs the provided bash command in the background and registers the command
