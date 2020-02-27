@@ -74,16 +74,14 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 	// wait for process to finish
 	eWait := p.Cmd.Wait()
 
-	// close pipes after wait is over so we don't leave streams open
-	eCloseStdin := p.Stdin.Close()
-	eCloseStdout := p.Stdout.Close()
+	// close manually created pipes after wait is over so we don't leave streams open
 	eClosePipeIn := p.PipeIn.Close()
 	eClosePipeOut := p.PipeOut.Close()
 
 	// now check for errors
-	if eWait != nil || eRead != nil || eCloseStdin != nil || eCloseStdout != nil || eClosePipeIn != nil || eClosePipeOut != nil {
-		return nil, fmt.Errorf("error in bash command '%s' for namespace '%s': (eWait=%s, outputBytes=%s, eRead=%v, eCloseStdin=%s, eCloseStdout=%s, eClosePipeIn=%s, eClosePipeOut=%s)",
-			cmd, namespace, eWait, string(outputBytes), eRead, eCloseStdin, eCloseStdout, eClosePipeIn, eClosePipeOut)
+	if eWait != nil || eRead != nil || eClosePipeIn != nil || eClosePipeOut != nil {
+		return nil, fmt.Errorf("error in bash command '%s' for namespace '%s': (eWait=%s, outputBytes=%s, eRead=%v, eClosePipeIn=%v, eClosePipeOut=%v)",
+			cmd, namespace, eWait, string(outputBytes), eRead, eClosePipeIn, eClosePipeOut)
 	}
 
 	return outputBytes, nil
