@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+
+	"github.com/nikhilsaraf/go-tools/multithreading"
 )
 
 // StreamOutput runs the provided command in a streaming fashion
@@ -67,12 +69,21 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 
 	var outputBytes []byte
 	var eRead error
-	go func() {
+	var eWait error
+	threadTracker := multithreading.MakeThreadTracker()
+	e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 		outputBytes, eRead = ioutil.ReadAll(p.Stdout)
-	}()
 
-	// wait for process to finish
-	eWait := p.Cmd.Wait()
+		// wait for process to finish
+		eWait = p.Cmd.Wait()
+	}, nil)
+	if e != nil {
+		return nil, fmt.Errorf("error while triggering goroutine to read from process: %s", e)
+	}
+	// wait for threadTracker to finish -- we need to do this double-wait setup because p.Cmd.Wait() needs to be called after
+	// we read but we still want to wait for this to happen because we are blocking on this command to finish.
+	// see: https://github.com/hashicorp/go-plugin/issues/116#issuecomment-494153638
+	threadTracker.Wait()
 
 	// close manually created pipes after wait is over so we don't leave streams open
 	eClosePipeIn := p.PipeIn.Close()
