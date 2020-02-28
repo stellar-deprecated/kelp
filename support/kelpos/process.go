@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -85,14 +84,10 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 	// see: https://github.com/hashicorp/go-plugin/issues/116#issuecomment-494153638
 	threadTracker.Wait()
 
-	// close manually created pipes after wait is over so we don't leave streams open
-	eClosePipeIn := p.PipeIn.Close()
-	eClosePipeOut := p.PipeOut.Close()
-
 	// now check for errors
-	if eWait != nil || eRead != nil || eClosePipeIn != nil || eClosePipeOut != nil {
-		return nil, fmt.Errorf("error in bash command '%s' for namespace '%s': (eWait=%s, outputBytes=%s, eRead=%v, eClosePipeIn=%v, eClosePipeOut=%v)",
-			cmd, namespace, eWait, string(outputBytes), eRead, eClosePipeIn, eClosePipeOut)
+	if eWait != nil || eRead != nil {
+		return nil, fmt.Errorf("error in bash command '%s' for namespace '%s': (eWait=%s, outputBytes=%s, eRead=%v)",
+			cmd, namespace, eWait, string(outputBytes), eRead)
 	}
 
 	return outputBytes, nil
@@ -111,28 +106,15 @@ func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 		return nil, fmt.Errorf("could not get Stdout pipe for bash command '%s': %s", cmd, e)
 	}
 
-	// create two pipes (unidirectional), pass one end of both pipes to child process, save the other on Process
-	childInputReader, childInputWriter, e := os.Pipe()
-	if e != nil {
-		return nil, fmt.Errorf("could not create input pipe for child bash command '%s': %s", cmd, e)
-	}
-	childOutputReader, childOutputWriter, e := os.Pipe()
-	if e != nil {
-		return nil, fmt.Errorf("could not create output pipe for child bash command '%s': %s", cmd, e)
-	}
-	c.ExtraFiles = []*os.File{childInputReader, childOutputWriter}
-
 	e = c.Start()
 	if e != nil {
 		return nil, fmt.Errorf("could not start bash command '%s': %s", cmd, e)
 	}
 
 	p := &Process{
-		Cmd:     c,
-		Stdin:   stdinWriter,
-		Stdout:  stdoutReader,
-		PipeIn:  childInputWriter,
-		PipeOut: childOutputReader,
+		Cmd:    c,
+		Stdin:  stdinWriter,
+		Stdout: stdoutReader,
 	}
 	e = kos.register(namespace, p)
 	if e != nil {
