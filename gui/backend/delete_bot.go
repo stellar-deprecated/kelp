@@ -40,7 +40,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("deleteBot for loop, current botState: %s\n", botState)
 
-		if botState == kelpos.BotStateStopped {
+		if botState == kelpos.BotStateStopped || botState == kelpos.BotStateInitializing {
 			break
 		}
 
