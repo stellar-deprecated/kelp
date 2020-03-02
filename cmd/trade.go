@@ -20,7 +20,6 @@ import (
 	"github.com/stellar/kelp/database"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
-	"github.com/stellar/kelp/query"
 	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
@@ -71,7 +70,6 @@ type inputs struct {
 	stratConfigPath               *string
 	operationalBuffer             *float64
 	operationalBufferNonNativePct *float64
-	withIPC                       *bool
 	simMode                       *bool
 	logPrefix                     *string
 	fixedIterations               *uint64
@@ -128,7 +126,6 @@ func init() {
 	// long-only flags
 	options.operationalBuffer = tradeCmd.Flags().Float64("operationalBuffer", 20, "buffer of native XLM to maintain beyond minimum account balance requirement")
 	options.operationalBufferNonNativePct = tradeCmd.Flags().Float64("operationalBufferNonNativePct", 0.001, "buffer of non-native assets to maintain as a percentage (0.001 = 0.1%)")
-	options.withIPC = tradeCmd.Flags().Bool("with-ipc", false, "enable IPC communication when spawned as a child process from the GUI")
 	options.simMode = tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
@@ -566,18 +563,6 @@ func runTradeCmd(options inputs) {
 		db,
 		threadTracker,
 	)
-	startQueryServer(
-		l,
-		*options.strategy,
-		strategy,
-		botConfig,
-		client,
-		sdex,
-		exchangeShim,
-		tradingPair,
-		threadTracker,
-		&options,
-	)
 	// --- end initialization of services ---
 
 	l.Info("Starting the trader bot...")
@@ -681,47 +666,6 @@ func startFillTracking(
 		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
-}
-
-func startQueryServer(
-	l logger.Logger,
-	strategyName string,
-	strategy api.Strategy,
-	botConfig trader.BotConfig,
-	client *horizonclient.Client,
-	sdex *plugins.SDEX,
-	exchangeShim api.ExchangeShim,
-	tradingPair *model.TradingPair,
-	threadTracker *multithreading.ThreadTracker,
-	options *inputs,
-) {
-	// only start query server (with IPC) if specifically instructed to so so from the command line.
-	// File descriptors in the IPC receiver will be invalid and will crash the bot if the other end of the pipe does not exist.
-	if !*options.withIPC {
-		return
-	}
-
-	qs := query.MakeServer(
-		l,
-		strategyName,
-		strategy,
-		botConfig,
-		client,
-		sdex,
-		exchangeShim,
-		tradingPair,
-	)
-
-	go func() {
-		defer logPanic(l, true)
-		e := qs.StartIPC()
-		if e != nil {
-			l.Info("")
-			l.Errorf("problem encountered while running the query server: %s", e)
-			// we want to delete all the offers and exit here because we don't want the bot to run if the query server isn't working
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-		}
-	}()
 }
 
 func validateTrustlines(l logger.Logger, client *horizonclient.Client, botConfig *trader.BotConfig) {

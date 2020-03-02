@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
+
+	"github.com/nikhilsaraf/go-tools/multithreading"
 )
 
 // StreamOutput runs the provided command in a streaming fashion
@@ -57,24 +58,39 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 		return nil, fmt.Errorf("could not run bash command in background '%s': %s", cmd, e)
 	}
 
-	var outputBytes []byte
-	var err error
-	go func() {
-		outputBytes, err = ioutil.ReadAll(p.Stdout)
-	}()
-
+	// defer unregistration of process because regardless of whether it succeeds or fails it will not be active on the system anymore
 	defer func() {
 		eInner := kos.Unregister(namespace)
 		if eInner != nil {
 			log.Fatalf("error unregistering bash command '%s': %s", cmd, eInner)
 		}
 	}()
-	e = p.Cmd.Wait()
+
+	var outputBytes []byte
+	var eRead error
+	var eWait error
+	threadTracker := multithreading.MakeThreadTracker()
+	e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+		outputBytes, eRead = ioutil.ReadAll(p.Stdout)
+
+		// wait for process to finish
+		eWait = p.Cmd.Wait()
+	}, nil)
 	if e != nil {
-		return nil, fmt.Errorf("error waiting for bash command '%s': %s (outputBytes=%s, err=%v)", cmd, e, string(outputBytes), err)
+		return nil, fmt.Errorf("error while triggering goroutine to read from process: %s", e)
+	}
+	// wait for threadTracker to finish -- we need to do this double-wait setup because p.Cmd.Wait() needs to be called after
+	// we read but we still want to wait for this to happen because we are blocking on this command to finish.
+	// see: https://github.com/hashicorp/go-plugin/issues/116#issuecomment-494153638
+	threadTracker.Wait()
+
+	// now check for errors
+	if eWait != nil || eRead != nil {
+		return nil, fmt.Errorf("error in bash command '%s' for namespace '%s': (eWait=%s, outputBytes=%s, eRead=%v)",
+			cmd, namespace, eWait, string(outputBytes), eRead)
 	}
 
-	return outputBytes, err
+	return outputBytes, nil
 }
 
 // Background runs the provided bash command in the background and registers the command
@@ -90,28 +106,15 @@ func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 		return nil, fmt.Errorf("could not get Stdout pipe for bash command '%s': %s", cmd, e)
 	}
 
-	// create two pipes (unidirectional), pass one end of both pipes to child process, save the other on Process
-	childInputReader, childInputWriter, e := os.Pipe()
-	if e != nil {
-		return nil, fmt.Errorf("could not create input pipe for child bash command '%s': %s", cmd, e)
-	}
-	childOutputReader, childOutputWriter, e := os.Pipe()
-	if e != nil {
-		return nil, fmt.Errorf("could not create output pipe for child bash command '%s': %s", cmd, e)
-	}
-	c.ExtraFiles = []*os.File{childInputReader, childOutputWriter}
-
 	e = c.Start()
 	if e != nil {
 		return nil, fmt.Errorf("could not start bash command '%s': %s", cmd, e)
 	}
 
 	p := &Process{
-		Cmd:     c,
-		Stdin:   stdinWriter,
-		Stdout:  stdoutReader,
-		PipeIn:  childInputWriter,
-		PipeOut: childOutputReader,
+		Cmd:    c,
+		Stdin:  stdinWriter,
+		Stdout: stdoutReader,
 	}
 	e = kos.register(namespace, p)
 	if e != nil {

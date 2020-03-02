@@ -2,7 +2,6 @@ package kelpos
 
 import (
 	"io"
-	"os"
 	"os/exec"
 	"sync"
 
@@ -25,11 +24,9 @@ func (kos *KelpOS) SetSilentRegistrations() {
 
 // Process contains all the pieces that can be used to control a given process
 type Process struct {
-	Cmd     *exec.Cmd
-	Stdin   io.WriteCloser
-	Stdout  io.ReadCloser
-	PipeIn  *os.File
-	PipeOut *os.File
+	Cmd    *exec.Cmd
+	Stdin  io.WriteCloser
+	Stdout io.ReadCloser
 }
 
 // singleton is the singleton instance of KelpOS

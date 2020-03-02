@@ -1,8 +1,6 @@
 package backend
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -16,13 +14,29 @@ import (
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/model"
-	"github.com/stellar/kelp/query"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
 )
 
 const buysell = "buysell"
+
+// botInfo is the response from the getBotInfo request
+type botInfo struct {
+	LastUpdated    string             `json:"last_updated"`
+	TradingAccount string             `json:"trading_account"`
+	Strategy       string             `json:"strategy"`
+	IsTestnet      bool               `json:"is_testnet"`
+	TradingPair    *model.TradingPair `json:"trading_pair"`
+	AssetBase      hProtocol.Asset    `json:"asset_base"`
+	AssetQuote     hProtocol.Asset    `json:"asset_quote"`
+	BalanceBase    float64            `json:"balance_base"`
+	BalanceQuote   float64            `json:"balance_quote"`
+	NumBids        int                `json:"num_bids"`
+	NumAsks        int                `json:"num_asks"`
+	SpreadValue    float64            `json:"spread_value"`
+	SpreadPercent  float64            `json:"spread_pct"`
+}
 
 func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 	botName, e := s.parseBotName(r)
@@ -31,42 +45,7 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// s.runGetBotInfoViaIPC(w, botName)
 	s.runGetBotInfoDirect(w, botName)
-}
-
-func (s *APIServer) runGetBotInfoViaIPC(w http.ResponseWriter, botName string) {
-	p, exists := s.kos.GetProcess(botName)
-	if !exists {
-		log.Printf("kelp bot process with name '%s' does not exist; processes available: %v\n", botName, s.kos.RegisteredProcesses())
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("{}"))
-		return
-	}
-
-	log.Printf("getBotInfo is making IPC request for botName: %s\n", botName)
-	p.PipeIn.Write([]byte("getBotInfo\n"))
-	scanner := bufio.NewScanner(p.PipeOut)
-	output := ""
-	for scanner.Scan() {
-		text := scanner.Text()
-		if strings.Contains(text, utils.IPCBoundary) {
-			break
-		}
-		output += text
-	}
-	var buf bytes.Buffer
-	e := json.Indent(&buf, []byte(output), "", "  ")
-	if e != nil {
-		log.Printf("cannot indent json response (error=%s), json_response: %s\n", e, output)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("{}"))
-		return
-	}
-	log.Printf("getBotInfo returned IPC response for botName '%s': %s\n", botName, buf.String())
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
 }
 
 func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
@@ -171,7 +150,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		spreadPct = spread / midPrice
 	}
 
-	bi := query.BotInfo{
+	bi := botInfo{
 		LastUpdated:    time.Now().UTC().Format("1/_2/2006 15:04:05 MST"),
 		TradingAccount: account.AccountID,
 		Strategy:       buysell,
@@ -189,7 +168,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 
 	marshalledJson, e := json.MarshalIndent(bi, "", "  ")
 	if e != nil {
-		log.Printf("cannot marshall to json response (error=%s), BotInfo: %+v\n", e, bi)
+		log.Printf("cannot marshall to json response (error=%s), botInfo: %+v\n", e, bi)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("{}"))
 		return
