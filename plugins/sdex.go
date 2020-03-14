@@ -752,6 +752,9 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 	trades := []model.Trade{}
 
 	for _, t := range tradesPage.Embedded.Records {
+		// update cursor first so we keep it moving
+		cursor = t.PT
+
 		orderAction, e := sdex.getOrderAction(baseAsset, quoteAsset, t)
 		if e != nil {
 			return nil, false, fmt.Errorf("could not load orderAction: %s", e)
@@ -782,7 +785,6 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 			Fee:           model.NumberFromFloat(baseFee, sdexOrderConstraints.PricePrecision),
 		})
 
-		cursor = t.PT
 		if cursor == cursorEnd {
 			return &api.TradeHistoryResult{
 				Cursor: cursor,
