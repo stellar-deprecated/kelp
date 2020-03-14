@@ -15,6 +15,7 @@ import (
 // strategyFactoryData is a data container that has all the information needed to make a strategy
 type strategyFactoryData struct {
 	sdex            *SDEX
+	tradeFetcher    api.TradeFetcher
 	ieif            *IEIF
 	tradingPair     *model.TradingPair
 	assetBase       *hProtocol.Asset
@@ -107,11 +108,33 @@ var strategies = map[string]StrategyContainer{
 			return makeDeleteStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote), nil
 		},
 	},
+	"swing": {
+		SortOrder:   6,
+		Description: "Swings bids and asks based on last trade",
+		NeedsConfig: true,
+		Complexity:  "Beginner",
+		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			var cfg swingConfig
+			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
+			utils.LogConfig(cfg)
+			return makeSwingStrategy(
+				strategyFactoryData.sdex,
+				strategyFactoryData.ieif,
+				strategyFactoryData.assetBase,
+				strategyFactoryData.assetQuote,
+				&cfg,
+				strategyFactoryData.tradeFetcher,
+				strategyFactoryData.tradingPair,
+			), nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy
 func MakeStrategy(
 	sdex *SDEX,
+	tradeFetcher api.TradeFetcher,
 	ieif *IEIF,
 	tradingPair *model.TradingPair,
 	assetBase *hProtocol.Asset,
@@ -128,6 +151,7 @@ func MakeStrategy(
 
 		s, e := s.makeFn(strategyFactoryData{
 			sdex:            sdex,
+			tradeFetcher:    tradeFetcher,
 			ieif:            ieif,
 			tradingPair:     tradingPair,
 			assetBase:       assetBase,

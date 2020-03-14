@@ -26,10 +26,16 @@ const (
 	DASH Asset = "DASH"
 	EOS  Asset = "EOS"
 	GNO  Asset = "GNO"
+	GRIN Asset = "GRIN"
 	FEE  Asset = "FEE"
 	QTUM Asset = "QTUM"
 	USDT Asset = "USDT"
+	TUSD Asset = "TUSD"
 	USDC Asset = "USDC"
+	USDS Asset = "USDS"
+	PAX  Asset = "PAX"
+	BUSD Asset = "BUSD"
+	DAI  Asset = "DAI"
 	DAO  Asset = "DAO"
 	ETC  Asset = "ETC"
 	ICN  Asset = "ICN"
@@ -46,6 +52,7 @@ const (
 	JPY  Asset = "JPY"
 	KRW  Asset = "KRW"
 	OMG  Asset = "OMG"
+	MANA Asset = "MANA"
 )
 
 // AssetConverterInterface is the interface which allows the creation of asset converters with logic instead of static bindings
@@ -169,9 +176,12 @@ var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
 
 // KrakenAssetConverterOpenOrders is the asset converter for the Kraken exchange's GetOpenOrders API
 var KrakenAssetConverterOpenOrders = makeAssetConverter(map[Asset]string{
-	XLM: "XLM",
-	BTC: "XBT",
-	USD: "USD",
+	XLM:  "XLM",
+	BTC:  "XBT",
+	USD:  "USD",
+	USDT: "USDT",
+	REP:  "REP",
+	ETH:  "ETH",
 })
 
 // FromHorizonAsset is a factory method

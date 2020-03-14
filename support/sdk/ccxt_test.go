@@ -227,6 +227,7 @@ func TestFetchTrades(t *testing.T) {
 
 	// "id" is not always part of a trade result on Kraken for the public trades API
 	krakenFields := []string{"amount", "cost", "datetime", "price", "side", "symbol", "timestamp"}
+	poloniexFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 	binanceFields := []string{"amount", "cost", "datetime", "id", "price", "side", "symbol", "timestamp"}
 	bittrexFields := []string{"amount", "datetime", "id", "price", "side", "symbol", "timestamp", "type"}
 
