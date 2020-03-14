@@ -324,7 +324,18 @@ func makeStrategy(
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
 
-	strategy, e := plugins.MakeStrategy(sdex, exchangeShim, ieif, tradingPair, &assetBase, &assetQuote, *options.strategy, *options.stratConfigPath, *options.simMode)
+	strategy, e := plugins.MakeStrategy(
+		sdex,
+		exchangeShim,
+		ieif,
+		tradingPair,
+		&assetBase,
+		&assetQuote,
+		*options.strategy,
+		*options.stratConfigPath,
+		*options.simMode,
+		botConfig.IsTradingSdex(),
+	)
 	if e != nil {
 		l.Info("")
 		l.Errorf("%s", e)

@@ -38,6 +38,7 @@ func makeSwingStrategy(
 	config *swingConfig,
 	tradeFetcher api.TradeFetcher,
 	tradingPair *model.TradingPair,
+	incrementTimestampCursor bool, // only do this if we are on ccxt
 ) api.Strategy {
 	if config.AmountTolerance != 1.0 {
 		panic("swing strategy needs to be configured with AMOUNT_TOLERANCE = 1.0")
@@ -56,6 +57,7 @@ func makeSwingStrategy(
 		tradeFetcher,
 		tradingPair,
 		config.LastTradeCursor,
+		incrementTimestampCursor,
 	)
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
@@ -80,6 +82,7 @@ func makeSwingStrategy(
 		tradeFetcher,
 		tradingPair,
 		config.LastTradeCursor,
+		incrementTimestampCursor,
 	)
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(

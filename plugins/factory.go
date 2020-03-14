@@ -22,6 +22,7 @@ type strategyFactoryData struct {
 	assetQuote      *hProtocol.Asset
 	stratConfigPath string
 	simMode         bool
+	isTradingSdex   bool
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -126,6 +127,7 @@ var strategies = map[string]StrategyContainer{
 				&cfg,
 				strategyFactoryData.tradeFetcher,
 				strategyFactoryData.tradingPair,
+				!strategyFactoryData.isTradingSdex,
 			), nil
 		},
 	},
@@ -142,6 +144,7 @@ func MakeStrategy(
 	strategy string,
 	stratConfigPath string,
 	simMode bool,
+	isTradingSdex bool,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
 	if s, ok := strategies[strategy]; ok {
@@ -158,6 +161,7 @@ func MakeStrategy(
 			assetQuote:      assetQuote,
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
+			isTradingSdex:   isTradingSdex,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)

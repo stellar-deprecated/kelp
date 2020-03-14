@@ -10,9 +10,6 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-// IsCcxtTradeHistoryHack so we know whether to use timestamp as cursor for fetch my trades
-var IsCcxtTradeHistoryHack bool
-
 // use a global variable for now so it is common across both instances (buy and sell side)
 var price2LastPrice map[float64]float64 = map[float64]float64{}
 
@@ -30,6 +27,7 @@ type swingLevelProvider struct {
 	tradingPair                   *model.TradingPair
 	lastTradeCursor               interface{}
 	isFirstTradeHistoryRun        bool
+	incrementTimestampCursor      bool
 }
 
 // ensure it implements LevelProvider
@@ -48,6 +46,7 @@ func makeSwingLevelProvider(
 	tradeFetcher api.TradeFetcher,
 	tradingPair *model.TradingPair,
 	lastTradeCursor interface{},
+	incrementTimestampCursor bool,
 ) *swingLevelProvider {
 	return &swingLevelProvider{
 		spread:                        spread,
@@ -62,6 +61,7 @@ func makeSwingLevelProvider(
 		tradingPair:                   tradingPair,
 		lastTradeCursor:               lastTradeCursor,
 		isFirstTradeHistoryRun:        true,
+		incrementTimestampCursor:      incrementTimestampCursor,
 	}
 }
 
@@ -195,12 +195,13 @@ func (p *swingLevelProvider) fetchLatestTradePrice() (float64, interface{}, bool
 			return lastPrice, tradeHistoryResult.Cursor, lastIsBuy, nil
 		}
 
+		log.Printf("listing %d trades since last cycle", len(tradeHistoryResult.Trades))
 		for _, t := range tradeHistoryResult.Trades {
-			log.Printf("trades since last cycle: %v\n", t)
+			log.Printf("    Trade: %v\n", t)
 		}
 
 		lastTrade := tradeHistoryResult.Trades[len(tradeHistoryResult.Trades)-1]
-		if IsCcxtTradeHistoryHack {
+		if p.incrementTimestampCursor {
 			i64Cursor, e := strconv.Atoi(lastTrade.Order.Timestamp.String())
 			if e != nil {
 				return 0, "", false, fmt.Errorf("unable to convert order timestamp to integer for binance cursor: %s", e)
