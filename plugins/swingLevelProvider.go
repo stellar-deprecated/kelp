@@ -28,7 +28,7 @@ type swingLevelProvider struct {
 	minBase                       float64
 	tradeFetcher                  api.TradeFetcher
 	tradingPair                   *model.TradingPair
-	lastTradeCursor               string
+	lastTradeCursor               interface{}
 	isFirstTradeHistoryRun        bool
 }
 
@@ -47,7 +47,7 @@ func makeSwingLevelProvider(
 	minBase float64,
 	tradeFetcher api.TradeFetcher,
 	tradingPair *model.TradingPair,
-	lastTradeCursor string,
+	lastTradeCursor interface{},
 ) *swingLevelProvider {
 	return &swingLevelProvider{
 		spread:                        spread,
@@ -113,15 +113,15 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 	if p.isFirstTradeHistoryRun {
 		p.isFirstTradeHistoryRun = false
 		p.lastTradeCursor = lastCursor
-		log.Printf("isFirstTradeHistoryRun so updated lastTradeCursor=%s, leaving unchanged lastTradePrice=%.10f", p.lastTradeCursor, p.lastTradePrice)
+		log.Printf("isFirstTradeHistoryRun so updated lastTradeCursor=%v, leaving unchanged lastTradePrice=%.10f", p.lastTradeCursor, p.lastTradePrice)
 	} else if lastCursor == p.lastTradeCursor {
-		log.Printf("lastCursor == p.lastTradeCursor leaving lastTradeCursor=%s and lastTradePrice=%.10f", p.lastTradeCursor, p.lastTradePrice)
+		log.Printf("lastCursor == p.lastTradeCursor leaving lastTradeCursor=%v and lastTradePrice=%.10f", p.lastTradeCursor, p.lastTradePrice)
 	} else {
 		p.lastTradeCursor = lastCursor
 		mapKey := model.NumberFromFloat(lastPrice, utils.SdexPrecision)
 		printPrice2LastPriceMap()
 		p.lastTradePrice = getLastPriceFromMap(mapKey, lastIsBuy)
-		log.Printf("updated lastTradeCursor=%s and lastTradePrice=%.10f (converted=%.10f)", p.lastTradeCursor, lastPrice, p.lastTradePrice)
+		log.Printf("updated lastTradeCursor=%v and lastTradePrice=%.10f (converted=%.10f)", p.lastTradeCursor, lastPrice, p.lastTradePrice)
 	}
 
 	levels := []api.Level{}
@@ -179,7 +179,7 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 	return levels, nil
 }
 
-func (p *swingLevelProvider) fetchLatestTradePrice() (float64, string, bool, error) {
+func (p *swingLevelProvider) fetchLatestTradePrice() (float64, interface{}, bool, error) {
 	lastPrice := p.lastTradePrice
 	lastCursor := p.lastTradeCursor
 	lastIsBuy := false
@@ -192,7 +192,7 @@ func (p *swingLevelProvider) fetchLatestTradePrice() (float64, string, bool, err
 		// TODO need to check for volume here too at some point (if full lot is not taken then we don't want to update last price)
 
 		if len(tradeHistoryResult.Trades) == 0 {
-			return lastPrice, lastCursor, lastIsBuy, nil
+			return lastPrice, tradeHistoryResult.Cursor, lastIsBuy, nil
 		}
 
 		for _, t := range tradeHistoryResult.Trades {
