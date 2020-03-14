@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const wantLowerBoundXLM = 0.04
+const wantLowerBoundXLM = 0.02
 const wantUpperBoundXLM = 0.50
 
 func TestMakePriceFeed(t *testing.T) {
