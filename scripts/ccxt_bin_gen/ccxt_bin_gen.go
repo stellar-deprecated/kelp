@@ -115,9 +115,12 @@ func runPkgTool(kos *kelpos.KelpOS, sourceDir string, outDir string, pkgos strin
 	if e != nil {
 		log.Fatal(errors.Wrap(e, "failed to run pkg tool"))
 	}
-	fmt.Printf("done\n")
+	fmt.Printf("done\n\n")
 
-	copyDependencyFiles(kos, outDir, string(outputBytes))
+	pkgCmdOutput := string(outputBytes)
+	log.Printf("output of pkg script:\n%s", pkgCmdOutput)
+
+	copyDependencyFiles(kos, outDir, pkgCmdOutput)
 }
 
 func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string) {
@@ -128,6 +131,7 @@ func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string)
 			continue
 		}
 		filename := strings.TrimSpace(strings.Replace(line, "(MISSING)", "", -1))
+		filename = strings.TrimSpace(strings.Replace(filename, "%1:", "", -1))
 
 		fmt.Printf("    copying file %s to the output directory %s ... ", filename, outDir)
 		cpCmd := fmt.Sprintf("cp %s %s", filename, outDir)
