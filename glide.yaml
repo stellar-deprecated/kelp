@@ -9,8 +9,7 @@ import:
 - package: github.com/spf13/pflag
   version: v1.0.0
 - package: github.com/stellar/go
-  repo: git@github.com:nikhilsaraf/go.git
-  vcs: git
+  repo: https://github.com/nikhilsaraf/go.git
   version: horizonclient-v2.0.0/3_fix_txnbuild_delete_offer_op
   subpackages:
   - build

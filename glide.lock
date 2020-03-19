@@ -144,8 +144,7 @@ imports:
   version: 01d7d76eb0020ae2fd1275899065ddfdd9f6a528
 - name: github.com/stellar/go
   version: 009cb26a4013ccd023c0a6c57a72e709a5dc82cf
-  repo: git@github.com:nikhilsaraf/go.git
-  vcs: git
+  repo: https://github.com/nikhilsaraf/go.git
   subpackages:
   - amount
   - build
