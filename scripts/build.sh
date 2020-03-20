@@ -272,7 +272,8 @@ echo ""
 
 ARCHIVE_FOLDER_NAME_UI=kelp_ui-$VERSION
 ARCHIVE_DIR_SOURCE_UI=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME_UI
-PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
+#PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
+PLATFORM_ARGS_UI=("darwin -d" "linux -l")
 if [[ IS_TEST_MODE -eq 1 ]]
 then
     PLATFORM_ARGS_UI=("$(go env GOOS)")
