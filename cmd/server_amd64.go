@@ -453,6 +453,7 @@ func openBrowser(kos *kelpos.KelpOS, trayIconPath string, url string) {
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
 			AppIconDefaultPath: "resources/kelp-icon@2x.png",
+			AcceptTCPTimeout:   time.Minute * 2,
 		},
 		Debug: false,
 		Windows: []*bootstrap.Window{&bootstrap.Window{
