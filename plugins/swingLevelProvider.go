@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 
 	"github.com/stellar/kelp/api"
@@ -66,15 +67,22 @@ func makeSwingLevelProvider(
 }
 
 func printPrice2LastPriceMap() {
+	keys := []float64{}
+	for k, _ := range price2LastPrice {
+		keys = append(keys, k)
+	}
+	sort.Float64s(keys)
+
 	log.Printf("price2LastPrice map (%d elements):\n", len(price2LastPrice))
-	for k, v := range price2LastPrice {
-		log.Printf("    %.8f -> %.8f\n", k, v)
+	for _, k := range keys {
+		log.Printf("    %.8f -> %.8f\n", k, price2LastPrice[k])
 	}
 }
 
 func getLastPriceFromMap(mapKey *model.Number, lastTradeIsBuy bool) float64 {
 	tradePrice := mapKey.AsFloat()
 	if lp, ok := price2LastPrice[tradePrice]; ok {
+		log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f: last price (%.8f)\n", tradePrice, lp)
 		return lp
 	}
 
@@ -89,7 +97,7 @@ func getLastPriceFromMap(mapKey *model.Number, lastTradeIsBuy bool) float64 {
 			lp = offerLastPrice
 		}
 	}
-	log.Printf("calculated closest offerPrice (%.8f) and last price (%.8f) when it was not in map\n", closestOfferPrice, lp)
+	log.Printf("getLastPriceFromMap, calculated for tradePrice = %.8f: closest offerPrice (%.8f) and last price (%.8f) when it was not in map\n", tradePrice, closestOfferPrice, lp)
 	return lp
 }
 
