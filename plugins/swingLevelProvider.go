@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"math"
 	"sort"
 	"strconv"
 
@@ -81,26 +82,33 @@ func printPrice2LastPriceMap() {
 	}
 }
 
-func getLastPriceFromMap(mapKey *model.Number, lastTradeIsBuy bool) float64 {
-	tradePrice := mapKey.AsFloat()
-	if lp, ok := price2LastPrice[tradePrice]; ok {
+func getLastPriceFromMap(price2LastPriceMap map[float64]float64, tradePrice float64, lastTradeIsBuy bool) (lastTradePrice float64, lastPrice float64) {
+	if lp, ok := price2LastPriceMap[tradePrice]; ok {
 		log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f: last price (%.8f)\n", tradePrice, lp)
-		return lp
+		return tradePrice, lp
 	}
 
 	closestOfferPrice := -1.0
-	lp := -1.0
-	for offerPrice, offerLastPrice := range price2LastPrice {
+	diff := -1.0
+	for offerPrice, _ := range price2LastPriceMap {
+		d := math.Abs(tradePrice - offerPrice)
+
 		firstIter := closestOfferPrice == -1
-		buyTrigger := lastTradeIsBuy && offerPrice > tradePrice && offerPrice < closestOfferPrice
-		sellTrigger := !lastTradeIsBuy && offerPrice < tradePrice && offerPrice > closestOfferPrice
-		if firstIter || buyTrigger || sellTrigger {
+		if firstIter {
 			closestOfferPrice = offerPrice
-			lp = offerLastPrice
+			diff = d
+			continue
+		}
+
+		if d < diff {
+			closestOfferPrice = offerPrice
+			diff = d
 		}
 	}
-	log.Printf("getLastPriceFromMap, calculated for tradePrice = %.8f: closest offerPrice (%.8f) and last price (%.8f) when it was not in map\n", tradePrice, closestOfferPrice, lp)
-	return lp
+	lp := price2LastPriceMap[closestOfferPrice]
+
+	log.Printf("getLastPriceFromMap, calculated for tradePrice = %.8f (isBuy = %v): closest offerPrice (%.8f) and last price (%.8f) when it was not in map\n", tradePrice, lastTradeIsBuy, closestOfferPrice, lp)
+	return closestOfferPrice, lp
 }
 
 // GetFillHandlers impl
@@ -130,7 +138,7 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 		p.lastTradeCursor = lastCursor
 		mapKey := model.NumberFromFloat(lastPrice, p.orderConstraints.PricePrecision)
 		printPrice2LastPriceMap()
-		p.lastTradePrice = getLastPriceFromMap(mapKey, lastIsBuy)
+		_, p.lastTradePrice = getLastPriceFromMap(price2LastPrice, mapKey.AsFloat(), lastIsBuy)
 		log.Printf("updated lastTradeCursor=%v and lastTradePrice=%.10f (converted=%.10f)", p.lastTradeCursor, lastPrice, p.lastTradePrice)
 	}
 
