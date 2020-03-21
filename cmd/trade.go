@@ -327,6 +327,7 @@ func makeStrategy(
 	strategy, e := plugins.MakeStrategy(
 		sdex,
 		exchangeShim,
+		exchangeShim,
 		ieif,
 		tradingPair,
 		&assetBase,

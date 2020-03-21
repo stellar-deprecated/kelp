@@ -15,6 +15,7 @@ import (
 // strategyFactoryData is a data container that has all the information needed to make a strategy
 type strategyFactoryData struct {
 	sdex            *SDEX
+	exchangeShim    api.ExchangeShim
 	tradeFetcher    api.TradeFetcher
 	ieif            *IEIF
 	tradingPair     *model.TradingPair
@@ -121,6 +122,7 @@ var strategies = map[string]StrategyContainer{
 			utils.LogConfig(cfg)
 			return makeSwingStrategy(
 				strategyFactoryData.sdex,
+				strategyFactoryData.exchangeShim,
 				strategyFactoryData.ieif,
 				strategyFactoryData.assetBase,
 				strategyFactoryData.assetQuote,
@@ -136,6 +138,7 @@ var strategies = map[string]StrategyContainer{
 // MakeStrategy makes a strategy
 func MakeStrategy(
 	sdex *SDEX,
+	exchangeShim api.ExchangeShim,
 	tradeFetcher api.TradeFetcher,
 	ieif *IEIF,
 	tradingPair *model.TradingPair,
@@ -154,6 +157,7 @@ func MakeStrategy(
 
 		s, e := s.makeFn(strategyFactoryData{
 			sdex:            sdex,
+			exchangeShim:    exchangeShim,
 			tradeFetcher:    tradeFetcher,
 			ieif:            ieif,
 			tradingPair:     tradingPair,

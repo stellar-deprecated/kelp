@@ -32,6 +32,7 @@ func (c swingConfig) String() string {
 // makeSwingStrategy is a factory method for swingStrategy
 func makeSwingStrategy(
 	sdex *SDEX,
+	exchangeShim api.ExchangeShim,
 	ieif *IEIF,
 	assetBase *horizon.Asset,
 	assetQuote *horizon.Asset,
@@ -44,7 +45,7 @@ func makeSwingStrategy(
 		panic("swing strategy needs to be configured with AMOUNT_TOLERANCE = 1.0")
 	}
 
-	orderConstraints := sdex.GetOrderConstraints(tradingPair)
+	orderConstraints := exchangeShim.GetOrderConstraints(tradingPair)
 	sellLevelProvider := makeSwingLevelProvider(
 		config.Spread,
 		config.OffsetSpread,
