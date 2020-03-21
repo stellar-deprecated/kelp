@@ -8,7 +8,6 @@ import (
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
-	"github.com/stellar/kelp/support/utils"
 )
 
 // use a global variable for now so it is common across both instances (buy and sell side)
@@ -29,6 +28,7 @@ type swingLevelProvider struct {
 	lastTradeCursor               interface{}
 	isFirstTradeHistoryRun        bool
 	incrementTimestampCursor      bool
+	orderConstraints              *model.OrderConstraints
 }
 
 // ensure it implements LevelProvider
@@ -48,6 +48,7 @@ func makeSwingLevelProvider(
 	tradingPair *model.TradingPair,
 	lastTradeCursor interface{},
 	incrementTimestampCursor bool,
+	orderConstraints *model.OrderConstraints,
 ) *swingLevelProvider {
 	return &swingLevelProvider{
 		spread:                        spread,
@@ -63,6 +64,7 @@ func makeSwingLevelProvider(
 		lastTradeCursor:               lastTradeCursor,
 		isFirstTradeHistoryRun:        true,
 		incrementTimestampCursor:      incrementTimestampCursor,
+		orderConstraints:              orderConstraints,
 	}
 }
 
@@ -126,7 +128,7 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 		log.Printf("lastCursor == p.lastTradeCursor leaving lastTradeCursor=%v and lastTradePrice=%.10f", p.lastTradeCursor, p.lastTradePrice)
 	} else {
 		p.lastTradeCursor = lastCursor
-		mapKey := model.NumberFromFloat(lastPrice, utils.SdexPrecision)
+		mapKey := model.NumberFromFloat(lastPrice, p.orderConstraints.PricePrecision)
 		printPrice2LastPriceMap()
 		p.lastTradePrice = getLastPriceFromMap(mapKey, lastIsBuy)
 		log.Printf("updated lastTradeCursor=%v and lastTradePrice=%.10f (converted=%.10f)", p.lastTradeCursor, lastPrice, p.lastTradePrice)
@@ -165,15 +167,15 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 		}
 
 		levels = append(levels, api.Level{
-			Price:  *model.NumberFromFloat(priceToUse, utils.SdexPrecision),
-			Amount: *model.NumberFromFloat(p.amountBase, utils.SdexPrecision),
+			Price:  *model.NumberFromFloat(priceToUse, p.orderConstraints.PricePrecision),
+			Amount: *model.NumberFromFloat(p.amountBase, p.orderConstraints.VolumePrecision),
 		})
 
 		// update last price map here
-		mapKey := model.NumberFromFloat(priceToUse, utils.SdexPrecision)
+		mapKey := model.NumberFromFloat(priceToUse, p.orderConstraints.PricePrecision)
 		mapValue := newPrice
 		if p.useMaxQuoteInTargetAmountCalc {
-			mapKey = model.NumberFromFloat(1/priceToUse, utils.SdexPrecision)
+			mapKey = model.NumberFromFloat(1/priceToUse, p.orderConstraints.PricePrecision)
 			mapValue = 1 / newPrice
 		}
 		price2LastPrice[mapKey.AsFloat()] = mapValue

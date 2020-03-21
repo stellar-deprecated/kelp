@@ -58,6 +58,7 @@ func makeSwingStrategy(
 		tradingPair,
 		config.LastTradeCursor,
 		incrementTimestampCursor,
+		orderConstraints,
 	)
 	sellSideStrategy := makeSellSideStrategy(
 		sdex,
@@ -83,6 +84,7 @@ func makeSwingStrategy(
 		tradingPair,
 		config.LastTradeCursor,
 		incrementTimestampCursor,
+		orderConstraints,
 	)
 	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
