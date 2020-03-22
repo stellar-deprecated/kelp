@@ -14,6 +14,11 @@ import (
 // use a global variable for now so it is common across both instances (buy and sell side)
 var price2LastPrice map[float64]float64 = map[float64]float64{}
 
+// the keys in price2LastPrice should have a larger precision than the exchange's market supports because we use the same map for
+// storing prices of both buy and sell orders which could hold prices at the same level and we want the map to allow both (instead
+// of rounding to the same offerPrice key)
+const offerPriceLargePrecision int8 = 15
+
 // swingLevelProvider provides levels based on the concept of a swinging price
 type swingLevelProvider struct {
 	spread                        float64
@@ -84,13 +89,37 @@ func printPrice2LastPriceMap() {
 
 func getLastPriceFromMap(price2LastPriceMap map[float64]float64, tradePrice float64, lastTradeIsBuy bool) (lastTradePrice float64, lastPrice float64) {
 	if lp, ok := price2LastPriceMap[tradePrice]; ok {
-		log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f: last price (%.8f)\n", tradePrice, lp)
-		return tradePrice, lp
+		if lastTradeIsBuy {
+			if tradePrice < lp {
+				log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f (lastTradeIsBuy = true): last price (%.8f)\n", tradePrice, lp)
+				return tradePrice, lp
+			}
+
+			log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f with unexpected last price for the lastTradeIsBuy = true: last price (%.8f); was expecting lastPrice to be greater than trade price\n", tradePrice, lp)
+			// don't return
+		} else if !lastTradeIsBuy {
+			if tradePrice > lp {
+				log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f (lastTradeIsBuy = false): last price (%.8f)\n", tradePrice, lp)
+				return tradePrice, lp
+			}
+
+			log.Printf("getLastPriceFromMap, found in map for tradePrice = %.8f with unexpected last price for the lastTradeIsBuy = false: last price (%.8f); was expecting lastPrice to be less than trade price\n", tradePrice, lp)
+			// don't return
+		}
 	}
 
 	closestOfferPrice := -1.0
 	diff := -1.0
-	for offerPrice, _ := range price2LastPriceMap {
+	for offerPrice, lp := range price2LastPriceMap {
+		if lastTradeIsBuy && !(offerPrice < lp) {
+			// skip sell prices when we are in buy mode
+			continue
+		}
+		if !lastTradeIsBuy && !(offerPrice > lp) {
+			// skip buy prices when we are in sell mode
+			continue
+		}
+
 		d := math.Abs(tradePrice - offerPrice)
 
 		firstIter := closestOfferPrice == -1
@@ -107,7 +136,7 @@ func getLastPriceFromMap(price2LastPriceMap map[float64]float64, tradePrice floa
 	}
 	lp := price2LastPriceMap[closestOfferPrice]
 
-	log.Printf("getLastPriceFromMap, calculated for tradePrice = %.8f (isBuy = %v): closest offerPrice (%.8f) and last price (%.8f) when it was not in map\n", tradePrice, lastTradeIsBuy, closestOfferPrice, lp)
+	log.Printf("getLastPriceFromMap, calculated for tradePrice = %.8f (lastTradeIsBuy = %v): closest offerPrice (%.8f) and last price (%.8f) when it was not in map\n", tradePrice, lastTradeIsBuy, closestOfferPrice, lp)
 	return closestOfferPrice, lp
 }
 
@@ -180,10 +209,13 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 		})
 
 		// update last price map here
-		mapKey := model.NumberFromFloat(priceToUse, p.orderConstraints.PricePrecision)
+		// the keys in price2LastPrice should have a larger precision than the exchange's market supports because we use the same map for
+		// storing prices of both buy and sell orders which could hold prices at the same level and we want the map to allow both (instead
+		// of rounding to the same offerPrice key)
+		mapKey := model.NumberFromFloat(priceToUse, offerPriceLargePrecision)
 		mapValue := newPrice
 		if p.useMaxQuoteInTargetAmountCalc {
-			mapKey = model.NumberFromFloat(1/priceToUse, p.orderConstraints.PricePrecision)
+			mapKey = model.NumberFromFloat(1/priceToUse, offerPriceLargePrecision)
 			mapValue = 1 / newPrice
 		}
 		price2LastPrice[mapKey.AsFloat()] = mapValue

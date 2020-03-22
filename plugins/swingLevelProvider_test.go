@@ -9,11 +9,8 @@ import (
 
 func TestGetLastPriceFromMap(t *testing.T) {
 	price2LastPriceMap := map[float64]float64{
-		0.115: 0.110,
-		0.105: 0.100,
-		0.095: 0.090,
-		0.085: 0.080,
-		0.075: 0.070,
+		0.075: 0.070, // sell side because offer price (key) is greater than last price (value)
+		0.074: 0.080, // buy side because offer price (key) is less than last price (value)
 	}
 
 	testCases := []struct {
@@ -25,28 +22,40 @@ func TestGetLastPriceFromMap(t *testing.T) {
 	}{
 		{
 			price2LastPrice: price2LastPriceMap,
-			tradePrice:      0.105,
-			isBuy:           true,
-			wantTradePrice:  0.105,
-			wantLastPrice:   0.100,
-		}, {
-			price2LastPrice: price2LastPriceMap,
-			tradePrice:      0.105,
+			tradePrice:      0.075,
 			isBuy:           false,
-			wantTradePrice:  0.105,
-			wantLastPrice:   0.100,
+			wantTradePrice:  0.075,
+			wantLastPrice:   0.070,
 		}, {
 			price2LastPrice: price2LastPriceMap,
-			tradePrice:      0.096,
-			isBuy:           true,
-			wantTradePrice:  0.095,
-			wantLastPrice:   0.090,
-		}, {
-			price2LastPrice: price2LastPriceMap,
-			tradePrice:      0.096,
+			tradePrice:      0.074,
 			isBuy:           false,
-			wantTradePrice:  0.095,
-			wantLastPrice:   0.090,
+			wantTradePrice:  0.075,
+			wantLastPrice:   0.070,
+		}, {
+			price2LastPrice: price2LastPriceMap,
+			tradePrice:      0.0745,
+			isBuy:           false,
+			wantTradePrice:  0.075,
+			wantLastPrice:   0.070,
+		}, {
+			price2LastPrice: price2LastPriceMap,
+			tradePrice:      0.074,
+			isBuy:           true,
+			wantTradePrice:  0.074,
+			wantLastPrice:   0.080,
+		}, {
+			price2LastPrice: price2LastPriceMap,
+			tradePrice:      0.075,
+			isBuy:           true,
+			wantTradePrice:  0.074,
+			wantLastPrice:   0.080,
+		}, {
+			price2LastPrice: price2LastPriceMap,
+			tradePrice:      0.0745,
+			isBuy:           true,
+			wantTradePrice:  0.074,
+			wantLastPrice:   0.080,
 		},
 	}
 
