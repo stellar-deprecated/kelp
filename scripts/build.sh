@@ -68,7 +68,7 @@ if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=0
     FORCE_RELEASE=0
-if [[ ($# -eq 1 && ("$1" == "-df" || "$1" == "-fd")) || ($# -eq 2 && ("$1" == "-d" || "$1" == "--deploy") && ("$2" == "-f" || "$2" == "--force")) || ($# -eq 2 && ("$1" == "-f" || "$1" == "--force") && ("$2" == "-d" || "$2" == "--deploy")) ]]; then
+elif [[ ($# -eq 1 && ("$1" == "-df" || "$1" == "-fd")) || ($# -eq 2 && ("$1" == "-d" || "$1" == "--deploy") && ("$2" == "-f" || "$2" == "--force")) || ($# -eq 2 && ("$1" == "-f" || "$1" == "--force") && ("$2" == "-d" || "$2" == "--deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=0
     FORCE_RELEASE=1
