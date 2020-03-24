@@ -5,6 +5,7 @@ function usage() {
     echo ""
     echo "Flags:"
     echo "    -d,   --deploy        prepare tar archives in build/, only works on a tagged commit in the format v1.0.0 or v1.0.0-rc1"
+    echo "    -f,   --force         force deploy, combined with the -d flag to release for non-tagged commits"
     echo "    -t,   --test-deploy   test prepare tar archives in build/ for your native platform only"
     echo "    -g,   --gen-ccxt      generate binary for ccxt-rest executable for to be uploaded to GitHub for use in building kelp binary, takes in arguments (linux, darwin, windows)"
     echo "    -h,   --help          show this help info"
@@ -66,6 +67,11 @@ KELP=`pwd`
 if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=0
+    FORCE_RELEASE=0
+if [[ ($# -eq 1 && ("$1" == "-df" || "$1" == "-fd")) || ($# -eq 2 && ("$1" == "-d" || "$1" == "--deploy") && ("$2" == "-f" || "$2" == "--force")) || ($# -eq 2 && ("$1" == "-f" || "$1" == "--force") && ("$2" == "-d" || "$2" == "--deploy")) ]]; then
+    ENV=release
+    IS_TEST_MODE=0
+    FORCE_RELEASE=1
 elif [[ ($# -eq 1 && ("$1" == "-t" || "$1" == "--test-deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=1
@@ -134,14 +140,24 @@ then
     then
         if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
         then
-            echo "error: the git commit needs to be tagged with a valid version to prepare archives, see $0 -h for more information"
-            exit 1
+            if [[ FORCE_RELEASE -eq 0 ]]
+            then
+                echo "error: the git commit needs to be tagged with a valid version to prepare archives, see $0 -h for more information"
+                exit 1
+            else
+                echo "force release option set so ignoring version format"
+            fi
         fi
         EXPECTED_GIT_RELEASE_BRANCH="release/$(echo $VERSION | cut -d '.' -f1,2).x"
         if ! [[ ("$GIT_BRANCH" == "$EXPECTED_GIT_RELEASE_BRANCH") || ("$GIT_BRANCH" == "master") ]]
         then
-            echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
-            exit 1
+            if [[ FORCE_RELEASE -eq 0 ]]
+            then
+                echo "error: you can only deploy an official release from the 'master' branch or a branch named in the format of 'release/vA.B.x' where 'A' and 'B' are positive numbers that co-incide with the major and minor versions of your release, example: $EXPECTED_GIT_RELEASE_BRANCH"
+                exit 1
+            else
+                echo "force release option set so ignoring release branch requirements"
+            fi
         fi
     fi
 fi
