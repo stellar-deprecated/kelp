@@ -7,7 +7,7 @@ function usage() {
     echo "    -d,   --deploy        prepare tar archives in build/, only works on a tagged commit in the format v1.0.0 or v1.0.0-rc1"
     echo "    -f,   --force         force deploy, combined with the -d flag to release for non-tagged commits"
     echo "    -t,   --test-deploy   test prepare tar archives in build/ for your native platform only"
-    echo "    -g,   --gen-ccxt      generate binary for ccxt-rest executable for to be uploaded to GitHub for use in building kelp binary, takes in arguments (linux, darwin, windows)"
+    echo "    -g,   --gen-ccxt      generate binary for ccxt-rest executable for to be uploaded to GitHub for use in building kelp binary, takes in arguments (linux, darwin)"
     echo "    -h,   --help          show this help info"
 }
 
@@ -87,7 +87,7 @@ elif [[ (($# -eq 1 || $# -eq 2) && ("$1" == "-g" || "$1" == "--gen-ccxt")) ]]; t
     fi
 
     if [[ $# -eq 2 ]]; then
-        if [[ "$2" == "linux" || "$2" == "darwin" || "$2" == "windows" ]]; then
+        if [[ "$2" == "linux" || "$2" == "darwin" ]]; then
             gen_ccxt_binary $2
             echo ""
             echo "BUILD SUCCESSFUL"
