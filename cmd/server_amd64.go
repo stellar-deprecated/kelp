@@ -17,6 +17,7 @@ import (
 
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"github.com/asticode/go-astilog"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -54,6 +55,7 @@ type serverInputs struct {
 	horizonTestnetURI *string
 	horizonPubnetURI  *string
 	noHeaders         *bool
+	verbose           *bool
 }
 
 func init() {
@@ -66,6 +68,7 @@ func init() {
 	options.horizonTestnetURI = serverCmd.Flags().String("horizon-testnet-uri", "https://horizon-testnet.stellar.org", "URI to use for the horizon instance connected to the Stellar Test Network (must contain the word 'test')")
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
+	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		binDirectory, e := getBinaryDirectory()
@@ -93,6 +96,10 @@ func init() {
 
 			logFilepath = filepath.Join(logDirPath, logFilename)
 			setLogFile(l, logFilepath)
+
+			if *options.verbose {
+				astilog.SetDefaultLogger()
+			}
 		}
 
 		if !isLocalDevMode {
