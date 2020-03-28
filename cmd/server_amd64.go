@@ -56,6 +56,7 @@ type serverInputs struct {
 	horizonPubnetURI  *string
 	noHeaders         *bool
 	verbose           *bool
+	noElectron        *bool
 }
 
 func init() {
@@ -69,6 +70,7 @@ func init() {
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
+	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		binDirectory, e := getBinaryDirectory()
@@ -126,7 +128,11 @@ func init() {
 			go func() {
 				url := tailFilepath
 				log.Printf("opening up the desktop window to URL '%s'\n", url)
-				openBrowser(kos, trayIconPath, url)
+				if *options.noElectron {
+					openBrowser(kos, appURL)
+				} else {
+					openElectron(trayIconPath, url)
+				}
 			}()
 		}
 
@@ -455,7 +461,19 @@ func getBinaryDirectory() (string, error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
-func openBrowser(kos *kelpos.KelpOS, trayIconPath string, url string) {
+func openBrowser(kos *kelpos.KelpOS, url string) {
+	log.Printf("opening URL in native browser: %s", url)
+
+	browserCmd := fmt.Sprintf("open %s", url)
+	_, e := kos.Blocking("browser", browserCmd)
+
+	if e != nil {
+		log.Fatal(e)
+	}
+}
+
+func openElectron(trayIconPath string, url string) {
+	log.Printf("opening URL in electron: %s", url)
 	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
