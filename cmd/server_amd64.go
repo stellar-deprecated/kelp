@@ -317,15 +317,15 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
 	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
 	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
-	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt)
+	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt, binDirectory)
 
 	return ccxtDirPath, nil
 }
 
-func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string) {
+func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, binDirectory string) {
 	zipFilename := filenameNoExt + ".zip"
 	log.Printf("unzipping file %s ... ", zipFilename)
-	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd -", ccxtDir, zipFilename)
+	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDir, zipFilename, binDirectory)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
