@@ -197,7 +197,11 @@ func init() {
 
 			if !ccxtRunning {
 				// start ccxt before we make API server (which loads exchange list)
-				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
+				ccxtGoos := runtime.GOOS
+				if ccxtGoos == "windows" {
+					ccxtGoos = "linux"
+				}
+				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", ccxtGoos)
 				ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
 				if e != nil {
 					panic(e)
