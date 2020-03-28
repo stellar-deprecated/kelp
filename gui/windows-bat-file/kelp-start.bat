@@ -1,1 +1,1 @@
-bash -c "./Kelp"
+bash -c "./Kelp.exe"
