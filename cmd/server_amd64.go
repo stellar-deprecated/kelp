@@ -36,6 +36,8 @@ import (
 
 const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
+const logsDir = "/logs"
+const vendorDirectory = "/vendor"
 const trayIconName = "kelp-icon@1-8x.png"
 const kelpCcxtPath = "/ccxt"
 const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
@@ -82,21 +84,21 @@ func init() {
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
+
 		logFilepath := ""
 		if !isLocalDevMode {
 			l := logger.MakeBasicLogger()
 			t := time.Now().Format("20060102T150405MST")
-			logDir := "/logs"
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logDir)
-			log.Printf("making logDirPath: %s ...", logDirPath)
-			e = kos.Mkdir(logDirPath)
+			logsDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logsDir)
+			log.Printf("making logsDirPath: %s ...", logsDirPath)
+			e = kos.Mkdir(logsDirPath)
 			if e != nil {
-				panic(errors.Wrap(e, "could not make directories for logDirPath: "+logDirPath))
+				panic(errors.Wrap(e, "could not make directories for logsDirPath: "+logsDirPath))
 			}
 
-			logFilepath = filepath.Join(logDirPath, logFilename)
+			logFilepath = filepath.Join(logsDirPath, logFilename)
 			setLogFile(l, logFilepath)
 
 			if *options.verbose {
