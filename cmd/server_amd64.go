@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/asticode/go-astilectron"
@@ -106,6 +107,9 @@ func init() {
 			}
 		}
 
+		// create a latch to trigger the browser opening once the backend server is loaded
+		openBrowserWg := &sync.WaitGroup{}
+		openBrowserWg.Add(1)
 		if !isLocalDevMode {
 			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
 			// write out tail.html after setting the file to be tailed
@@ -131,7 +135,7 @@ func init() {
 				url := tailFilepath
 				log.Printf("opening up the desktop window to URL '%s'\n", url)
 				if *options.noElectron {
-					openBrowser(kos, appURL)
+					openBrowser(kos, appURL, openBrowserWg)
 				} else {
 					openElectron(trayIconPath, url)
 				}
@@ -265,6 +269,7 @@ func init() {
 		time.Sleep(sleepNumSecondsBeforeReadyString * time.Second)
 
 		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
+		openBrowserWg.Done()
 		threadTracker.Wait()
 	}
 }
@@ -467,7 +472,7 @@ func getBinaryDirectory() (string, error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
-func openBrowser(kos *kelpos.KelpOS, url string) {
+func openBrowser(kos *kelpos.KelpOS, url string, openBrowserWg *sync.WaitGroup) {
 	log.Printf("opening URL in native browser: %s", url)
 
 	var browserCmd string
@@ -481,6 +486,7 @@ func openBrowser(kos *kelpos.KelpOS, url string) {
 		log.Fatalf("unable to open url '%s' in browser because runtime.GOOS was unrecognized: %s", url, runtime.GOOS)
 	}
 
+	openBrowserWg.Wait()
 	_, e := kos.Blocking("browser", browserCmd)
 	if e != nil {
 		log.Fatal(e)
