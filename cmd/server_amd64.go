@@ -229,6 +229,8 @@ func init() {
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
 			runWithYarn(kos, options)
+
+			log.Printf("should not have reached here after running yarn")
 			return
 		}
 
@@ -271,6 +273,8 @@ func init() {
 		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
 		openBrowserWg.Done()
 		threadTracker.Wait()
+
+		log.Printf("should not have reached here after starting the backend server")
 	}
 }
 
