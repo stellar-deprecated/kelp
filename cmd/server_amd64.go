@@ -470,9 +470,18 @@ func getBinaryDirectory() (string, error) {
 func openBrowser(kos *kelpos.KelpOS, url string) {
 	log.Printf("opening URL in native browser: %s", url)
 
-	browserCmd := fmt.Sprintf("open %s", url)
-	_, e := kos.Blocking("browser", browserCmd)
+	var browserCmd string
+	if runtime.GOOS == "linux" {
+		browserCmd = fmt.Sprintf("xdg-open %s", url)
+	} else if runtime.GOOS == "darwin" {
+		browserCmd = fmt.Sprintf("open %s", url)
+	} else if runtime.GOOS == "windows" {
+		browserCmd = fmt.Sprintf("start %s", url)
+	} else {
+		log.Fatalf("unable to open url '%s' in browser because runtime.GOOS was unrecognized: %s", url, runtime.GOOS)
+	}
 
+	_, e := kos.Blocking("browser", browserCmd)
 	if e != nil {
 		log.Fatal(e)
 	}
