@@ -25,8 +25,27 @@ var environments = `{
 	]
 }`
 
+var environmentsDarwin = `{
+	"environments": [
+		{"os": "darwin", "arch": "amd64"}
+	]
+}`
+
+var environmentsLinux = `{
+	"environments": [
+		{"os": "linux", "arch": "amd64"}
+	]
+}`
+
+var environmentsWindows = `{
+	"environments": [
+		{"os": "windows", "arch": "amd64"}
+	]
+}`
+
 func main() {
 	buildAllP := flag.Bool("a", false, "whether to build for all platforms (default builds only for native platform)")
+	buildPlatformP := flag.String("p", "", "explicitly specify a specific platform to build for")
 	flag.Parse()
 	buildAll := *buildAllP
 
@@ -36,17 +55,15 @@ func main() {
 		panic(e)
 	}
 
-	if buildAll {
-		var environmentsJSON map[string]interface{}
-		e := json.Unmarshal([]byte(environments), &environmentsJSON)
-		if e != nil {
-			panic(e)
-		}
-
-		for k, v := range environmentsJSON {
-			bundlerJSON[k] = v
-		}
-	}
+	if *buildPlatformP == "darwin" {
+		setPlatform(environmentsDarwin, bundlerJSON)
+	} else if *buildPlatformP == "linux" {
+		setPlatform(environmentsLinux, bundlerJSON)
+	} else if *buildPlatformP == "windows" {
+		setPlatform(environmentsWindows, bundlerJSON)
+	} else if buildAll {
+		setPlatform(environments, bundlerJSON)
+	} // else only for native platform
 
 	jsonBytes, e := json.MarshalIndent(bundlerJSON, "", "    ")
 	if e != nil {
@@ -54,4 +71,16 @@ func main() {
 	}
 	jsonString := string(jsonBytes)
 	fmt.Println(jsonString)
+}
+
+func setPlatform(envs string, bundlerJSON map[string]interface{}) {
+	var environmentsJSON map[string]interface{}
+	e := json.Unmarshal([]byte(envs), &environmentsJSON)
+	if e != nil {
+		panic(e)
+	}
+
+	for k, v := range environmentsJSON {
+		bundlerJSON[k] = v
+	}
 }

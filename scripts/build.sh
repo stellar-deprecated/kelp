@@ -56,6 +56,22 @@ function gen_ccxt_binary() {
     echo "successful"
 }
 
+# takes in the ARGS for which to build
+function gen_bundler_json() {
+    echo -n "generating the bundler.json file in / to create missing files for '$@' platforms ... "
+    go run ./scripts/gen_bundler_json/gen_bundler_json.go $@ > $KELP/bundler.json
+    check_build_result $?
+    echo "done"
+}
+
+# takes in no args
+function gen_bind_files() {
+    echo -n "generating the bind file in /cmd to create missing files for platforms specified in the bundler.json ... "
+    astilectron-bundler bd -c $KELP/bundler.json
+    check_build_result $?
+    echo "done"
+}
+
 if [[ $(basename $("pwd")) != "kelp" ]]
 then
     echo "need to invoke from the root 'kelp' directory"
@@ -178,20 +194,12 @@ check_build_result $?
 echo "... finished embedding contents of gui/web/build into a .go file (env=$ENV)"
 echo ""
 
-echo -n "generating the bundler.json file in / to create missing files for current platform ... "
-go run ./scripts/gen_bundler_json/gen_bundler_json.go > $KELP/bundler.json
-check_build_result $?
-echo "done"
-echo -n "generating the bind file in /cmd to create missing files for current platform ... "
-astilectron-bundler bd -c $KELP/bundler.json
-check_build_result $?
-echo "done"
-echo ""
-
 if [[ $ENV == "dev" ]]
 then
-    echo "GOOS: $(go env GOOS)"
-    echo "GOARCH: $(go env GOARCH)"
+    GOOS="$(go env GOOS)"
+    GOARCH="$(go env GOARCH)"
+    echo "GOOS: $GOOS"
+    echo "GOARCH: $GOARCH"
     echo ""
 
     # explicit check for windows
@@ -205,6 +213,10 @@ then
     OUTFILE=bin/kelp$EXTENSION
     mkdir -p bin
 
+    gen_bundler_json
+    gen_bind_files
+    echo ""
+
     echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
     check_build_result $?
@@ -215,18 +227,7 @@ then
 fi
 # else, we are in deploy mode
 
-echo -n "generating the bundler.json file in / to create missing files for all remaining platforms ... "
-go run ./scripts/gen_bundler_json/gen_bundler_json.go -a > $KELP/bundler.json
-check_build_result $?
-echo "done"
-echo -n "generating the bind file in /cmd to create missing files for all remaining platforms ... "
-astilectron-bundler bd -c $KELP/bundler.json
-check_build_result $?
-echo "done"
-echo ""
-
 ARCHIVE_DIR=build/$DATE
-
 ARCHIVE_FOLDER_NAME=kelp-$VERSION
 ARCHIVE_DIR_SOURCE=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME
 mkdir -p $ARCHIVE_DIR_SOURCE
@@ -243,7 +244,6 @@ do
     GOOS=`echo $args | cut -d' ' -f1 | tr -d ' '`
     GOARCH=`echo $args | cut -d' ' -f2 | tr -d ' '`
     GOARM=`echo $args | cut -d' ' -f3 | tr -d ' '`
-    echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
 
     # explicit check for windows
     BINARY="$OUTFILE"
@@ -252,7 +252,10 @@ do
         BINARY="$OUTFILE.exe"
     fi
 
+    gen_bundler_json -p $GOOS
+    gen_bind_files
     # compile
+    echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
     env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
     check_build_result $?
     echo "successful"
@@ -308,6 +311,8 @@ do
     GOARCH=amd64
     unset GOARM
 
+    gen_bundler_json -p $GOOS
+    echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
     # compile
     echo -n "compiling UI for (GOOS=$GOOS, GOARCH=$GOARCH, FLAG=$FLAG) ... "
     astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
