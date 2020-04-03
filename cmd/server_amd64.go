@@ -111,9 +111,14 @@ func init() {
 		openBrowserWg := &sync.WaitGroup{}
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
+			htmlContent := tailFileHTML
+			if runtime.GOOS == "windows" {
+				htmlContent = windowsInitialFile
+			}
+
 			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
 			// write out tail.html after setting the file to be tailed
-			tailFileCompiled1 := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
+			tailFileCompiled1 := strings.Replace(htmlContent, stringPlaceholder, logFilepath, -1)
 			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
 			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
@@ -541,6 +546,50 @@ func quit() {
 	log.Printf("quitting...")
 	os.Exit(0)
 }
+
+const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<script type="text/javascript">
+			if (typeof XMLHttpRequest == "undefined") {
+				// this is only for really ancient browsers
+				XMLHttpRequest = function () {
+					try { return new ActiveXObject("Msxml2.xmlHttp.6.0"); }
+					catch (e1) { }
+					try { return new ActiveXObject("Msxml2.xmlHttp.3.0"); }
+					catch (e2) { }
+					try { return new ActiveXObject("Msxml2.xmlHttp"); }
+					catch (e3) { }
+					throw new Error("This browser does not support xmlHttpRequest.");
+				};
+			}
+
+			var url = "REDIRECT_URL";
+			function checkServerOnline() {
+				var ajax = new XMLHttpRequest();
+				ajax.open("GET", url, true);
+				ajax.onreadystatechange = function () {
+					if (ajax.readyState == 4 && ajax.status % 100 == 2) {
+						window.location.href = url;
+					}
+				}
+				ajax.send(null);
+			}
+		</script>
+	</head>
+	<body onLoad='setInterval("checkServerOnline()", 500);' bgcolor="#0D0208" text="#00FF41">
+		<div>
+			Loading the backend for Kelp.<br />
+			This will take a few minutes.<br />
+			<br />
+			You will be redirected automatically once loaded.<br />
+			<br />
+			Please be patient.<br />
+		</div>
+	</body>
+</html>
+`
 
 const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/javascript/tail-dash-f.html with minor modifications -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
