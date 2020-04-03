@@ -568,7 +568,7 @@ const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transit
 				var ajax = new XMLHttpRequest();
 				ajax.open("GET", url, true);
 				ajax.onreadystatechange = function () {
-					if (ajax.readyState == 4 && ajax.status % 100 == 2) {
+					if ((ajax.readyState == 4) && (ajax.status == 200)) {
 						window.location.href = url;
 					}
 				}
