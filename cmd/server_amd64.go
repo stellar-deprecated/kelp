@@ -137,12 +137,10 @@ func init() {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
 			go func() {
-				url := tailFilepath
-				log.Printf("opening up the desktop window to URL '%s'\n", url)
 				if *options.noElectron {
 					openBrowser(kos, appURL, openBrowserWg)
 				} else {
-					openElectron(trayIconPath, url)
+					openElectron(trayIconPath, tailFilepath)
 				}
 			}()
 		}
