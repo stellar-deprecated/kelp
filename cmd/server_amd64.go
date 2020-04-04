@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -139,11 +140,19 @@ func init() {
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
+
+			electronURL := tailFilepath
+			if runtime.GOOS == "windows" {
+				// start a new web server to serve the tail file since windows does not allow accessing a file directly in electron
+				// likely because of the way the file path is specified
+				tailFilePort := startTailFileServer(tailFileCompiled5)
+				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
+			}
 			go func() {
 				if *options.noElectron {
 					openBrowser(kos, appURL, openBrowserWg)
 				} else {
-					openElectron(trayIconPath, tailFilepath)
+					openElectron(trayIconPath, electronURL)
 				}
 			}()
 		}
@@ -546,6 +555,27 @@ func openElectron(trayIconPath string, url string) {
 func quit() {
 	log.Printf("quitting...")
 	os.Exit(0)
+}
+
+// startTailFileServer takes in anhtml file or a string and serves that on the root of a new url at localhost:port where port is the int returned
+func startTailFileServer(tailFileHTML string) int {
+	r := chi.NewRouter()
+	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(tailFileHTML))
+	}))
+
+	listener, e := net.Listen("tcp", ":0")
+	if e != nil {
+		log.Fatal(e)
+	}
+
+	port := listener.Addr().(*net.TCPAddr).Port
+	log.Printf("starting server for tail file on port %d\n", port)
+	go func() {
+		panic(http.Serve(listener, r))
+	}()
+	return port
 }
 
 const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
