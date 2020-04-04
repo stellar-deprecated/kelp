@@ -291,8 +291,7 @@ echo ""
 
 ARCHIVE_FOLDER_NAME_UI=kelp_ui-$VERSION
 ARCHIVE_DIR_SOURCE_UI=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME_UI
-#PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
-PLATFORM_ARGS_UI=("darwin -d" "linux -l")
+PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
 if [[ IS_TEST_MODE -eq 1 ]]
 then
     PLATFORM_ARGS_UI=("$(go env GOOS)")
@@ -318,6 +317,11 @@ do
     astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
     check_build_result $?
     echo "successful"
+
+    if [[ $GOOS == "windows" ]]
+    then
+        cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
+    fi
 
     # archive
     ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM

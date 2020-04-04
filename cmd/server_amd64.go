@@ -7,12 +7,14 @@ import (
 	"image/png"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/asticode/go-astilectron"
@@ -36,6 +38,8 @@ import (
 
 const kelpPrefsDirectory = ".kelp"
 const kelpAssetsPath = "/assets"
+const logsDir = "/logs"
+const vendorDirectory = "/vendor"
 const trayIconName = "kelp-icon@1-8x.png"
 const kelpCcxtPath = "/ccxt"
 const ccxtDownloadBaseURL = "https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4"
@@ -44,6 +48,7 @@ const ccxtWaitSeconds = 60
 const versionPlaceholder = "VERSION_PLACEHOLDER"
 const stringPlaceholder = "PLACEHOLDER_URL"
 const redirectPlaceholder = "REDIRECT_URL"
+const pingPlaceholder = "PING_URL"
 const sleepNumSecondsBeforeReadyString = 1
 const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
@@ -56,6 +61,7 @@ type serverInputs struct {
 	horizonPubnetURI  *string
 	noHeaders         *bool
 	verbose           *bool
+	noElectron        *bool
 }
 
 func init() {
@@ -69,6 +75,7 @@ func init() {
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
 	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
+	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		binDirectory, e := getBinaryDirectory()
@@ -80,21 +87,21 @@ func init() {
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
+
 		logFilepath := ""
 		if !isLocalDevMode {
 			l := logger.MakeBasicLogger()
 			t := time.Now().Format("20060102T150405MST")
-			logDir := "/logs"
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logDir)
-			log.Printf("making logDirPath: %s ...", logDirPath)
-			e = kos.Mkdir(logDirPath)
+			logsDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logsDir)
+			log.Printf("making logsDirPath: %s ...", logsDirPath)
+			e = kos.Mkdir(logsDirPath)
 			if e != nil {
-				panic(errors.Wrap(e, "could not make directories for logDirPath: "+logDirPath))
+				panic(errors.Wrap(e, "could not make directories for logsDirPath: "+logsDirPath))
 			}
 
-			logFilepath = filepath.Join(logDirPath, logFilename)
+			logFilepath = filepath.Join(logsDirPath, logFilename)
 			setLogFile(l, logFilepath)
 
 			if *options.verbose {
@@ -102,16 +109,26 @@ func init() {
 			}
 		}
 
+		// create a latch to trigger the browser opening once the backend server is loaded
+		openBrowserWg := &sync.WaitGroup{}
+		openBrowserWg.Add(1)
 		if !isLocalDevMode {
+			htmlContent := tailFileHTML
+			if runtime.GOOS == "windows" {
+				htmlContent = windowsInitialFile
+			}
+
 			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
+			pingURL := fmt.Sprintf("http://localhost:%d/ping", *options.port)
 			// write out tail.html after setting the file to be tailed
-			tailFileCompiled1 := strings.Replace(tailFileHTML, stringPlaceholder, logFilepath, -1)
+			tailFileCompiled1 := strings.Replace(htmlContent, stringPlaceholder, logFilepath, -1)
 			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
 			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
 			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
+			tailFileCompiled5 := strings.Replace(tailFileCompiled4, pingPlaceholder, pingURL, -1)
 			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
-			fileContents := []byte(tailFileCompiled4)
+			fileContents := []byte(tailFileCompiled5)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 			if e != nil {
 				panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
@@ -123,10 +140,20 @@ func init() {
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
+
+			electronURL := tailFilepath
+			if runtime.GOOS == "windows" {
+				// start a new web server to serve the tail file since windows does not allow accessing a file directly in electron
+				// likely because of the way the file path is specified
+				tailFilePort := startTailFileServer(tailFileCompiled5)
+				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
+			}
 			go func() {
-				url := tailFilepath
-				log.Printf("opening up the desktop window to URL '%s'\n", url)
-				openBrowser(kos, trayIconPath, url)
+				if *options.noElectron {
+					openBrowser(kos, appURL, openBrowserWg)
+				} else {
+					openElectron(trayIconPath, electronURL)
+				}
 			}()
 		}
 
@@ -189,7 +216,11 @@ func init() {
 
 			if !ccxtRunning {
 				// start ccxt before we make API server (which loads exchange list)
-				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", runtime.GOOS)
+				ccxtGoos := runtime.GOOS
+				if ccxtGoos == "windows" {
+					ccxtGoos = "linux"
+				}
+				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", ccxtGoos)
 				ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
 				if e != nil {
 					panic(e)
@@ -213,6 +244,8 @@ func init() {
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
 			runWithYarn(kos, options)
+
+			log.Printf("should not have reached here after running yarn")
 			return
 		}
 
@@ -253,7 +286,10 @@ func init() {
 		time.Sleep(sleepNumSecondsBeforeReadyString * time.Second)
 
 		log.Printf("%s: %d\n", readyStringIndicator, *options.port)
+		openBrowserWg.Done()
 		threadTracker.Wait()
+
+		log.Printf("should not have reached here after starting the backend server")
 	}
 }
 
@@ -305,15 +341,15 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
 	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
 	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
-	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt)
+	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt, binDirectory)
 
 	return ccxtDirPath, nil
 }
 
-func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string) {
+func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, binDirectory string) {
 	zipFilename := filenameNoExt + ".zip"
 	log.Printf("unzipping file %s ... ", zipFilename)
-	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd -", ccxtDir, zipFilename)
+	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDir, zipFilename, binDirectory)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
@@ -455,7 +491,29 @@ func getBinaryDirectory() (string, error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
-func openBrowser(kos *kelpos.KelpOS, trayIconPath string, url string) {
+func openBrowser(kos *kelpos.KelpOS, url string, openBrowserWg *sync.WaitGroup) {
+	log.Printf("opening URL in native browser: %s", url)
+
+	var browserCmd string
+	if runtime.GOOS == "linux" {
+		browserCmd = fmt.Sprintf("xdg-open %s", url)
+	} else if runtime.GOOS == "darwin" {
+		browserCmd = fmt.Sprintf("open %s", url)
+	} else if runtime.GOOS == "windows" {
+		browserCmd = fmt.Sprintf("start %s", url)
+	} else {
+		log.Fatalf("unable to open url '%s' in browser because runtime.GOOS was unrecognized: %s", url, runtime.GOOS)
+	}
+
+	openBrowserWg.Wait()
+	_, e := kos.Blocking("browser", browserCmd)
+	if e != nil {
+		log.Fatal(e)
+	}
+}
+
+func openElectron(trayIconPath string, url string) {
+	log.Printf("opening URL in electron: %s", url)
 	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
@@ -498,6 +556,72 @@ func quit() {
 	log.Printf("quitting...")
 	os.Exit(0)
 }
+
+// startTailFileServer takes in anhtml file or a string and serves that on the root of a new url at localhost:port where port is the int returned
+func startTailFileServer(tailFileHTML string) int {
+	r := chi.NewRouter()
+	r.Get("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(tailFileHTML))
+	}))
+
+	listener, e := net.Listen("tcp", ":0")
+	if e != nil {
+		log.Fatal(e)
+	}
+
+	port := listener.Addr().(*net.TCPAddr).Port
+	log.Printf("starting server for tail file on port %d\n", port)
+	go func() {
+		panic(http.Serve(listener, r))
+	}()
+	return port
+}
+
+const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<script type="text/javascript">
+			if (typeof XMLHttpRequest == "undefined") {
+				// this is only for really ancient browsers
+				XMLHttpRequest = function () {
+					try { return new ActiveXObject("Msxml2.xmlHttp.6.0"); }
+					catch (e1) { }
+					try { return new ActiveXObject("Msxml2.xmlHttp.3.0"); }
+					catch (e2) { }
+					try { return new ActiveXObject("Msxml2.xmlHttp"); }
+					catch (e3) { }
+					throw new Error("This browser does not support xmlHttpRequest.");
+				};
+			}
+
+			var pingUrl = "PING_URL";
+			var redirectUrl = "REDIRECT_URL";
+			function checkServerOnline() {
+				var ajax = new XMLHttpRequest();
+				ajax.open("GET", pingUrl, true);
+				ajax.onreadystatechange = function () {
+					if ((ajax.readyState == 4) && (ajax.status == 200)) {
+						window.location.href = redirectUrl;
+					}
+				}
+				ajax.send(null);
+			}
+		</script>
+	</head>
+	<body onLoad='setInterval("checkServerOnline()", 1000);' bgcolor="#0D0208" text="#00FF41">
+		<div>
+			Loading the backend for Kelp.<br />
+			This will take a few minutes.<br />
+			<br />
+			You will be redirected automatically once loaded.<br />
+			<br />
+			Please be patient.<br />
+		</div>
+	</body>
+</html>
+`
 
 const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/javascript/tail-dash-f.html with minor modifications -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
