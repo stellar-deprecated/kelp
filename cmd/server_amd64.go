@@ -580,7 +580,7 @@ const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transit
 			}
 		</script>
 	</head>
-	<body onLoad='setInterval("checkServerOnline()", 500);' bgcolor="#0D0208" text="#00FF41">
+	<body onLoad='setInterval("checkServerOnline()", 1000);' bgcolor="#0D0208" text="#00FF41">
 		<div>
 			Loading the backend for Kelp.<br />
 			This will take a few minutes.<br />
