@@ -47,6 +47,7 @@ const ccxtWaitSeconds = 60
 const versionPlaceholder = "VERSION_PLACEHOLDER"
 const stringPlaceholder = "PLACEHOLDER_URL"
 const redirectPlaceholder = "REDIRECT_URL"
+const pingPlaceholder = "PING_URL"
 const sleepNumSecondsBeforeReadyString = 1
 const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
@@ -117,14 +118,16 @@ func init() {
 			}
 
 			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
+			pingURL := fmt.Sprintf("http://localhost:%d/ping", *options.port)
 			// write out tail.html after setting the file to be tailed
 			tailFileCompiled1 := strings.Replace(htmlContent, stringPlaceholder, logFilepath, -1)
 			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
 			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
 			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
+			tailFileCompiled5 := strings.Replace(tailFileCompiled4, pingPlaceholder, pingURL, -1)
 			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
-			fileContents := []byte(tailFileCompiled4)
+			fileContents := []byte(tailFileCompiled5)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 			if e != nil {
 				panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
@@ -563,13 +566,14 @@ const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transit
 				};
 			}
 
-			var url = "REDIRECT_URL";
+			var pingUrl = "PING_URL";
+			var redirectUrl = "REDIRECT_URL";
 			function checkServerOnline() {
 				var ajax = new XMLHttpRequest();
-				ajax.open("GET", url, true);
+				ajax.open("GET", pingUrl, true);
 				ajax.onreadystatechange = function () {
 					if ((ajax.readyState == 4) && (ajax.status == 200)) {
-						window.location.href = url;
+						window.location.href = redirectUrl;
 					}
 				}
 				ajax.send(null);
