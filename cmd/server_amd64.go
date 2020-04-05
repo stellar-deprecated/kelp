@@ -78,11 +78,11 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		binDirectory, e := getBinaryDirectory()
+		currentDir, e := getCurrentDir()
 		if e != nil {
 			panic(errors.Wrap(e, "could not get binary directory"))
 		}
-		log.Printf("binDirectory: %s", binDirectory)
+		log.Printf("currentDir: %s", currentDir)
 
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
@@ -94,7 +94,7 @@ func init() {
 			t := time.Now().Format("20060102T150405MST")
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logsDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, logsDir)
+			logsDirPath := filepath.Join(currentDir, kelpPrefsDirectory, logsDir)
 			log.Printf("making logsDirPath: %s ...", logsDirPath)
 			e = kos.Mkdir(logsDirPath)
 			if e != nil {
@@ -127,7 +127,7 @@ func init() {
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
 			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
 			tailFileCompiled5 := strings.Replace(tailFileCompiled4, pingPlaceholder, pingURL, -1)
-			tailFilepath := filepath.Join(binDirectory, kelpPrefsDirectory, "tail.html")
+			tailFilepath := filepath.Join(currentDir, kelpPrefsDirectory, "tail.html")
 			fileContents := []byte(tailFileCompiled5)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 			if e != nil {
@@ -319,13 +319,13 @@ func setMiddleware(r *chi.Mux) {
 }
 
 func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error) {
-	binDirectory, e := getBinaryDirectory()
+	currentDir, e := getCurrentDir()
 	if e != nil {
 		return "", errors.Wrap(e, "could not get binary directory")
 	}
-	log.Printf("binDirectory: %s", binDirectory)
+	log.Printf("currentDir: %s", currentDir)
 
-	ccxtDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, kelpCcxtPath)
+	ccxtDirPath := filepath.Join(currentDir, kelpPrefsDirectory, kelpCcxtPath)
 	log.Printf("making ccxtDirPath: %s ...", ccxtDirPath)
 	e = kos.Mkdir(ccxtDirPath)
 	if e != nil {
@@ -341,15 +341,15 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
 	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
 	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
-	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt, binDirectory)
+	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt, currentDir)
 
 	return ccxtDirPath, nil
 }
 
-func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, binDirectory string) {
+func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, currentDir string) {
 	zipFilename := filenameNoExt + ".zip"
 	log.Printf("unzipping file %s ... ", zipFilename)
-	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDir, zipFilename, binDirectory)
+	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDir, zipFilename, currentDir)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
@@ -439,12 +439,12 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 }
 
 func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
-	binDirectory, e := getBinaryDirectory()
+	currentDir, e := getCurrentDir()
 	if e != nil {
 		return "", errors.Wrap(e, "could not get binary directory")
 	}
-	log.Printf("binDirectory: %s", binDirectory)
-	assetsDirPath := filepath.Join(binDirectory, kelpPrefsDirectory, kelpAssetsPath)
+	log.Printf("currentDir: %s", currentDir)
+	assetsDirPath := filepath.Join(currentDir, kelpPrefsDirectory, kelpAssetsPath)
 	log.Printf("assetsDirPath: %s", assetsDirPath)
 	trayIconPath := filepath.Join(assetsDirPath, trayIconName)
 	log.Printf("trayIconPath: %s", trayIconPath)
@@ -487,8 +487,13 @@ func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
 	return trayIconPath, nil
 }
 
-func getBinaryDirectory() (string, error) {
-	return filepath.Abs(filepath.Dir(os.Args[0]))
+func getCurrentDir() (string, error) {
+	kos := kelpos.GetKelpOS()
+	outputBytes, e := kos.Blocking("pwd", "pwd")
+	if e != nil {
+		return "", fmt.Errorf("could not fetch current directory: %s", e)
+	}
+	return strings.TrimSpace(string(outputBytes)), nil
 }
 
 func openBrowser(kos *kelpos.KelpOS, url string, openBrowserWg *sync.WaitGroup) {
