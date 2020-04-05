@@ -34,6 +34,7 @@ import (
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
+	"github.com/stellar/kelp/support/utils"
 )
 
 const kelpPrefsDirectory = ".kelp"
@@ -78,11 +79,22 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		currentDir, e := getCurrentDir()
+		currentDirUnix, e := getCurrentDirUnix()
 		if e != nil {
 			panic(errors.Wrap(e, "could not get current directory"))
 		}
-		log.Printf("currentDir: %s", currentDir)
+		log.Printf("currentDirUnix: %s", currentDirUnix)
+
+		binaryDirectoryNative, e := getBinaryDirectoryNative()
+		if e != nil {
+			panic(errors.Wrap(e, "could not get binary directory"))
+		}
+		log.Printf("binaryDirectoryNative: %s", binaryDirectoryNative)
+
+		if filepath.Base(currentDirUnix) != filepath.Base(binaryDirectoryNative) {
+			utils.PrintErrorHintf("need to run from the same directory as the location of the binary, cd over to the binary directory : %s", binaryDirectoryNative)
+			return
+		}
 
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
@@ -94,7 +106,7 @@ func init() {
 			t := time.Now().Format("20060102T150405MST")
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logsDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, logsDir))
+			logsDirPath := toUnixFilepath(filepath.Join(currentDirUnix, kelpPrefsDirectory, logsDir))
 			log.Printf("making logsDirPath: %s ...", logsDirPath)
 			e = kos.Mkdir(logsDirPath)
 			if e != nil {
@@ -102,12 +114,7 @@ func init() {
 			}
 
 			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
-			binaryDirectory, e := getBinaryDirectory()
-			if e != nil {
-				panic(errors.Wrap(e, "could not get binary directory"))
-			}
-			log.Printf("binaryDirectory: %s", binaryDirectory)
-			logFilepath = filepath.Join(binaryDirectory, kelpPrefsDirectory, logsDir, logFilename)
+			logFilepath = filepath.Join(binaryDirectoryNative, kelpPrefsDirectory, logsDir, logFilename)
 			setLogFile(l, logFilepath)
 
 			if *options.verbose {
@@ -120,12 +127,7 @@ func init() {
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
 			// don't use explicit unix filepath here since it uses os.Create directly and won't work on windows
-			binaryDirectory, e := getBinaryDirectory()
-			if e != nil {
-				panic(errors.Wrap(e, "could not get binary directory"))
-			}
-			log.Printf("binaryDirectory: %s", binaryDirectory)
-			trayIconPath := filepath.Join(binaryDirectory, kelpPrefsDirectory, kelpAssetsPath, trayIconName)
+			trayIconPath := filepath.Join(binaryDirectoryNative, kelpPrefsDirectory, kelpAssetsPath, trayIconName)
 			log.Printf("trayIconPath: %s", trayIconPath)
 			e = writeTrayIcon(kos, trayIconPath)
 			if e != nil {
@@ -155,7 +157,7 @@ func init() {
 				tailFilePort := startTailFileServer(tailFileCompiled)
 				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
 			} else {
-				tailFilepath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, "tail.html"))
+				tailFilepath := toUnixFilepath(filepath.Join(currentDirUnix, kelpPrefsDirectory, "tail.html"))
 				fileContents := []byte(tailFileCompiled)
 				e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 				if e != nil {
@@ -239,13 +241,22 @@ func init() {
 				if ccxtGoos == "windows" {
 					ccxtGoos = "linux"
 				}
+
+				ccxtDirPathNative := filepath.Join(binaryDirectoryNative, kelpPrefsDirectory, kelpCcxtPath)
+				ccxtDirPathUnix := toUnixFilepath(filepath.Join(currentDirUnix, kelpPrefsDirectory, kelpCcxtPath))
 				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", ccxtGoos)
-				ccxtDirPath, e := downloadCcxtBinary(kos, ccxtFilenameNoExt)
+				filenameWithExt := fmt.Sprintf("%s.zip", ccxtFilenameNoExt)
+
+				// don't use explicit unix filepath here since it uses os.Stat and os.Create directly and won't work on windows
+				ccxtZipDownloadPathNative := filepath.Join(ccxtDirPathNative, filenameWithExt)
+				e = downloadCcxtBinary(kos, ccxtDirPathUnix, ccxtZipDownloadPathNative, filenameWithExt)
 				if e != nil {
 					panic(e)
 				}
 
-				e = runCcxtBinary(kos, ccxtDirPath, ccxtFilenameNoExt)
+				ccxtBinPathNative := filepath.Join(ccxtDirPathNative, ccxtFilenameNoExt, ccxtBinaryName)
+				ccxtBinPathUnix := filepath.Join(ccxtDirPathUnix, ccxtFilenameNoExt, ccxtBinaryName)
+				e = runCcxtBinary(kos, ccxtBinPathNative, ccxtBinPathUnix)
 				if e != nil {
 					panic(e)
 				}
@@ -341,56 +352,58 @@ func setMiddleware(r *chi.Mux) {
 	r.Use(middleware.Timeout(60 * time.Second))
 }
 
-func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error) {
-	currentDir, e := getCurrentDir()
+func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPathUnix string, ccxtZipDownloadPathNative string, filenameWithExt string) error {
+	log.Printf("making ccxtDirPathUnix: %s ...", ccxtDirPathUnix)
+	e := kos.Mkdir(ccxtDirPathUnix)
 	if e != nil {
-		return "", errors.Wrap(e, "could not get current directory")
-	}
-	log.Printf("currentDir: %s", currentDir)
-
-	ccxtDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, kelpCcxtPath))
-	log.Printf("making ccxtDirPath: %s ...", ccxtDirPath)
-	e = kos.Mkdir(ccxtDirPath)
-	if e != nil {
-		return "", errors.Wrap(e, "could not make directories for ccxtDirPath: "+ccxtDirPath)
+		return errors.Wrap(e, "could not make directories for ccxtDirPathUnix: "+ccxtDirPathUnix)
 	}
 
-	filenameWithExt := fmt.Sprintf("%s.zip", filenameNoExt)
-	ccxtZipDownloadPath := toUnixFilepath(filepath.Join(ccxtDirPath, filenameWithExt))
-	if _, e := os.Stat(ccxtZipDownloadPath); !os.IsNotExist(e) {
-		return ccxtDirPath, nil
+	if _, e := os.Stat(ccxtZipDownloadPathNative); !os.IsNotExist(e) {
+		return nil
 	}
-
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
-	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
-	networking.DownloadFile(downloadURL, ccxtZipDownloadPath)
-	unzipCcxtFile(kos, ccxtDirPath, filenameNoExt, currentDir)
+	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPathNative)
+	networking.DownloadFile(downloadURL, ccxtZipDownloadPathNative)
+	unzipCcxtFile(kos, ccxtDirPathUnix, filenameWithExt, ccxtDirPathUnix)
 
-	return ccxtDirPath, nil
+	return nil
 }
 
-func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, currentDir string) {
-	zipFilename := filenameNoExt + ".zip"
-	log.Printf("unzipping file %s ... ", zipFilename)
-	zipCmd := fmt.Sprintf("\"cd %s && unzip %s && cd %s\"", ccxtDir, zipFilename, currentDir)
+func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDirUnix string, filenameWithExt string, originalDirUnix string) {
+	log.Printf("unzipping file %s ... ", filenameWithExt)
+
+	zipCmd := fmt.Sprintf("cd %s", ccxtDirUnix)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
-		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDirUnix)))
 	}
+
+	zipCmd = fmt.Sprintf("unzip %s", filenameWithExt)
+	_, e = kos.Blocking("zip", zipCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDirUnix)))
+	}
+
+	zipCmd = fmt.Sprintf("cd %s", originalDirUnix)
+	_, e = kos.Blocking("zip", zipCmd)
+	if e != nil {
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDirUnix)))
+	}
+
 	log.Printf("done\n")
 }
 
-func runCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath string, ccxtFilenameNoExt string) error {
-	ccxtBinPath := toUnixFilepath(filepath.Join(ccxtDirPath, ccxtFilenameNoExt, ccxtBinaryName))
-	if _, e := os.Stat(ccxtBinPath); os.IsNotExist(e) {
-		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath)
+func runCcxtBinary(kos *kelpos.KelpOS, ccxtBinPathNative string, ccxtBinPathUnix string) error {
+	if _, e := os.Stat(ccxtBinPathNative); os.IsNotExist(e) {
+		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPathNative)
 	}
 
-	log.Printf("running binary %s", ccxtBinPath)
+	log.Printf("running binary %s", ccxtBinPathUnix)
 	// TODO CCXT should be run at the port specified by rootCcxtRestURL, currently it will default to port 3000 even if the config file specifies otherwise
-	_, e := kos.Background("ccxt-rest", ccxtBinPath)
+	_, e := kos.Background("ccxt-rest", ccxtBinPathUnix)
 	if e != nil {
-		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file %s", ccxtBinPath)))
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file %s", ccxtBinPathUnix)))
 	}
 
 	log.Printf("waiting up to %d seconds for ccxt-rest to start up ...", ccxtWaitSeconds)
@@ -462,12 +475,12 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 }
 
 func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath string) error {
-	currentDir, e := getCurrentDir()
+	currentDirUnix, e := getCurrentDirUnix()
 	if e != nil {
 		return errors.Wrap(e, "could not get current directory")
 	}
-	log.Printf("currentDir: %s", currentDir)
-	assetsDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, kelpAssetsPath))
+	log.Printf("currentDirUnix: %s", currentDirUnix)
+	assetsDirPath := toUnixFilepath(filepath.Join(currentDirUnix, kelpPrefsDirectory, kelpAssetsPath))
 	log.Printf("assetsDirPath: %s", assetsDirPath)
 	if _, e := os.Stat(trayIconPath); !os.IsNotExist(e) {
 		// file exists, don't write again
@@ -508,11 +521,11 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath string) error {
 	return nil
 }
 
-func getBinaryDirectory() (string, error) {
+func getBinaryDirectoryNative() (string, error) {
 	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
-func getCurrentDir() (string, error) {
+func getCurrentDirUnix() (string, error) {
 	kos := kelpos.GetKelpOS()
 	outputBytes, e := kos.Blocking("pwd", "pwd")
 	if e != nil {
