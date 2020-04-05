@@ -101,7 +101,8 @@ func init() {
 				panic(errors.Wrap(e, "could not make directories for logsDirPath: "+logsDirPath))
 			}
 
-			logFilepath = toUnixFilepath(filepath.Join(logsDirPath, logFilename))
+			// don't use unix filepath here since it uses os.Open directly and won't work on windows
+			logFilepath = filepath.Join(logsDirPath, logFilename)
 			setLogFile(l, logFilepath)
 
 			if *options.verbose {
