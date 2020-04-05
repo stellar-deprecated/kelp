@@ -6,6 +6,7 @@ vendor/
 .vscode/
 build/
 bin/
+.kelp/
 .idea
 gui/filesystem_vfsdata.go
 kelp.prefs

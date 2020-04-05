@@ -34,6 +34,7 @@ type APIServer struct {
 // MakeAPIServer is a factory method
 func MakeAPIServer(
 	kos *kelpos.KelpOS,
+	currentDirUnix string,
 	horizonTestnetURI string,
 	apiTestNet *horizonclient.Client,
 	horizonPubnetURI string,
@@ -47,9 +48,9 @@ func MakeAPIServer(
 		return nil, fmt.Errorf("could not get binPath of currently running binary: %s", e)
 	}
 
-	dirPath := filepath.Dir(binPath)
-	configsDir := dirPath + "/ops/configs"
-	logsDir := dirPath + "/ops/logs"
+	dirPath := currentDirUnix
+	configsDir := filepath.Join(currentDirUnix, "ops", "configs")
+	logsDir := filepath.Join(currentDirUnix, "ops", "logs")
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
