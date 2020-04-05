@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/stellar/kelp/support/kelpos"
 )
@@ -24,5 +25,5 @@ func main() {
 		log.Fatal(e)
 	}
 	outputString := string(outputBytes)
-	fmt.Println(outputString)
+	fmt.Println("'" + strings.TrimSpace(outputString) + "'")
 }
