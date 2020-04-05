@@ -254,7 +254,10 @@ func init() {
 					panic(e)
 				}
 
-				ccxtBinPathNative := filepath.Join(ccxtDirPathNative, ccxtFilenameNoExt, ccxtBinaryName)
+				ccxtUnzippedFolderNative := filepath.Join(ccxtDirPathNative, ccxtFilenameNoExt)
+				ccxtBinPathNative := filepath.Join(ccxtUnzippedFolderNative, ccxtBinaryName)
+				unzipCcxtFile(kos, ccxtDirPathNative, ccxtBinPathNative, ccxtDirPathUnix, filenameWithExt, currentDirUnix)
+
 				ccxtBinPathUnix := filepath.Join(ccxtDirPathUnix, ccxtFilenameNoExt, ccxtBinaryName)
 				e = runCcxtBinary(kos, ccxtBinPathNative, ccxtBinPathUnix)
 				if e != nil {
@@ -365,12 +368,23 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPathUnix string, ccxtZipDownl
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
 	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPathNative)
 	networking.DownloadFile(downloadURL, ccxtZipDownloadPathNative)
-	unzipCcxtFile(kos, ccxtDirPathUnix, filenameWithExt, ccxtDirPathUnix)
-
 	return nil
 }
 
-func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDirUnix string, filenameWithExt string, originalDirUnix string) {
+func unzipCcxtFile(
+	kos *kelpos.KelpOS,
+	ccxtDirNative string,
+	ccxtBinPathNative string,
+	ccxtDirUnix string,
+	filenameWithExt string,
+	originalDirUnix string,
+) {
+	if _, e := os.Stat(ccxtDirNative); !os.IsNotExist(e) {
+		if _, e := os.Stat(ccxtBinPathNative); !os.IsNotExist(e) {
+			return
+		}
+	}
+
 	log.Printf("unzipping file %s ... ", filenameWithExt)
 
 	zipCmd := fmt.Sprintf("cd %s", ccxtDirUnix)
