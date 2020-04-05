@@ -127,7 +127,7 @@ func init() {
 			log.Printf("binaryDirectory: %s", binaryDirectory)
 			trayIconPath := filepath.Join(binaryDirectory, kelpPrefsDirectory, kelpAssetsPath, trayIconName)
 			log.Printf("trayIconPath: %s", trayIconPath)
-			e := writeTrayIcon(kos)
+			e = writeTrayIcon(kos, trayIconPath)
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
