@@ -119,6 +119,11 @@ func init() {
 		openBrowserWg := &sync.WaitGroup{}
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
+			trayIconPath, e := writeTrayIcon(kos)
+			if e != nil {
+				log.Fatal(errors.Wrap(e, "could not write tray icon"))
+			}
+
 			htmlContent := tailFileHTML
 			if runtime.GOOS == "windows" {
 				htmlContent = windowsInitialFile
@@ -133,27 +138,27 @@ func init() {
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
 			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
 			tailFileCompiled5 := strings.Replace(tailFileCompiled4, pingPlaceholder, pingURL, -1)
-			tailFilepath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, "tail.html"))
-			fileContents := []byte(tailFileCompiled5)
-			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
-			if e != nil {
-				panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
+			tailFileCompiled := tailFileCompiled5
+
+			var electronURL string
+			if runtime.GOOS == "windows" {
+				// start a new web server to serve the tail file since windows does not allow accessing a file directly in electron
+				// likely because of the way the file path is specified
+				tailFilePort := startTailFileServer(tailFileCompiled)
+				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
+			} else {
+				tailFilepath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, "tail.html"))
+				fileContents := []byte(tailFileCompiled)
+				e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
+				if e != nil {
+					panic(fmt.Sprintf("could not write tailfile to path '%s': %s", tailFilepath, e))
+				}
+
+				electronURL = tailFilepath
 			}
 
 			// kick off the desktop window for UI feedback to the user
 			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
-			trayIconPath, e := writeTrayIcon(kos)
-			if e != nil {
-				log.Fatal(errors.Wrap(e, "could not write tray icon"))
-			}
-
-			electronURL := tailFilepath
-			if runtime.GOOS == "windows" {
-				// start a new web server to serve the tail file since windows does not allow accessing a file directly in electron
-				// likely because of the way the file path is specified
-				tailFilePort := startTailFileServer(tailFileCompiled5)
-				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
-			}
 			go func() {
 				if *options.noElectron {
 					openBrowser(kos, appURL, openBrowserWg)
