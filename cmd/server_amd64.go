@@ -266,7 +266,17 @@ func init() {
 			}
 		}
 
-		s, e := backend.MakeAPIServer(kos, *options.horizonTestnetURI, apiTestNet, *options.horizonPubnetURI, apiPubNet, *rootCcxtRestURL, *options.noHeaders, quit)
+		s, e := backend.MakeAPIServer(
+			kos,
+			currentDirUnix,
+			*options.horizonTestnetURI,
+			apiTestNet,
+			*options.horizonPubnetURI,
+			apiPubNet,
+			*rootCcxtRestURL,
+			*options.noHeaders,
+			quit,
+		)
 		if e != nil {
 			panic(e)
 		}
