@@ -387,20 +387,8 @@ func unzipCcxtFile(
 
 	log.Printf("unzipping file %s ... ", filenameWithExt)
 
-	zipCmd := fmt.Sprintf("cd %s", ccxtDirUnix)
+	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDirUnix, filenameWithExt, originalDirUnix)
 	_, e := kos.Blocking("zip", zipCmd)
-	if e != nil {
-		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDirUnix)))
-	}
-
-	zipCmd = fmt.Sprintf("unzip %s", filenameWithExt)
-	_, e = kos.Blocking("zip", zipCmd)
-	if e != nil {
-		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDirUnix)))
-	}
-
-	zipCmd = fmt.Sprintf("cd %s", originalDirUnix)
-	_, e = kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDirUnix)))
 	}
