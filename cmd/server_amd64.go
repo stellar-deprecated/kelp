@@ -80,7 +80,7 @@ func init() {
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		currentDir, e := getCurrentDir()
 		if e != nil {
-			panic(errors.Wrap(e, "could not get binary directory"))
+			panic(errors.Wrap(e, "could not get current directory"))
 		}
 		log.Printf("currentDir: %s", currentDir)
 
@@ -102,7 +102,12 @@ func init() {
 			}
 
 			// don't use unix filepath here since it uses os.Open directly and won't work on windows
-			logFilepath = filepath.Join(logsDirPath, logFilename)
+			binaryDirectory, e := getBinaryDirectory()
+			if e != nil {
+				panic(errors.Wrap(e, "could not get binary directory"))
+			}
+			log.Printf("binaryDirectory: %s", binaryDirectory)
+			logFilepath = filepath.Join(binaryDirectory, kelpPrefsDirectory, logsDir, logFilename)
 			setLogFile(l, logFilepath)
 
 			if *options.verbose {
@@ -326,7 +331,7 @@ func setMiddleware(r *chi.Mux) {
 func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error) {
 	currentDir, e := getCurrentDir()
 	if e != nil {
-		return "", errors.Wrap(e, "could not get binary directory")
+		return "", errors.Wrap(e, "could not get current directory")
 	}
 	log.Printf("currentDir: %s", currentDir)
 
@@ -446,7 +451,7 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
 	currentDir, e := getCurrentDir()
 	if e != nil {
-		return "", errors.Wrap(e, "could not get binary directory")
+		return "", errors.Wrap(e, "could not get current directory")
 	}
 	log.Printf("currentDir: %s", currentDir)
 	assetsDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, kelpAssetsPath))
@@ -490,6 +495,10 @@ func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
 	}
 
 	return trayIconPath, nil
+}
+
+func getBinaryDirectory() (string, error) {
+	return filepath.Abs(filepath.Dir(os.Args[0]))
 }
 
 func getCurrentDir() (string, error) {
