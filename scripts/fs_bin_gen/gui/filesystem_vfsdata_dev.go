@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 )
 
-var guiBuildDir = filepath.Join("gui", "web", "build")
+// build dir is ../gui/web/build because we run from the bin directory in dev mode
+var guiBuildDir = filepath.Join("..", "gui", "web", "build")
 
 // file system for GUI
 var FS = http.Dir(guiBuildDir)
