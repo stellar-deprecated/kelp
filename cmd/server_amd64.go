@@ -94,14 +94,14 @@ func init() {
 			t := time.Now().Format("20060102T150405MST")
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logsDirPath := filepath.Join(currentDir, kelpPrefsDirectory, logsDir)
+			logsDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, logsDir))
 			log.Printf("making logsDirPath: %s ...", logsDirPath)
 			e = kos.Mkdir(logsDirPath)
 			if e != nil {
 				panic(errors.Wrap(e, "could not make directories for logsDirPath: "+logsDirPath))
 			}
 
-			logFilepath = filepath.Join(logsDirPath, logFilename)
+			logFilepath = toUnixFilepath(filepath.Join(logsDirPath, logFilename))
 			setLogFile(l, logFilepath)
 
 			if *options.verbose {
@@ -127,7 +127,7 @@ func init() {
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
 			tailFileCompiled4 := strings.Replace(tailFileCompiled3, versionPlaceholder, version, -1)
 			tailFileCompiled5 := strings.Replace(tailFileCompiled4, pingPlaceholder, pingURL, -1)
-			tailFilepath := filepath.Join(currentDir, kelpPrefsDirectory, "tail.html")
+			tailFilepath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, "tail.html"))
 			fileContents := []byte(tailFileCompiled5)
 			e := ioutil.WriteFile(tailFilepath, fileContents, 0644)
 			if e != nil {
@@ -293,6 +293,10 @@ func init() {
 	}
 }
 
+func toUnixFilepath(path string) string {
+	return filepath.ToSlash(path)
+}
+
 func checkIsCcxtUpTwice(ccxtURL string) error {
 	e := isCcxtUp(ccxtURL)
 	if e != nil {
@@ -325,7 +329,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 	}
 	log.Printf("currentDir: %s", currentDir)
 
-	ccxtDirPath := filepath.Join(currentDir, kelpPrefsDirectory, kelpCcxtPath)
+	ccxtDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, kelpCcxtPath))
 	log.Printf("making ccxtDirPath: %s ...", ccxtDirPath)
 	e = kos.Mkdir(ccxtDirPath)
 	if e != nil {
@@ -333,7 +337,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 	}
 
 	filenameWithExt := fmt.Sprintf("%s.zip", filenameNoExt)
-	ccxtZipDownloadPath := filepath.Join(ccxtDirPath, filenameWithExt)
+	ccxtZipDownloadPath := toUnixFilepath(filepath.Join(ccxtDirPath, filenameWithExt))
 	if _, e := os.Stat(ccxtZipDownloadPath); !os.IsNotExist(e) {
 		return ccxtDirPath, nil
 	}
@@ -358,7 +362,7 @@ func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, cur
 }
 
 func runCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath string, ccxtFilenameNoExt string) error {
-	ccxtBinPath := filepath.Join(ccxtDirPath, ccxtFilenameNoExt, ccxtBinaryName)
+	ccxtBinPath := toUnixFilepath(filepath.Join(ccxtDirPath, ccxtFilenameNoExt, ccxtBinaryName))
 	if _, e := os.Stat(ccxtBinPath); os.IsNotExist(e) {
 		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath)
 	}
@@ -444,9 +448,9 @@ func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
 		return "", errors.Wrap(e, "could not get binary directory")
 	}
 	log.Printf("currentDir: %s", currentDir)
-	assetsDirPath := filepath.Join(currentDir, kelpPrefsDirectory, kelpAssetsPath)
+	assetsDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, kelpAssetsPath))
 	log.Printf("assetsDirPath: %s", assetsDirPath)
-	trayIconPath := filepath.Join(assetsDirPath, trayIconName)
+	trayIconPath := toUnixFilepath(filepath.Join(assetsDirPath, trayIconName))
 	log.Printf("trayIconPath: %s", trayIconPath)
 	if _, e := os.Stat(trayIconPath); !os.IsNotExist(e) {
 		// file exists, don't write again
