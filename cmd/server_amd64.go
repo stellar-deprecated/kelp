@@ -372,7 +372,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, filenameNoExt string) (string, error
 func unzipCcxtFile(kos *kelpos.KelpOS, ccxtDir string, filenameNoExt string, currentDir string) {
 	zipFilename := filenameNoExt + ".zip"
 	log.Printf("unzipping file %s ... ", zipFilename)
-	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDir, zipFilename, currentDir)
+	zipCmd := fmt.Sprintf("\"cd %s && unzip %s && cd %s\"", ccxtDir, zipFilename, currentDir)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", zipFilename, ccxtDir)))
