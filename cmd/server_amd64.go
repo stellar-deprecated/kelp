@@ -271,12 +271,12 @@ func init() {
 			panic(e)
 		}
 
+		guiWebPathUnix := toUnixFilepath(filepath.Join(currentDirUnix, "../gui/web"))
 		if isLocalDevMode {
-			checkHomeDir()
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
-			runWithYarn(kos, options)
+			runWithYarn(kos, options, guiWebPathUnix)
 
 			log.Printf("should not have reached here after running yarn")
 			return
@@ -287,8 +287,7 @@ func init() {
 		os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.port))
 
 		if isLocalMode {
-			checkHomeDir()
-			generateStaticFiles(kos)
+			generateStaticFiles(kos, guiWebPathUnix)
 		}
 
 		r := chi.NewRouter()
@@ -441,38 +440,26 @@ func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPo
 	log.Fatal(e)
 }
 
-func checkHomeDir() {
-	op, e := exec.Command("pwd").Output()
-	if e != nil {
-		panic(e)
-	}
-	result := strings.TrimSpace(string(op))
-
-	if !strings.HasSuffix(result, "/kelp") {
-		log.Fatalf("need to invoke the '%s' command while in the root 'kelp' directory\n", serverCmd.Use)
-	}
-}
-
-func runWithYarn(kos *kelpos.KelpOS, options serverInputs) {
+func runWithYarn(kos *kelpos.KelpOS, options serverInputs, guiWebPathUnix string) {
 	// yarn requires the PORT variable to be set when serving
 	os.Setenv("PORT", fmt.Sprintf("%d", *options.port))
 
 	log.Printf("Serving frontend via yarn on HTTP port: %d\n", *options.port)
-	e := kos.StreamOutput(exec.Command("yarn", "--cwd", "gui/web", "start"))
+	e := kos.StreamOutput(exec.Command("yarn", "--cwd", guiWebPathUnix, "start"))
 	if e != nil {
 		panic(e)
 	}
 }
 
-func generateStaticFiles(kos *kelpos.KelpOS) {
-	log.Printf("generating contents of gui/web/build ...\n")
+func generateStaticFiles(kos *kelpos.KelpOS, guiWebPathUnix string) {
+	log.Printf("generating contents of %s/build ...\n", guiWebPathUnix)
 
-	e := kos.StreamOutput(exec.Command("yarn", "--cwd", "gui/web", "build"))
+	e := kos.StreamOutput(exec.Command("yarn", "--cwd", guiWebPathUnix, "build"))
 	if e != nil {
 		panic(e)
 	}
 
-	log.Printf("... finished generating contents of gui/web/build\n")
+	log.Printf("... finished generating contents of %s/build\n", guiWebPathUnix)
 	log.Println()
 }
 
