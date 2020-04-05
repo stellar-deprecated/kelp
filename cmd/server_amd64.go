@@ -79,7 +79,7 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		currentDirUnix, e := getCurrentDirUnix()
+		currentDirUnix, e := toUnixFilepath(getCurrentDirUnix())
 		if e != nil {
 			panic(errors.Wrap(e, "could not get current directory"))
 		}
