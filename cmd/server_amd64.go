@@ -101,7 +101,7 @@ func init() {
 				panic(errors.Wrap(e, "could not make directories for logsDirPath: "+logsDirPath))
 			}
 
-			// don't use unix filepath here since it uses os.Open directly and won't work on windows
+			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
 			binaryDirectory, e := getBinaryDirectory()
 			if e != nil {
 				panic(errors.Wrap(e, "could not get binary directory"))
@@ -119,7 +119,15 @@ func init() {
 		openBrowserWg := &sync.WaitGroup{}
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
-			trayIconPath, e := writeTrayIcon(kos)
+			// don't use explicit unix filepath here since it uses os.Create directly and won't work on windows
+			binaryDirectory, e := getBinaryDirectory()
+			if e != nil {
+				panic(errors.Wrap(e, "could not get binary directory"))
+			}
+			log.Printf("binaryDirectory: %s", binaryDirectory)
+			trayIconPath := filepath.Join(binaryDirectory, kelpPrefsDirectory, kelpAssetsPath, trayIconName)
+			log.Printf("trayIconPath: %s", trayIconPath)
+			e := writeTrayIcon(kos)
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
@@ -453,29 +461,27 @@ func generateStaticFiles(kos *kelpos.KelpOS) {
 	log.Println()
 }
 
-func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
+func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath string) error {
 	currentDir, e := getCurrentDir()
 	if e != nil {
-		return "", errors.Wrap(e, "could not get current directory")
+		return errors.Wrap(e, "could not get current directory")
 	}
 	log.Printf("currentDir: %s", currentDir)
 	assetsDirPath := toUnixFilepath(filepath.Join(currentDir, kelpPrefsDirectory, kelpAssetsPath))
 	log.Printf("assetsDirPath: %s", assetsDirPath)
-	trayIconPath := toUnixFilepath(filepath.Join(assetsDirPath, trayIconName))
-	log.Printf("trayIconPath: %s", trayIconPath)
 	if _, e := os.Stat(trayIconPath); !os.IsNotExist(e) {
 		// file exists, don't write again
-		return trayIconPath, nil
+		return nil
 	}
 
 	trayIconBytes, e := resourcesKelpIcon18xPngBytes()
 	if e != nil {
-		return "", errors.Wrap(e, "could not fetch tray icon image bytes")
+		return errors.Wrap(e, "could not fetch tray icon image bytes")
 	}
 
 	img, _, e := image.Decode(bytes.NewReader(trayIconBytes))
 	if e != nil {
-		return "", errors.Wrap(e, "could not decode bytes as image data")
+		return errors.Wrap(e, "could not decode bytes as image data")
 	}
 
 	// create dir if not exists
@@ -483,23 +489,23 @@ func writeTrayIcon(kos *kelpos.KelpOS) (string, error) {
 		log.Printf("making assetsDirPath: %s ...", assetsDirPath)
 		e = kos.Mkdir(assetsDirPath)
 		if e != nil {
-			return "", errors.Wrap(e, "could not make directories for assetsDirPath: "+assetsDirPath)
+			return errors.Wrap(e, "could not make directories for assetsDirPath: "+assetsDirPath)
 		}
 		log.Printf("... made assetsDirPath (%s)", assetsDirPath)
 	}
 
 	trayIconFile, e := os.Create(trayIconPath)
 	if e != nil {
-		return "", errors.Wrap(e, "could not create tray icon file")
+		return errors.Wrap(e, "could not create tray icon file")
 	}
 	defer trayIconFile.Close()
 
 	e = png.Encode(trayIconFile, img)
 	if e != nil {
-		return "", errors.Wrap(e, "could not write png encoded icon")
+		return errors.Wrap(e, "could not write png encoded icon")
 	}
 
-	return trayIconPath, nil
+	return nil
 }
 
 func getBinaryDirectory() (string, error) {
