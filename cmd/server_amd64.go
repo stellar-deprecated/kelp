@@ -23,6 +23,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/nikhilsaraf/go-tools/multithreading"
+	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizonclient"
@@ -172,7 +173,7 @@ func init() {
 			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
 			go func() {
 				if *options.noElectron {
-					openBrowser(kos, appURL, openBrowserWg)
+					openBrowser(appURL, openBrowserWg)
 				} else {
 					openElectron(trayIconPathNative, electronURL)
 				}
@@ -531,22 +532,11 @@ func getCurrentDirUnix() (string, error) {
 	return strings.TrimSpace(string(outputBytes)), nil
 }
 
-func openBrowser(kos *kelpos.KelpOS, url string, openBrowserWg *sync.WaitGroup) {
+func openBrowser(url string, openBrowserWg *sync.WaitGroup) {
 	log.Printf("opening URL in native browser: %s", url)
-
-	var browserCmd string
-	if runtime.GOOS == "linux" {
-		browserCmd = fmt.Sprintf("xdg-open %s", url)
-	} else if runtime.GOOS == "darwin" {
-		browserCmd = fmt.Sprintf("open %s", url)
-	} else if runtime.GOOS == "windows" {
-		browserCmd = fmt.Sprintf("start %s", url)
-	} else {
-		log.Fatalf("unable to open url '%s' in browser because runtime.GOOS was unrecognized: %s", url, runtime.GOOS)
-	}
-
 	openBrowserWg.Wait()
-	_, e := kos.Blocking("browser", browserCmd)
+
+	e := browser.OpenURL(url)
 	if e != nil {
 		log.Fatal(e)
 	}
