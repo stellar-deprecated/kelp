@@ -259,7 +259,7 @@ func init() {
 				ccxtBinPathNative := filepath.Join(ccxtUnzippedFolderNative, ccxtBinaryName)
 				unzipCcxtFile(kos, ccxtDirPathNative, ccxtBinPathNative, ccxtDirPathUnix, filenameWithExt, currentDirUnix)
 
-				ccxtBinPathUnix := filepath.Join(ccxtDirPathUnix, ccxtFilenameNoExt, ccxtBinaryName)
+				ccxtBinPathUnix := toUnixFilepath(filepath.Join(ccxtDirPathUnix, ccxtFilenameNoExt, ccxtBinaryName))
 				e = runCcxtBinary(kos, ccxtBinPathNative, ccxtBinPathUnix)
 				if e != nil {
 					panic(e)
