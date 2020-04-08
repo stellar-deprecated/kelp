@@ -80,23 +80,12 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		currentDirUnslashed, e := getCurrentDirUnix()
+		ospath, e := kelpos.MakeOsPath()
 		if e != nil {
-			panic(errors.Wrap(e, "could not get current directory"))
+			panic(errors.Wrap(e, "could not make ospath"))
 		}
-		currentDirUnix := toUnixFilepath(currentDirUnslashed)
-		log.Printf("currentDirUnix: %s", currentDirUnix)
-
-		binaryDirectoryNative, e := getBinaryDirectoryNative()
-		if e != nil {
-			panic(errors.Wrap(e, "could not get binary directory"))
-		}
-		log.Printf("binaryDirectoryNative: %s", binaryDirectoryNative)
-
-		if filepath.Base(currentDirUnix) != filepath.Base(binaryDirectoryNative) {
-			utils.PrintErrorHintf("need to run from the same directory as the location of the binary, cd over to the binary directory : %s", binaryDirectoryNative)
-			return
-		}
+		log.Printf("ospath initialized with native path: %s", ospath.Native())
+		log.Printf("ospath initialized with unix path: %s", ospath.Unix())
 
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
@@ -517,19 +506,6 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPathNative string, currentDirUnix
 	}
 
 	return nil
-}
-
-func getBinaryDirectoryNative() (string, error) {
-	return filepath.Abs(filepath.Dir(os.Args[0]))
-}
-
-func getCurrentDirUnix() (string, error) {
-	kos := kelpos.GetKelpOS()
-	outputBytes, e := kos.Blocking("pwd", "pwd")
-	if e != nil {
-		return "", fmt.Errorf("could not fetch current directory: %s", e)
-	}
-	return strings.TrimSpace(string(outputBytes)), nil
 }
 
 func openBrowser(url string, openBrowserWg *sync.WaitGroup) {
