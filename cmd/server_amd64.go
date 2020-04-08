@@ -97,7 +97,7 @@ func init() {
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
 			logsDirPath := basepath.Join(kelpPrefsDirectory, logsDir)
-			log.Printf("calling mkdir on logsDirPath: %s ...", logsDirPath)
+			log.Printf("calling mkdir on logsDirPath: %s ...", logsDirPath.AsString())
 			e = kos.Mkdir(logsDirPath)
 			if e != nil {
 				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath.AsString()))
@@ -118,7 +118,7 @@ func init() {
 		if !isLocalDevMode {
 			// don't use explicit unix filepath here since it uses os.Create directly and won't work on windows
 			trayIconPath := basepath.Join(kelpPrefsDirectory, kelpAssetsPath, trayIconName)
-			log.Printf("trayIconPath: %s", trayIconPath)
+			log.Printf("trayIconPath: %s", trayIconPath.AsString())
 			e = writeTrayIcon(kos, trayIconPath, basepath)
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
@@ -352,7 +352,7 @@ func setMiddleware(r *chi.Mux) {
 }
 
 func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipDownloadPath *kelpos.OSPath, filenameWithExt string) error {
-	log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath)
+	log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath.AsString())
 	e := kos.Mkdir(ccxtDirPath)
 	if e != nil {
 		return errors.Wrap(e, "could not mkdir for ccxtDirPath: "+ccxtDirPath.AsString())
@@ -362,7 +362,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipD
 		return nil
 	}
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
-	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath)
+	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath.AsString())
 	networking.DownloadFile(downloadURL, ccxtZipDownloadPath.Native())
 	return nil
 }
@@ -391,14 +391,14 @@ func unzipCcxtFile(
 
 func runCcxtBinary(kos *kelpos.KelpOS, ccxtBinPath *kelpos.OSPath) error {
 	if _, e := os.Stat(ccxtBinPath.Native()); os.IsNotExist(e) {
-		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath)
+		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath.AsString())
 	}
 
-	log.Printf("running binary %s", ccxtBinPath)
+	log.Printf("running binary %s", ccxtBinPath.AsString())
 	// TODO CCXT should be run at the port specified by rootCcxtRestURL, currently it will default to port 3000 even if the config file specifies otherwise
 	_, e := kos.Background("ccxt-rest", ccxtBinPath.Unix())
 	if e != nil {
-		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file at location %s", ccxtBinPath)))
+		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file at location %s", ccxtBinPath.AsString())))
 	}
 
 	log.Printf("waiting up to %d seconds for ccxt-rest to start up ...", ccxtWaitSeconds)
@@ -459,7 +459,7 @@ func generateStaticFiles(kos *kelpos.KelpOS, guiWebPath *kelpos.OSPath) {
 
 func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, basepath *kelpos.OSPath) error {
 	assetsDirPath := basepath.Join(kelpPrefsDirectory, kelpAssetsPath)
-	log.Printf("assetsDirPath: %s", assetsDirPath)
+	log.Printf("assetsDirPath: %s", assetsDirPath.AsString())
 	if _, e := os.Stat(trayIconPath.Native()); !os.IsNotExist(e) {
 		// file exists, don't write again
 		return nil
@@ -477,12 +477,12 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, basepath *ke
 
 	// create dir if not exists
 	if _, e := os.Stat(assetsDirPath.Native()); os.IsNotExist(e) {
-		log.Printf("mkdir assetsDirPath: %s ...", assetsDirPath)
+		log.Printf("mkdir assetsDirPath: %s ...", assetsDirPath.AsString())
 		e = kos.Mkdir(assetsDirPath)
 		if e != nil {
 			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath.AsString())
 		}
-		log.Printf("... made assetsDirPath (%s)", assetsDirPath)
+		log.Printf("... made assetsDirPath (%s)", assetsDirPath.AsString())
 	}
 
 	trayIconFile, e := os.Create(trayIconPath.Native())
