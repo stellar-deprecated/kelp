@@ -256,7 +256,7 @@ func init() {
 
 		s, e := backend.MakeAPIServer(
 			kos,
-			currentDirUnix,
+			basepath,
 			*options.horizonTestnetURI,
 			apiTestNet,
 			*options.horizonPubnetURI,

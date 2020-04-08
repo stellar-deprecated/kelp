@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
@@ -15,10 +14,10 @@ import (
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	dirPath           string
-	binPath           string
-	configsDir        string
-	logsDir           string
+	basepath          *kelpos.OSPath
+	kelpBinPath       *kelpos.OSPath
+	configsDir        *kelpos.OSPath
+	logsDir           *kelpos.OSPath
 	kos               *kelpos.KelpOS
 	horizonTestnetURI string
 	horizonPubnetURI  string
@@ -34,7 +33,7 @@ type APIServer struct {
 // MakeAPIServer is a factory method
 func MakeAPIServer(
 	kos *kelpos.KelpOS,
-	currentDirUnix string,
+	basepath *kelpos.OSPath,
 	horizonTestnetURI string,
 	apiTestNet *horizonclient.Client,
 	horizonPubnetURI string,
@@ -43,14 +42,9 @@ func MakeAPIServer(
 	noHeaders bool,
 	quitFn func(),
 ) (*APIServer, error) {
-	binPath, e := filepath.Abs(os.Args[0])
-	if e != nil {
-		return nil, fmt.Errorf("could not get binPath of currently running binary: %s", e)
-	}
-
-	dirPath := currentDirUnix
-	configsDir := filepath.Join(currentDirUnix, "ops", "configs")
-	logsDir := filepath.Join(currentDirUnix, "ops", "logs")
+	kelpBinPath := basepath.Join(os.Args[0])
+	configsDir := basepath.Join("ops", "configs")
+	logsDir := basepath.Join("ops", "logs")
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
@@ -58,8 +52,8 @@ func MakeAPIServer(
 	}
 
 	return &APIServer{
-		dirPath:               dirPath,
-		binPath:               binPath,
+		basepath:              basepath,
+		kelpBinPath:           kelpBinPath,
 		configsDir:            configsDir,
 		logsDir:               logsDir,
 		kos:                   kos,
@@ -125,24 +119,24 @@ func (s *APIServer) writeJsonWithLog(w http.ResponseWriter, v interface{}, doLog
 }
 
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {
-	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
+	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
 	return s.kos.Blocking(namespace, cmdString)
 }
 
 func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kelpos.Process, error) {
-	cmdString := fmt.Sprintf("%s %s", s.binPath, cmd)
+	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
 	return s.kos.Background(namespace, cmdString)
 }
 
 func (s *APIServer) setupOpsDirectory() error {
 	e := s.kos.Mkdir(s.configsDir)
 	if e != nil {
-		return fmt.Errorf("error setting up configs directory: %s\n", e)
+		return fmt.Errorf("error setting up configs directory (%s): %s\n", s.configsDir, e)
 	}
 
 	e = s.kos.Mkdir(s.logsDir)
 	if e != nil {
-		return fmt.Errorf("error setting up logs directory: %s\n", e)
+		return fmt.Errorf("error setting up logs directory (%s): %s\n", s.logsDir, e)
 	}
 
 	return nil
