@@ -64,9 +64,9 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	}
 
 	filenamePair := model2.GetBotFilenames(botName, buysell)
-	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
+	traderFilePath := s.configsDir.Join(filenamePair.Trader)
 	var botConfig trader.BotConfig
-	e = config.Read(traderFilePath, &botConfig)
+	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath, e))
 		return

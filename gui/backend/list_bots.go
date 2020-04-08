@@ -13,7 +13,7 @@ import (
 
 func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	log.Printf("listing bots\n")
-	resultBytes, e := s.kos.Blocking("ls", fmt.Sprintf("ls %s | sort", s.configsDir))
+	resultBytes, e := s.kos.Blocking("ls", fmt.Sprintf("ls %s | sort", s.configsDir.Unix()))
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error when listing bots: %s\n", e))
 		return

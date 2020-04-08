@@ -27,16 +27,16 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filenamePair := model2.GetBotFilenames(botName, "buysell")
-	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
+	traderFilePath := s.configsDir.Join(filenamePair.Trader)
 	var botConfig trader.BotConfig
-	e = config.Read(traderFilePath, &botConfig)
+	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath, e))
 		return
 	}
-	strategyFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Strategy)
+	strategyFilePath := s.configsDir.Join(filenamePair.Strategy)
 	var buysellConfig plugins.BuySellConfig
-	e = config.Read(strategyFilePath, &buysellConfig)
+	e = config.Read(strategyFilePath.Native(), &buysellConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("cannot read strategy config at path '%s': %s\n", strategyFilePath, e))
 		return

@@ -38,7 +38,12 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
 	filenamePair := model2.GetBotFilenames(botName, strategy)
 	logPrefix := model2.GetLogPrefix(botName, strategy)
-	command := fmt.Sprintf("trade -c %s/%s -s %s -f %s/%s -l %s/%s --ui", s.configsDir, filenamePair.Trader, strategy, s.configsDir, filenamePair.Strategy, s.logsDir, logPrefix)
+	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
+		s.configsDir.Join(filenamePair.Trader).Unix(),
+		strategy,
+		s.configsDir.Join(filenamePair.Strategy),
+		s.logsDir.Join(logPrefix),
+	)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
 	}
