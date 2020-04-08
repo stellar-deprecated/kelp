@@ -100,7 +100,7 @@ func init() {
 			log.Printf("calling mkdir on logsDirPath: %s ...", logsDirPath)
 			e = kos.Mkdir(logsDirPath)
 			if e != nil {
-				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath.String()))
+				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath.AsString()))
 			}
 
 			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
@@ -355,7 +355,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipD
 	log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath)
 	e := kos.Mkdir(ccxtDirPath)
 	if e != nil {
-		return errors.Wrap(e, "could not mkdir for ccxtDirPath: "+ccxtDirPath.String())
+		return errors.Wrap(e, "could not mkdir for ccxtDirPath: "+ccxtDirPath.AsString())
 	}
 
 	if _, e := os.Stat(ccxtZipDownloadPath.Native()); !os.IsNotExist(e) {
@@ -480,7 +480,7 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, basepath *ke
 		log.Printf("mkdir assetsDirPath: %s ...", assetsDirPath)
 		e = kos.Mkdir(assetsDirPath)
 		if e != nil {
-			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath.String())
+			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath.AsString())
 		}
 		log.Printf("... made assetsDirPath (%s)", assetsDirPath)
 	}

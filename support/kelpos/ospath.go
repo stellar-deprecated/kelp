@@ -14,8 +14,14 @@ type OSPath struct {
 	unix   string
 }
 
-// String is the Stringer method
+// String() is the Stringer method which is unsupprted
 func (o *OSPath) String() string {
+	panic(fmt.Errorf("String method is unsupported because the usage is ambiguous for this struct, use .Unix(), .Native(), or .AsString() instead"))
+}
+
+// AsString produces a string representation and we intentionally don't use the Stringer API because this can mistakenly
+// be used in place of a string path which will produce hidden runtime errors which is dangerous
+func (o *OSPath) AsString() string {
 	return fmt.Sprintf("OSPath[native=%s, unix=%s]", o.native, o.unix)
 }
 
