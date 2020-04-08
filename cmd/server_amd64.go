@@ -35,7 +35,6 @@ import (
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
-	"github.com/stellar/kelp/support/utils"
 )
 
 const kelpPrefsDirectory = ".kelp"
@@ -91,7 +90,7 @@ func init() {
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
 
-		logFilepath := ""
+		var logFilepath *kelpos.OSPath
 		if !isLocalDevMode {
 			l := logger.MakeBasicLogger()
 			t := time.Now().Format("20060102T150405MST")
@@ -101,7 +100,7 @@ func init() {
 			log.Printf("calling mkdir on logsDirPath: %s ...", logsDirPath)
 			e = kos.Mkdir(logsDirPath)
 			if e != nil {
-				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath))
+				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath.String()))
 			}
 
 			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
@@ -352,11 +351,11 @@ func setMiddleware(r *chi.Mux) {
 	r.Use(middleware.Timeout(60 * time.Second))
 }
 
-func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipDownloadPath string, filenameWithExt string) error {
+func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipDownloadPath *kelpos.OSPath, filenameWithExt string) error {
 	log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath)
 	e := kos.Mkdir(ccxtDirPath)
 	if e != nil {
-		return errors.Wrap(e, "could not mkdir for ccxtDirPath: "+ccxtDirPath)
+		return errors.Wrap(e, "could not mkdir for ccxtDirPath: "+ccxtDirPath.String())
 	}
 
 	if _, e := os.Stat(ccxtZipDownloadPath.Native()); !os.IsNotExist(e) {
@@ -481,7 +480,7 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, basepath *ke
 		log.Printf("mkdir assetsDirPath: %s ...", assetsDirPath)
 		e = kos.Mkdir(assetsDirPath)
 		if e != nil {
-			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath)
+			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath.String())
 		}
 		log.Printf("... made assetsDirPath (%s)", assetsDirPath)
 	}
@@ -510,7 +509,7 @@ func openBrowser(url string, openBrowserWg *sync.WaitGroup) {
 	}
 }
 
-func openElectron(trayIconPath string, url string) {
+func openElectron(trayIconPath *kelpos.OSPath, url string) {
 	log.Printf("opening URL in electron: %s", url)
 	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
