@@ -14,6 +14,11 @@ type OSPath struct {
 	unix   string
 }
 
+// String is the Stringer method
+func (o *OSPath) String() string {
+	return fmt.Sprintf("OSPath[native=%s, unix=%s]", o.native, o.unix)
+}
+
 // makeOSPath is an internal helper that enforced always using toUnixFilepath on the unix path
 func makeOSPath(native string, unix string) *OSPath {
 	return &OSPath{

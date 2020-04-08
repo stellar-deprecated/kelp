@@ -91,22 +91,22 @@ func init() {
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
 
-		logFilepathNative := ""
+		logFilepath := ""
 		if !isLocalDevMode {
 			l := logger.MakeBasicLogger()
 			t := time.Now().Format("20060102T150405MST")
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logsDirPathUnix := toUnixFilepath(filepath.Join(currentDirUnix, kelpPrefsDirectory, logsDir))
-			log.Printf("making logsDirPathUnix: %s ...", logsDirPathUnix)
-			e = kos.Mkdir(logsDirPathUnix)
+			logsDirPath := basepath.Join(kelpPrefsDirectory, logsDir)
+			log.Printf("calling mkdir on logsDirPath: %s ...", logsDirPath)
+			e = kos.Mkdir(logsDirPath)
 			if e != nil {
-				panic(errors.Wrap(e, "could not make directories for logsDirPathUnix: "+logsDirPathUnix))
+				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath))
 			}
 
 			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
-			logFilepathNative = filepath.Join(binaryDirectoryNative, kelpPrefsDirectory, logsDir, logFilename)
-			setLogFile(l, logFilepathNative)
+			logFilepath = basepath.Join(kelpPrefsDirectory, logsDir, logFilename)
+			setLogFile(l, logFilepath.Native())
 
 			if *options.verbose {
 				astilog.SetDefaultLogger()
@@ -118,9 +118,9 @@ func init() {
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
 			// don't use explicit unix filepath here since it uses os.Create directly and won't work on windows
-			trayIconPathNative := filepath.Join(binaryDirectoryNative, kelpPrefsDirectory, kelpAssetsPath, trayIconName)
-			log.Printf("trayIconPathNative: %s", trayIconPathNative)
-			e = writeTrayIcon(kos, trayIconPathNative, currentDirUnix, binaryDirectoryNative)
+			trayIconPath := basepath.Join(kelpPrefsDirectory, kelpAssetsPath, trayIconName)
+			log.Printf("trayIconPath: %s", trayIconPath)
+			e = writeTrayIcon(kos, trayIconPath, currentDirUnix, binaryDirectoryNative)
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
@@ -133,7 +133,7 @@ func init() {
 			appURL := fmt.Sprintf("http://localhost:%d", *options.port)
 			pingURL := fmt.Sprintf("http://localhost:%d/ping", *options.port)
 			// write out tail.html after setting the file to be tailed
-			tailFileCompiled1 := strings.Replace(htmlContent, stringPlaceholder, logFilepathNative, -1)
+			tailFileCompiled1 := strings.Replace(htmlContent, stringPlaceholder, logFilepath.Native(), -1)
 			tailFileCompiled2 := strings.Replace(tailFileCompiled1, redirectPlaceholder, appURL, -1)
 			tailFileCompiled3 := strings.Replace(tailFileCompiled2, readyPlaceholder, readyStringIndicator, -1)
 			version := strings.TrimSpace(fmt.Sprintf("%s (%s)", guiVersion, version))
@@ -164,7 +164,7 @@ func init() {
 				if *options.noElectron {
 					openBrowser(appURL, openBrowserWg)
 				} else {
-					openElectron(trayIconPathNative, electronURL)
+					openElectron(trayIconPath, electronURL)
 				}
 			}()
 		}
@@ -464,12 +464,12 @@ func generateStaticFiles(kos *kelpos.KelpOS, guiWebPathUnix string) {
 	log.Println()
 }
 
-func writeTrayIcon(kos *kelpos.KelpOS, trayIconPathNative string, currentDirUnix string, binaryDirectoryNative string) error {
+func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, currentDirUnix string, binaryDirectoryNative string) error {
 	assetsDirPathNative := filepath.Join(binaryDirectoryNative, kelpPrefsDirectory, kelpAssetsPath)
 	log.Printf("assetsDirPathNative: %s", assetsDirPathNative)
 	assetsDirPathUnix := toUnixFilepath(filepath.Join(currentDirUnix, kelpPrefsDirectory, kelpAssetsPath))
 	log.Printf("assetsDirPathUnix: %s", assetsDirPathUnix)
-	if _, e := os.Stat(trayIconPathNative); !os.IsNotExist(e) {
+	if _, e := os.Stat(trayIconPath.Native()); !os.IsNotExist(e) {
 		// file exists, don't write again
 		return nil
 	}
@@ -494,7 +494,7 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPathNative string, currentDirUnix
 		log.Printf("... made assetsDirPathUnix (%s)", assetsDirPathUnix)
 	}
 
-	trayIconFile, e := os.Create(trayIconPathNative)
+	trayIconFile, e := os.Create(trayIconPath.Native())
 	if e != nil {
 		return errors.Wrap(e, "could not create tray icon file")
 	}
@@ -518,7 +518,7 @@ func openBrowser(url string, openBrowserWg *sync.WaitGroup) {
 	}
 }
 
-func openElectron(trayIconPathNative string, url string) {
+func openElectron(trayIconPath string, url string) {
 	log.Printf("opening URL in electron: %s", url)
 	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
@@ -537,7 +537,7 @@ func openElectron(trayIconPathNative string, url string) {
 			},
 		}},
 		TrayOptions: &astilectron.TrayOptions{
-			Image: astilectron.PtrStr(trayIconPathNative),
+			Image: astilectron.PtrStr(trayIconPath.Native()),
 		},
 		TrayMenuOptions: []*astilectron.MenuItemOptions{
 			&astilectron.MenuItemOptions{
