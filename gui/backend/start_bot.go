@@ -41,8 +41,8 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
 		s.configsDir.Join(filenamePair.Trader).Unix(),
 		strategy,
-		s.configsDir.Join(filenamePair.Strategy),
-		s.logsDir.Join(logPrefix),
+		s.configsDir.Join(filenamePair.Strategy).Unix(),
+		s.logsDir.Join(logPrefix).Unix(),
 	)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
