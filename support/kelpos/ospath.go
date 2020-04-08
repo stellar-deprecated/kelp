@@ -2,8 +2,10 @@ package kelpos
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 )
 
@@ -16,7 +18,8 @@ type OSPath struct {
 
 // String() is the Stringer method which is unsupprted
 func (o *OSPath) String() string {
-	panic(fmt.Errorf("String method is unsupported because the usage is ambiguous for this struct, use .Unix(), .Native(), or .AsString() instead"))
+	log.Fatalf("String method is unsupported because the usage is ambiguous for this struct, use .Unix(), .Native(), or .AsString() instead, trace:\n%s", string(debug.Stack()))
+	return ""
 }
 
 // AsString produces a string representation and we intentionally don't use the Stringer API because this can mistakenly
