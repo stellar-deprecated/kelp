@@ -38,11 +38,27 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
 	filenamePair := model2.GetBotFilenames(botName, strategy)
 	logPrefix := model2.GetLogPrefix(botName, strategy)
+
+	traderRelativeConfigPath, e := s.configsDir.Join(filenamePair.Trader).RelFromPath(s.basepath)
+	if e != nil {
+		return fmt.Errorf("unable to get relative path of trader config file from basepath: %s", e)
+	}
+
+	stratRelativeConfigPath, e := s.configsDir.Join(filenamePair.Strategy).RelFromPath(s.basepath)
+	if e != nil {
+		return fmt.Errorf("unable to get relative path of strategy config file from basepath: %s", e)
+	}
+
+	logRelativePrefix, e := s.logsDir.Join(logPrefix).RelFromPath(s.basepath)
+	if e != nil {
+		return fmt.Errorf("unable to get relative log prefix from basepath: %s", e)
+	}
+
 	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
-		s.configsDir.Join(filenamePair.Trader).Unix(),
+		traderRelativeConfigPath.Unix(),
 		strategy,
-		s.configsDir.Join(filenamePair.Strategy).Unix(),
-		s.logsDir.Join(logPrefix).Unix(),
+		stratRelativeConfigPath.Unix(),
+		logRelativePrefix.Unix(),
 	)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
