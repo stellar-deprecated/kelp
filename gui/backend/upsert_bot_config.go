@@ -87,19 +87,19 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filenamePair := model2.GetBotFilenames(req.Name, req.Strategy)
-	traderFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Trader)
+	traderFilePath := s.configsDir.Join(filenamePair.Trader)
 	botConfig := req.TraderConfig
-	log.Printf("upsert bot config to file: %s\n", traderFilePath)
-	e = toml.WriteFile(traderFilePath, &botConfig)
+	log.Printf("upsert bot config to file: %s\n", traderFilePath.AsString())
+	e = toml.WriteFile(traderFilePath.Native(), &botConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error writing trader botConfig toml file for bot '%s': %s", req.Name, e))
 		return
 	}
 
-	strategyFilePath := fmt.Sprintf("%s/%s", s.configsDir, filenamePair.Strategy)
+	strategyFilePath := s.configsDir.Join(filenamePair.Strategy)
 	strategyConfig := req.StrategyConfig
-	log.Printf("upsert strategy config to file: %s\n", strategyFilePath)
-	e = toml.WriteFile(strategyFilePath, &strategyConfig)
+	log.Printf("upsert strategy config to file: %s\n", strategyFilePath.AsString())
+	e = toml.WriteFile(strategyFilePath.Native(), &strategyConfig)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error writing strategy toml file for bot '%s': %s", req.Name, e))
 		return

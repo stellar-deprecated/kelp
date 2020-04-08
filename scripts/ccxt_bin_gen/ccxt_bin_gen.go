@@ -73,7 +73,7 @@ func checkPkgTool(kos *kelpos.KelpOS) {
 
 func downloadCcxtSource(kos *kelpos.KelpOS, downloadDir string) {
 	fmt.Printf("making directory where we can download ccxt file %s ... ", downloadDir)
-	e := kos.Mkdir(downloadDir)
+	_, e := kos.Blocking("mkdir", fmt.Sprintf("mkdir -p %s", downloadDir))
 	if e != nil {
 		log.Fatal(errors.Wrap(e, "could not make directory for downloadDir "+downloadDir))
 	}
@@ -147,7 +147,7 @@ func copyDependencyFiles(kos *kelpos.KelpOS, outDir string, pkgCmdOutput string)
 
 func mkDir(kos *kelpos.KelpOS, zipDir string) {
 	fmt.Printf("making directory %s ... ", zipDir)
-	e := kos.Mkdir(zipDir)
+	_, e := kos.Blocking("mkdir", fmt.Sprintf("mkdir -p %s", zipDir))
 	if e != nil {
 		log.Fatal(errors.Wrap(e, "unable to make directory "+zipDir))
 	}
