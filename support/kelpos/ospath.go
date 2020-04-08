@@ -14,6 +14,7 @@ import (
 type OSPath struct {
 	native string
 	unix   string
+	isRel  bool
 }
 
 // String() is the Stringer method which is unsupprted
@@ -25,14 +26,15 @@ func (o *OSPath) String() string {
 // AsString produces a string representation and we intentionally don't use the Stringer API because this can mistakenly
 // be used in place of a string path which will produce hidden runtime errors which is dangerous
 func (o *OSPath) AsString() string {
-	return fmt.Sprintf("OSPath[native=%s, unix=%s]", o.native, o.unix)
+	return fmt.Sprintf("OSPath[native=%s, unix=%s, isRel=%v]", o.native, o.unix, o.isRel)
 }
 
 // makeOSPath is an internal helper that enforced always using toUnixFilepath on the unix path
-func makeOSPath(native string, unix string) *OSPath {
+func makeOSPath(native string, unix string, isRel bool) *OSPath {
 	return &OSPath{
 		native: filepath.Clean(native),
 		unix:   toUnixFilepath(filepath.Clean(unix)),
+		isRel:  isRel,
 	}
 }
 
@@ -46,7 +48,7 @@ func MakeOsPathBase() (*OSPath, error) {
 	if e != nil {
 		return nil, fmt.Errorf("could not get binary directory: %s", e)
 	}
-	ospath := makeOSPath(binaryDirectoryNative, currentDirUnslashed)
+	ospath := makeOSPath(binaryDirectoryNative, currentDirUnslashed, false)
 
 	if filepath.Base(ospath.Native()) != filepath.Base(ospath.Unix()) {
 		return nil, fmt.Errorf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary", ospath.Unix(), ospath.Native())
@@ -65,6 +67,11 @@ func (o *OSPath) Unix() string {
 	return o.unix
 }
 
+// IsRelative returns true if this is a relative path, otherwise false
+func (o *OSPath) IsRelative() bool {
+	return o.isRel
+}
+
 // Join makes a new OSPath struct by modifying the internal path representations together
 func (o *OSPath) Join(elem ...string) *OSPath {
 	nativePaths := []string{o.native}
@@ -76,7 +83,34 @@ func (o *OSPath) Join(elem ...string) *OSPath {
 	return makeOSPath(
 		filepath.Join(nativePaths...),
 		filepath.Join(unixPaths...),
+		o.isRel,
 	)
+}
+
+// RelFromBase returns a *OSPath that is relative to the basepath
+func (o *OSPath) RelFromBase() (*OSPath, error) {
+	basepath, e := MakeOsPathBase()
+	if e != nil {
+		return nil, fmt.Errorf("unable to fetch ospathbase: %s", e)
+	}
+
+	return o.RelFromPath(basepath)
+}
+
+// RelFromPath returns a *OSPath that is relative from the provided path
+func (o *OSPath) RelFromPath(basepath *OSPath) (*OSPath, error) {
+	newRelNative, e := filepath.Rel(basepath.Native(), o.Native())
+	if e != nil {
+		return nil, fmt.Errorf("unable to make relative native path from basepath: %s", e)
+	}
+
+	newRelUnix, e := filepath.Rel(basepath.Unix(), o.Unix())
+	if e != nil {
+		return nil, fmt.Errorf("unable to make relative unix path from basepath: %s", e)
+	}
+
+	// set this to be a relative path
+	return makeOSPath(newRelNative, newRelUnix, true), nil
 }
 
 func getCurrentDirUnix() (string, error) {

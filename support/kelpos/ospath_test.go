@@ -38,12 +38,29 @@ func TestOSPath(t *testing.T) {
 				return
 			}
 
-			ospath1 := makeOSPath(k.basePathNative, "/mnt/c/testfolder")
+			ospath1 := makeOSPath(k.basePathNative, "/mnt/c/testfolder", false)
+			if !assert.Equal(t, false, ospath1.IsRelative()) {
+				return
+			}
 			ospath2 := ospath1.Join("subfolder")
+			if !assert.Equal(t, false, ospath2.IsRelative()) {
+				return
+			}
 			if !assert.Equal(t, k.wantFinalNative, ospath2.Native()) {
 				return
 			}
 			if !assert.Equal(t, ospath1.Unix()+"/subfolder", ospath2.Unix()) {
+				return
+			}
+
+			rel1, e := ospath2.RelFromPath(ospath1)
+			if !assert.NoError(t, e) {
+				return
+			}
+			if !assert.Equal(t, true, rel1.IsRelative()) {
+				return
+			}
+			if !assert.Equal(t, "subfolder", rel1.Unix()) {
 				return
 			}
 		})
