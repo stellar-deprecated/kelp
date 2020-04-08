@@ -14,27 +14,31 @@ type OSPath struct {
 	unix   string
 }
 
-// MakeOsPath is a factory method for the OSPath struct based on the current binary's directory
-func MakeOsPath() (*OSPath, error) {
+// makeOSPath is an internal helper that enforced always using toUnixFilepath on the unix path
+func makeOSPath(native string, unix string) *OSPath {
+	return &OSPath{
+		native: filepath.Clean(native),
+		unix:   toUnixFilepath(filepath.Clean(unix)),
+	}
+}
+
+// MakeOsPathBase is a factory method for the OSPath struct based on the current binary's directory
+func MakeOsPathBase() (*OSPath, error) {
 	currentDirUnslashed, e := getCurrentDirUnix()
 	if e != nil {
 		return nil, fmt.Errorf("could not get current directory: %s", e)
 	}
-	currentDirUnix := toUnixFilepath(currentDirUnslashed)
-
 	binaryDirectoryNative, e := getBinaryDirectoryNative()
 	if e != nil {
 		return nil, fmt.Errorf("could not get binary directory: %s", e)
 	}
+	ospath := makeOSPath(binaryDirectoryNative, currentDirUnslashed)
 
-	if filepath.Base(currentDirUnix) != filepath.Base(binaryDirectoryNative) {
-		return nil, fmt.Errorf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary", currentDirUnix, binaryDirectoryNative)
+	if filepath.Base(ospath.Native()) != filepath.Base(ospath.Unix()) {
+		return nil, fmt.Errorf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary", ospath.Unix(), ospath.Native())
 	}
 
-	return &OSPath{
-		native: binaryDirectoryNative,
-		unix:   currentDirUnix,
-	}, nil
+	return ospath, nil
 }
 
 // Native returns the native representation of the path as a string
@@ -47,18 +51,18 @@ func (o *OSPath) Unix() string {
 	return o.unix
 }
 
-// NewPathByAppending makes a new OSPath struct by modifying the internal path representations together
-func (o *OSPath) NewPathByAppending(elem ...string) *OSPath {
+// Join makes a new OSPath struct by modifying the internal path representations together
+func (o *OSPath) Join(elem ...string) *OSPath {
 	nativePaths := []string{o.native}
 	nativePaths = append(nativePaths, elem...)
 
 	unixPaths := []string{o.unix}
 	unixPaths = append(unixPaths, elem...)
 
-	return &OSPath{
-		native: filepath.Join(nativePaths...),
-		unix:   filepath.Join(unixPaths...),
-	}
+	return makeOSPath(
+		filepath.Join(nativePaths...),
+		filepath.Join(unixPaths...),
+	)
 }
 
 func getCurrentDirUnix() (string, error) {

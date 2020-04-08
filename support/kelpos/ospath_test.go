@@ -38,12 +38,8 @@ func TestOSPath(t *testing.T) {
 				return
 			}
 
-			ospath1 := &OSPath{
-				native: k.basePathNative,
-				unix:   "/mnt/c/testfolder",
-			}
-
-			ospath2 := ospath1.NewPathByAppending("subfolder")
+			ospath1 := makeOSPath(k.basePathNative, "/mnt/c/testfolder")
+			ospath2 := ospath1.Join("subfolder")
 			if !assert.Equal(t, k.wantFinalNative, ospath2.Native()) {
 				return
 			}

@@ -80,12 +80,12 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		ospath, e := kelpos.MakeOsPath()
+		basepath, e := kelpos.MakeOsPathBase()
 		if e != nil {
 			panic(errors.Wrap(e, "could not make ospath"))
 		}
-		log.Printf("ospath initialized with native path: %s", ospath.Native())
-		log.Printf("ospath initialized with unix path: %s", ospath.Unix())
+		log.Printf("ospath initialized with native path: %s", basepath.Native())
+		log.Printf("ospath initialized with unix path: %s", basepath.Unix())
 
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
