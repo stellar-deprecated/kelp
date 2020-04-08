@@ -39,6 +39,11 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	filenamePair := model2.GetBotFilenames(botName, strategy)
 	logPrefix := model2.GetLogPrefix(botName, strategy)
 
+	// use relative paths here so it works under windows. In windows we use unix paths to reference the config files since it is
+	// started under the linux subsystem, but it is a windows binary so uses the windows naming scheme (C:\ etc.). Therefore we need
+	// to either find a regex replacement to convert from unix to windows (/mnt/c -> C:\) or we can use relative paths which we did.
+	// Note that /mnt/c is unlikely to be valid in windows (but is valid in the linux subsystem) since it's usually prefixed by the
+	// volume (C:\ etc.), which is why relative paths works so well here as it avoids this confusion.
 	traderRelativeConfigPath, e := s.configsDir.Join(filenamePair.Trader).RelFromPath(s.basepath)
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of trader config file from basepath: %s", e)
