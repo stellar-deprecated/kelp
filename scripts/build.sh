@@ -310,17 +310,28 @@ do
     GOARCH=amd64
     unset GOARM
 
+    # generate bundler.json for platform
     gen_bundler_json -p $GOOS
-    echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
-    # compile
-    echo -n "compiling UI for (GOOS=$GOOS, GOARCH=$GOARCH, FLAG=$FLAG) ... "
-    astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
-    check_build_result $?
-    echo "successful"
 
     if [[ $GOOS == "windows" ]]
     then
+        gen_bind_files
+        # compile
+        # need to use cli tool for windows because building a GUI version will trigger the command prompt to open every time we invoke a "bash -c" command which is too frequent
+        echo -n "compiling UI for windows using cli tool instead of using astilectron-bundler (GOOS=$GOOS, GOARCH=$GOARCH) ... "
+        env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/kelp.exe
+        check_build_result $?
+        echo "successful"
+        
+        echo -n "copying over kelp-start.bat file to the windows build ..."
         cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
+        echo "done"
+    else
+        # compile
+        echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
+        astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
+        check_build_result $?
+        echo "successful"
     fi
 
     # archive
