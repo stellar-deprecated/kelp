@@ -87,6 +87,18 @@ func (o *OSPath) Join(elem ...string) *OSPath {
 	)
 }
 
+// JoinRelPath makes a new OSPath struct by modifying the internal path representations together
+func (o *OSPath) JoinRelPath(relPaths ...*OSPath) (*OSPath, error) {
+	elems := []string{}
+	for _, path := range relPaths {
+		if !path.IsRelative() {
+			return nil, fmt.Errorf("paths need to be relative but found a non-relative path %s", path.AsString())
+		}
+		elems = append(elems, path.Native())
+	}
+	return o.Join(elems...), nil
+}
+
 // RelFromBase returns a *OSPath that is relative to the basepath
 func (o *OSPath) RelFromBase() (*OSPath, error) {
 	basepath, e := MakeOsPathBase()
