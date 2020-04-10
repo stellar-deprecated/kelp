@@ -39,42 +39,32 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	filenamePair := model2.GetBotFilenames(botName, strategy)
 	logPrefix := model2.GetLogPrefix(botName, strategy)
 
-	// use relative paths here so it works under windows. In windows we use unix paths to reference the config files since it is
-	// started under the linux subsystem, but it is a windows binary so uses the windows naming scheme (C:\ etc.). Therefore we need
-	// to either find a regex replacement to convert from unix to windows (/mnt/c -> C:\) or we can use relative paths which we did.
+	// use native relative paths for the configs files so it works under windows even though it is started under the linux subsystem.
+	// use native absolute paths for the log prefix so it works under windows.
+	//
+	// Since on windows it is a windows binary it will use the windows naming scheme (C:\ etc.).
+	// However in the linux subsystem there is no C:\ but instead is listed as /mnt/c/... so we need to either find a regex replacement
+	// to convert from unix to windows (/mnt/c -> C:\) or we can use relative paths like we did.
 	// Note that /mnt/c is unlikely to be valid in windows (but is valid in the linux subsystem) since it's usually prefixed by the
 	// volume (C:\ etc.), which is why relative paths works so well here as it avoids this confusion.
+	//
+	// the log file is a file that we create and write to disk so it needs the absolute path including the C:\ so we use the absolute path
 	traderRelativeConfigPath, e := s.configsDir.Join(filenamePair.Trader).RelFromPath(s.basepath)
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of trader config file from basepath: %s", e)
-	}
-	traderConfigPath, e := s.basepath.JoinRelPath(traderRelativeConfigPath)
-	if e != nil {
-		return fmt.Errorf("unable to make absolute path from basepath (%s) + traderRelativeConfigPath (%s): %s", s.basepath.AsString(), traderRelativeConfigPath.AsString(), e)
 	}
 
 	stratRelativeConfigPath, e := s.configsDir.Join(filenamePair.Strategy).RelFromPath(s.basepath)
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of strategy config file from basepath: %s", e)
 	}
-	stratConfigPath, e := s.basepath.JoinRelPath(stratRelativeConfigPath)
-	if e != nil {
-		return fmt.Errorf("unable to make absolute path from basepath (%s) + stratRelativeConfigPath (%s): %s", s.basepath.AsString(), stratRelativeConfigPath.AsString(), e)
-	}
 
-	logRelativePrefix, e := s.logsDir.Join(logPrefix).RelFromPath(s.basepath)
-	if e != nil {
-		return fmt.Errorf("unable to get relative log prefix from basepath: %s", e)
-	}
-	logPrefixPath, e := s.basepath.JoinRelPath(logRelativePrefix)
-	if e != nil {
-		return fmt.Errorf("unable to make absolute path from basepath (%s) + logRelativePrefix (%s): %s", s.basepath.AsString(), logRelativePrefix.AsString(), e)
-	}
+	logPrefixPath := s.logsDir.Join(logPrefix)
 
 	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
-		traderConfigPath.Native(),
+		traderRelativeConfigPath.Native(),
 		strategy,
-		stratConfigPath.Native(),
+		stratRelativeConfigPath.Native(),
 		logPrefixPath.Native(),
 	)
 	if iterations != nil {
