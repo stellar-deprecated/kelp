@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+
+	"github.com/stellar/kelp/support/utils"
 )
 
 // OSPath encapsulates the pair of the native path (i.e. windows or unix) and the unix path
@@ -51,7 +53,9 @@ func MakeOsPathBase() (*OSPath, error) {
 	ospath := makeOSPath(binaryDirectoryNative, currentDirUnslashed, false)
 
 	if filepath.Base(ospath.Native()) != filepath.Base(ospath.Unix()) {
-		return nil, fmt.Errorf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary", ospath.Unix(), ospath.Native())
+		errorStr := fmt.Sprintf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary\n", ospath.Unix(), ospath.Native())
+		utils.PrintErrorHintf(errorStr)
+		return nil, fmt.Errorf(errorStr)
 	}
 
 	return ospath, nil
