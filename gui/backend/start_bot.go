@@ -39,16 +39,16 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	filenamePair := model2.GetBotFilenames(botName, strategy)
 	logPrefix := model2.GetLogPrefix(botName, strategy)
 
-	// use native relative paths for the configs files so it works under windows even though it is started under the linux subsystem.
-	// use native absolute paths for the log prefix so it works under windows.
+	// use unix relative paths for the configs files so it works under windows under the linux subsystem and reads file.
+	// use native absolute paths for the log prefix so it works under windows under the linux subsystem and create and writes
+	// to disk so it needs the absolute native path including the C:\.
 	//
 	// Since on windows it is a windows binary it will use the windows naming scheme (C:\ etc.).
 	// However in the linux subsystem there is no C:\ but instead is listed as /mnt/c/... so we need to either find a regex replacement
-	// to convert from unix to windows (/mnt/c -> C:\) or we can use relative paths like we did.
+	// to convert from unix to windows (/mnt/c -> C:\) or we can use relative paths for the configs like we did.
+	//
 	// Note that /mnt/c is unlikely to be valid in windows (but is valid in the linux subsystem) since it's usually prefixed by the
 	// volume (C:\ etc.), which is why relative paths works so well here as it avoids this confusion.
-	//
-	// the log file is a file that we create and write to disk so it needs the absolute path including the C:\ so we use the absolute path
 	traderRelativeConfigPath, e := s.configsDir.Join(filenamePair.Trader).RelFromPath(s.basepath)
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of trader config file from basepath: %s", e)
@@ -62,9 +62,9 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	logPrefixPath := s.logsDir.Join(logPrefix)
 
 	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
-		traderRelativeConfigPath.Native(),
+		traderRelativeConfigPath.Unix(),
 		strategy,
-		stratRelativeConfigPath.Native(),
+		stratRelativeConfigPath.Unix(),
 		logPrefixPath.Native(),
 	)
 	if iterations != nil {
