@@ -48,22 +48,34 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of trader config file from basepath: %s", e)
 	}
+	traderConfigPath, e := s.basepath.JoinRelPath(traderRelativeConfigPath)
+	if e != nil {
+		return fmt.Errorf("unable to make absolute path from basepath (%s) + traderRelativeConfigPath (%s): %s", s.basepath.AsString(), traderRelativeConfigPath.AsString(), e)
+	}
 
 	stratRelativeConfigPath, e := s.configsDir.Join(filenamePair.Strategy).RelFromPath(s.basepath)
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of strategy config file from basepath: %s", e)
+	}
+	stratConfigPath, e := s.basepath.JoinRelPath(stratRelativeConfigPath)
+	if e != nil {
+		return fmt.Errorf("unable to make absolute path from basepath (%s) + stratRelativeConfigPath (%s): %s", s.basepath.AsString(), stratRelativeConfigPath.AsString(), e)
 	}
 
 	logRelativePrefix, e := s.logsDir.Join(logPrefix).RelFromPath(s.basepath)
 	if e != nil {
 		return fmt.Errorf("unable to get relative log prefix from basepath: %s", e)
 	}
+	logPrefixPath, e := s.basepath.JoinRelPath(logRelativePrefix)
+	if e != nil {
+		return fmt.Errorf("unable to make absolute path from basepath (%s) + logRelativePrefix (%s): %s", s.basepath.AsString(), logRelativePrefix.AsString(), e)
+	}
 
 	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
-		traderRelativeConfigPath.Unix(),
+		traderConfigPath.Native(),
 		strategy,
-		stratRelativeConfigPath.Unix(),
-		logRelativePrefix.Unix(),
+		stratConfigPath.Native(),
+		logPrefixPath.Native(),
 	)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
