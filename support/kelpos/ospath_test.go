@@ -52,6 +52,20 @@ func TestOSPath(t *testing.T) {
 			if !assert.Equal(t, ospath1.Unix()+"/subfolder", ospath2.Unix()) {
 				return
 			}
+			ospath3, e := ospath1.JoinRelPath(makeOSPath("subfolder", "subfolder", true))
+			if !assert.NoError(t, e) {
+				return
+			}
+			// after joining a relativce path we end up with a non-relative path
+			if !assert.Equal(t, ospath1.IsRelative(), ospath3.IsRelative()) {
+				return
+			}
+			if !assert.Equal(t, k.wantFinalNative, ospath3.Native()) {
+				return
+			}
+			if !assert.Equal(t, ospath1.Unix()+"/subfolder", ospath3.Unix()) {
+				return
+			}
 
 			rel1, e := ospath2.RelFromPath(ospath1)
 			if !assert.NoError(t, e) {
