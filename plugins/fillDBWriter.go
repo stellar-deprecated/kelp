@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/stellar/kelp/api"
-	"github.com/stellar/kelp/database"
+	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/utils"
@@ -117,9 +117,9 @@ func (f *FillDBWriter) fetchOrRegisterMarket(trade model.Trade) (*tradingMarket,
 }
 
 func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error) {
-	rows, e := f.db.Query(database.SqlQueryMarketsById, marketId)
+	rows, e := f.db.Query(kelpdb.SqlQueryMarketsById, marketId)
 	if e != nil {
-		return nil, fmt.Errorf("could not execute sql select query (%s) for marketId (%s): %s", database.SqlQueryMarketsById, marketId, e)
+		return nil, fmt.Errorf("could not execute sql select query (%s) for marketId (%s): %s", kelpdb.SqlQueryMarketsById, marketId, e)
 	}
 	defer rows.Close()
 
@@ -138,7 +138,7 @@ func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error
 }
 
 func (f *FillDBWriter) registerMarket(market *tradingMarket) error {
-	sqlInsert := fmt.Sprintf(database.SqlMarketsInsertTemplate,
+	sqlInsert := fmt.Sprintf(kelpdb.SqlMarketsInsertTemplate,
 		market.ID,
 		market.ExchangeName,
 		market.BaseAsset,
@@ -166,7 +166,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		return fmt.Errorf("cannot fetch or register market for trade (txid=%s): %s", txid, e)
 	}
 
-	sqlInsert := fmt.Sprintf(database.SqlTradesInsertTemplate,
+	sqlInsert := fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
 		market.ID,
 		txid,
 		dateString,

@@ -10,7 +10,7 @@ import (
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
-	"github.com/stellar/kelp/database"
+	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/utils"
@@ -101,7 +101,7 @@ func makeSqlQueryDailyValues(marketIDs []string) string {
 	}
 	inClause := strings.Join(inClauseParts, ", ")
 
-	return fmt.Sprintf(database.SqlQueryDailyValuesTemplate, inClause)
+	return fmt.Sprintf(kelpdb.SqlQueryDailyValuesTemplate, inClause)
 }
 
 var _ SubmitFilter = &volumeFilter{}

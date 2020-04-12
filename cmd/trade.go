@@ -17,9 +17,10 @@ import (
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/api"
-	"github.com/stellar/kelp/database"
+	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/database"
 	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
@@ -28,6 +29,19 @@ import (
 	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
 )
+
+var upgradeScripts = []*database.UpgradeScript{
+	database.MakeUpgradeScript(1, database.SqlDbVersionTableCreate),
+	database.MakeUpgradeScript(2,
+		kelpdb.SqlMarketsTableCreate,
+		kelpdb.SqlTradesTableCreate,
+		kelpdb.SqlTradesIndexCreate,
+	),
+	database.MakeUpgradeScript(3,
+		kelpdb.SqlTradesIndexDrop,
+		kelpdb.SqlTradesIndexCreate2,
+	),
+}
 
 const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg
   kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg --sim`
@@ -489,7 +503,7 @@ func runTradeCmd(options inputs) {
 		}
 
 		var e error
-		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig)
+		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig, upgradeScripts)
 		if e != nil {
 			logger.Fatal(l, fmt.Errorf("problem encountered while initializing the db: %s", e))
 		}

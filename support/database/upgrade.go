@@ -11,18 +11,8 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-var upgradeScripts = []*UpgradeScript{
-	makeUpgradeScript(1, sqlDbVersionTableCreate),
-	makeUpgradeScript(2,
-		sqlMarketsTableCreate,
-		sqlTradesTableCreate,
-		sqlTradesIndexCreate,
-	),
-	makeUpgradeScript(3,
-		sqlTradesIndexDrop,
-		sqlTradesIndexCreate2,
-	),
-}
+// sqlDbVersionTableInsertTemplate inserts into the db_version table
+const sqlDbVersionTableInsertTemplate = "INSERT INTO db_version (version, date_completed_utc, num_scripts, time_elapsed_millis) VALUES (%d, '%s', %d, %d)"
 
 // UpgradeScript encapsulates a script to be run to upgrade the database from one version to the next
 type UpgradeScript struct {
@@ -30,8 +20,8 @@ type UpgradeScript struct {
 	commands []string
 }
 
-// makeUpgradeScript encapsulates a script to be run to upgrade the database from one version to the next
-func makeUpgradeScript(version uint32, command string, moreCommands ...string) *UpgradeScript {
+// MakeUpgradeScript encapsulates a script to be run to upgrade the database from one version to the next
+func MakeUpgradeScript(version uint32, command string, moreCommands ...string) *UpgradeScript {
 	allCommands := []string{command}
 	allCommands = append(allCommands, moreCommands...)
 
@@ -42,7 +32,7 @@ func makeUpgradeScript(version uint32, command string, moreCommands ...string) *
 }
 
 // ConnectInitializedDatabase creates a database with the required metadata tables
-func ConnectInitializedDatabase(postgresDbConfig *postgresdb.Config) (*sql.DB, error) {
+func ConnectInitializedDatabase(postgresDbConfig *postgresdb.Config, upgradeScripts []*UpgradeScript) (*sql.DB, error) {
 	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
 	if e != nil {
 		if strings.Contains(e.Error(), "connect: connection refused") {
