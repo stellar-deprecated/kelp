@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
@@ -42,7 +43,7 @@ func MakeAPIServer(
 	noHeaders bool,
 	quitFn func(),
 ) (*APIServer, error) {
-	kelpBinPath := basepath.Join(os.Args[0])
+	kelpBinPath := basepath.Join(filepath.Base(os.Args[0]))
 	configsDir := basepath.Join("ops", "configs")
 	logsDir := basepath.Join("ops", "logs")
 

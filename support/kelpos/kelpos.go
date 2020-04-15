@@ -11,6 +11,7 @@ import (
 
 // KelpOS is a struct that manages all subprocesses started by this Kelp process
 type KelpOS struct {
+	workingBinDir       *OSPath
 	processes           map[string]Process
 	processLock         *sync.Mutex
 	bots                map[string]*BotInstance
@@ -34,11 +35,17 @@ type Process struct {
 var singleton *KelpOS
 
 func init() {
+	path, e := MakeOsPathBase()
+	if e != nil {
+		panic(e)
+	}
+
 	singleton = &KelpOS{
-		processes:   map[string]Process{},
-		processLock: &sync.Mutex{},
-		bots:        map[string]*BotInstance{},
-		botLock:     &sync.Mutex{},
+		workingBinDir: path,
+		processes:     map[string]Process{},
+		processLock:   &sync.Mutex{},
+		bots:          map[string]*BotInstance{},
+		botLock:       &sync.Mutex{},
 	}
 }
 
