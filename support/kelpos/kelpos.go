@@ -1,6 +1,7 @@
 package kelpos
 
 import (
+	"fmt"
 	"io"
 	"os/exec"
 	"sync"
@@ -49,5 +50,8 @@ type BotInstance struct {
 
 // GetKelpOS gets the singleton instance
 func GetKelpOS() *KelpOS {
+	if singleton == nil {
+		panic(fmt.Errorf("there is a cycle stemming from the init() method since singleton was nil"))
+	}
 	return singleton
 }
