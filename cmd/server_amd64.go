@@ -697,10 +697,21 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 						if (ajax.status == 200 || ajax.status == 206) {
 							if (ajax.responseText.includes("READY_STRING")) {
 								var redirectURL = "REDIRECT_URL";
+								var pingURL = "PING_URL";
 								document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
 								document.getElementById("theEnd").scrollIntoView();
+
 								// sleep for 2 seconds so the user sees that we are being redirected
-								setTimeout(() => { window.location.href = redirectURL; }, 2000)
+								setTimeout(() => {
+									var ajaxPing = new XMLHttpRequest();
+									ajaxPing.open("GET", pingURL, true);
+									ajaxPing.onreadystatechange = function () {
+										if ((ajaxPing.readyState == 4) && (ajaxPing.status == 200)) {
+											window.location.href = redirectURL;
+										}
+									}
+									ajaxPing.send(null);
+								}, 2000)
 							}
 						}
 					}// ready state 4
