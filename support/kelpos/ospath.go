@@ -48,14 +48,14 @@ func MakeOsPathBase() (*OSPath, error) {
 		return nil, fmt.Errorf("could not get binary directory: %s", e)
 	}
 
-	binaryDirectoryUnslashed, e := getBinaryDirectoryUnix(binaryDirectoryNative)
+	binaryDirectoryUnix, e := getBinaryDirectoryUnix(binaryDirectoryNative)
 	if e != nil {
 		return nil, fmt.Errorf("could not get binary directory unix: %s", e)
 	}
 
 	// use the binary directory for the base path since UI executables will be run from $PWD whereas the binary can be located
 	// in a different path (for example $PWD/Kelp.app/Contents/MacOS/ for darwin)
-	ospath := makeOSPath(binaryDirectoryNative, binaryDirectoryUnslashed, false)
+	ospath := makeOSPath(binaryDirectoryNative, binaryDirectoryUnix, false)
 
 	if filepath.Base(ospath.Native()) != filepath.Base(ospath.Unix()) {
 		errorStr := fmt.Sprintf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary\n", ospath.Unix(), ospath.Native())
@@ -158,7 +158,7 @@ func convertNativePathToUnix(baseNative string, targetNative string, baseUnix st
 		return "", fmt.Errorf("could not fetch relative path from baseNative (%s) to targetNative (%s): %s", baseNative, targetNative, e)
 	}
 
-	return filepath.Join(baseUnix, toUnixFilepath(relBaseToTarget)), nil
+	return toUnixFilepath(filepath.Join(baseUnix, toUnixFilepath(relBaseToTarget))), nil
 }
 
 func getWorkingDirUnix() (string, error) {
