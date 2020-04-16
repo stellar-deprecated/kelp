@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
@@ -15,7 +16,7 @@ import (
 // APIServer is an instance of the API service
 type APIServer struct {
 	basepath          *kelpos.OSPath
-	kelpBinPath       *kelpos.OSPath
+	kelpBinName       string
 	configsDir        *kelpos.OSPath
 	logsDir           *kelpos.OSPath
 	kos               *kelpos.KelpOS
@@ -42,7 +43,7 @@ func MakeAPIServer(
 	noHeaders bool,
 	quitFn func(),
 ) (*APIServer, error) {
-	kelpBinPath := basepath.Join(os.Args[0])
+	kelpBinName := filepath.Base(os.Args[0])
 	configsDir := basepath.Join("ops", "configs")
 	logsDir := basepath.Join("ops", "logs")
 
@@ -53,7 +54,7 @@ func MakeAPIServer(
 
 	return &APIServer{
 		basepath:              basepath,
-		kelpBinPath:           kelpBinPath,
+		kelpBinName:           kelpBinName,
 		configsDir:            configsDir,
 		logsDir:               logsDir,
 		kos:                   kos,
@@ -119,12 +120,22 @@ func (s *APIServer) writeJsonWithLog(w http.ResponseWriter, v interface{}, doLog
 }
 
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {
-	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
+	// There is a weird issue on windows where the absolute path for the kelp binary does not work on the release GUI
+	// version because of the unzipped directory name but it will work on the released cli version or if we change the
+	// name of the folder in which the GUI version is unzipped.
+	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
+	// directory name. see start_bot.go for some experimentation with absolute and relative paths
+	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
 	return s.kos.Blocking(namespace, cmdString)
 }
 
 func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kelpos.Process, error) {
-	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
+	// There is a weird issue on windows where the absolute path for the kelp binary does not work on the release GUI
+	// version because of the unzipped directory name but it will work on the released cli version or if we change the
+	// name of the folder in which the GUI version is unzipped.
+	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
+	// directory name. see start_bot.go for some experimentation with absolute and relative paths
+	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
 	return s.kos.Background(namespace, cmdString)
 }
 

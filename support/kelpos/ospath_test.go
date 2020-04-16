@@ -27,14 +27,7 @@ func TestOSPath(t *testing.T) {
 	for _, k := range testCases {
 		t.Run(k.basePathNative, func(t *testing.T) {
 			// early exit if running on a disallowed platform to avoid false negatives
-			isValid := false
-			for _, allowedGoos := range k.runGoos {
-				if runtime.GOOS == allowedGoos {
-					isValid = true
-					break
-				}
-			}
-			if !isValid {
+			if !checkGoosAllowed(k.runGoos) {
 				return
 			}
 
@@ -79,4 +72,97 @@ func TestOSPath(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConvertNativePathToUnix(t *testing.T) {
+	testCases := []struct {
+		name           string
+		runGoos        []string
+		baseNative     string
+		targetNative   string
+		baseUnix       string
+		wantTargetUnix string
+	}{
+		{
+			name:           "unix_forward",
+			runGoos:        []string{"linux", "darwin"},
+			baseNative:     "/Users/a/test",
+			targetNative:   "/Users/a/test/b",
+			baseUnix:       "/Users/a/test",
+			wantTargetUnix: "/Users/a/test/b",
+		}, {
+			name:           "unix_forward_trailslash",
+			runGoos:        []string{"linux", "darwin"},
+			baseNative:     "/Users/a/test/",
+			targetNative:   "/Users/a/test/b/",
+			baseUnix:       "/Users/a/test/",
+			wantTargetUnix: "/Users/a/test/b",
+		}, {
+			name:           "unix_backward",
+			runGoos:        []string{"linux", "darwin"},
+			baseNative:     "/Users/a/test",
+			targetNative:   "/Users/a",
+			baseUnix:       "/Users/a/test",
+			wantTargetUnix: "/Users/a",
+		}, {
+			name:           "unix_backward_trailslash",
+			runGoos:        []string{"linux", "darwin"},
+			baseNative:     "/Users/a/test/",
+			targetNative:   "/Users/a/",
+			baseUnix:       "/Users/a/test/",
+			wantTargetUnix: "/Users/a",
+		}, {
+			name:           "windows_forward",
+			runGoos:        []string{"windows"},
+			baseNative:     "C:\\Users\\a\\test",
+			targetNative:   "C:\\Users\\a\\test\\b",
+			baseUnix:       "/Users/a/test",
+			wantTargetUnix: "/Users/a/test/b",
+		}, {
+			name:           "windows_forward_trailslash",
+			runGoos:        []string{"windows"},
+			baseNative:     "C:\\Users\\a\\test\\",
+			targetNative:   "C:\\Users\\a\\test\\b\\",
+			baseUnix:       "/Users/a/test/",
+			wantTargetUnix: "/Users/a/test/b",
+		}, {
+			name:           "windows_backward",
+			runGoos:        []string{"windows"},
+			baseNative:     "C:\\Users\\a\\test",
+			targetNative:   "C:\\Users\\a",
+			baseUnix:       "/Users/a/test",
+			wantTargetUnix: "/Users/a",
+		}, {
+			name:           "windows_backward_trailslash",
+			runGoos:        []string{"windows"},
+			baseNative:     "C:\\Users\\a\\test\\",
+			targetNative:   "C:\\Users\\a\\",
+			baseUnix:       "/Users/a/test/",
+			wantTargetUnix: "/Users/a",
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			// early exit if running on a disallowed platform to avoid false negatives
+			if !checkGoosAllowed(k.runGoos) {
+				return
+			}
+
+			targetUnix, e := convertNativePathToUnix(k.baseNative, k.targetNative, k.baseUnix)
+			if !assert.NoError(t, e) {
+				return
+			}
+			assert.Equal(t, k.wantTargetUnix, targetUnix)
+		})
+	}
+}
+
+func checkGoosAllowed(runGoos []string) bool {
+	for _, allowedGoos := range runGoos {
+		if runtime.GOOS == allowedGoos {
+			return true
+		}
+	}
+	return false
 }

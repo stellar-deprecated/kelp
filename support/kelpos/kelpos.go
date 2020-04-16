@@ -1,6 +1,7 @@
 package kelpos
 
 import (
+	"fmt"
 	"io"
 	"os/exec"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 // KelpOS is a struct that manages all subprocesses started by this Kelp process
 type KelpOS struct {
+	workingBinDir       *OSPath
 	processes           map[string]Process
 	processLock         *sync.Mutex
 	bots                map[string]*BotInstance
@@ -33,11 +35,17 @@ type Process struct {
 var singleton *KelpOS
 
 func init() {
+	path, e := MakeOsPathBase()
+	if e != nil {
+		panic(e)
+	}
+
 	singleton = &KelpOS{
-		processes:   map[string]Process{},
-		processLock: &sync.Mutex{},
-		bots:        map[string]*BotInstance{},
-		botLock:     &sync.Mutex{},
+		workingBinDir: path,
+		processes:     map[string]Process{},
+		processLock:   &sync.Mutex{},
+		bots:          map[string]*BotInstance{},
+		botLock:       &sync.Mutex{},
 	}
 }
 
@@ -49,5 +57,8 @@ type BotInstance struct {
 
 // GetKelpOS gets the singleton instance
 func GetKelpOS() *KelpOS {
+	if singleton == nil {
+		panic(fmt.Errorf("there is a cycle stemming from the init() method since singleton was nil"))
+	}
 	return singleton
 }

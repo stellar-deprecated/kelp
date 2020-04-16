@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+
+	"github.com/stellar/kelp/support/utils"
 )
 
 // OSPath encapsulates the pair of the native path (i.e. windows or unix) and the unix path
@@ -40,18 +43,24 @@ func makeOSPath(native string, unix string, isRel bool) *OSPath {
 
 // MakeOsPathBase is a factory method for the OSPath struct based on the current binary's directory
 func MakeOsPathBase() (*OSPath, error) {
-	currentDirUnslashed, e := getCurrentDirUnix()
-	if e != nil {
-		return nil, fmt.Errorf("could not get current directory: %s", e)
-	}
 	binaryDirectoryNative, e := getBinaryDirectoryNative()
 	if e != nil {
 		return nil, fmt.Errorf("could not get binary directory: %s", e)
 	}
-	ospath := makeOSPath(binaryDirectoryNative, currentDirUnslashed, false)
+
+	binaryDirectoryUnix, e := getBinaryDirectoryUnix(binaryDirectoryNative)
+	if e != nil {
+		return nil, fmt.Errorf("could not get binary directory unix: %s", e)
+	}
+
+	// use the binary directory for the base path since UI executables will be run from $PWD whereas the binary can be located
+	// in a different path (for example $PWD/Kelp.app/Contents/MacOS/ for darwin)
+	ospath := makeOSPath(binaryDirectoryNative, binaryDirectoryUnix, false)
 
 	if filepath.Base(ospath.Native()) != filepath.Base(ospath.Unix()) {
-		return nil, fmt.Errorf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary", ospath.Unix(), ospath.Native())
+		errorStr := fmt.Sprintf("ran from directory (%s) but need to run from the same directory as the location of the binary (%s), cd over to the location of the binary\n", ospath.Unix(), ospath.Native())
+		utils.PrintErrorHintf(errorStr)
+		return nil, fmt.Errorf(errorStr)
 	}
 
 	return ospath, nil
@@ -125,11 +134,37 @@ func (o *OSPath) RelFromPath(basepath *OSPath) (*OSPath, error) {
 	return makeOSPath(newRelNative, newRelUnix, true), nil
 }
 
-func getCurrentDirUnix() (string, error) {
-	kos := GetKelpOS()
-	outputBytes, e := kos.Blocking("pwd", "pwd")
+// getBinaryDirectoryUnix takes the workingDirUnix and adds to it the relative path from
+// workingDirNative to binaryDirectoryNative in unix form.
+func getBinaryDirectoryUnix(binaryDirectoryNative string) (string, error) {
+	wdUnix, e := getWorkingDirUnix()
 	if e != nil {
-		return "", fmt.Errorf("could not fetch current directory: %s", e)
+		return "", fmt.Errorf("could not fetch working directory unix: %s", e)
+	}
+
+	wdNative, e := os.Getwd()
+	if e != nil {
+		return "", fmt.Errorf("could not fetch working directory native: %s", e)
+	}
+
+	// on windows the native format is not unix-based so we need to convert from C:\ vs /mnt/c notation. This method will
+	// standardize conversions across OSes but results in a nop for darwin/unix since they use unix paths as their native format
+	return convertNativePathToUnix(wdNative, binaryDirectoryNative, wdUnix)
+}
+
+func convertNativePathToUnix(baseNative string, targetNative string, baseUnix string) (string, error) {
+	relBaseToTarget, e := filepath.Rel(baseNative, targetNative)
+	if e != nil {
+		return "", fmt.Errorf("could not fetch relative path from baseNative (%s) to targetNative (%s): %s", baseNative, targetNative, e)
+	}
+
+	return toUnixFilepath(filepath.Join(baseUnix, toUnixFilepath(relBaseToTarget))), nil
+}
+
+func getWorkingDirUnix() (string, error) {
+	outputBytes, e := exec.Command("bash", "-c", "pwd").Output()
+	if e != nil {
+		return "", fmt.Errorf("could not run raw command 'bash -c pwd': %s", e)
 	}
 	return strings.TrimSpace(string(outputBytes)), nil
 }

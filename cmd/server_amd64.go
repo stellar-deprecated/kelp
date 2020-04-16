@@ -35,6 +35,7 @@ import (
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
+	"github.com/stellar/kelp/support/utils"
 )
 
 const kelpPrefsDirectory = ".kelp"
@@ -89,6 +90,17 @@ func init() {
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
+		if isLocalMode {
+			wd, e := os.Getwd()
+			if e != nil {
+				panic(errors.Wrap(e, "could not get working directory"))
+			}
+			if filepath.Base(wd) != "kelp" {
+				e := fmt.Errorf("need to invoke from the root 'kelp' directory")
+				utils.PrintErrorHintf(e.Error())
+				panic(e)
+			}
+		}
 
 		var logFilepath *kelpos.OSPath
 		if !isLocalDevMode {
@@ -517,7 +529,7 @@ func openElectron(trayIconPath *kelpos.OSPath, url string) {
 			AppIconDefaultPath: "resources/kelp-icon@2x.png",
 			AcceptTCPTimeout:   time.Minute * 2,
 		},
-		Debug: false,
+		Debug: true,
 		Windows: []*bootstrap.Window{&bootstrap.Window{
 			Homepage: url,
 			Options: &astilectron.WindowOptions{
@@ -697,10 +709,21 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 						if (ajax.status == 200 || ajax.status == 206) {
 							if (ajax.responseText.includes("READY_STRING")) {
 								var redirectURL = "REDIRECT_URL";
+								var pingURL = "PING_URL";
 								document.getElementById("theEnd").innerHTML = "<br/><br/><b>redirecting to " + redirectURL + " ...</b><br/><br/>";
 								document.getElementById("theEnd").scrollIntoView();
+
 								// sleep for 2 seconds so the user sees that we are being redirected
-								setTimeout(() => { window.location.href = redirectURL; }, 2000)
+								setTimeout(() => {
+									var ajaxPing = new XMLHttpRequest();
+									ajaxPing.open("GET", pingURL, true);
+									ajaxPing.onreadystatechange = function () {
+										if ((ajaxPing.readyState == 4) && (ajaxPing.status == 200)) {
+											window.location.href = redirectURL;
+										}
+									}
+									ajaxPing.send(null);
+								}, 2000)
 							}
 						}
 					}// ready state 4

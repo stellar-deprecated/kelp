@@ -96,6 +96,9 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 // Background runs the provided bash command in the background and registers the command
 func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 	c := exec.Command("bash", "-c", cmd)
+	// always execute commands from the working directory (specify as native since underlying OS handles it)
+	c.Dir = kos.workingBinDir.Native()
+	log.Printf("process.Background is executing command: '%s' from directory '%s'", c.String(), c.Dir)
 
 	stdinWriter, e := c.StdinPipe()
 	if e != nil {
@@ -176,7 +179,7 @@ func (kos *KelpOS) RegisteredProcesses() []string {
 func (kos *KelpOS) Mkdir(dirPath *OSPath) error {
 	_, e := kos.Blocking("mkdir", fmt.Sprintf("mkdir -p %s", dirPath.Unix()))
 	if e != nil {
-		return fmt.Errorf("error running mkdir command for dir (%s): %s\n", dirPath, e)
+		return fmt.Errorf("error running mkdir command for dir (%s): %s\n", dirPath.AsString(), e)
 	}
 	return nil
 }
