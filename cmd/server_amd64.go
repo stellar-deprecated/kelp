@@ -517,7 +517,7 @@ func openElectron(trayIconPath *kelpos.OSPath, url string) {
 			AppIconDefaultPath: "resources/kelp-icon@2x.png",
 			AcceptTCPTimeout:   time.Minute * 2,
 		},
-		Debug: false,
+		Debug: true,
 		Windows: []*bootstrap.Window{&bootstrap.Window{
 			Homepage: url,
 			Options: &astilectron.WindowOptions{
