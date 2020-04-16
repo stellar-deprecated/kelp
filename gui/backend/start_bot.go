@@ -51,6 +51,9 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	// - native absolute paths did work on windows!
 	// - unix absolute path did not work on windows
 	//
+	// (see api_server.go#runKelpCommandBlocking and #runKelpCommandBackground for information that may be related to why
+	// absolute paths did not work)
+	//
 	// The above experimentation makes unix relative paths the most common format so we will use that to start new bots
 	//
 	// Note that on windows it could use the native windows naming scheme (C:\ etc.) but in the linux subsystem on windows

@@ -120,11 +120,21 @@ func (s *APIServer) writeJsonWithLog(w http.ResponseWriter, v interface{}, doLog
 }
 
 func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {
+	// There is a weird issue on windows where the absolute path for the kelp binary does not work on the release GUI
+	// version because of the unzipped directory name but it will work on the released cli version or if we change the
+	// name of the folder in which the GUI version is unzipped.
+	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
+	// directory name. see start_bot.go for some experimentation with absolute and relative paths
 	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
 	return s.kos.Blocking(namespace, cmdString)
 }
 
 func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kelpos.Process, error) {
+	// There is a weird issue on windows where the absolute path for the kelp binary does not work on the release GUI
+	// version because of the unzipped directory name but it will work on the released cli version or if we change the
+	// name of the folder in which the GUI version is unzipped.
+	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
+	// directory name. see start_bot.go for some experimentation with absolute and relative paths
 	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
 	return s.kos.Background(namespace, cmdString)
 }
