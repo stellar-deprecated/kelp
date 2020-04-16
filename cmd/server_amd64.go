@@ -35,6 +35,7 @@ import (
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
+	"github.com/stellar/kelp/support/utils"
 )
 
 const kelpPrefsDirectory = ".kelp"
@@ -89,6 +90,17 @@ func init() {
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
+		if isLocalMode {
+			wd, e := os.Getwd()
+			if e != nil {
+				panic(errors.Wrap(e, "could not get working directory"))
+			}
+			if filepath.Base(wd) != "kelp" {
+				e := fmt.Errorf("need to invoke from the root 'kelp' directory")
+				utils.PrintErrorHintf(e.Error())
+				panic(e)
+			}
+		}
 
 		var logFilepath *kelpos.OSPath
 		if !isLocalDevMode {
