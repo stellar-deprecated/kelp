@@ -27,9 +27,7 @@ func TestOSPath(t *testing.T) {
 	for _, k := range testCases {
 		t.Run(k.basePathNative, func(t *testing.T) {
 			// early exit if running on a disallowed platform to avoid false negatives
-			if !checkGoosAllowed(k.runGoos) {
-				return
-			}
+			skipIfGoosNotAllowed(t, k.runGoos)
 
 			ospath1 := makeOSPath(k.basePathNative, "/mnt/c/testfolder", false)
 			if !assert.Equal(t, false, ospath1.IsRelative()) {
@@ -117,9 +115,7 @@ func TestConvertBetweenNativeUnixPaths(t *testing.T) {
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
 			// early exit if running on a disallowed platform to avoid false negatives
-			if !checkGoosAllowed(k.runGoos) {
-				return
-			}
+			skipIfGoosNotAllowed(t, k.runGoos)
 
 			targetUnix, e := convertNativePathToUnix(k.baseNative, k.targetNative, k.baseUnix)
 			if !assert.NoError(t, e) {
@@ -183,9 +179,7 @@ func TestMakeFromUnixPath(t *testing.T) {
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
 			// early exit if running on a disallowed platform to avoid false negatives
-			if !checkGoosAllowed(k.runGoos) {
-				return
-			}
+			skipIfGoosNotAllowed(t, k.runGoos)
 
 			basepath := makeOSPath(k.basePathNative, k.basePathUnix, false)
 			ospath2, e := basepath.MakeFromUnixPath(k.targetPathUnix)
@@ -206,11 +200,11 @@ func TestMakeFromUnixPath(t *testing.T) {
 	}
 }
 
-func checkGoosAllowed(runGoos []string) bool {
+func skipIfGoosNotAllowed(t *testing.T, runGoos []string) {
 	for _, allowedGoos := range runGoos {
 		if runtime.GOOS == allowedGoos {
-			return true
+			return
 		}
 	}
-	return false
+	t.Skipf("allowed GOOS values = %v but runtime.GOOS = %s", runGoos, runtime.GOOS)
 }
