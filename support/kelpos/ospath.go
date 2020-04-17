@@ -161,6 +161,15 @@ func convertNativePathToUnix(baseNative string, targetNative string, baseUnix st
 	return toUnixFilepath(filepath.Join(baseUnix, toUnixFilepath(relBaseToTarget))), nil
 }
 
+func convertUnixPathToNative(baseUnix string, targetUnix string, baseNative string) (string, error) {
+	relBaseToTarget, e := filepath.Rel(baseUnix, targetUnix)
+	if e != nil {
+		return "", fmt.Errorf("could not fetch relative path from baseUnix (%s) to targetUnix (%s): %s", baseUnix, targetUnix, e)
+	}
+
+	return filepath.Join(baseNative, relBaseToTarget), nil
+}
+
 func getWorkingDirUnix() (string, error) {
 	outputBytes, e := exec.Command("bash", "-c", "pwd").Output()
 	if e != nil {

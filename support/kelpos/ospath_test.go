@@ -74,71 +74,43 @@ func TestOSPath(t *testing.T) {
 	}
 }
 
-func TestConvertNativePathToUnix(t *testing.T) {
+func TestConvertBetweenNativeUnixPaths(t *testing.T) {
 	testCases := []struct {
-		name           string
-		runGoos        []string
-		baseNative     string
-		targetNative   string
-		baseUnix       string
-		wantTargetUnix string
+		name         string
+		runGoos      []string
+		baseNative   string
+		targetNative string
+		baseUnix     string
+		targetUnix   string
 	}{
 		{
-			name:           "unix_forward",
-			runGoos:        []string{"linux", "darwin"},
-			baseNative:     "/Users/a/test",
-			targetNative:   "/Users/a/test/b",
-			baseUnix:       "/Users/a/test",
-			wantTargetUnix: "/Users/a/test/b",
+			name:         "unix_forward",
+			runGoos:      []string{"linux", "darwin"},
+			baseNative:   "/Users/a/test",
+			targetNative: "/Users/a/test/b",
+			baseUnix:     "/Users/a/test",
+			targetUnix:   "/Users/a/test/b",
 		}, {
-			name:           "unix_forward_trailslash",
-			runGoos:        []string{"linux", "darwin"},
-			baseNative:     "/Users/a/test/",
-			targetNative:   "/Users/a/test/b/",
-			baseUnix:       "/Users/a/test/",
-			wantTargetUnix: "/Users/a/test/b",
+			name:         "unix_backward",
+			runGoos:      []string{"linux", "darwin"},
+			baseNative:   "/Users/a/test",
+			targetNative: "/Users/a",
+			baseUnix:     "/Users/a/test",
+			targetUnix:   "/Users/a",
 		}, {
-			name:           "unix_backward",
-			runGoos:        []string{"linux", "darwin"},
-			baseNative:     "/Users/a/test",
-			targetNative:   "/Users/a",
-			baseUnix:       "/Users/a/test",
-			wantTargetUnix: "/Users/a",
+			name:         "windows_forward",
+			runGoos:      []string{"windows"},
+			baseNative:   "C:\\Users\\a\\test",
+			targetNative: "C:\\Users\\a\\test\\b",
+			baseUnix:     "/Users/a/test",
+			targetUnix:   "/Users/a/test/b",
 		}, {
-			name:           "unix_backward_trailslash",
-			runGoos:        []string{"linux", "darwin"},
-			baseNative:     "/Users/a/test/",
-			targetNative:   "/Users/a/",
-			baseUnix:       "/Users/a/test/",
-			wantTargetUnix: "/Users/a",
-		}, {
-			name:           "windows_forward",
-			runGoos:        []string{"windows"},
-			baseNative:     "C:\\Users\\a\\test",
-			targetNative:   "C:\\Users\\a\\test\\b",
-			baseUnix:       "/Users/a/test",
-			wantTargetUnix: "/Users/a/test/b",
-		}, {
-			name:           "windows_forward_trailslash",
-			runGoos:        []string{"windows"},
-			baseNative:     "C:\\Users\\a\\test\\",
-			targetNative:   "C:\\Users\\a\\test\\b\\",
-			baseUnix:       "/Users/a/test/",
-			wantTargetUnix: "/Users/a/test/b",
-		}, {
-			name:           "windows_backward",
-			runGoos:        []string{"windows"},
-			baseNative:     "C:\\Users\\a\\test",
-			targetNative:   "C:\\Users\\a",
-			baseUnix:       "/Users/a/test",
-			wantTargetUnix: "/Users/a",
-		}, {
-			name:           "windows_backward_trailslash",
-			runGoos:        []string{"windows"},
-			baseNative:     "C:\\Users\\a\\test\\",
-			targetNative:   "C:\\Users\\a\\",
-			baseUnix:       "/Users/a/test/",
-			wantTargetUnix: "/Users/a",
+			name:         "windows_backward",
+			runGoos:      []string{"windows"},
+			baseNative:   "C:\\Users\\a\\test",
+			targetNative: "C:\\Users\\a",
+			baseUnix:     "/Users/a/test",
+			targetUnix:   "/Users/a",
 		},
 	}
 
@@ -153,7 +125,17 @@ func TestConvertNativePathToUnix(t *testing.T) {
 			if !assert.NoError(t, e) {
 				return
 			}
-			assert.Equal(t, k.wantTargetUnix, targetUnix)
+			if !assert.Equal(t, k.targetUnix, targetUnix) {
+				return
+			}
+
+			targetNative, e := convertUnixPathToNative(k.baseUnix, k.targetUnix, k.baseNative)
+			if !assert.NoError(t, e) {
+				return
+			}
+			if !assert.Equal(t, k.targetNative, targetNative) {
+				return
+			}
 		})
 	}
 }
