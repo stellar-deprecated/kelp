@@ -117,16 +117,6 @@ func (o *OSPath) JoinRelPath(relPaths ...*OSPath) (*OSPath, error) {
 	return o.Join(elems...), nil
 }
 
-// RelFromBase returns a *OSPath that is relative to the basepath
-func (o *OSPath) RelFromBase() (*OSPath, error) {
-	basepath, e := MakeOsPathBase()
-	if e != nil {
-		return nil, fmt.Errorf("unable to fetch ospathbase: %s", e)
-	}
-
-	return o.RelFromPath(basepath)
-}
-
 // RelFromPath returns a *OSPath that is relative from the provided path
 func (o *OSPath) RelFromPath(basepath *OSPath) (*OSPath, error) {
 	newRelNative, e := filepath.Rel(basepath.Native(), o.Native())
