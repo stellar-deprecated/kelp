@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -38,7 +39,7 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-const dotKelpUnixPath = "~/.kelp"
+const dotKelpDir = ".kelp"
 const kelpAssetsPath = "/assets"
 const uiLogsDir = "/ui_logs"
 const vendorDirectory = "/vendor"
@@ -86,7 +87,13 @@ func init() {
 		}
 		log.Printf("basepath initialized: %s", basepath.AsString())
 
-		dotKelpPath, e := basepath.MakeFromUnixPath(dotKelpUnixPath)
+		usr, e := user.Current()
+		if e != nil {
+			panic(errors.Wrap(e, "could not fetch current user (need to get home directory)"))
+		}
+		log.Printf("Kelp is being run from user '%s' (Uid=%s, Name=%s, HomeDir=%s)", usr.Username, usr.Uid, usr.Name, usr.HomeDir)
+
+		dotKelpPath, e := basepath.MakeFromUnixPath(fmt.Sprintf("%s/%s", usr.HomeDir, dotKelpDir))
 		if e != nil {
 			panic(errors.Wrap(e, "could not make dotKelpPath"))
 		}
