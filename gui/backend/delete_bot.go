@@ -52,7 +52,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 
 	// delete configs
 	botPrefix := model2.GetPrefix(botName)
-	botConfigPath := s.configsDir.Join(botPrefix)
+	botConfigPath := s.botConfigsPath.Join(botPrefix)
 	_, e = s.kos.Blocking("rm", fmt.Sprintf("rm %s*", botConfigPath.Unix()))
 	if e != nil {
 		s.writeError(w, fmt.Sprintf("error running rm command for bot configs: %s\n", e))

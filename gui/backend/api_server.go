@@ -17,8 +17,8 @@ import (
 type APIServer struct {
 	basepath          *kelpos.OSPath
 	kelpBinName       string
-	configsDir        *kelpos.OSPath
-	logsDir           *kelpos.OSPath
+	botConfigsPath    *kelpos.OSPath
+	botLogsPath       *kelpos.OSPath
 	kos               *kelpos.KelpOS
 	horizonTestnetURI string
 	horizonPubnetURI  string
@@ -35,6 +35,8 @@ type APIServer struct {
 func MakeAPIServer(
 	kos *kelpos.KelpOS,
 	basepath *kelpos.OSPath,
+	botConfigsPath *kelpos.OSPath,
+	botLogsPath *kelpos.OSPath,
 	horizonTestnetURI string,
 	apiTestNet *horizonclient.Client,
 	horizonPubnetURI string,
@@ -44,8 +46,6 @@ func MakeAPIServer(
 	quitFn func(),
 ) (*APIServer, error) {
 	kelpBinName := filepath.Base(os.Args[0])
-	configsDir := basepath.Join("ops", "configs")
-	logsDir := basepath.Join("ops", "logs")
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
@@ -55,8 +55,8 @@ func MakeAPIServer(
 	return &APIServer{
 		basepath:              basepath,
 		kelpBinName:           kelpBinName,
-		configsDir:            configsDir,
-		logsDir:               logsDir,
+		botConfigsPath:        botConfigsPath,
+		botLogsPath:           botLogsPath,
 		kos:                   kos,
 		horizonTestnetURI:     horizonTestnetURI,
 		horizonPubnetURI:      horizonPubnetURI,
@@ -140,14 +140,14 @@ func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kel
 }
 
 func (s *APIServer) setupOpsDirectory() error {
-	e := s.kos.Mkdir(s.configsDir)
+	e := s.kos.Mkdir(s.botConfigsPath)
 	if e != nil {
-		return fmt.Errorf("error setting up configs directory (%s): %s\n", s.configsDir, e)
+		return fmt.Errorf("error setting up configs directory (%s): %s\n", s.botConfigsPath, e)
 	}
 
-	e = s.kos.Mkdir(s.logsDir)
+	e = s.kos.Mkdir(s.botLogsPath)
 	if e != nil {
-		return fmt.Errorf("error setting up logs directory (%s): %s\n", s.logsDir, e)
+		return fmt.Errorf("error setting up logs directory (%s): %s\n", s.botLogsPath, e)
 	}
 
 	return nil

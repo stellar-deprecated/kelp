@@ -38,9 +38,9 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-const kelpPrefsDirectory = ".kelp"
+const dotKelpUnixPath = "~/.kelp"
 const kelpAssetsPath = "/assets"
-const logsDir = "/logs"
+const uiLogsDir = "/ui_logs"
 const vendorDirectory = "/vendor"
 const trayIconName = "kelp-icon@1-8x.png"
 const kelpCcxtPath = "/ccxt"
@@ -82,10 +82,15 @@ func init() {
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		basepath, e := kelpos.MakeOsPathBase()
 		if e != nil {
-			panic(errors.Wrap(e, "could not make ospath"))
+			panic(errors.Wrap(e, "could not make basepath"))
 		}
-		log.Printf("ospath initialized with native path: %s", basepath.Native())
-		log.Printf("ospath initialized with unix path: %s", basepath.Unix())
+		log.Printf("basepath initialized: %s", basepath.AsString())
+
+		dotKelpPath, e := basepath.MakeFromUnixPath(dotKelpUnixPath)
+		if e != nil {
+			panic(errors.Wrap(e, "could not make dotKelpPath"))
+		}
+		log.Printf("dotKelpPath initialized: %s", dotKelpPath.AsString())
 
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
@@ -108,15 +113,15 @@ func init() {
 			t := time.Now().Format("20060102T150405MST")
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			logsDirPath := basepath.Join(kelpPrefsDirectory, logsDir)
-			log.Printf("calling mkdir on logsDirPath: %s ...", logsDirPath.AsString())
-			e = kos.Mkdir(logsDirPath)
+			uiLogsDirPath := dotKelpPath.Join(uiLogsDir)
+			log.Printf("calling mkdir on uiLogsDirPath: %s ...", uiLogsDirPath.AsString())
+			e = kos.Mkdir(uiLogsDirPath)
 			if e != nil {
-				panic(errors.Wrap(e, "could not mkdir on logsDirPath: "+logsDirPath.AsString()))
+				panic(errors.Wrap(e, "could not mkdir on uiLogsDirPath: "+uiLogsDirPath.AsString()))
 			}
 
 			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
-			logFilepath = basepath.Join(kelpPrefsDirectory, logsDir, logFilename)
+			logFilepath = uiLogsDirPath.Join(logFilename)
 			setLogFile(l, logFilepath.Native())
 
 			if *options.verbose {
@@ -129,9 +134,11 @@ func init() {
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
 			// don't use explicit unix filepath here since it uses os.Create directly and won't work on windows
-			trayIconPath := basepath.Join(kelpPrefsDirectory, kelpAssetsPath, trayIconName)
+			assetsDirPath := dotKelpPath.Join(kelpAssetsPath)
+			log.Printf("assetsDirPath: %s", assetsDirPath.AsString())
+			trayIconPath := assetsDirPath.Join(trayIconName)
 			log.Printf("trayIconPath: %s", trayIconPath.AsString())
-			e = writeTrayIcon(kos, trayIconPath, basepath)
+			e = writeTrayIcon(kos, trayIconPath, assetsDirPath)
 			if e != nil {
 				log.Fatal(errors.Wrap(e, "could not write tray icon"))
 			}
@@ -159,7 +166,7 @@ func init() {
 				tailFilePort := startTailFileServer(tailFileCompiled)
 				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
 			} else {
-				tailFilepath := basepath.Join(kelpPrefsDirectory, "tail.html")
+				tailFilepath := dotKelpPath.Join("tail.html")
 				fileContents := []byte(tailFileCompiled)
 				e := ioutil.WriteFile(tailFilepath.Native(), fileContents, 0644)
 				if e != nil {
@@ -244,7 +251,7 @@ func init() {
 					ccxtGoos = "linux"
 				}
 
-				ccxtDirPath := basepath.Join(kelpPrefsDirectory, kelpCcxtPath)
+				ccxtDirPath := dotKelpPath.Join(kelpCcxtPath)
 				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", ccxtGoos)
 				filenameWithExt := fmt.Sprintf("%s.zip", ccxtFilenameNoExt)
 
@@ -256,7 +263,7 @@ func init() {
 				}
 
 				ccxtBinPath := ccxtDirPath.Join(ccxtFilenameNoExt, ccxtBinaryName)
-				unzipCcxtFile(kos, ccxtDirPath, ccxtBinPath, filenameWithExt, basepath)
+				unzipCcxtFile(kos, ccxtDirPath, ccxtBinPath, filenameWithExt)
 
 				e = runCcxtBinary(kos, ccxtBinPath)
 				if e != nil {
@@ -265,9 +272,14 @@ func init() {
 			}
 		}
 
+		dataPath := dotKelpPath.Join("bot_data")
+		botConfigsPath := dataPath.Join("configs")
+		botLogsPath := dataPath.Join("logs")
 		s, e := backend.MakeAPIServer(
 			kos,
 			basepath,
+			botConfigsPath,
+			botLogsPath,
 			*options.horizonTestnetURI,
 			apiTestNet,
 			*options.horizonPubnetURI,
@@ -384,7 +396,6 @@ func unzipCcxtFile(
 	ccxtDir *kelpos.OSPath,
 	ccxtBinPath *kelpos.OSPath,
 	filenameWithExt string,
-	originalDir *kelpos.OSPath,
 ) {
 	if _, e := os.Stat(ccxtDir.Native()); !os.IsNotExist(e) {
 		if _, e := os.Stat(ccxtBinPath.Native()); !os.IsNotExist(e) {
@@ -393,7 +404,7 @@ func unzipCcxtFile(
 	}
 
 	log.Printf("unzipping file %s ... ", filenameWithExt)
-	zipCmd := fmt.Sprintf("cd %s && unzip %s && cd %s", ccxtDir.Unix(), filenameWithExt, originalDir.Unix())
+	zipCmd := fmt.Sprintf("cd %s && unzip %s", ccxtDir.Unix(), filenameWithExt)
 	_, e := kos.Blocking("zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDir)))
@@ -469,9 +480,7 @@ func generateStaticFiles(kos *kelpos.KelpOS, guiWebPath *kelpos.OSPath) {
 	log.Println()
 }
 
-func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, basepath *kelpos.OSPath) error {
-	assetsDirPath := basepath.Join(kelpPrefsDirectory, kelpAssetsPath)
-	log.Printf("assetsDirPath: %s", assetsDirPath.AsString())
+func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, assetsDirPath *kelpos.OSPath) error {
 	if _, e := os.Stat(trayIconPath.Native()); !os.IsNotExist(e) {
 		// file exists, don't write again
 		return nil
