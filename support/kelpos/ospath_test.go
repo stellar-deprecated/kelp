@@ -140,6 +140,72 @@ func TestConvertBetweenNativeUnixPaths(t *testing.T) {
 	}
 }
 
+func TestMakeFromUnixPath(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		runGoos              []string
+		basePathUnix         string
+		targetPathUnix       string
+		basePathNative       string
+		wantTargetPathNative string
+	}{
+		{
+			name:                 "unix_forwards",
+			runGoos:              []string{"linux", "darwin"},
+			basePathUnix:         "/mnt/c/testfolder",
+			targetPathUnix:       "/mnt/c/testfolder/a",
+			basePathNative:       "/mnt/c/testfolder",
+			wantTargetPathNative: "/mnt/c/testfolder/a",
+		}, {
+			name:                 "windows_forwards",
+			runGoos:              []string{"windows"},
+			basePathUnix:         "/mnt/c/testfolder",
+			targetPathUnix:       "/mnt/c/testfolder/a",
+			basePathNative:       "C:\\testfolder",
+			wantTargetPathNative: "C:\\testfolder\\a",
+		}, {
+			name:                 "unix_backwards",
+			runGoos:              []string{"linux", "darwin"},
+			basePathUnix:         "/mnt/c/testfolder/subfolder",
+			targetPathUnix:       "/mnt/c/a",
+			basePathNative:       "/mnt/c/testfolder/subfolder",
+			wantTargetPathNative: "/mnt/c/a",
+		}, {
+			name:                 "windows_backwards",
+			runGoos:              []string{"windows"},
+			basePathUnix:         "/mnt/c/testfolder/subfolder",
+			targetPathUnix:       "/mnt/c/a",
+			basePathNative:       "C:\\testfolder\\subfolder",
+			wantTargetPathNative: "C:\\a",
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			// early exit if running on a disallowed platform to avoid false negatives
+			if !checkGoosAllowed(k.runGoos) {
+				return
+			}
+
+			basepath := makeOSPath(k.basePathNative, k.basePathUnix, false)
+			ospath2, e := basepath.MakeFromUnixPath(k.targetPathUnix)
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			if !assert.Equal(t, k.targetPathUnix, ospath2.Unix()) {
+				return
+			}
+			if !assert.Equal(t, k.wantTargetPathNative, ospath2.Native()) {
+				return
+			}
+			if !assert.Equal(t, false, ospath2.IsRelative()) {
+				return
+			}
+		})
+	}
+}
+
 func checkGoosAllowed(runGoos []string) bool {
 	for _, allowedGoos := range runGoos {
 		if runtime.GOOS == allowedGoos {
