@@ -91,7 +91,11 @@ func init() {
 		if e != nil {
 			panic(errors.Wrap(e, "could not fetch current user (need to get home directory)"))
 		}
-		log.Printf("Kelp is being run from user '%s' (Uid=%s, Name=%s, HomeDir=%s)", usr.Username, usr.Uid, usr.Name, usr.HomeDir)
+		usrHomeDir, e := basepath.MakeFromNativePath(usr.HomeDir)
+		if e != nil {
+			panic(errors.Wrap(e, "could not make usrHomeDir from usr.HomeDir="+usr.HomeDir))
+		}
+		log.Printf("Kelp is being run from user '%s' (Uid=%s, Name=%s, HomeDir=%s)", usr.Username, usr.Uid, usr.Name, usrHomeDir.AsString())
 
 		// file path for windows needs to be 260 characters (https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
 		// so we want to put it closer to the root volume in ~/.kelp (or C:\.kelp) so it does not throw an error
