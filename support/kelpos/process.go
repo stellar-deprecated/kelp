@@ -97,6 +97,8 @@ func (kos *KelpOS) Blocking(namespace string, cmd string) ([]byte, error) {
 func (kos *KelpOS) Background(namespace string, cmd string) (*Process, error) {
 	c := exec.Command("bash", "-c", cmd)
 	// always execute commands from the working directory (specify as native since underlying OS handles it)
+	// using dotKelpWorkingDir as working directory since all our config files and log files are located in here and we want
+	// to have the shortest path lengths to accommodate for the 260 character file path limit in windows
 	c.Dir = kos.dotKelpWorkingDir.Native()
 	log.Printf("process.Background is executing command: '%s' from directory '%s'", c.String(), c.Dir)
 

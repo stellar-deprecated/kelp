@@ -72,6 +72,8 @@ func init() {
 	dotKelpWorkingDir := usrHomeDir.Join(dotKelpDir)
 	log.Printf("dotKelpWorkingDir initialized: %s", dotKelpWorkingDir.AsString())
 
+	// using dotKelpWorkingDir as working directory since all our config files and log files are located in here and we want
+	// to have the shortest path lengths to accommodate for the 260 character file path limit in windows
 	singleton = &KelpOS{
 		binDir:            binDir,
 		dotKelpWorkingDir: dotKelpWorkingDir,
