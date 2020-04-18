@@ -99,10 +99,7 @@ func init() {
 
 		// file path for windows needs to be 260 characters (https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
 		// so we want to put it closer to the root volume in ~/.kelp (or C:\.kelp) so it does not throw an error
-		dotKelpPath, e := basepath.MakeFromUnixPath(fmt.Sprintf("%s/%s", usr.HomeDir, dotKelpDir))
-		if e != nil {
-			panic(errors.Wrap(e, "could not make dotKelpPath"))
-		}
+		dotKelpPath := usrHomeDir.Join(dotKelpDir)
 		log.Printf("dotKelpPath initialized: %s", dotKelpPath.AsString())
 
 		isLocalMode := env == envDev
