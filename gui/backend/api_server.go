@@ -15,7 +15,7 @@ import (
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	kelpBinName       string
+	kelpBinPath       *kelpos.OSPath
 	botConfigsPath    *kelpos.OSPath
 	botLogsPath       *kelpos.OSPath
 	kos               *kelpos.KelpOS
@@ -43,7 +43,7 @@ func MakeAPIServer(
 	noHeaders bool,
 	quitFn func(),
 ) (*APIServer, error) {
-	kelpBinName := filepath.Base(os.Args[0])
+	kelpBinPath := kos.GetBinDir().Join(filepath.Base(os.Args[0]))
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
@@ -51,7 +51,7 @@ func MakeAPIServer(
 	}
 
 	return &APIServer{
-		kelpBinName:           kelpBinName,
+		kelpBinPath:           kelpBinPath,
 		botConfigsPath:        botConfigsPath,
 		botLogsPath:           botLogsPath,
 		kos:                   kos,
@@ -122,7 +122,7 @@ func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte
 	// name of the folder in which the GUI version is unzipped.
 	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
 	// directory name. see start_bot.go for some experimentation with absolute and relative paths
-	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
+	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
 	return s.kos.Blocking(namespace, cmdString)
 }
 
@@ -132,7 +132,7 @@ func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kel
 	// name of the folder in which the GUI version is unzipped.
 	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
 	// directory name. see start_bot.go for some experimentation with absolute and relative paths
-	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
+	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
 	return s.kos.Background(namespace, cmdString)
 }
 
