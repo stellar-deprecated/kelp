@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -39,7 +38,6 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-const dotKelpDir = ".kelp"
 const kelpAssetsPath = "/assets"
 const uiLogsDir = "/ui_logs"
 const vendorDirectory = "/vendor"
@@ -81,30 +79,10 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		basepath, e := kelpos.MakeOsPathBase()
-		if e != nil {
-			panic(errors.Wrap(e, "could not make basepath"))
-		}
-		log.Printf("basepath initialized: %s", basepath.AsString())
-
-		usr, e := user.Current()
-		if e != nil {
-			panic(errors.Wrap(e, "could not fetch current user (need to get home directory)"))
-		}
-		usrHomeDir, e := basepath.MakeFromNativePath(usr.HomeDir)
-		if e != nil {
-			panic(errors.Wrap(e, "could not make usrHomeDir from usr.HomeDir="+usr.HomeDir))
-		}
-		log.Printf("Kelp is being run from user '%s' (Uid=%s, Name=%s, HomeDir=%s)", usr.Username, usr.Uid, usr.Name, usrHomeDir.AsString())
-
-		// file path for windows needs to be 260 characters (https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
-		// so we want to put it closer to the root volume in ~/.kelp (or C:\.kelp) so it does not throw an error
-		dotKelpPath := usrHomeDir.Join(dotKelpDir)
-		log.Printf("dotKelpPath initialized: %s", dotKelpPath.AsString())
-
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
+		var e error
 		if isLocalMode {
 			wd, e := os.Getwd()
 			if e != nil {
@@ -123,7 +101,7 @@ func init() {
 			t := time.Now().Format("20060102T150405MST")
 			logFilename := fmt.Sprintf("kelp-ui_%s.log", t)
 
-			uiLogsDirPath := dotKelpPath.Join(uiLogsDir)
+			uiLogsDirPath := kos.GetDotKelpWorkingDir().Join(uiLogsDir)
 			log.Printf("calling mkdir on uiLogsDirPath: %s ...", uiLogsDirPath.AsString())
 			e = kos.Mkdir(uiLogsDirPath)
 			if e != nil {
@@ -144,7 +122,7 @@ func init() {
 		openBrowserWg.Add(1)
 		if !isLocalDevMode {
 			// don't use explicit unix filepath here since it uses os.Create directly and won't work on windows
-			assetsDirPath := dotKelpPath.Join(kelpAssetsPath)
+			assetsDirPath := kos.GetDotKelpWorkingDir().Join(kelpAssetsPath)
 			log.Printf("assetsDirPath: %s", assetsDirPath.AsString())
 			trayIconPath := assetsDirPath.Join(trayIconName)
 			log.Printf("trayIconPath: %s", trayIconPath.AsString())
@@ -176,7 +154,7 @@ func init() {
 				tailFilePort := startTailFileServer(tailFileCompiled)
 				electronURL = fmt.Sprintf("http://localhost:%d", tailFilePort)
 			} else {
-				tailFilepath := dotKelpPath.Join("tail.html")
+				tailFilepath := kos.GetDotKelpWorkingDir().Join("tail.html")
 				fileContents := []byte(tailFileCompiled)
 				e := ioutil.WriteFile(tailFilepath.Native(), fileContents, 0644)
 				if e != nil {
@@ -261,7 +239,7 @@ func init() {
 					ccxtGoos = "linux"
 				}
 
-				ccxtDirPath := dotKelpPath.Join(kelpCcxtPath)
+				ccxtDirPath := kos.GetDotKelpWorkingDir().Join(kelpCcxtPath)
 				ccxtFilenameNoExt := fmt.Sprintf("ccxt-rest_%s-x64", ccxtGoos)
 				filenameWithExt := fmt.Sprintf("%s.zip", ccxtFilenameNoExt)
 
@@ -282,12 +260,11 @@ func init() {
 			}
 		}
 
-		dataPath := dotKelpPath.Join("bot_data")
+		dataPath := kos.GetDotKelpWorkingDir().Join("bot_data")
 		botConfigsPath := dataPath.Join("configs")
 		botLogsPath := dataPath.Join("logs")
 		s, e := backend.MakeAPIServer(
 			kos,
-			basepath,
 			botConfigsPath,
 			botLogsPath,
 			*options.horizonTestnetURI,
@@ -302,7 +279,7 @@ func init() {
 			panic(e)
 		}
 
-		guiWebPath := basepath.Join("../gui/web")
+		guiWebPath := kos.GetBinDir().Join("../gui/web")
 		if isLocalDevMode {
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))

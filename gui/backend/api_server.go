@@ -15,7 +15,6 @@ import (
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	basepath          *kelpos.OSPath
 	kelpBinName       string
 	botConfigsPath    *kelpos.OSPath
 	botLogsPath       *kelpos.OSPath
@@ -34,7 +33,6 @@ type APIServer struct {
 // MakeAPIServer is a factory method
 func MakeAPIServer(
 	kos *kelpos.KelpOS,
-	basepath *kelpos.OSPath,
 	botConfigsPath *kelpos.OSPath,
 	botLogsPath *kelpos.OSPath,
 	horizonTestnetURI string,
@@ -53,7 +51,6 @@ func MakeAPIServer(
 	}
 
 	return &APIServer{
-		basepath:              basepath,
 		kelpBinName:           kelpBinName,
 		botConfigsPath:        botConfigsPath,
 		botLogsPath:           botLogsPath,
