@@ -81,7 +81,7 @@ func (o *OSPath) MakeFromNativePath(targetNativePath string) (*OSPath, error) {
 	if e != nil {
 		return nil, fmt.Errorf("could not convert native path (%s) to unix: %s", targetNativePath, e)
 	}
-	return makeOSPath(unixPath, targetNativePath, false), nil
+	return makeOSPath(targetNativePath, unixPath, false), nil
 }
 
 // Native returns the native representation of the path as a string
