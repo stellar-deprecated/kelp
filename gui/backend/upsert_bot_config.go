@@ -87,7 +87,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filenamePair := model2.GetBotFilenames(req.Name, req.Strategy)
-	traderFilePath := s.configsDir.Join(filenamePair.Trader)
+	traderFilePath := s.botConfigsPath.Join(filenamePair.Trader)
 	botConfig := req.TraderConfig
 	log.Printf("upsert bot config to file: %s\n", traderFilePath.AsString())
 	e = toml.WriteFile(traderFilePath.Native(), &botConfig)
@@ -96,7 +96,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	strategyFilePath := s.configsDir.Join(filenamePair.Strategy)
+	strategyFilePath := s.botConfigsPath.Join(filenamePair.Strategy)
 	strategyConfig := req.StrategyConfig
 	log.Printf("upsert strategy config to file: %s\n", strategyFilePath.AsString())
 	e = toml.WriteFile(strategyFilePath.Native(), &strategyConfig)

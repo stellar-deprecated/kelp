@@ -66,6 +66,24 @@ func MakeOsPathBase() (*OSPath, error) {
 	return ospath, nil
 }
 
+// MakeFromUnixPath returns a new OSPath at the passed in unix path string by using the existing OSPath
+func (o *OSPath) MakeFromUnixPath(targetUnixPath string) (*OSPath, error) {
+	nativePath, e := convertUnixPathToNative(o.Unix(), targetUnixPath, o.Native())
+	if e != nil {
+		return nil, fmt.Errorf("could not convert unix path (%s) to native: %s", targetUnixPath, e)
+	}
+	return makeOSPath(nativePath, targetUnixPath, false), nil
+}
+
+// MakeFromNativePath returns a new OSPath at the passed in native path string by using the existing OSPath
+func (o *OSPath) MakeFromNativePath(targetNativePath string) (*OSPath, error) {
+	unixPath, e := convertNativePathToUnix(o.Native(), targetNativePath, o.Unix())
+	if e != nil {
+		return nil, fmt.Errorf("could not convert native path (%s) to unix: %s", targetNativePath, e)
+	}
+	return makeOSPath(targetNativePath, unixPath, false), nil
+}
+
 // Native returns the native representation of the path as a string
 func (o *OSPath) Native() string {
 	return o.native
@@ -106,16 +124,6 @@ func (o *OSPath) JoinRelPath(relPaths ...*OSPath) (*OSPath, error) {
 		elems = append(elems, path.Native())
 	}
 	return o.Join(elems...), nil
-}
-
-// RelFromBase returns a *OSPath that is relative to the basepath
-func (o *OSPath) RelFromBase() (*OSPath, error) {
-	basepath, e := MakeOsPathBase()
-	if e != nil {
-		return nil, fmt.Errorf("unable to fetch ospathbase: %s", e)
-	}
-
-	return o.RelFromPath(basepath)
 }
 
 // RelFromPath returns a *OSPath that is relative from the provided path
@@ -159,6 +167,15 @@ func convertNativePathToUnix(baseNative string, targetNative string, baseUnix st
 	}
 
 	return toUnixFilepath(filepath.Join(baseUnix, toUnixFilepath(relBaseToTarget))), nil
+}
+
+func convertUnixPathToNative(baseUnix string, targetUnix string, baseNative string) (string, error) {
+	relBaseToTarget, e := filepath.Rel(baseUnix, targetUnix)
+	if e != nil {
+		return "", fmt.Errorf("could not fetch relative path from baseUnix (%s) to targetUnix (%s): %s", baseUnix, targetUnix, e)
+	}
+
+	return filepath.Join(baseNative, relBaseToTarget), nil
 }
 
 func getWorkingDirUnix() (string, error) {

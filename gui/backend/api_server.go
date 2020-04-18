@@ -15,10 +15,9 @@ import (
 
 // APIServer is an instance of the API service
 type APIServer struct {
-	basepath          *kelpos.OSPath
-	kelpBinName       string
-	configsDir        *kelpos.OSPath
-	logsDir           *kelpos.OSPath
+	kelpBinPath       *kelpos.OSPath
+	botConfigsPath    *kelpos.OSPath
+	botLogsPath       *kelpos.OSPath
 	kos               *kelpos.KelpOS
 	horizonTestnetURI string
 	horizonPubnetURI  string
@@ -34,7 +33,8 @@ type APIServer struct {
 // MakeAPIServer is a factory method
 func MakeAPIServer(
 	kos *kelpos.KelpOS,
-	basepath *kelpos.OSPath,
+	botConfigsPath *kelpos.OSPath,
+	botLogsPath *kelpos.OSPath,
 	horizonTestnetURI string,
 	apiTestNet *horizonclient.Client,
 	horizonPubnetURI string,
@@ -43,9 +43,7 @@ func MakeAPIServer(
 	noHeaders bool,
 	quitFn func(),
 ) (*APIServer, error) {
-	kelpBinName := filepath.Base(os.Args[0])
-	configsDir := basepath.Join("ops", "configs")
-	logsDir := basepath.Join("ops", "logs")
+	kelpBinPath := kos.GetBinDir().Join(filepath.Base(os.Args[0]))
 
 	optionsMetadata, e := loadOptionsMetadata()
 	if e != nil {
@@ -53,10 +51,9 @@ func MakeAPIServer(
 	}
 
 	return &APIServer{
-		basepath:              basepath,
-		kelpBinName:           kelpBinName,
-		configsDir:            configsDir,
-		logsDir:               logsDir,
+		kelpBinPath:           kelpBinPath,
+		botConfigsPath:        botConfigsPath,
+		botLogsPath:           botLogsPath,
 		kos:                   kos,
 		horizonTestnetURI:     horizonTestnetURI,
 		horizonPubnetURI:      horizonPubnetURI,
@@ -125,7 +122,7 @@ func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte
 	// name of the folder in which the GUI version is unzipped.
 	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
 	// directory name. see start_bot.go for some experimentation with absolute and relative paths
-	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
+	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
 	return s.kos.Blocking(namespace, cmdString)
 }
 
@@ -135,19 +132,19 @@ func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kel
 	// name of the folder in which the GUI version is unzipped.
 	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
 	// directory name. see start_bot.go for some experimentation with absolute and relative paths
-	cmdString := fmt.Sprintf("./%s %s", s.kelpBinName, cmd)
+	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
 	return s.kos.Background(namespace, cmdString)
 }
 
 func (s *APIServer) setupOpsDirectory() error {
-	e := s.kos.Mkdir(s.configsDir)
+	e := s.kos.Mkdir(s.botConfigsPath)
 	if e != nil {
-		return fmt.Errorf("error setting up configs directory (%s): %s\n", s.configsDir, e)
+		return fmt.Errorf("error setting up configs directory (%s): %s\n", s.botConfigsPath, e)
 	}
 
-	e = s.kos.Mkdir(s.logsDir)
+	e = s.kos.Mkdir(s.botLogsPath)
 	if e != nil {
-		return fmt.Errorf("error setting up logs directory (%s): %s\n", s.logsDir, e)
+		return fmt.Errorf("error setting up logs directory (%s): %s\n", s.botLogsPath, e)
 	}
 
 	return nil
