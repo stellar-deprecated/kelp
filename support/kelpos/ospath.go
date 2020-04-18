@@ -66,13 +66,22 @@ func MakeOsPathBase() (*OSPath, error) {
 	return ospath, nil
 }
 
-// MakeFromUnixPath is returns a new OSPath at the passed in unix path string by using the existing OSPath
+// MakeFromUnixPath returns a new OSPath at the passed in unix path string by using the existing OSPath
 func (o *OSPath) MakeFromUnixPath(targetUnixPath string) (*OSPath, error) {
 	nativePath, e := convertUnixPathToNative(o.Unix(), targetUnixPath, o.Native())
 	if e != nil {
 		return nil, fmt.Errorf("could not convert unix path (%s) to native: %s", targetUnixPath, e)
 	}
 	return makeOSPath(nativePath, targetUnixPath, false), nil
+}
+
+// MakeFromNativePath returns a new OSPath at the passed in native path string by using the existing OSPath
+func (o *OSPath) MakeFromNativePath(targetNativePath string) (*OSPath, error) {
+	unixPath, e := convertNativePathToUnix(o.Native(), targetNativePath, o.Unix())
+	if e != nil {
+		return nil, fmt.Errorf("could not convert native path (%s) to unix: %s", targetNativePath, e)
+	}
+	return makeOSPath(unixPath, targetNativePath, false), nil
 }
 
 // Native returns the native representation of the path as a string

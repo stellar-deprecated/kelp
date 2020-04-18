@@ -136,43 +136,43 @@ func TestConvertBetweenNativeUnixPaths(t *testing.T) {
 	}
 }
 
-func TestMakeFromUnixPath(t *testing.T) {
+func TestMakeBetweenNativeUnixPaths(t *testing.T) {
 	testCases := []struct {
-		name                 string
-		runGoos              []string
-		basePathUnix         string
-		targetPathUnix       string
-		basePathNative       string
-		wantTargetPathNative string
+		name             string
+		runGoos          []string
+		basePathUnix     string
+		targetPathUnix   string
+		basePathNative   string
+		targetPathNative string
 	}{
 		{
-			name:                 "unix_forwards",
-			runGoos:              []string{"linux", "darwin"},
-			basePathUnix:         "/mnt/c/testfolder",
-			targetPathUnix:       "/mnt/c/testfolder/a",
-			basePathNative:       "/mnt/c/testfolder",
-			wantTargetPathNative: "/mnt/c/testfolder/a",
+			name:             "unix_forward",
+			runGoos:          []string{"linux", "darwin"},
+			basePathUnix:     "/mnt/c/testfolder",
+			targetPathUnix:   "/mnt/c/testfolder/a",
+			basePathNative:   "/mnt/c/testfolder",
+			targetPathNative: "/mnt/c/testfolder/a",
 		}, {
-			name:                 "windows_forwards",
-			runGoos:              []string{"windows"},
-			basePathUnix:         "/mnt/c/testfolder",
-			targetPathUnix:       "/mnt/c/testfolder/a",
-			basePathNative:       "C:\\testfolder",
-			wantTargetPathNative: "C:\\testfolder\\a",
+			name:             "unix_backward",
+			runGoos:          []string{"linux", "darwin"},
+			basePathUnix:     "/mnt/c/testfolder/subfolder",
+			targetPathUnix:   "/mnt/c/a",
+			basePathNative:   "/mnt/c/testfolder/subfolder",
+			targetPathNative: "/mnt/c/a",
 		}, {
-			name:                 "unix_backwards",
-			runGoos:              []string{"linux", "darwin"},
-			basePathUnix:         "/mnt/c/testfolder/subfolder",
-			targetPathUnix:       "/mnt/c/a",
-			basePathNative:       "/mnt/c/testfolder/subfolder",
-			wantTargetPathNative: "/mnt/c/a",
+			name:             "windows_forward",
+			runGoos:          []string{"windows"},
+			basePathUnix:     "/mnt/c/testfolder",
+			targetPathUnix:   "/mnt/c/testfolder/a",
+			basePathNative:   "C:\\testfolder",
+			targetPathNative: "C:\\testfolder\\a",
 		}, {
-			name:                 "windows_backwards",
-			runGoos:              []string{"windows"},
-			basePathUnix:         "/mnt/c/testfolder/subfolder",
-			targetPathUnix:       "/mnt/c/a",
-			basePathNative:       "C:\\testfolder\\subfolder",
-			wantTargetPathNative: "C:\\a",
+			name:             "windows_backward",
+			runGoos:          []string{"windows"},
+			basePathUnix:     "/mnt/c/testfolder/subfolder",
+			targetPathUnix:   "/mnt/c/a",
+			basePathNative:   "C:\\testfolder\\subfolder",
+			targetPathNative: "C:\\a",
 		},
 	}
 
@@ -182,18 +182,32 @@ func TestMakeFromUnixPath(t *testing.T) {
 			skipIfGoosNotAllowed(t, k.runGoos)
 
 			basepath := makeOSPath(k.basePathNative, k.basePathUnix, false)
-			ospath2, e := basepath.MakeFromUnixPath(k.targetPathUnix)
+
+			nativePath, e := basepath.MakeFromUnixPath(k.targetPathUnix)
 			if !assert.NoError(t, e) {
 				return
 			}
+			if !assert.Equal(t, k.targetPathUnix, nativePath.Unix()) {
+				return
+			}
+			if !assert.Equal(t, k.targetPathNative, nativePath.Native()) {
+				return
+			}
+			if !assert.Equal(t, false, nativePath.IsRelative()) {
+				return
+			}
 
-			if !assert.Equal(t, k.targetPathUnix, ospath2.Unix()) {
+			unixPath, e := basepath.MakeFromNativePath(k.targetPathNative)
+			if !assert.NoError(t, e) {
 				return
 			}
-			if !assert.Equal(t, k.wantTargetPathNative, ospath2.Native()) {
+			if !assert.Equal(t, k.targetPathUnix, unixPath.Unix()) {
 				return
 			}
-			if !assert.Equal(t, false, ospath2.IsRelative()) {
+			if !assert.Equal(t, k.targetPathNative, unixPath.Native()) {
+				return
+			}
+			if !assert.Equal(t, false, unixPath.IsRelative()) {
 				return
 			}
 		})
