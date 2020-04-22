@@ -71,6 +71,12 @@ func init() {
 	// so we want to put it closer to the root volume in ~/.kelp (or C:\.kelp) so it does not throw an error
 	dotKelpWorkingDir := usrHomeDir.Join(dotKelpDir)
 	log.Printf("dotKelpWorkingDir initialized: %s", dotKelpWorkingDir.AsString())
+	// manually make dotKelpWorkingDir so we can use it as the working dir for kelpos
+	mkDotKelpWorkingDir := fmt.Sprintf("mkdir -p %s", dotKelpWorkingDir.Unix())
+	e = exec.Command("bash", "-c", mkDotKelpWorkingDir).Run()
+	if e != nil {
+		panic(fmt.Errorf("could not run raw command 'bash -c %s': %s", mkDotKelpWorkingDir, e))
+	}
 
 	// using dotKelpWorkingDir as working directory since all our config files and log files are located in here and we want
 	// to have the shortest path lengths to accommodate for the 260 character file path limit in windows
