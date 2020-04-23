@@ -1,5 +1,7 @@
 package: github.com/stellar/kelp
 import:
+- package: github.com/cavaliercoder/grab
+  version: 9f014744ee41e6bca139fe07601e65ac8b9c5109
 - package: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
 - package: github.com/pkg/errors
