@@ -150,7 +150,11 @@ func DownloadFileWithGrab(
 
 	// start download
 	resp := client.Do(req)
-	statusCodeHandler(resp.HTTPResponse.StatusCode, resp.HTTPResponse.Status)
+	if resp.HTTPResponse != nil {
+		statusCodeHandler(resp.HTTPResponse.StatusCode, resp.HTTPResponse.Status)
+	} else {
+		statusCodeHandler(-1, "nil resp.HTTPResponse")
+	}
 
 	// start UI loop
 	t := time.NewTicker(time.Duration(updateIntervalMillis) * time.Millisecond)
