@@ -53,6 +53,7 @@ const pingPlaceholder = "PING_URL"
 const sleepNumSecondsBeforeReadyString = 1
 const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
+const downloadCcxtUpdateIntervalLogMillis = 1000
 
 type serverInputs struct {
 	port              *uint16
@@ -373,8 +374,30 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipD
 		return nil
 	}
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
-	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath.AsString())
-	networking.DownloadFile(downloadURL, ccxtZipDownloadPath.Native())
+	log.Printf("download ccxt from %s to location: %s ...", downloadURL, ccxtZipDownloadPath.AsString())
+	e = networking.DownloadFileWithGrab(
+		downloadURL,
+		ccxtZipDownloadPath.Native(),
+		downloadCcxtUpdateIntervalLogMillis,
+		func(statusCode int, statusString string) {
+			log.Printf("  response_status = %s, code = %d\n", statusString, statusCode)
+		},
+		func(completedBytes float64, sizeBytes float64, speedBytesPerSec float64) {
+			log.Printf("  downloaded %.2f / %.2f MB (%.2f%%) at an average speed of %.2f MB/sec\n",
+				completedBytes,
+				sizeBytes,
+				100*(float64(completedBytes)/float64(sizeBytes)),
+				speedBytesPerSec,
+			)
+		},
+		func(filename string) {
+			log.Printf("  done\n")
+			log.Printf("... downloaded file from URL '%s' to destination '%s'\n", downloadURL, filename)
+		},
+	)
+	if e != nil {
+		return fmt.Errorf("could not download ccxt from '%s' to location '%s': %s", downloadURL, ccxtZipDownloadPath.AsString(), e)
+	}
 	return nil
 }
 

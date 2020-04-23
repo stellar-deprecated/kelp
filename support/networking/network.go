@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/cavaliercoder/grab"
 )
 
 // JSONRequestDynamicHeaders submits an HTTP web request and parses the response into the responseData object as JSON
@@ -126,5 +129,65 @@ func DownloadFile(url string, filepath string) error {
 	if e != nil {
 		return fmt.Errorf("could not download from URL (%s) to file (%s) in a streaming manner: %s", url, filepath, e)
 	}
+	return nil
+}
+
+// DownloadFileWithGrab is a download function that uses the grab third-party library
+func DownloadFileWithGrab(
+	url string,
+	filepath string,
+	updateIntervalMillis int,
+	statusCodeHandler func(statusCode int, statusString string),
+	updateHandler func(completedMB float64, sizeMB float64, speedMBPerSec float64),
+	finishHandler func(filename string),
+) error {
+	// create client
+	client := grab.NewClient()
+	req, e := grab.NewRequest(filepath, url)
+	if e != nil {
+		return fmt.Errorf("could not make new grab request: %s", e)
+	}
+	req.NoResume = true
+
+	// start download
+	resp := client.Do(req)
+	if resp.HTTPResponse != nil {
+		statusCodeHandler(resp.HTTPResponse.StatusCode, resp.HTTPResponse.Status)
+	} else {
+		statusCodeHandler(-1, "nil resp.HTTPResponse")
+	}
+	tic := time.Now().UnixNano()
+
+	// start UI loop
+	t := time.NewTicker(time.Duration(updateIntervalMillis) * time.Millisecond)
+	defer t.Stop()
+
+	invokeUpdateHandler := func() {
+		toc := time.Now().UnixNano()
+		timeElapsedSec := float64(toc-tic) / float64(time.Second)
+		mbCompleted := float64(resp.BytesComplete()) / 1024 / 1024
+		speedMBPerSec := float64(mbCompleted) / float64(timeElapsedSec)
+		sizeMB := float64(resp.Size()) / 1024 / 2014
+		updateHandler(mbCompleted, sizeMB, speedMBPerSec)
+	}
+Loop:
+	for {
+		select {
+		case <-t.C:
+			invokeUpdateHandler()
+
+		case <-resp.Done:
+			// download is complete
+			invokeUpdateHandler()
+			break Loop
+		}
+	}
+
+	// check for errors
+	if e = resp.Err(); e != nil {
+		return fmt.Errorf("error while downloading: %s", e)
+	}
+
+	finishHandler(resp.Filename)
 	return nil
 }
