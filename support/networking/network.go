@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cavaliercoder/grab"
 )
@@ -133,11 +133,52 @@ func DownloadFile(url string, filepath string) error {
 }
 
 // DownloadFileWithGrab is a download function that uses the grab third-party library
-func DownloadFileWithGrab(url string, filepath string) error {
-	resp, e := grab.Get(filepath, url)
+func DownloadFileWithGrab(
+	url string,
+	filepath string,
+	updateIntervalMillis int,
+	statusCodeHandler func(statusCode int, statusString string),
+	updateHandler func(completedMB float64, sizeMB float64, speedMBPerSec float64),
+	finishHandler func(filename string),
+) error {
+	// create client
+	client := grab.NewClient()
+	req, e := grab.NewRequest(filepath, url)
 	if e != nil {
-		return fmt.Errorf("unable to get file with grab from url '%s' to location '%s': %s", url, filepath, e)
+		return fmt.Errorf("could not make new grab request: %s", e)
 	}
-	log.Printf("download file from URL '%s' to destination '%s'", url, resp.Filename)
+
+	// start download
+	resp := client.Do(req)
+	statusCodeHandler(resp.HTTPResponse.StatusCode, resp.HTTPResponse.Status)
+
+	// start UI loop
+	t := time.NewTicker(time.Duration(updateIntervalMillis) * time.Millisecond)
+	defer t.Stop()
+
+	tic := time.Now().UnixNano()
+Loop:
+	for {
+		select {
+		case <-t.C:
+			toc := time.Now().UnixNano()
+			timeElapsedSec := float64(toc-tic) / float64(time.Second)
+			mbCompleted := float64(resp.BytesComplete()) / 1024 / 1024
+			speedMBPerSec := float64(mbCompleted) / float64(timeElapsedSec)
+			sizeMB := float64(resp.Size()) / 1024 / 2014
+			updateHandler(mbCompleted, sizeMB, speedMBPerSec)
+
+		case <-resp.Done:
+			// download is complete
+			break Loop
+		}
+	}
+
+	// check for errors
+	if e = resp.Err(); e != nil {
+		return fmt.Errorf("error while downloading: %s", e)
+	}
+
+	finishHandler(resp.Filename)
 	return nil
 }
