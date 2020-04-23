@@ -147,6 +147,7 @@ func DownloadFileWithGrab(
 	if e != nil {
 		return fmt.Errorf("could not make new grab request: %s", e)
 	}
+	req.NoResume = true
 
 	// start download
 	resp := client.Do(req)
