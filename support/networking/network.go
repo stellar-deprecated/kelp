@@ -162,19 +162,23 @@ func DownloadFileWithGrab(
 	t := time.NewTicker(time.Duration(updateIntervalMillis) * time.Millisecond)
 	defer t.Stop()
 
+	invokeUpdateHandler := func() {
+		toc := time.Now().UnixNano()
+		timeElapsedSec := float64(toc-tic) / float64(time.Second)
+		mbCompleted := float64(resp.BytesComplete()) / 1024 / 1024
+		speedMBPerSec := float64(mbCompleted) / float64(timeElapsedSec)
+		sizeMB := float64(resp.Size()) / 1024 / 2014
+		updateHandler(mbCompleted, sizeMB, speedMBPerSec)
+	}
 Loop:
 	for {
 		select {
 		case <-t.C:
-			toc := time.Now().UnixNano()
-			timeElapsedSec := float64(toc-tic) / float64(time.Second)
-			mbCompleted := float64(resp.BytesComplete()) / 1024 / 1024
-			speedMBPerSec := float64(mbCompleted) / float64(timeElapsedSec)
-			sizeMB := float64(resp.Size()) / 1024 / 2014
-			updateHandler(mbCompleted, sizeMB, speedMBPerSec)
+			invokeUpdateHandler()
 
 		case <-resp.Done:
 			// download is complete
+			invokeUpdateHandler()
 			break Loop
 		}
 	}
