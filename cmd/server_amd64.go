@@ -396,7 +396,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipD
 		},
 	)
 	if e != nil {
-		return errors.Errorf("... could not download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath.AsString())
+		return fmt.Errorf("could not download ccxt from '%s' to location '%s': %s", downloadURL, ccxtZipDownloadPath.AsString(), e)
 	}
 	return nil
 }
