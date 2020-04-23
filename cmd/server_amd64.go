@@ -374,7 +374,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipD
 	}
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
 	log.Printf("download ccxt from %s to location: %s", downloadURL, ccxtZipDownloadPath.AsString())
-	networking.DownloadFile(downloadURL, ccxtZipDownloadPath.Native())
+	networking.DownloadFileWithGrab(downloadURL, ccxtZipDownloadPath.Native())
 	return nil
 }
 

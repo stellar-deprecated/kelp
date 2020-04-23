@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/cavaliercoder/grab"
 )
 
 // JSONRequestDynamicHeaders submits an HTTP web request and parses the response into the responseData object as JSON
@@ -126,5 +129,15 @@ func DownloadFile(url string, filepath string) error {
 	if e != nil {
 		return fmt.Errorf("could not download from URL (%s) to file (%s) in a streaming manner: %s", url, filepath, e)
 	}
+	return nil
+}
+
+// DownloadFileWithGrab is a download function that uses the grab third-party library
+func DownloadFileWithGrab(url string, filepath string) error {
+	resp, e := grab.Get(filepath, url)
+	if e != nil {
+		return fmt.Errorf("unable to get file with grab from url '%s' to location '%s': %s", url, filepath, e)
+	}
+	log.Printf("download file from URL '%s' to destination '%s'", url, resp.Filename)
 	return nil
 }
