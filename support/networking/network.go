@@ -156,12 +156,12 @@ func DownloadFileWithGrab(
 	} else {
 		statusCodeHandler(-1, "nil resp.HTTPResponse")
 	}
+	tic := time.Now().UnixNano()
 
 	// start UI loop
 	t := time.NewTicker(time.Duration(updateIntervalMillis) * time.Millisecond)
 	defer t.Stop()
 
-	tic := time.Now().UnixNano()
 Loop:
 	for {
 		select {
