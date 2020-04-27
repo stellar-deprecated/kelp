@@ -256,6 +256,10 @@ func TestFetchTrades(t *testing.T) {
 			exchangeName:   "bittrex",
 			tradingPair:    "XLM/BTC",
 			expectedFields: bittrexFields,
+		}, {
+			exchangeName:   "poloniex",
+			tradingPair:    "XLM/BTC",
+			expectedFields: poloniexFields,
 		},
 	} {
 		tradingPairString := strings.Replace(k.tradingPair, "/", "_", -1)

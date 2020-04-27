@@ -214,6 +214,7 @@ func loadExchanges() {
 	testedCcxtExchanges := map[string]bool{
 		"kraken":      true,
 		"binance":     true,
+		"poloniex":    true,
 		"coinbasepro": true,
 	}
 
