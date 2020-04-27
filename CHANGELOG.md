@@ -8,13 +8,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Kelp GUI: allows revealing the log file on startup ([bbd709736f25fdf8f4809fb5e4f017ce1d405afa](https://github.com/stellar/kelp/commit/bbd709736f25fdf8f4809fb5e4f017ce1d405afa))
+- Kelp GUI: start backend server before sending ready string message ([f2d75d52bfb9dbbee74414b863b813a204f85a53](https://github.com/stellar/kelp/commit/f2d75d52bfb9dbbee74414b863b813a204f85a53))
+- Kelp GUI: explicit quit button inside the Kelp GUI window ([846fcf0517be36d3143967e43f33d2a2238aa719](https://github.com/stellar/kelp/commit/846fcf0517be36d3143967e43f33d2a2238aa719))
+- update build script to introduce new force option (-f, --force) ([f49f8778f226dbe0069c057068a7557d2411e955](https://github.com/stellar/kelp/commit/f49f8778f226dbe0069c057068a7557d2411e955))
+- Kelp GUI: improve ccxt download to show progress for better visibility ([9a9fad13701b84a54c5441175328eae457a2c454](https://github.com/stellar/kelp/commit/9a9fad13701b84a54c5441175328eae457a2c454))
+- Kelp GUI: copy ccxt zip from source near binary to dotKelp/ccxt folder ([8ea4b1e5b8c6438d67daea24c5311a3d80fb1ac9](https://github.com/stellar/kelp/commit/8ea4b1e5b8c6438d67daea24c5311a3d80fb1ac9))
+
 ### Changed
+
+- Kelp GUI: allow bots to be deleted when in Initializing state ([1491b61ddfd9f12c76faa91eeff5cd620c508c64](https://github.com/stellar/kelp/commit/1491b61ddfd9f12c76faa91eeff5cd620c508c64))
+- Kelp GUI: fix generation of bundler.json and bind files to reduce redundant astilectron builds ([5a5967c78e087023ac96bf64e5683a52ff5af7ae](https://github.com/stellar/kelp/commit/5a5967c78e087023ac96bf64e5683a52ff5af7ae))
+- Kelp GUI: package for windows via tail file web server with cors-enabled /ping endpoint and add --no-electron ([71729111be7bc23eb9aac601b9dd407aa607503d](https://github.com/stellar/kelp/commit/71729111be7bc23eb9aac601b9dd407aa607503d))
+- Kelp GUI: Fix filepaths for windows by introducing the kelpos.OSPath ([e6d89f7a79774b6e36c79f13dc735d7af9216dbd](https://github.com/stellar/kelp/commit/e6d89f7a79774b6e36c79f13dc735d7af9216dbd))
+- Kelp GUI: Fix basepath and use pingURL to ping server in tailFile before redirect ([20a5cf4c08491aa49ecc385c643237d8adec5a9c](https://github.com/stellar/kelp/commit/20a5cf4c08491aa49ecc385c643237d8adec5a9c))
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Kelp GUI: fix too many open files error ([df4cb9e87eee5c537f22cd19b49a56c0709c610d](https://github.com/stellar/kelp/commit/df4cb9e87eee5c537f22cd19b49a56c0709c610d))
+- Kelp GUI: fix windows bash execution ([ec74f1b4ad019864b79a8f35e4638947bebe621f](https://github.com/stellar/kelp/commit/ec74f1b4ad019864b79a8f35e4638947bebe621f))
+- Kelp GUI: run ccxt on windows ([9f9ab964a299cd1c950838d2cb1c4bd32bb426ba](https://github.com/stellar/kelp/commit/9f9ab964a299cd1c950838d2cb1c4bd32bb426ba))
+- Kelp GUI: use github.com/pkg/browser to call cross-platform OpenURL function ([8729754b4df07e2c0db537780a1dd41c90e44b09](https://github.com/stellar/kelp/commit/8729754b4df07e2c0db537780a1dd41c90e44b09))
+- Kelp GUI: default windows to --no-electron in bat file ([6a6d9ccae71b788dee55970f072edcc8f2c5a80d](https://github.com/stellar/kelp/commit/6a6d9ccae71b788dee55970f072edcc8f2c5a80d))
+- Kelp GUI: refactor os paths used to accommodate for 260 character file path limit in windows ([ae33d83c7ba2344e085816f4071b0763a4a1336e](https://github.com/stellar/kelp/commit/ae33d83c7ba2344e085816f4071b0763a4a1336e))
 
 ### Security
 
