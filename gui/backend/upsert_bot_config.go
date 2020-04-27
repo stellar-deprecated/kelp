@@ -233,11 +233,16 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 		client = s.apiTestNet
 	}
 
+	address := kp.Address()
 	// find trustlines to be added
 	trustlines := []hProtocol.Asset{}
 	for _, a := range assets {
 		if a.Type == "native" {
 			log.Printf("not adding a trustline for the native asset\n")
+			continue
+		}
+		if a.Issuer == address {
+			log.Printf("not adding a trustline for an asset created by this trading account\n")
 			continue
 		}
 
@@ -261,7 +266,6 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 	}
 
 	// build txn
-	address := kp.Address()
 	accountReq := horizonclient.AccountRequest{AccountID: address}
 	account, err := client.AccountDetail(accountReq)
 	if err != nil {
