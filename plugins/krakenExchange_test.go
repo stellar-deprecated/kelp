@@ -105,14 +105,6 @@ func TestGetOrderBook(t *testing.T) {
 	assert.True(t, ob.Asks()[0].Volume.AsFloat() > 0)
 	assert.True(t, ob.Bids()[0].Price.AsFloat() > 0)
 	assert.True(t, ob.Bids()[0].Volume.AsFloat() > 0)
-
-	// print here for convenience
-	fmt.Printf("first 2 bids:\n")
-	fmt.Println(ob.Bids()[0])
-	fmt.Println(ob.Bids()[1])
-	fmt.Printf("first 2 asks:\n")
-	fmt.Println(ob.Asks()[0])
-	fmt.Println(ob.Asks()[1])
 }
 
 func TestGetTrades(t *testing.T) {
@@ -125,14 +117,6 @@ func TestGetTrades(t *testing.T) {
 	cursor := trades.Cursor.(int64)
 	assert.True(t, cursor > 0, strconv.FormatInt(cursor, 10))
 	assert.True(t, len(trades.Trades) > 0)
-
-	// print here for convenience
-	fmt.Printf("total number of trades: %d\n", len(trades.Trades))
-	for _, t := range trades.Trades {
-		fmt.Println(t.String())
-	}
-
-	// assert.Fail(t, "force fail")
 }
 
 func TestGetTradeHistory(t *testing.T) {
@@ -144,12 +128,6 @@ func TestGetTradeHistory(t *testing.T) {
 	tradeHistoryResult, e := testKrakenExchange.GetTradeHistory(pair, nil, nil)
 	if !assert.NoError(t, e) {
 		return
-	}
-
-	// print here for convenience
-	fmt.Printf("total number of trades: %d\n", len(tradeHistoryResult.Trades))
-	for _, t := range tradeHistoryResult.Trades {
-		fmt.Println(t.String())
 	}
 
 	if !assert.True(t, len(tradeHistoryResult.Trades) >= 0) {
