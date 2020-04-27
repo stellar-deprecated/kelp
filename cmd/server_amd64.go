@@ -245,8 +245,9 @@ func init() {
 				filenameWithExt := fmt.Sprintf("%s.zip", ccxtFilenameNoExt)
 
 				// don't use explicit unix filepath here since it uses os.Stat and os.Create directly and won't work on windows
-				ccxtZipDownloadPath := ccxtDirPath.Join(filenameWithExt)
-				e = downloadCcxtBinary(kos, ccxtDirPath, ccxtZipDownloadPath, filenameWithExt)
+				ccxtBundledZipPath := kos.GetBinDir().Join("ccxt").Join(filenameWithExt)
+				ccxtZipDestPath := ccxtDirPath.Join(filenameWithExt)
+				e = copyOrDownloadCcxtBinary(kos, ccxtBundledZipPath, ccxtDirPath, ccxtZipDestPath, filenameWithExt)
 				if e != nil {
 					panic(e)
 				}
@@ -363,21 +364,43 @@ func setMiddleware(r *chi.Mux) {
 	r.Use(middleware.Timeout(60 * time.Second))
 }
 
-func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipDownloadPath *kelpos.OSPath, filenameWithExt string) error {
+func copyOrDownloadCcxtBinary(
+	kos *kelpos.KelpOS,
+	ccxtBundledZipPath *kelpos.OSPath,
+	ccxtDirPath *kelpos.OSPath,
+	ccxtZipDestPath *kelpos.OSPath,
+	filenameWithExt string,
+) error {
 	log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath.AsString())
 	e := kos.Mkdir(ccxtDirPath)
 	if e != nil {
 		return errors.Wrap(e, "could not mkdir for ccxtDirPath: "+ccxtDirPath.AsString())
 	}
 
-	if _, e := os.Stat(ccxtZipDownloadPath.Native()); !os.IsNotExist(e) {
+	if _, e := os.Stat(ccxtZipDestPath.Native()); !os.IsNotExist(e) {
 		return nil
 	}
+
+	if _, e := os.Stat(ccxtBundledZipPath.Native()); !os.IsNotExist(e) {
+		log.Printf("copying ccxt from %s to location %s ...", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
+
+		cpCmd := fmt.Sprintf("cp %s %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
+		_, e = kos.Blocking("cp-ccxt", cpCmd)
+		if e != nil {
+			return fmt.Errorf("unable to copy ccxt zip file from %s to %s: %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix(), e)
+		}
+		log.Printf("... done copying ccxt from %s to location %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
+
+		return nil
+	}
+	log.Printf("did not find ccxt zip file at source %s, proceeding to download", ccxtBundledZipPath.Unix())
+
+	// else download
 	downloadURL := fmt.Sprintf("%s/%s", ccxtDownloadBaseURL, filenameWithExt)
-	log.Printf("download ccxt from %s to location: %s ...", downloadURL, ccxtZipDownloadPath.AsString())
+	log.Printf("download ccxt from %s to location: %s ...", downloadURL, ccxtZipDestPath.AsString())
 	e = networking.DownloadFileWithGrab(
 		downloadURL,
-		ccxtZipDownloadPath.Native(),
+		ccxtZipDestPath.Native(),
 		downloadCcxtUpdateIntervalLogMillis,
 		func(statusCode int, statusString string) {
 			log.Printf("  response_status = %s, code = %d\n", statusString, statusCode)
@@ -396,7 +419,7 @@ func downloadCcxtBinary(kos *kelpos.KelpOS, ccxtDirPath *kelpos.OSPath, ccxtZipD
 		},
 	)
 	if e != nil {
-		return fmt.Errorf("could not download ccxt from '%s' to location '%s': %s", downloadURL, ccxtZipDownloadPath.AsString(), e)
+		return fmt.Errorf("could not download ccxt from '%s' to location '%s': %s", downloadURL, ccxtZipDestPath.AsString(), e)
 	}
 	return nil
 }
