@@ -59,7 +59,7 @@ func TestMakePriceFeed(t *testing.T) {
 			wantHigherOrEqualBound: 1.4,
 		}, {
 			typ:                    "function",
-			url:                    "max(fixed/0.02,exchange/ccxt-kraken/XLM/USD/last)",
+			url:                    "max(fixed/0.02,exchange/ccxt-binance/XLM/USDT/last)",
 			wantLowerOrEqualBound:  wantLowerBoundXLM,
 			wantHigherOrEqualBound: wantUpperBoundXLM,
 		}, {
