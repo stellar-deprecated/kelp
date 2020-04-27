@@ -472,11 +472,6 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 			wantPricePrecision: 6,
 			wantVolPrecision:   8,
 		}, {
-			exchangeName:       "kraken",
-			pair:               &model.TradingPair{Base: model.XLM, Quote: model.BTC},
-			wantPricePrecision: 8,
-			wantVolPrecision:   8,
-		}, {
 			exchangeName:       "binance",
 			pair:               &model.TradingPair{Base: model.XLM, Quote: model.USDT},
 			wantPricePrecision: 5,
