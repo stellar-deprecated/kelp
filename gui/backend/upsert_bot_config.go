@@ -18,6 +18,7 @@ import (
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/toml"
+	"github.com/stellar/kelp/support/utils"
 	"github.com/stellar/kelp/trader"
 )
 
@@ -69,11 +70,13 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validate before init validation so we return validation errors to user instead of throwing unknown errors on init if file is invalid
 	if errResp := s.validateConfigs(req); errResp != nil {
 		s.writeJson(w, errResp)
 		return
 	}
 
+	// init after validation so we return validation errors to user instead of throwing unknown errors on init if file is invalid
 	e = req.TraderConfig.Init()
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error running Init() for TraderConfig: %s", e))
@@ -121,6 +124,24 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 	if _, e := strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.TradingSecretSeed); e != nil {
 		errResp.TraderConfig.TradingSecretSeed = "invalid Trader Secret Key"
 		hasError = true
+	} else {
+		// only check this if it is a valid trading secret seed
+		tradingAccount, e := utils.ParseSecret(req.TraderConfig.TradingSecretSeed)
+		if e != nil {
+			errResp.TraderConfig.TradingSecretSeed = fmt.Sprintf("unable to parse: %s", e)
+			hasError = true
+		} else {
+			if req.TraderConfig.IssuerA == *tradingAccount {
+				errResp.TraderConfig.TradingSecretSeed = "cannot trade using issuer account"
+				errResp.TraderConfig.IssuerA = "cannot trade asset issued by trading account"
+				hasError = true
+			}
+			if req.TraderConfig.IssuerB == *tradingAccount {
+				errResp.TraderConfig.TradingSecretSeed = "cannot trade using issuer account"
+				errResp.TraderConfig.IssuerB = "cannot trade asset issued by trading account"
+				hasError = true
+			}
+		}
 	}
 
 	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
