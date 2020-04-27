@@ -565,6 +565,28 @@ func openBrowser(url string, openBrowserWg *sync.WaitGroup) {
 
 func openElectron(trayIconPath *kelpos.OSPath, url string) {
 	log.Printf("opening URL in electron: %s", url)
+	quitMenuItemOption := &astilectron.MenuItemOptions{
+		Label:   astilectron.PtrStr("Quit"),
+		Visible: astilectron.PtrBool(true),
+		Enabled: astilectron.PtrBool(true),
+		OnClick: astilectron.Listener(func(e astilectron.Event) (deleteListener bool) {
+			quit()
+			return false
+		}),
+	}
+	mainMenuItemOptions := []*astilectron.MenuItemOptions{
+		&astilectron.MenuItemOptions{
+			Label: astilectron.PtrStr("File"),
+			SubMenu: []*astilectron.MenuItemOptions{
+				quitMenuItemOption,
+			},
+		},
+		&astilectron.MenuItemOptions{
+			Label: astilectron.PtrStr("Edit"),
+			Role:  astilectron.MenuItemRoleEditMenu,
+		},
+	}
+
 	e := bootstrap.Run(bootstrap.Options{
 		AstilectronOptions: astilectron.Options{
 			AppName:            "Kelp",
@@ -585,15 +607,10 @@ func openElectron(trayIconPath *kelpos.OSPath, url string) {
 			Image: astilectron.PtrStr(trayIconPath.Native()),
 		},
 		TrayMenuOptions: []*astilectron.MenuItemOptions{
-			&astilectron.MenuItemOptions{
-				Label:   astilectron.PtrStr("Quit"),
-				Visible: astilectron.PtrBool(true),
-				Enabled: astilectron.PtrBool(true),
-				OnClick: astilectron.Listener(func(e astilectron.Event) (deleteListener bool) {
-					quit()
-					return false
-				}),
-			},
+			quitMenuItemOption,
+		},
+		MenuOptions: []*astilectron.MenuItemOptions{
+			&astilectron.MenuItemOptions{SubMenu: mainMenuItemOptions},
 		},
 	})
 	if e != nil {
