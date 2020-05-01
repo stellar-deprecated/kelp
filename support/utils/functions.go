@@ -339,7 +339,7 @@ func Shuffle(slice []string) {
 }
 
 // SignWithSeed returns a new tx with the signatures of the passed in seeds
-func SignWithSeed(tx *txnbuild.Transaction, seeds ...string) (*txnbuild.Transaction, error) {
+func SignWithSeed(tx *txnbuild.Transaction, network string, seeds ...string) (*txnbuild.Transaction, error) {
 	// create a copy
 	signedTx := &txnbuild.Transaction{}
 	*signedTx = *tx
@@ -351,7 +351,7 @@ func SignWithSeed(tx *txnbuild.Transaction, seeds ...string) (*txnbuild.Transact
 		}
 
 		// keep adding signatures
-		signedTx, e = signedTx.Sign(kp.(*keypair.Full))
+		signedTx, e = signedTx.Sign(network, kp.(*keypair.Full))
 		if e != nil {
 			return nil, fmt.Errorf("cannot sign tx with keypair at index %d (pubKey: %s): %s", i, kp.Address(), e)
 		}
