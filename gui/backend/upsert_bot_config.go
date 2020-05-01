@@ -302,31 +302,38 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 		log.Printf("added trust asset operation to transaction for asset: %+v\n", a)
 	}
 
-	tx := txnbuild.Transaction{
-		SourceAccount: &account,
-		Operations:    txOps,
-		Timebounds:    txnbuild.NewInfiniteTimeout(),
-		Network:       activeNetwork,
-		BaseFee:       100,
-	}
-	e := tx.Build()
+	tx, e := txnbuild.NewTransaction(
+		txnbuild.TransactionParams{
+			SourceAccount: &account,
+			Operations:    txOps,
+			Timebounds:    txnbuild.NewInfiniteTimeout(),
+			BaseFee:       100,
+			// If IncrementSequenceNum is true, NewTransaction() will call `sourceAccount.IncrementSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			// If IncrementSequenceNum is false, NewTransaction() will call `sourceAccount.GetSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			// leaving as true since that's what it was in the old sdk so we want to maintain backward compatibility and we
+			// need to increment the seq number on the account somewhere to use the next seq num
+			IncrementSequenceNum: true,
+		},
+	)
 	if e != nil {
-		return fmt.Errorf("cannot create trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("cannot make tx to create trustline transaction for account %s for bot '%s': %s", address, botName, e)
 	}
 
 	kpSigner, e := keypair.Parse(traderSeed)
 	if e != nil {
-		return fmt.Errorf("cannot parse seed  %s required for signing: %s\n", traderSeed, e)
+		return fmt.Errorf("cannot parse seed  %s required for signing: %s", traderSeed, e)
 	}
 
-	e = tx.Sign(kpSigner.(*keypair.Full))
+	tx, e = tx.Sign(activeNetwork, kpSigner.(*keypair.Full))
 	if e != nil {
-		return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s", address, botName, e)
 	}
 
 	txn64, e := tx.Base64()
 	if e != nil {
-		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s", address, botName, e)
 	}
 
 	txSuccess, e := client.SubmitTransactionXDR(txn64)
@@ -338,9 +345,9 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 		case horizonclient.Error:
 			herr = &t
 		default:
-			return fmt.Errorf("error when submitting change trust transaction for address %s for bot '%s' for assets(%v): %s (%s)\n", address, botName, trustlines, e, txn64)
+			return fmt.Errorf("error when submitting change trust transaction for address %s for bot '%s' for assets(%v): %s (%s)", address, botName, trustlines, e, txn64)
 		}
-		return fmt.Errorf("horizon error when submitting change trust transaction for address %s for bot '%s' for assets(%v): %s (%s)\n", address, botName, trustlines, *herr, txn64)
+		return fmt.Errorf("horizon error when submitting change trust transaction for address %s for bot '%s' for assets(%v): %s (%s)", address, botName, trustlines, *herr, txn64)
 	}
 
 	log.Printf("tx result of submitting trustline transaction for address %s for bot '%s' for assets(%v): %v (%s)\n", address, botName, trustlines, txSuccess, txn64)
