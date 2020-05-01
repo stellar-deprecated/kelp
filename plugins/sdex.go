@@ -367,20 +367,25 @@ func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback fun
 	ops := api.ConvertTM2Operation(opsOld)
 
 	sdex.incrementSeqNum()
-	tx := txnbuild.Transaction{
-		// sequence number is decremented here because Transaction.Build will increment sequence number
-		// I have not tested with not decrementing here and setting IncrementSequenceNum=false so leaving this way
-		SourceAccount: &txnbuild.SimpleAccount{
-			AccountID: sdex.SourceAccount,
-			Sequence:  int64(sdex.seqNum - 1),
+	tx, e := txnbuild.NewTransaction(
+		txnbuild.TransactionParams{
+			// sequence number is decremented here because Transaction.Build will increment sequence number
+			// I have not tested with not decrementing here and setting IncrementSequenceNum=false so leaving this way
+			SourceAccount: &txnbuild.SimpleAccount{
+				AccountID: sdex.SourceAccount,
+				Sequence:  int64(sdex.seqNum - 1),
+			},
+			// If IncrementSequenceNum is true, NewTransaction() will call `sourceAccount.IncrementSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			// If IncrementSequenceNum is false, NewTransaction() will call `sourceAccount.GetSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			IncrementSequenceNum: true,
+			Operations:           ops,
+			Timebounds:           txnbuild.NewInfiniteTimeout(),
 		},
-		// If IncrementSequenceNum is true, NewTransaction() will call `sourceAccount.IncrementSequenceNumber()`
-		// to obtain the sequence number for the transaction.
-		// If IncrementSequenceNum is false, NewTransaction() will call `sourceAccount.GetSequenceNumber()`
-		// to obtain the sequence number for the transaction.
-		IncrementSequenceNum: true,
-		Operations:           ops,
-		Timebounds:           txnbuild.NewInfiniteTimeout(),
+	)
+	if e != nil {
+		return fmt.Errorf("unable to make new transaction: %s", e)
 	}
 
 	// compute fee per operation
