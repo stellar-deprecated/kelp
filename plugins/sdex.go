@@ -197,20 +197,12 @@ func (sdex *SDEX) DeleteAllOffers(offers []hProtocol.Offer) []txnbuild.Operation
 
 // DeleteOffer returns the op that needs to be submitted to the network in order to delete the passed in offer
 func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
-	var result txnbuild.ManageSellOffer
-	var e error
-
 	txOffer := utils.Offer2TxnBuildSellOffer(offer)
-	if sdex.SourceAccount == sdex.TradingAccount {
-		result, e = txnbuild.DeleteOfferOp2(txOffer)
-	} else {
-		result, e = txnbuild.DeleteOfferOp2(txOffer, &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount})
+	txOffer.Amount = "0"
+	if sdex.SourceAccount != sdex.TradingAccount {
+		txOffer.SourceAccount = &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount}
 	}
-
-	if e != nil {
-		panic(fmt.Sprintf("unexpected error while creating delete offer op: %s", e))
-	}
-	return result
+	return txOffer
 }
 
 // ModifyBuyOffer modifies a buy offer
@@ -374,31 +366,37 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
 	ops := api.ConvertTM2Operation(opsOld)
 
-	sdex.incrementSeqNum()
-	tx := txnbuild.Transaction{
-		// sequence number is decremented here because Transaction.Build auto increments sequence number
-		SourceAccount: &txnbuild.SimpleAccount{
-			AccountID: sdex.SourceAccount,
-			Sequence:  int64(sdex.seqNum - 1),
-		},
-		Operations: ops,
-		Timebounds: txnbuild.NewInfiniteTimeout(),
-		Network:    sdex.Network,
-	}
-
 	// compute fee per operation
 	opFee, e := sdex.opFeeStroopsFn()
 	if e != nil {
 		return fmt.Errorf("SubmitOps error when computing op fee: %s", e)
 	}
-	tx.BaseFee = uint32(opFee)
-	e = tx.Build()
+
+	sdex.incrementSeqNum()
+	tx, e := txnbuild.NewTransaction(
+		txnbuild.TransactionParams{
+			// sequence number is decremented here because Transaction.Build will increment sequence number
+			// I have not tested with not decrementing here and setting IncrementSequenceNum=false so leaving this way
+			SourceAccount: &txnbuild.SimpleAccount{
+				AccountID: sdex.SourceAccount,
+				Sequence:  int64(sdex.seqNum - 1),
+			},
+			BaseFee: int64(opFee),
+			// If IncrementSequenceNum is true, NewTransaction() will call `sourceAccount.IncrementSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			// If IncrementSequenceNum is false, NewTransaction() will call `sourceAccount.GetSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			IncrementSequenceNum: true,
+			Operations:           ops,
+			Timebounds:           txnbuild.NewInfiniteTimeout(),
+		},
+	)
 	if e != nil {
-		return errors.Wrap(e, "SubmitOps error: ")
+		return fmt.Errorf("unable to make new transaction: %s", e)
 	}
 
 	// convert to xdr string
-	txeB64, e := sdex.sign(&tx)
+	txeB64, e := sdex.sign(tx)
 	if e != nil {
 		return e
 	}
@@ -433,9 +431,9 @@ func (sdex *SDEX) CreateBuyOffer(base hProtocol.Asset, counter hProtocol.Asset, 
 func (sdex *SDEX) sign(tx *txnbuild.Transaction) (string, error) {
 	var e error
 	if sdex.SourceSeed != sdex.TradingSeed {
-		e = utils.SignWithSeed(tx, sdex.SourceSeed, sdex.TradingSeed)
+		tx, e = utils.SignWithSeed(tx, sdex.Network, sdex.SourceSeed, sdex.TradingSeed)
 	} else {
-		e = utils.SignWithSeed(tx, sdex.SourceSeed)
+		tx, e = utils.SignWithSeed(tx, sdex.Network, sdex.SourceSeed)
 	}
 	if e != nil {
 		return "", fmt.Errorf("error signing transaction: %s", e)

@@ -94,7 +94,7 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) setupAccount(address string, signer string, botName string) error {
 	fundedAccount, e := s.checkFundAccount(address, botName)
 	if e != nil {
-		return fmt.Errorf("error checking and funding account: %s\n", e)
+		return fmt.Errorf("error checking and funding account: %s", e)
 	}
 
 	var txOps []txnbuild.Operation
@@ -117,39 +117,46 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 	}
 	txOps = append(txOps, &paymentOp)
 
-	tx := txnbuild.Transaction{
-		SourceAccount: fundedAccount,
-		Operations:    txOps,
-		Timebounds:    txnbuild.NewInfiniteTimeout(),
-		Network:       network.TestNetworkPassphrase,
-		BaseFee:       100,
-	}
-	e = tx.Build()
+	tx, e := txnbuild.NewTransaction(
+		txnbuild.TransactionParams{
+			SourceAccount: fundedAccount,
+			Operations:    txOps,
+			Timebounds:    txnbuild.NewInfiniteTimeout(),
+			BaseFee:       100,
+			// If IncrementSequenceNum is true, NewTransaction() will call `sourceAccount.IncrementSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			// If IncrementSequenceNum is false, NewTransaction() will call `sourceAccount.GetSequenceNumber()`
+			// to obtain the sequence number for the transaction.
+			// leaving as true since that's what it was in the old sdk so we want to maintain backward compatibility and we
+			// need to increment the seq number on the account somewhere to use the next seq num
+			IncrementSequenceNum: true,
+		},
+	)
 	if e != nil {
-		return fmt.Errorf("cannot create trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("cannot make transaction to create trustline transaction for account %s for bot '%s': %s", address, botName, e)
 	}
 
 	for _, s := range []string{signer, issuerSeed} {
 		kp, e := keypair.Parse(s)
 		if e != nil {
-			return fmt.Errorf("cannot parse seed  %s required for signing: %s\n", s, e)
+			return fmt.Errorf("cannot parse seed  %s required for signing: %s", s, e)
 		}
 
-		e = tx.Sign(kp.(*keypair.Full))
+		tx, e = tx.Sign(network.TestNetworkPassphrase, kp.(*keypair.Full))
 		if e != nil {
-			return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s\n", address, botName, e)
+			return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s", address, botName, e)
 		}
 	}
 
 	txn64, e := tx.Base64()
 	if e != nil {
-		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s", address, botName, e)
 	}
 
 	client := s.apiTestNet
 	resp, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
-		return fmt.Errorf("error submitting change trust transaction for address %s for bot '%s': %s\n", address, botName, e)
+		return fmt.Errorf("error submitting change trust transaction for address %s for bot '%s': %s", address, botName, e)
 	}
 
 	log.Printf("successfully added trustline for address %s for bot '%s': %v\n", address, botName, resp)

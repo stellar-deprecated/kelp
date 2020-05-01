@@ -338,21 +338,26 @@ func Shuffle(slice []string) {
 	}
 }
 
-// SignWithSeed modifies the passed in tx with the signatures of the passed in seeds
-func SignWithSeed(tx *txnbuild.Transaction, seeds ...string) error {
+// SignWithSeed returns a new tx with the signatures of the passed in seeds
+func SignWithSeed(tx *txnbuild.Transaction, network string, seeds ...string) (*txnbuild.Transaction, error) {
+	// create a copy
+	signedTx := &txnbuild.Transaction{}
+	*signedTx = *tx
+
 	for i, s := range seeds {
 		kp, e := keypair.Parse(s)
 		if e != nil {
-			return fmt.Errorf("cannot parse seed into keypair at index %d: %s", i, e)
+			return nil, fmt.Errorf("cannot parse seed into keypair at index %d: %s", i, e)
 		}
 
-		e = tx.Sign(kp.(*keypair.Full))
+		// keep adding signatures
+		signedTx, e = signedTx.Sign(network, kp.(*keypair.Full))
 		if e != nil {
-			return fmt.Errorf("cannot sign tx with keypair at index %d (pubKey: %s): %s", i, kp.Address(), e)
+			return nil, fmt.Errorf("cannot sign tx with keypair at index %d (pubKey: %s): %s", i, kp.Address(), e)
 		}
 	}
 
-	return nil
+	return signedTx, nil
 }
 
 // StringSet converts a string slice to a map of string to bool values to represent a Set

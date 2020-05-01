@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/stellar/go/clients/horizon"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/support/utils"
@@ -60,8 +59,8 @@ func ignoreOfferIDs(ops []txnbuild.Operation) map[int64]bool {
 	return ignoreOfferIDs
 }
 
-func makeOfferMap(offers []horizon.Offer) map[int64]horizon.Offer {
-	offerMap := map[int64]horizon.Offer{}
+func makeOfferMap(offers []hProtocol.Offer) map[int64]hProtocol.Offer {
+	offerMap := map[int64]hProtocol.Offer{}
 	for _, o := range offers {
 		offerMap[o.ID] = o
 	}
@@ -279,7 +278,7 @@ func selectOpOrOffer(
 }
 
 // fetchOfferAsOpByID returns the offer as an op if it exists otherwise nil
-func fetchOfferAsOpByID(offerID int64, offerMap map[int64]horizon.Offer) *txnbuild.ManageSellOffer {
+func fetchOfferAsOpByID(offerID int64, offerMap map[int64]hProtocol.Offer) *txnbuild.ManageSellOffer {
 	if offer, exists := offerMap[offerID]; exists {
 		return convertOffer2MSO(offer)
 	}
