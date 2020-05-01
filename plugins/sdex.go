@@ -366,6 +366,12 @@ func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(h
 func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error), asyncMode bool) error {
 	ops := api.ConvertTM2Operation(opsOld)
 
+	// compute fee per operation
+	opFee, e := sdex.opFeeStroopsFn()
+	if e != nil {
+		return fmt.Errorf("SubmitOps error when computing op fee: %s", e)
+	}
+
 	sdex.incrementSeqNum()
 	tx, e := txnbuild.NewTransaction(
 		txnbuild.TransactionParams{
@@ -375,6 +381,7 @@ func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback fun
 				AccountID: sdex.SourceAccount,
 				Sequence:  int64(sdex.seqNum - 1),
 			},
+			BaseFee: int64(opFee),
 			// If IncrementSequenceNum is true, NewTransaction() will call `sourceAccount.IncrementSequenceNumber()`
 			// to obtain the sequence number for the transaction.
 			// If IncrementSequenceNum is false, NewTransaction() will call `sourceAccount.GetSequenceNumber()`
@@ -388,19 +395,8 @@ func (sdex *SDEX) submitOps(opsOld []build.TransactionMutator, asyncCallback fun
 		return fmt.Errorf("unable to make new transaction: %s", e)
 	}
 
-	// compute fee per operation
-	opFee, e := sdex.opFeeStroopsFn()
-	if e != nil {
-		return fmt.Errorf("SubmitOps error when computing op fee: %s", e)
-	}
-	tx.BaseFee = uint32(opFee)
-	e = tx.Build()
-	if e != nil {
-		return errors.Wrap(e, "SubmitOps error: ")
-	}
-
 	// convert to xdr string
-	txeB64, e := sdex.sign(&tx)
+	txeB64, e := sdex.sign(tx)
 	if e != nil {
 		return e
 	}
@@ -435,9 +431,9 @@ func (sdex *SDEX) CreateBuyOffer(base hProtocol.Asset, counter hProtocol.Asset, 
 func (sdex *SDEX) sign(tx *txnbuild.Transaction) (string, error) {
 	var e error
 	if sdex.SourceSeed != sdex.TradingSeed {
-		e = utils.SignWithSeed(tx, sdex.Network, sdex.SourceSeed, sdex.TradingSeed)
+		tx, e = utils.SignWithSeed(tx, sdex.Network, sdex.SourceSeed, sdex.TradingSeed)
 	} else {
-		e = utils.SignWithSeed(tx, sdex.Network, sdex.SourceSeed)
+		tx, e = utils.SignWithSeed(tx, sdex.Network, sdex.SourceSeed)
 	}
 	if e != nil {
 		return "", fmt.Errorf("error signing transaction: %s", e)
