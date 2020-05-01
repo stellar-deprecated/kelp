@@ -341,17 +341,15 @@ func (b BatchedExchange) OpenOrders2Offers(orders []model.OpenOrder, baseAsset h
 			lmt = &lastModTime
 		}
 		offers = append(offers, hProtocol.Offer{
-			ID: ID,
-			OfferBase: hProtocol.OfferBase{
-				Seller:             tradingAccount,
-				Selling:            sellingAsset,
-				Buying:             buyingAsset,
-				Amount:             amount,
-				PriceR:             price,
-				Price:              priceString,
-				LastModifiedLedger: 0, // TODO fix?
-				LastModifiedTime:   lmt,
-			},
+			ID:                 ID,
+			Seller:             tradingAccount,
+			Selling:            sellingAsset,
+			Buying:             buyingAsset,
+			Amount:             amount,
+			PriceR:             price,
+			Price:              priceString,
+			LastModifiedLedger: 0, // TODO fix?
+			LastModifiedTime:   lmt,
 		})
 	}
 	return offers, nil
