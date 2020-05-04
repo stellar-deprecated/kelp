@@ -75,6 +75,19 @@ function gen_bind_files() {
 # takes in args:
 # 1 = filename with extension
 # 2 = destination folder without trailing slash
+function download_vendor_zip() {
+    FILENAME_WITH_EXT=$1
+    DEST_FOLDER=$2
+
+    URL="https://github.com/stellar/kelp/releases/download/ui-astilectron-vendor/$FILENAME_WITH_EXT"
+    DESTINATION="$DEST_FOLDER/$FILENAME_WITH_EXT"
+
+    download_file $URL $DESTINATION vendor_directory_zip
+}
+
+# takes in args:
+# 1 = filename with extension
+# 2 = destination folder without trailing slash
 function download_ccxt() {
     FILENAME_WITH_EXT=$1
     DEST_FOLDER=$2
@@ -375,6 +388,8 @@ do
         cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
         echo "done"
 
+        echo "we do not download a vendor directory for windows"
+
         CCXT_FILENAME="ccxt-rest_linux-x64.zip"
     else
         # compile
@@ -382,6 +397,8 @@ do
         astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
         check_build_result $?
         echo "successful"
+
+        download_vendor_zip "vendor-$GOOS-amd64.zip" $KELP_CACHE_VENDOR
 
         CCXT_FILENAME="ccxt-rest_$GOOS-x64.zip"
     fi
