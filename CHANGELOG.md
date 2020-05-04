@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - update build script to introduce new force option (-f, --force) ([f49f8778f226dbe0069c057068a7557d2411e955](https://github.com/stellar/kelp/commit/f49f8778f226dbe0069c057068a7557d2411e955))
 - Kelp GUI: improve ccxt download to show progress for better visibility ([9a9fad13701b84a54c5441175328eae457a2c454](https://github.com/stellar/kelp/commit/9a9fad13701b84a54c5441175328eae457a2c454))
 - Kelp GUI: copy ccxt zip from source near binary to dotKelp/ccxt folder ([8ea4b1e5b8c6438d67daea24c5311a3d80fb1ac9](https://github.com/stellar/kelp/commit/8ea4b1e5b8c6438d67daea24c5311a3d80fb1ac9))
+- Kelp GUI: allow copy paste keyboard shortcuts and add to menu bar along with Quit option ([3dfb14a3dffcea2ddeb474501cc24185158f0932](https://github.com/stellar/kelp/commit/3dfb14a3dffcea2ddeb474501cc24185158f0932))
 
 ### Changed
 
@@ -22,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Kelp GUI: package for windows via tail file web server with cors-enabled /ping endpoint and add --no-electron ([71729111be7bc23eb9aac601b9dd407aa607503d](https://github.com/stellar/kelp/commit/71729111be7bc23eb9aac601b9dd407aa607503d))
 - Kelp GUI: Fix filepaths for windows by introducing the kelpos.OSPath ([e6d89f7a79774b6e36c79f13dc735d7af9216dbd](https://github.com/stellar/kelp/commit/e6d89f7a79774b6e36c79f13dc735d7af9216dbd))
 - Kelp GUI: Fix basepath and use pingURL to ping server in tailFile before redirect ([20a5cf4c08491aa49ecc385c643237d8adec5a9c](https://github.com/stellar/kelp/commit/20a5cf4c08491aa49ecc385c643237d8adec5a9c))
+- Kelp GUI: do not attempt to add trustlines for assets created by trading account ([9fd7afc5ad03ae5a1473dd6dedc0e319bdddaea1](https://github.com/stellar/kelp/commit/9fd7afc5ad03ae5a1473dd6dedc0e319bdddaea1))
+- Kelp GUI: do not allow trading from the issuer account ([2081ad9f83a6a69623150115446e586d8baa1108](https://github.com/stellar/kelp/commit/2081ad9f83a6a69623150115446e586d8baa1108))
+- Upgrade stellar SDK dependency to 'horizonclient-v3.0.0' tag from stellar/go to make it compatible with protocol 13 ([9884a0402d3f0d7307f6de03d46013a3605c79bf](https://github.com/stellar/kelp/commit/9884a0402d3f0d7307f6de03d46013a3605c79bf))
+- when setting fee if endpoint is not available (eg: custom network) then use maxOpFeeStroops ([5e8085c790214fa3569ed5c76ca622e8da8e4834](https://github.com/stellar/kelp/commit/5e8085c790214fa3569ed5c76ca622e8da8e4834))
 
 ### Deprecated
 
