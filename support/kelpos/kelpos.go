@@ -50,7 +50,12 @@ type Process struct {
 // singleton is the singleton instance of KelpOS
 var singleton *KelpOS
 
-func init() {
+// startedMakeKelpOS is used to track cycles in the initialization of makeKelpOS()
+var startedMakeKelpOS = false
+
+func makeKelpOS() *KelpOS {
+	startedMakeKelpOS = true
+
 	binDir, e := MakeOsPathBase()
 	if e != nil {
 		panic(errors.Wrap(e, "could not make binDir"))
@@ -80,7 +85,7 @@ func init() {
 
 	// using dotKelpWorkingDir as working directory since all our config files and log files are located in here and we want
 	// to have the shortest path lengths to accommodate for the 260 character file path limit in windows
-	singleton = &KelpOS{
+	return &KelpOS{
 		binDir:            binDir,
 		dotKelpWorkingDir: dotKelpWorkingDir,
 		processes:         map[string]Process{},
@@ -98,8 +103,14 @@ type BotInstance struct {
 
 // GetKelpOS gets the singleton instance
 func GetKelpOS() *KelpOS {
-	if singleton == nil {
-		panic(fmt.Errorf("there is a cycle stemming from the init() method since singleton was nil"))
+	if singleton != nil {
+		return singleton
 	}
+
+	if startedMakeKelpOS {
+		panic(fmt.Errorf("there is a cycle stemming from the makeKelpOS() method since singleton was nil and startedMakeKelpOS was true"))
+	}
+
+	singleton = makeKelpOS()
 	return singleton
 }
