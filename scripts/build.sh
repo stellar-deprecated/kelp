@@ -79,8 +79,14 @@ function download_ccxt() {
     FILENAME_WITH_EXT=$1
     DEST_FOLDER=$2
 
-    URL="https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4/$FILENAME_WITH_EXT"
     DESTINATION="$DEST_FOLDER/$FILENAME_WITH_EXT"
+    if [ -f "$DESTINATION" ]
+    then
+        echo "not downloading ccxt-rest file since it exists in cache: $DESTINATION"
+        return
+    fi
+
+    URL="https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4/$FILENAME_WITH_EXT"
     echo "downloading ccxt-rest from URL=$URL to DESTINATION=$DESTINATION ..."
     curl -Lo $DESTINATION $URL
     check_build_result $?
