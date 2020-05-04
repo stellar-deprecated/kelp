@@ -396,6 +396,7 @@ do
     else
         # compile
         echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
+        echo -n "compiling UI for $GOOS via astilectron-bundler (GOOS=$GOOS, GOARCH=$GOARCH) ... "
         astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
         check_build_result $?
         echo "successful"
