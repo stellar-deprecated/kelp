@@ -336,15 +336,39 @@ do
 
     # archive
     ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
-    ARCHIVE_FILENAME_UI=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM.zip
+    ARCHIVE_FILENAME_UI_PREFIX=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM
     mv $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME
     check_build_result $?
     cd $ARCHIVE_DIR_SOURCE_UI
-    echo -n "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI ... "
-    zip -rq "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" $ARCHIVE_FOLDER_NAME
-    check_build_result $?
+    if [[ ("$(go env GOOS)" == "darwin" && $GOOS == "darwin") ]]
+    then
+        ARCHIVE_FILENAME_UI="$ARCHIVE_FILENAME_UI_PREFIX.dmg"
+        ARCHIVE_FILENAME_UI_TEMP="$ARCHIVE_FILENAME_UI_PREFIX-temp.dmg"
+        echo "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI (via temporary file $ARCHIVE_FILENAME_UI_TEMP) ..."
+
+        echo -n "    creating soft symlink to /Applications in $ARCHIVE_FOLDER_NAME/Applications ... "
+        ln -s /Applications $ARCHIVE_FOLDER_NAME/Applications
+        check_build_result $?
+        echo "done"
+
+        echo -n "    create temporary writable dmg file $ARCHIVE_FILENAME_UI_TEMP ... "
+        hdiutil create -quiet $ARCHIVE_FILENAME_UI_TEMP -ov -volname "KelpUI $VERSION" -fs HFS+ -srcfolder $ARCHIVE_FOLDER_NAME
+        check_build_result $?
+        echo "done"
+
+        echo -n "    converting intermediate dmg file $ARCHIVE_FILENAME_UI_TEMP to read-only file $KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI ... "
+        hdiutil convert -quiet $ARCHIVE_FILENAME_UI_TEMP -format UDZO -o "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI"
+        check_build_result $?
+        echo "done"
+    else
+        ARCHIVE_FILENAME_UI=$ARCHIVE_FILENAME_UI_PREFIX.zip
+        echo "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI ..."
+
+        zip -rq "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" $ARCHIVE_FOLDER_NAME
+        check_build_result $?
+    fi
     cd $KELP
-    echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME_UI}"
+    echo "... archiving UI successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME_UI}"
 
     echo -n "cleaning up UI: $ARCHIVE_DIR_SOURCE_UI ... "
     rm -rf $ARCHIVE_DIR_SOURCE_UI
