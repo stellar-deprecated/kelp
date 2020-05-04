@@ -72,6 +72,21 @@ function gen_bind_files() {
     echo "done"
 }
 
+# takes in args:
+# 1 = filename with extension
+# 2 = destination folder without trailing slash
+function download_ccxt() {
+    FILENAME_WITH_EXT=$1
+    DEST_FOLDER=$2
+
+    URL="https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4/$FILENAME_WITH_EXT"
+    DESTINATION="$DEST_FOLDER/$FILENAME_WITH_EXT"
+    echo "downloading ccxt-rest from URL=$URL to DESTINATION=$DESTINATION ..."
+    curl -Lo $DESTINATION $URL
+    check_build_result $?
+    echo "... downloaded ccxt-rest to $DESTINATION"
+}
+
 if [[ $(basename $("pwd")) != "kelp" ]]
 then
     echo "need to invoke from the root 'kelp' directory"
@@ -289,6 +304,20 @@ echo "done"
 echo ""
 echo ""
 
+KELP_CACHE=~/.kelp_cache
+echo -n "making directory for KELP_CACHE if not exists: $KELP_CACHE ... "
+mkdir -p $KELP_CACHE
+echo "done"
+KELP_CACHE_CCXT=$KELP_CACHE/ccxt
+echo -n "making directory for KELP_CACHE_CCXT if not exists: $KELP_CACHE_CCXT ... "
+mkdir -p $KELP_CACHE_CCXT
+echo "done"
+KELP_CACHE_VENDOR=$KELP_CACHE/vendor
+echo -n "making directory for KELP_CACHE_VENDOR if not exists: $KELP_CACHE_VENDOR ... "
+mkdir -p $KELP_CACHE_VENDOR
+echo "done"
+echo ""
+
 ARCHIVE_FOLDER_NAME_UI=kelp_ui-$VERSION
 ARCHIVE_DIR_SOURCE_UI=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME_UI
 PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
@@ -326,13 +355,18 @@ do
         echo -n "copying over kelp-start.bat file to the windows build ..."
         cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
         echo "done"
+
+        CCXT_FILENAME="ccxt-rest_linux-x64.zip"
     else
         # compile
         echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
         astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
         check_build_result $?
         echo "successful"
+
+        CCXT_FILENAME="ccxt-rest_$GOOS-x64.zip"
     fi
+    download_ccxt $CCXT_FILENAME $KELP_CACHE_CCXT
 
     # archive
     ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
