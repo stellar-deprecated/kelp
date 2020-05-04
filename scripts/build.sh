@@ -388,8 +388,11 @@ do
         cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
         echo "done"
 
+        # set paths needed for unzipping the vendor and ccxt files
         VENDOR_FILENAME=""
         CCXT_FILENAME="ccxt-rest_linux-x64.zip"
+        # set the path of the binary directory relative to ARCHIVE_FOLDER_NAME
+        BIN_PATH_REL="."
     else
         # compile
         echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
@@ -397,29 +400,49 @@ do
         check_build_result $?
         echo "successful"
 
+        # set paths needed for unzipping the vendor and ccxt files
         VENDOR_FILENAME="vendor-$GOOS-amd64.zip"
         CCXT_FILENAME="ccxt-rest_$GOOS-x64.zip"
+        # set the path of the binary directory relative to ARCHIVE_FOLDER_NAME
+        if [[ $GOOS == "linux" ]]
+        then
+            BIN_PATH_REL="."
+        else
+            BIN_PATH_REL="Kelp.app/Contents/MacOS"
+        fi
     fi
     
-    # download vendor directory
-    if [[ "$VENDOR_FILENAME" != "" ]]
-    then
-        download_vendor_zip $VENDOR_FILENAME $KELP_BUILD_CACHE_VENDOR
-    else
-        echo "not downloading the vendor directory for this platform ($GOOS)"
-        VENDOR_DIR_REL_TO_BIN_DIR="vendor"
-    fi
-
-    # download pre-compiled ccxt binaries
-    download_ccxt $CCXT_FILENAME $KELP_BUILD_CACHE_CCXT
-    CCXT_DIR_REL_TO_BIN_DIR="ccxt"
-
-    # archive
+    # rename/move folder after building
     ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
     ARCHIVE_FILENAME_UI_PREFIX=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM
     mv $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME
     check_build_result $?
     cd $ARCHIVE_DIR_SOURCE_UI
+
+    # download vendor directory
+    if [[ "$VENDOR_FILENAME" != "" ]]
+    then
+        download_vendor_zip $VENDOR_FILENAME $KELP_BUILD_CACHE_VENDOR
+        echo -n "unzipping vendor directory from $KELP_BUILD_CACHE_VENDOR/$VENDOR_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL ... "
+        unzip -q $KELP_BUILD_CACHE_VENDOR/$VENDOR_FILENAME -d $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL
+        check_build_result $?
+        echo "done"
+    else
+        echo "not downloading the vendor directory for this platform ($GOOS)"
+    fi
+
+    # download pre-compiled ccxt binaries
+    download_ccxt $CCXT_FILENAME $KELP_BUILD_CACHE_CCXT
+    echo -n "making ccxt folder if not exists: $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt ... "
+    mkdir -p "$ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt"
+    check_build_result $?
+    echo "done"
+    echo -n "copying ccxt-rest zip file from $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME ... "
+    cp $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME
+    check_build_result $?
+    echo "done"
+    
+    # archive
     if [[ ("$(go env GOOS)" == "darwin" && $GOOS == "darwin") ]]
     then
         ARCHIVE_FILENAME_UI="$ARCHIVE_FILENAME_UI_PREFIX.dmg"
