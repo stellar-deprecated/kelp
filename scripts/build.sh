@@ -414,7 +414,7 @@ do
     fi
     
     # rename/move folder after building
-    ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
+    ARCHIVE_FOLDER_NAME=KelpGUI-$VERSION-$GOOS-$GOARCH$GOARM
     ARCHIVE_FILENAME_UI_PREFIX=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM
     mv $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME
     check_build_result $?
@@ -456,7 +456,7 @@ do
         echo "done"
 
         echo -n "    create temporary writable dmg file $ARCHIVE_FILENAME_UI_TEMP ... "
-        hdiutil create -quiet $ARCHIVE_FILENAME_UI_TEMP -ov -volname "KelpUI $VERSION" -fs HFS+ -srcfolder $ARCHIVE_FOLDER_NAME
+        hdiutil create -quiet $ARCHIVE_FILENAME_UI_TEMP -ov -volname "KelpGUI_$VERSION" -fs HFS+ -srcfolder $ARCHIVE_FOLDER_NAME
         check_build_result $?
         echo "done"
 
