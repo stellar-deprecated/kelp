@@ -72,6 +72,53 @@ function gen_bind_files() {
     echo "done"
 }
 
+# takes in args:
+# 1 = filename with extension
+# 2 = destination folder without trailing slash
+function download_vendor_zip() {
+    FILENAME_WITH_EXT=$1
+    DEST_FOLDER=$2
+
+    URL="https://github.com/stellar/kelp/releases/download/ui-astilectron-vendor/$FILENAME_WITH_EXT"
+    DESTINATION="$DEST_FOLDER/$FILENAME_WITH_EXT"
+
+    download_file $URL $DESTINATION vendor_directory_zip
+}
+
+# takes in args:
+# 1 = filename with extension
+# 2 = destination folder without trailing slash
+function download_ccxt() {
+    FILENAME_WITH_EXT=$1
+    DEST_FOLDER=$2
+
+    URL="https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4/$FILENAME_WITH_EXT"
+    DESTINATION="$DEST_FOLDER/$FILENAME_WITH_EXT"
+
+    download_file $URL $DESTINATION ccxt-rest
+}
+
+# takes in args:
+# 1 = URL
+# 2 = destination path with filename and extension
+# 3 = namespace/context for logging purposes
+function download_file() {
+    URL=$1
+    DESTINATION=$2
+    NAMESPACE=$3
+
+    if [ -f "$DESTINATION" ]
+    then
+        echo "not downloading $NAMESPACE file since it already exists at destination: $DESTINATION"
+        return
+    fi
+
+    echo "downloading $NAMESPACE file from URL=$URL to DESTINATION=$DESTINATION ..."
+    curl -Lo $DESTINATION $URL
+    check_build_result $?
+    echo "... downloaded $NAMESPACE to $DESTINATION"
+}
+
 if [[ $(basename $("pwd")) != "kelp" ]]
 then
     echo "need to invoke from the root 'kelp' directory"
@@ -289,6 +336,20 @@ echo "done"
 echo ""
 echo ""
 
+KELP_BUILD_CACHE=~/.kelp_build_cache
+echo -n "making directory for KELP_BUILD_CACHE if not exists: $KELP_BUILD_CACHE ... "
+mkdir -p $KELP_BUILD_CACHE
+echo "done"
+KELP_BUILD_CACHE_CCXT=$KELP_BUILD_CACHE/ccxt
+echo -n "making directory for KELP_BUILD_CACHE_CCXT if not exists: $KELP_BUILD_CACHE_CCXT ... "
+mkdir -p $KELP_BUILD_CACHE_CCXT
+echo "done"
+KELP_BUILD_CACHE_VENDOR=$KELP_BUILD_CACHE/vendor
+echo -n "making directory for KELP_BUILD_CACHE_VENDOR if not exists: $KELP_BUILD_CACHE_VENDOR ... "
+mkdir -p $KELP_BUILD_CACHE_VENDOR
+echo "done"
+echo ""
+
 ARCHIVE_FOLDER_NAME_UI=kelp_ui-$VERSION
 ARCHIVE_DIR_SOURCE_UI=$ARCHIVE_DIR/$ARCHIVE_FOLDER_NAME_UI
 PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
@@ -326,25 +387,92 @@ do
         echo -n "copying over kelp-start.bat file to the windows build ..."
         cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
         echo "done"
+
+        # set paths needed for unzipping the vendor and ccxt files
+        VENDOR_FILENAME=""
+        CCXT_FILENAME="ccxt-rest_linux-x64.zip"
+        # set the path of the binary directory relative to ARCHIVE_FOLDER_NAME
+        BIN_PATH_REL="."
     else
         # compile
         echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
+        echo -n "compiling UI for $GOOS via astilectron-bundler (GOOS=$GOOS, GOARCH=$GOARCH) ... "
         astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
         check_build_result $?
         echo "successful"
-    fi
 
-    # archive
-    ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
-    ARCHIVE_FILENAME_UI=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM.zip
+        # set paths needed for unzipping the vendor and ccxt files
+        VENDOR_FILENAME="vendor-$GOOS-amd64.zip"
+        CCXT_FILENAME="ccxt-rest_$GOOS-x64.zip"
+        # set the path of the binary directory relative to ARCHIVE_FOLDER_NAME
+        if [[ $GOOS == "linux" ]]
+        then
+            BIN_PATH_REL="."
+        else
+            BIN_PATH_REL="Kelp.app/Contents/MacOS"
+        fi
+    fi
+    
+    # rename/move folder after building
+    ARCHIVE_FOLDER_NAME=KelpGUI-$VERSION-$GOOS-$GOARCH$GOARM
+    ARCHIVE_FILENAME_UI_PREFIX=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM
     mv $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME
     check_build_result $?
     cd $ARCHIVE_DIR_SOURCE_UI
-    echo -n "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI ... "
-    zip -rq "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" $ARCHIVE_FOLDER_NAME
+
+    # download vendor directory
+    if [[ "$VENDOR_FILENAME" != "" ]]
+    then
+        download_vendor_zip $VENDOR_FILENAME $KELP_BUILD_CACHE_VENDOR
+        echo -n "unzipping vendor directory from $KELP_BUILD_CACHE_VENDOR/$VENDOR_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL ... "
+        unzip -q $KELP_BUILD_CACHE_VENDOR/$VENDOR_FILENAME -d $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL
+        check_build_result $?
+        echo "done"
+    else
+        echo "not downloading the vendor directory for this platform ($GOOS)"
+    fi
+
+    # download pre-compiled ccxt binaries
+    download_ccxt $CCXT_FILENAME $KELP_BUILD_CACHE_CCXT
+    echo -n "making ccxt folder if not exists: $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt ... "
+    mkdir -p "$ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt"
     check_build_result $?
+    echo "done"
+    echo -n "copying ccxt-rest zip file from $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME ... "
+    cp $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME
+    check_build_result $?
+    echo "done"
+    
+    # archive
+    if [[ ("$(go env GOOS)" == "darwin" && $GOOS == "darwin") ]]
+    then
+        ARCHIVE_FILENAME_UI="$ARCHIVE_FILENAME_UI_PREFIX.dmg"
+        ARCHIVE_FILENAME_UI_TEMP="$ARCHIVE_FILENAME_UI_PREFIX-temp.dmg"
+        echo "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI (via temporary file $ARCHIVE_FILENAME_UI_TEMP) ..."
+
+        echo -n "    creating soft symlink to /Applications in $ARCHIVE_FOLDER_NAME/Applications ... "
+        ln -s /Applications $ARCHIVE_FOLDER_NAME/Applications
+        check_build_result $?
+        echo "done"
+
+        echo -n "    create temporary writable dmg file $ARCHIVE_FILENAME_UI_TEMP ... "
+        hdiutil create -quiet $ARCHIVE_FILENAME_UI_TEMP -ov -volname "KelpGUI_$VERSION" -fs HFS+ -srcfolder $ARCHIVE_FOLDER_NAME
+        check_build_result $?
+        echo "done"
+
+        echo -n "    converting intermediate dmg file $ARCHIVE_FILENAME_UI_TEMP to read-only file $KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI ... "
+        hdiutil convert -quiet $ARCHIVE_FILENAME_UI_TEMP -format UDZO -o "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI"
+        check_build_result $?
+        echo "done"
+    else
+        ARCHIVE_FILENAME_UI=$ARCHIVE_FILENAME_UI_PREFIX.zip
+        echo "archiving ui from $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME as $ARCHIVE_FILENAME_UI ..."
+
+        zip -rq "$KELP/$ARCHIVE_DIR/$ARCHIVE_FILENAME_UI" $ARCHIVE_FOLDER_NAME
+        check_build_result $?
+    fi
     cd $KELP
-    echo "successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME_UI}"
+    echo "... archiving UI successful: ${ARCHIVE_DIR}/${ARCHIVE_FILENAME_UI}"
 
     echo -n "cleaning up UI: $ARCHIVE_DIR_SOURCE_UI ... "
     rm -rf $ARCHIVE_DIR_SOURCE_UI
