@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -56,6 +57,12 @@ func SdexFeeFnFromStats(
 func getFeeFromStats(horizonClient horizonclient.ClientInterface, capacityTrigger float64, percentile uint8, maxOpFeeStroops uint64) (uint64, error) {
 	feeStats, e := horizonClient.FeeStats()
 	if e != nil {
+		// if the endpoint is not available (horizon-specific error) then use the maxOpFeeStroops
+		// the Stellar network will use the base fee and increase it when necessary up to a max of the fee specified
+		if strings.Contains(e.Error(), "Endpoint Not Available") {
+			log.Printf("endpoint was not available so using maxOpFeeStroops passed in of %d stroops\n", maxOpFeeStroops)
+			return maxOpFeeStroops, nil
+		}
 		return 0, fmt.Errorf("error fetching fee stats: %s", e)
 	}
 
