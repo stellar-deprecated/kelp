@@ -388,8 +388,7 @@ do
         cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
         echo "done"
 
-        echo "we do not download a vendor directory for windows"
-
+        VENDOR_FILENAME=""
         CCXT_FILENAME="ccxt-rest_linux-x64.zip"
     else
         # compile
@@ -398,11 +397,22 @@ do
         check_build_result $?
         echo "successful"
 
-        download_vendor_zip "vendor-$GOOS-amd64.zip" $KELP_BUILD_CACHE_VENDOR
-
+        VENDOR_FILENAME="vendor-$GOOS-amd64.zip"
         CCXT_FILENAME="ccxt-rest_$GOOS-x64.zip"
     fi
+    
+    # download vendor directory
+    if [[ "$VENDOR_FILENAME" != "" ]]
+    then
+        download_vendor_zip $VENDOR_FILENAME $KELP_BUILD_CACHE_VENDOR
+    else
+        echo "not downloading the vendor directory for this platform ($GOOS)"
+        VENDOR_DIR_REL_TO_BIN_DIR="vendor"
+    fi
+
+    # download pre-compiled ccxt binaries
     download_ccxt $CCXT_FILENAME $KELP_BUILD_CACHE_CCXT
+    CCXT_DIR_REL_TO_BIN_DIR="ccxt"
 
     # archive
     ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
