@@ -109,7 +109,7 @@ function download_file() {
 
     if [ -f "$DESTINATION" ]
     then
-        echo "not downloading $NAMESPACE file since it exists in cache: $DESTINATION"
+        echo "not downloading $NAMESPACE file since it already exists at destination: $DESTINATION"
         return
     fi
 
@@ -336,17 +336,17 @@ echo "done"
 echo ""
 echo ""
 
-KELP_CACHE=~/.kelp_cache
-echo -n "making directory for KELP_CACHE if not exists: $KELP_CACHE ... "
-mkdir -p $KELP_CACHE
+KELP_BUILD_CACHE=~/.kelp_build_cache
+echo -n "making directory for KELP_BUILD_CACHE if not exists: $KELP_BUILD_CACHE ... "
+mkdir -p $KELP_BUILD_CACHE
 echo "done"
-KELP_CACHE_CCXT=$KELP_CACHE/ccxt
-echo -n "making directory for KELP_CACHE_CCXT if not exists: $KELP_CACHE_CCXT ... "
-mkdir -p $KELP_CACHE_CCXT
+KELP_BUILD_CACHE_CCXT=$KELP_BUILD_CACHE/ccxt
+echo -n "making directory for KELP_BUILD_CACHE_CCXT if not exists: $KELP_BUILD_CACHE_CCXT ... "
+mkdir -p $KELP_BUILD_CACHE_CCXT
 echo "done"
-KELP_CACHE_VENDOR=$KELP_CACHE/vendor
-echo -n "making directory for KELP_CACHE_VENDOR if not exists: $KELP_CACHE_VENDOR ... "
-mkdir -p $KELP_CACHE_VENDOR
+KELP_BUILD_CACHE_VENDOR=$KELP_BUILD_CACHE/vendor
+echo -n "making directory for KELP_BUILD_CACHE_VENDOR if not exists: $KELP_BUILD_CACHE_VENDOR ... "
+mkdir -p $KELP_BUILD_CACHE_VENDOR
 echo "done"
 echo ""
 
@@ -398,11 +398,11 @@ do
         check_build_result $?
         echo "successful"
 
-        download_vendor_zip "vendor-$GOOS-amd64.zip" $KELP_CACHE_VENDOR
+        download_vendor_zip "vendor-$GOOS-amd64.zip" $KELP_BUILD_CACHE_VENDOR
 
         CCXT_FILENAME="ccxt-rest_$GOOS-x64.zip"
     fi
-    download_ccxt $CCXT_FILENAME $KELP_CACHE_CCXT
+    download_ccxt $CCXT_FILENAME $KELP_BUILD_CACHE_CCXT
 
     # archive
     ARCHIVE_FOLDER_NAME=KelpUI-$VERSION-$GOOS-$GOARCH$GOARM
