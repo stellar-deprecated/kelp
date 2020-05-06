@@ -1,8 +1,10 @@
 # Kelp
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/stellar/kelp.svg?style=for-the-badge)][github-last-commit]
-[![Github All Releases](https://img.shields.io/github/downloads/stellar/kelp/total.svg?style=for-the-badge)][github-releases]
-[![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge&longCache=true)][license-apache]
+![Kelp logo](resources/kelp-icon@1x.png)
+
+[![GitHub last commit](https://img.shields.io/github/last-commit/stellar/kelp.svg)][github-last-commit]
+[![Github All Releases](https://img.shields.io/github/downloads/stellar/kelp/total.svg)][github-releases]
+[![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg?longCache=true)][license-apache]
 
 [![Godoc](https://godoc.org/github.com/stellar/kelp?status.svg)](https://godoc.org/github.com/stellar/kelp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stellar/kelp)](https://goreportcard.com/report/github.com/stellar/kelp)
