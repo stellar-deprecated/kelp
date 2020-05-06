@@ -438,10 +438,18 @@ do
     mkdir -p "$ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt"
     check_build_result $?
     echo "done"
-    echo -n "copying ccxt-rest zip file from $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME ... "
-    cp $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME
-    check_build_result $?
-    echo "done"
+    if [[ $GOOS == "windows" ]]
+    then
+        echo -n "unzipping ccxt directory from $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt ... "
+        unzip -q $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME -d $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt
+        check_build_result $?
+        echo "done"
+    else
+        echo -n "copying ccxt-rest zip file from $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME to $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME ... "
+        cp $KELP_BUILD_CACHE_CCXT/$CCXT_FILENAME $ARCHIVE_FOLDER_NAME/$BIN_PATH_REL/ccxt/$CCXT_FILENAME
+        check_build_result $?
+        echo "done"
+    fi
     
     # archive
     if [[ ("$(go env GOOS)" == "darwin" && $GOOS == "darwin") ]]
