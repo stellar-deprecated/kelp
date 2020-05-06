@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Kelp GUI: improve ccxt download to show progress for better visibility ([9a9fad13701b84a54c5441175328eae457a2c454](https://github.com/stellar/kelp/commit/9a9fad13701b84a54c5441175328eae457a2c454))
 - Kelp GUI: copy ccxt zip from source near binary to dotKelp/ccxt folder ([8ea4b1e5b8c6438d67daea24c5311a3d80fb1ac9](https://github.com/stellar/kelp/commit/8ea4b1e5b8c6438d67daea24c5311a3d80fb1ac9))
 - Kelp GUI: allow copy paste keyboard shortcuts and add to menu bar along with Quit option ([3dfb14a3dffcea2ddeb474501cc24185158f0932](https://github.com/stellar/kelp/commit/3dfb14a3dffcea2ddeb474501cc24185158f0932))
+- improve build script process used to package Kelp GUI ([35533687b828880f19b33d953ba21790f9e86414](https://github.com/stellar/kelp/commit/35533687b828880f19b33d953ba21790f9e86414))
+- add image logo to README ([61bbf654dd8ead5dc76c86da1b5c637b9780af5a](https://github.com/stellar/kelp/commit/61bbf654dd8ead5dc76c86da1b5c637b9780af5a))
+- Kelp GUI: add reload button in menu ([64807a4538d19710dca2a91b907c36334da10f7a](https://github.com/stellar/kelp/commit/64807a4538d19710dca2a91b907c36334da10f7a))
 
 ### Changed
 
