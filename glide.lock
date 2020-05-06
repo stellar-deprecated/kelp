@@ -1,5 +1,5 @@
-hash: 23f8e089886a1874d4b1cf37cf30cab6519a2afd562c832b2931224462d6544c
-updated: 2020-05-01T18:33:44.744557+05:30
+hash: 1486c50ca5ac23649defc5471ee8a5c81914b5781c5c779f694056df4ee840f1
+updated: 2020-05-07T03:29:16.430592+05:30
 imports:
 - name: cloud.google.com/go
   version: 310d83b78255a1605c3bd3a9ffe1606cf09ebcac
@@ -96,6 +96,10 @@ imports:
   version: a586bb8b7deaae2a0eb4c6c8b63a539425628137
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/mattn/go-colorable
+  version: f1b5a0ed4603826971e6d07195710bbc9ed74df6
+- name: github.com/mattn/go-isatty
+  version: cb30d6282491c185f77d9bec5d25de1bb61a06bc
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nikhilsaraf/go-tools
