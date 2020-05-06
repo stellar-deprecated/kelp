@@ -578,6 +578,10 @@ func openElectron(trayIconPath *kelpos.OSPath, url string) {
 		&astilectron.MenuItemOptions{
 			Label: astilectron.PtrStr("File"),
 			SubMenu: []*astilectron.MenuItemOptions{
+				&astilectron.MenuItemOptions{
+					Label: astilectron.PtrStr("Reload"),
+					Role:  astilectron.MenuItemRoleReload,
+				},
 				quitMenuItemOption,
 			},
 		},
