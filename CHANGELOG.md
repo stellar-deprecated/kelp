@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v1.9.0] - 2020-05-07
+
+### Added
+
 - Kelp GUI: allows revealing the log file on startup ([bbd709736f25fdf8f4809fb5e4f017ce1d405afa](https://github.com/stellar/kelp/commit/bbd709736f25fdf8f4809fb5e4f017ce1d405afa))
 - Kelp GUI: start backend server before sending ready string message ([f2d75d52bfb9dbbee74414b863b813a204f85a53](https://github.com/stellar/kelp/commit/f2d75d52bfb9dbbee74414b863b813a204f85a53))
 - Kelp GUI: explicit quit button inside the Kelp GUI window ([846fcf0517be36d3143967e43f33d2a2238aa719](https://github.com/stellar/kelp/commit/846fcf0517be36d3143967e43f33d2a2238aa719))
@@ -36,10 +51,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Kelp GUI: adjust frontend timer intervals and add comments ([6fb8d428b59a2e517d8f952837169b416b9a45c6](https://github.com/stellar/kelp/commit/6fb8d428b59a2e517d8f952837169b416b9a45c6))
 - Kelp GUI: automatically pay test accounts with 1000 units of any asset issued by GBMMZ... public issuer ([3c87298c8b4ce88045d542b872f825532071fc86](https://github.com/stellar/kelp/commit/3c87298c8b4ce88045d542b872f825532071fc86))
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Kelp GUI: fix too many open files error ([df4cb9e87eee5c537f22cd19b49a56c0709c610d](https://github.com/stellar/kelp/commit/df4cb9e87eee5c537f22cd19b49a56c0709c610d))
@@ -48,9 +59,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Kelp GUI: use github.com/pkg/browser to call cross-platform OpenURL function ([8729754b4df07e2c0db537780a1dd41c90e44b09](https://github.com/stellar/kelp/commit/8729754b4df07e2c0db537780a1dd41c90e44b09))
 - Kelp GUI: default windows to --no-electron in bat file ([6a6d9ccae71b788dee55970f072edcc8f2c5a80d](https://github.com/stellar/kelp/commit/6a6d9ccae71b788dee55970f072edcc8f2c5a80d))
 - Kelp GUI: refactor os paths used to accommodate for 260 character file path limit in windows ([ae33d83c7ba2344e085816f4071b0763a4a1336e](https://github.com/stellar/kelp/commit/ae33d83c7ba2344e085816f4071b0763a4a1336e))
-
-### Security
-
 
 ## [v1.8.1] - 2020-02-17
 
@@ -288,7 +296,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.9.0...HEAD
+[v1.9.0]: https://github.com/stellar/kelp/compare/v1.8.1...v1.9.0
 [v1.8.1]: https://github.com/stellar/kelp/compare/v1.8.0...v1.8.1
 [v1.8.0]: https://github.com/stellar/kelp/compare/v1.7.2...v1.8.0
 [v1.7.2]: https://github.com/stellar/kelp/compare/v1.7.1...v1.7.2
