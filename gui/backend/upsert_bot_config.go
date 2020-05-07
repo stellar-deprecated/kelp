@@ -293,13 +293,27 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 		return fmt.Errorf("Unable to load account for %s\n: %s", address, err)
 	}
 
+	needsIsserSignature := false
 	var txOps []txnbuild.Operation
 	for _, a := range trustlines {
+		creditAsset := txnbuild.CreditAsset{Code: a.Code, Issuer: a.Issuer}
 		trustOp := txnbuild.ChangeTrust{
-			Line: txnbuild.CreditAsset{Code: a.Code, Issuer: a.Issuer},
+			Line: creditAsset,
 		}
 		txOps = append(txOps, &trustOp)
 		log.Printf("added trust asset operation to transaction for asset: %+v\n", a)
+
+		if isTestnet && a.Issuer == "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI" {
+			paymentOp := txnbuild.Payment{
+				Destination:   address,
+				Amount:        "1000.0",
+				Asset:         creditAsset,
+				SourceAccount: &txnbuild.SimpleAccount{AccountID: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+			}
+			txOps = append(txOps, &paymentOp)
+			log.Printf("added payment operation to transaction for asset because issuer was the public issuer (%s): %+v\n", "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI", a)
+			needsIsserSignature = true
+		}
 	}
 
 	tx, e := txnbuild.NewTransaction(
@@ -321,14 +335,20 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 		return fmt.Errorf("cannot make tx to create trustline transaction for account %s for bot '%s': %s", address, botName, e)
 	}
 
-	kpSigner, e := keypair.Parse(traderSeed)
-	if e != nil {
-		return fmt.Errorf("cannot parse seed  %s required for signing: %s", traderSeed, e)
+	signers := []string{traderSeed}
+	if needsIsserSignature {
+		signers = append(signers, issuerSeed)
 	}
+	for _, s := range signers {
+		kp, e := keypair.Parse(s)
+		if e != nil {
+			return fmt.Errorf("cannot parse seed  %s required for signing: %s", s, e)
+		}
 
-	tx, e = tx.Sign(activeNetwork, kpSigner.(*keypair.Full))
-	if e != nil {
-		return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s", address, botName, e)
+		tx, e = tx.Sign(activeNetwork, kp.(*keypair.Full))
+		if e != nil {
+			return fmt.Errorf("cannot sign trustline transaction for account %s for bot '%s': %s", address, botName, e)
+		}
 	}
 
 	txn64, e := tx.Base64()
