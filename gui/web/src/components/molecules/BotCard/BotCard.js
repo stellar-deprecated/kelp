@@ -45,9 +45,14 @@ let defaultBotInfo = {
   "spread_pct": "?",
 }
 
-const botStateIntervalMillis = 2000;
+// botStateIntervalMillis: it's inexpensive to call this since it only looks in-memory on the backend so
+// we can run it once every second
+const botStateIntervalMillis = 1000;
+// botInfoIntervalMillis: its expensive to run this frequently because it calls out to horizon which will
+// consume the rate limit, 5 seconds is fast enough since that's the ledger close time on SDEX
 const botInfoIntervalMillis = 5000;
-const botInfoTimeoutMillis = 3000;  // should be less than interval
+// botInfoTimeoutMillis: should be less than botInfoIntervalMillis
+const botInfoTimeoutMillis = 3000;
 
 class BotCard extends Component {
   constructor(props) {
