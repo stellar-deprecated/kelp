@@ -30,6 +30,9 @@ To learn more about the Stellar protocol check out [this video created by Lumena
 
 # Table of Contents
 
+<details>
+    <summary>click to expand</summary>
+
    * [Getting Started](#getting-started)
       * [How To Get Kelp](#how-to-get-kelp)
          * [Download Kelp Binary](#download-kelp-binary)
@@ -58,6 +61,8 @@ To learn more about the Stellar protocol check out [this video created by Lumena
       * [Code of Conduct](#code-of-conduct)
       * [Project Improvements](#project-improvements)
    * [Public Assets](#public-assets)
+
+</details>
 
 # Getting Started
 
