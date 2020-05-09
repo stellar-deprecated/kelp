@@ -11,7 +11,7 @@
 [![Build Status](https://travis-ci.com/stellar/kelp.svg?branch=master)](https://travis-ci.com/stellar/kelp)
 [![Contributors](https://img.shields.io/github/contributors/stellar/kelp.svg)](https://github.com/stellar/kelp/graphs/contributors)
 
-Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
+Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx] and for centralized exchanges such as Binance, Kraken, CoinbasePro, etc.
 
 Kelp includes several configurable trading strategies and exchange integrations. You can define your own parameters or use the sample configurations to quickly get up and running with a trading bot in a matter of minutes. The modular design allows you to easily create new trading strategies, exchange integrations, and assets to give you full control over the bot.
 
