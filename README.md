@@ -11,7 +11,7 @@
 [![Build Status](https://travis-ci.com/stellar/kelp.svg?branch=master)](https://travis-ci.com/stellar/kelp)
 [![Contributors](https://img.shields.io/github/contributors/stellar/kelp.svg)](https://github.com/stellar/kelp/graphs/contributors)
 
-Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx].
+Kelp is a free and open-source trading bot for the [Stellar universal marketplace][stellarx] and for centralized exchanges such as Binance, Kraken, CoinbasePro, etc.
 
 Kelp includes several configurable trading strategies and exchange integrations. You can define your own parameters or use the sample configurations to quickly get up and running with a trading bot in a matter of minutes. The modular design allows you to easily create new trading strategies, exchange integrations, and assets to give you full control over the bot.
 
@@ -29,6 +29,9 @@ To learn more about the Stellar protocol check out [this video created by Lumena
 # Sign up for the new [announcements distribution list][announcements-group] and [user mailing list][discussions-group]
 
 # Table of Contents
+
+<details>
+    <summary>click to expand</summary>
 
    * [Getting Started](#getting-started)
       * [How To Get Kelp](#how-to-get-kelp)
@@ -58,6 +61,8 @@ To learn more about the Stellar protocol check out [this video created by Lumena
       * [Code of Conduct](#code-of-conduct)
       * [Project Improvements](#project-improvements)
    * [Public Assets](#public-assets)
+
+</details>
 
 # Getting Started
 
@@ -97,6 +102,9 @@ To run the bot in simulation mode, try this command:
 
 ### Compile from Source
 
+<details>
+    <summary>click to expand</summary>
+
 _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
 
 To compile Kelp from source:
@@ -116,6 +124,8 @@ To compile Kelp from source:
     * `./bin/kelp`
 8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
+
+</details>
 
 ## Running Kelp
 
@@ -144,6 +154,8 @@ If you are ever stuck, just run the `kelp` binary directly to bring up the help 
 
 ## Using CCXT
 
+<details>
+    <summary>click to expand</summary>
 You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices and orderbooks from a larger number of exchanges. You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it.
 
 The CCXT-REST server **must** be running on port `3000` _before_ you start up the Kelp bot. You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
@@ -163,9 +175,16 @@ You can find these pre-compiled binaries of the CCXT-rest server in the [release
 Install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`).
 You can find more details on the [CCXT_REST github page][ccxt-rest].
 
+</details>
+
 ## Using Postgres
 
+<details>
+    <summary>click to expand</summary>
+
 [Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
+
+</details>
 
 ## Be Smart and Go Slow
 
@@ -176,6 +195,9 @@ _Whenever you trade on Stellar, you are trading with volatile assets, in volatil
 Kelp includes an assortment of strategies, price feeds, and plugins you can use to customize your bot. Kelp also enables you to create your own trading strategies.
 
 ## Strategies
+
+<details>
+    <summary>click to expand</summary>
 
 Strategies are at the core of Kelp. Without them it's just lazy, capable of nothing, thinking of nothing, doing nothing, like our friend [scooter][scooter video] here. The strategies give your bot purpose. Each approaches the market in a different way and is designed to achieve a particular goal.
 
@@ -215,7 +237,12 @@ The following strategies are available **out of the box** with Kelp:
     - **Who:** Anyone managing the operations of the bot who wants to stop all activity by the bot.
     - **Complexity:** Beginner
 
+</details>
+
 ## Price Feeds
+
+<details>
+    <summary>click to expand</summary>
 
 Price Feeds fetch the price of an asset from an external source. The following price feeds are available **out of the box** with Kelp:
 
@@ -223,6 +250,8 @@ Price Feeds fetch the price of an asset from an external source. The following p
 - fiat: fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
 - exchange: fetches the price from an exchange you specify, such as Kraken or Poloniex. You can also use the [CCXT][ccxt] integration to fetch prices from a wider range of exchanges (see the [Using CCXT](#using-ccxt) section for details)
 - fixed: sets the price to a constant
+
+</details>
 
 ## Configuration Files
 
@@ -234,6 +263,9 @@ For more details, check out the [examples section](#configuration-files-1) of th
 
 Exchange integrations provide data to trading strategies and allow you to [hedge][hedge] your positions on different exchanges. The following [exchange integrations](plugins) are available **out of the box** with Kelp:
 
+<details>
+    <summary>click to expand</summary>
+
 - sdex (_`"sdex"`_) ([source](plugins/sdex.go)): The [Stellar Decentralized Exchange][sdex]
 - kraken (_`"kraken"`_) ([source](plugins/krakenExchange.go)): [Kraken][kraken] - recommended to use `ccxt-kraken` instead
 - kraken (via CCXT) (_`"ccxt-kraken"`_) ([source](plugins/ccxtExchange.go)): Kraken via CCXT - full two-way integration (tested)
@@ -242,7 +274,12 @@ Exchange integrations provide data to trading strategies and allow you to [hedge
 - poloniex (via CCXT) (_`"ccxt-poloniex"`_) ([source](plugins/ccxtExchange.go)): Poloniex via CCXT - only tested on priceFeeds and one-way mirroring
 - bittrex (via CCXT) (_`"ccxt-bittrex"`_) ([source](plugins/ccxtExchange.go)): Bittrex via CCXT - only tested on priceFeeds and onw-way mirroring
 
+</details>
+
 ## Plugins
+
+<details>
+    <summary>click to expand</summary>
 
 Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
@@ -252,7 +289,12 @@ These interfaces make it easy to create plugins:
 - PriceFeed ([source](api/priceFeed.go)) - API for price of an asset
 - Exchange ([source](api/exchange.go)) - API for crypto exchanges
 
+</details>
+
 ## Directory Structure
+
+<details>
+    <summary>click to expand</summary>
 
 The folders are organized to make it easy to find code and streamline development flow.
 Each folder is its own package **without any sub-packages**.
@@ -268,6 +310,8 @@ Each folder is its own package **without any sub-packages**.
     ├── glide.yaml      # Glide dependencies
     ├── main.go         # main function for our kelp binary
     └── ...
+
+</details>
 
 ## Accounting
 
@@ -322,8 +366,12 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 # Public Assets
 
+<details>
+    <summary>click to expand</summary>
+
 `TEST1` and `TEST2` issued by the `GCL4KBYTRA3QYI4JTN4FWVYVYNI67W2M6XMDUB2V6ZLWFASIYHWEJPHU` account are test assets used to test Kelp on the production Stellar Network. **These assets have no value** and are marked as `auth_required` with the intent to close them off from the rest of the Stellar ecosystem. No trustlines will be accepted against these assets. As part of our testing process, you may observe a market and trades between these two tokens. It is not intended for any of these assets to represent any meaningful volume on the Stellar Network.
 
+</details>
 
 [github-last-commit]: https://github.com/stellar/kelp/commit/HEAD
 [github-releases]: https://github.com/stellar/kelp/releases
