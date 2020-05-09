@@ -24,6 +24,8 @@ Kelp is built to:
 
 To learn more about the Stellar protocol check out [this video created by Lumenauts][sdex explainer video]. You can also search [Stellar's Q&A][stellar q&a].
 
+![Kelp logo](screenshots/gui_screenshot.png)
+
 # Sign up for the new [announcements distribution list][announcements-group] and [user mailing list][discussions-group]
 
 # Table of Contents
