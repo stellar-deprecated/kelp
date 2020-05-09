@@ -97,6 +97,9 @@ To run the bot in simulation mode, try this command:
 
 ### Compile from Source
 
+<details>
+    <summary>click to expand</summary>
+
 _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
 
 To compile Kelp from source:
@@ -116,6 +119,8 @@ To compile Kelp from source:
     * `./bin/kelp`
 8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
+
+</details>
 
 ## Running Kelp
 
