@@ -9,7 +9,6 @@ class PriceFeedSelector extends Component {
   constructor(props) {
     super(props);
 
-    this.fixIfFiatValue = this.fixIfFiatValue.bind(this);
     this.renderComponentSingle = this.renderComponentSingle.bind(this);
     this.renderComponentRecursive = this.renderComponentRecursive.bind(this);
     this.getOptionItems = this.getOptionItems.bind(this);
@@ -61,21 +60,13 @@ class PriceFeedSelector extends Component {
         }
         selectedOption = selectedOption.subtype;
       }
-      
+
       valuesToUpdate.push(curValue);
       i++;
     }
 
     this.props.onChange(valuesToUpdate);
   }
-
-  fixIfFiatValue(value) {
-    if (value.startsWith("http://apilayer.net/api/live?access_key=")) {
-      return "http://apilayer.net/api/live?access_key=<api_key>&currencies=" + value.substring(value.indexOf("currencies=") + "currencies=".length)
-    }
-    return value
-  }
-
 
   renderComponentSingle(idx, metadata, value) {
     let className = grid.colPriceSelector;
@@ -94,14 +85,12 @@ class PriceFeedSelector extends Component {
             type="string"
             onChange={(event) => this.changeHandler(idx, event)}
             readOnly={this.props.readOnly}
-            />
+          />
         </div>
       );
     } else if (metadata.type === "dropdown") {
       let options = this.getOptionItems(metadata.options);
       selectedOption = metadata.options[value];
-      // TODO remove element-specific logic from here
-      value = this.fixIfFiatValue(value)
       component = (
         <div className={className}>
           <Select
@@ -109,7 +98,7 @@ class PriceFeedSelector extends Component {
             selected={value}
             onChange={(event) => this.changeHandler(idx, event)}
             readOnly={this.props.readOnly}
-            />
+          />
         </div>
       );
     }
@@ -135,7 +124,7 @@ class PriceFeedSelector extends Component {
       }
       secondComponent = this.renderComponentRecursive(idx + 1, selectedOption.subtype, innerValues);
     }
-    
+
     return (
       <div className={grid.row}>
         {firstComponent}
