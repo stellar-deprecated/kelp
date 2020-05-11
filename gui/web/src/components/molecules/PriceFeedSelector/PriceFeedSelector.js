@@ -9,6 +9,7 @@ class PriceFeedSelector extends Component {
   constructor(props) {
     super(props);
 
+    this.fixIfFiatValue = this.fixIfFiatValue.bind(this);
     this.renderComponentSingle = this.renderComponentSingle.bind(this);
     this.renderComponentRecursive = this.renderComponentRecursive.bind(this);
     this.getOptionItems = this.getOptionItems.bind(this);
@@ -68,6 +69,14 @@ class PriceFeedSelector extends Component {
     this.props.onChange(valuesToUpdate);
   }
 
+  fixIfFiatValue(value) {
+    if (value.startsWith("http://apilayer.net/api/live?access_key=")) {
+      return "http://apilayer.net/api/live?access_key=<api_key>&currencies=" + value.substring(value.indexOf("currencies=") + "currencies=".length)
+    }
+    return value
+  }
+
+
   renderComponentSingle(idx, metadata, value) {
     let className = grid.colPriceSelector;
     if (idx === 0) {
@@ -91,6 +100,8 @@ class PriceFeedSelector extends Component {
     } else if (metadata.type === "dropdown") {
       let options = this.getOptionItems(metadata.options);
       selectedOption = metadata.options[value];
+      // TODO remove element-specific logic from here
+      value = this.fixIfFiatValue(value)
       component = (
         <div className={className}>
           <Select
