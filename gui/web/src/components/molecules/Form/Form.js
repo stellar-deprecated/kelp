@@ -21,6 +21,7 @@ import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import newSecretKey from '../../../kelp-ops-api/newSecretKey';
+import fetchPrice from '../../../kelp-ops-api/fetchPrice';
 import SecretKey from '../SecretKey/SecretKey';
 
 const fiatURLPrefix = "http://apilayer.net/api/live?access_key=";
@@ -885,12 +886,17 @@ class Form extends Component {
             <FieldGroup groupTitle="Price Feed">
               <FieldItem>
                 <PriceFeedAsset
-                  baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("a", newValues)}
                   title={"Numerator: current price of base asset (" + this.props.configData.trader_config.asset_code_a + ")"}
                   optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_a}
                   feed_url={this.getConfigFeedURLTransformIfFiat("a")}
+                  fetchPrice={fetchPrice.bind(
+                    this,
+                    this.props.baseUrl,
+                    this.props.configData.strategy_config.data_type_a,
+                    this.props.configData.strategy_config.data_feed_a_url,
+                  )}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("numerator", newPrice)}
                   readOnly={this.props.readOnly}
@@ -898,12 +904,17 @@ class Form extends Component {
               </FieldItem>
               <FieldItem>
                 <PriceFeedAsset
-                  baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("b", newValues)}
                   title={"Denominator: current price of quote asset (" + this.props.configData.trader_config.asset_code_b + ")"}
                   optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_b}
                   feed_url={this.getConfigFeedURLTransformIfFiat("b")}
+                  fetchPrice={fetchPrice.bind(
+                    this,
+                    this.props.baseUrl,
+                    this.props.configData.strategy_config.data_type_b,
+                    this.props.configData.strategy_config.data_feed_b_url,
+                  )}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
                   readOnly={this.props.readOnly}
