@@ -60,7 +60,7 @@ class PriceFeedSelector extends Component {
         }
         selectedOption = selectedOption.subtype;
       }
-      
+
       valuesToUpdate.push(curValue);
       i++;
     }
@@ -85,7 +85,7 @@ class PriceFeedSelector extends Component {
             type="string"
             onChange={(event) => this.changeHandler(idx, event)}
             readOnly={this.props.readOnly}
-            />
+          />
         </div>
       );
     } else if (metadata.type === "dropdown") {
@@ -98,7 +98,7 @@ class PriceFeedSelector extends Component {
             selected={value}
             onChange={(event) => this.changeHandler(idx, event)}
             readOnly={this.props.readOnly}
-            />
+          />
         </div>
       );
     }
@@ -124,7 +124,7 @@ class PriceFeedSelector extends Component {
       }
       secondComponent = this.renderComponentRecursive(idx + 1, selectedOption.subtype, innerValues);
     }
-    
+
     return (
       <div className={grid.row}>
         {firstComponent}

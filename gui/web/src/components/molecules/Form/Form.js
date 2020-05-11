@@ -21,11 +21,11 @@ import PriceFeedFormula from '../PriceFeedFormula/PriceFeedFormula';
 import Levels from '../Levels/Levels';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import newSecretKey from '../../../kelp-ops-api/newSecretKey';
+import fetchPrice from '../../../kelp-ops-api/fetchPrice';
 import SecretKey from '../SecretKey/SecretKey';
 
 const fiatURLPrefix = "http://apilayer.net/api/live?access_key=";
 const fiatURLCurrencyParam = "&currencies=";
-const fiatAPIKeyPlaceholder = "<api_key>";
 const currencyLayerWebsite = "https://currencylayer.com/";
 
 class Form extends Component {
@@ -60,7 +60,9 @@ class Form extends Component {
     this.addLevelError = this.addLevelError.bind(this);
     this.clearLevelError = this.clearLevelError.bind(this);
     this.makeNewFiatDataFeedURL = this.makeNewFiatDataFeedURL.bind(this);
+    this.extractCurrencyCodeFromFiatURL = this.extractCurrencyCodeFromFiatURL.bind(this);
     this.updateFiatAPIKey = this.updateFiatAPIKey.bind(this);
+    this.getConfigFeedURLTransformIfFiat = this.getConfigFeedURLTransformIfFiat.bind(this);
     this._emptyLevel = this._emptyLevel.bind(this);
     this._triggerUpdateLevels = this._triggerUpdateLevels.bind(this);
     this._fetchDotNotation = this._fetchDotNotation.bind(this);
@@ -69,6 +71,7 @@ class Form extends Component {
     this._asyncRequests = {};
   }
 
+  // _extractFiatAPIKey gets called when we load the config and we want to populate the fiat APIKey in the GUI
   _extractFiatAPIKey(props) {
     let url = null;
     if (props.configData.strategy_config.data_type_a === "fiat") {
@@ -87,6 +90,19 @@ class Form extends Component {
       return "";
     }
     return url.substring(fiatURLPrefix.length, url.indexOf(fiatURLCurrencyParam));
+  }
+
+  // getConfigFeedURLTransformIfFiat is called when loading the config value for feed URLs
+  // we want to load only the currencyCode
+  getConfigFeedURLTransformIfFiat(ab) {
+    let dataType = this.props.configData.strategy_config["data_type_" + ab]
+    let feedUrl = this.props.configData.strategy_config["data_feed_" + ab + "_url"];
+
+    if (dataType === "fiat") {
+      const currencyCode = this.extractCurrencyCodeFromFiatURL(feedUrl);
+      return currencyCode;
+    }
+    return feedUrl;
   }
 
   componentWillUnmount() {
@@ -200,9 +216,11 @@ class Form extends Component {
       feedUrlValue = feedUrlValue + "/" + newValues[2];
     }
 
-    // special handling for fiat feeds
+    // when the users selects a new fiat feed currency, wrap the currencyCode (feedUrlValue) with the fiat URL format
+    // so it can be saved in the config file which requires a URL.
+    // This leaves the UI text in the dropdown unchanged
     if (dataTypeValue === "fiat") {
-      feedUrlValue = feedUrlValue.replace(fiatAPIKeyPlaceholder, this.state.fiatAPIKey);
+      feedUrlValue = this.makeNewFiatDataFeedURL(this.state.fiatAPIKey, feedUrlValue);
     }
 
     let mergeUpdateInstructions = {};
@@ -329,19 +347,24 @@ class Form extends Component {
     });
   }
 
-  makeNewFiatDataFeedURL(apiKey, oldURL) {
-    return fiatURLPrefix + apiKey + oldURL.substring(oldURL.indexOf(fiatURLCurrencyParam));
+  makeNewFiatDataFeedURL(apiKey, currencyCode) {
+    return fiatURLPrefix + apiKey + fiatURLCurrencyParam + currencyCode;
   }
 
+  extractCurrencyCodeFromFiatURL(url) {
+    return url.substring(url.indexOf(fiatURLCurrencyParam) + fiatURLCurrencyParam.length);
+  }
+
+  // updateFiatAPIKey is called when the user upates the fiat API key in the GUI
   updateFiatAPIKey(apiKey) {
     if (this.props.configData.strategy_config.data_type_a === "fiat") {
-      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.props.configData.strategy_config.data_feed_a_url);
-      this.props.onChange("strategy_config.data_feed_a_url", {target: {value: newValue }});
+      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.extractCurrencyCodeFromFiatURL(this.props.configData.strategy_config.data_feed_a_url));
+      this.props.onChange("strategy_config.data_feed_a_url", { target: { value: newValue } });
     }
 
     if (this.props.configData.strategy_config.data_type_b === "fiat") {
-      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.props.configData.strategy_config.data_feed_b_url);
-      this.props.onChange("strategy_config.data_feed_b_url", {target: {value: newValue }});
+      const newValue = this.makeNewFiatDataFeedURL(apiKey, this.extractCurrencyCodeFromFiatURL(this.props.configData.strategy_config.data_feed_b_url));
+      this.props.onChange("strategy_config.data_feed_b_url", { target: { value: newValue } });
     }
 
     this.setState({
@@ -863,12 +886,17 @@ class Form extends Component {
             <FieldGroup groupTitle="Price Feed">
               <FieldItem>
                 <PriceFeedAsset
-                  baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("a", newValues)}
                   title={"Numerator: current price of base asset (" + this.props.configData.trader_config.asset_code_a + ")"}
                   optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_a}
-                  feed_url={this.props.configData.strategy_config.data_feed_a_url}
+                  feed_url={this.getConfigFeedURLTransformIfFiat("a")}
+                  fetchPrice={fetchPrice.bind(
+                    this,
+                    this.props.baseUrl,
+                    this.props.configData.strategy_config.data_type_a,
+                    this.props.configData.strategy_config.data_feed_a_url,
+                  )}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("numerator", newPrice)}
                   readOnly={this.props.readOnly}
@@ -876,12 +904,17 @@ class Form extends Component {
               </FieldItem>
               <FieldItem>
                 <PriceFeedAsset
-                  baseUrl={this.props.baseUrl}
                   onChange={(newValues) => this.priceFeedAssetChangeHandler("b", newValues)}
                   title={"Denominator: current price of quote asset (" + this.props.configData.trader_config.asset_code_b + ")"}
                   optionsMetadata={this.props.optionsMetadata}
                   type={this.props.configData.strategy_config.data_type_b}
-                  feed_url={this.props.configData.strategy_config.data_feed_b_url}
+                  feed_url={this.getConfigFeedURLTransformIfFiat("b")}
+                  fetchPrice={fetchPrice.bind(
+                    this,
+                    this.props.baseUrl,
+                    this.props.configData.strategy_config.data_type_b,
+                    this.props.configData.strategy_config.data_feed_b_url,
+                  )}
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
                   readOnly={this.props.readOnly}

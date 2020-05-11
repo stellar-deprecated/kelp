@@ -4,7 +4,6 @@ import styles from './PriceFeedAsset.module.scss';
 import Label from '../../atoms/Label/Label';
 import PriceFeedDisplay from '../PriceFeedDisplay/PriceFeedDisplay';
 import PriceFeedSelector from '../PriceFeedSelector/PriceFeedSelector';
-import fetchPrice from '../../../kelp-ops-api/fetchPrice';
 import LoadingAnimation from '../../atoms/LoadingAnimation/LoadingAnimation';
 
 class PriceFeedAsset extends Component {
@@ -20,11 +19,11 @@ class PriceFeedAsset extends Component {
   }
 
   static propTypes = {
-    baseUrl: PropTypes.string,
     title: PropTypes.string,
     type: PropTypes.string,
     feed_url: PropTypes.string,
     onChange: PropTypes.func,
+    fetchPrice: PropTypes.func,
     onLoadingPrice: PropTypes.func,
     onNewPrice: PropTypes.func,
     optionsMetadata: PropTypes.object,
@@ -37,7 +36,6 @@ class PriceFeedAsset extends Component {
 
   componentDidUpdate(prevProps) {
     if (
-      prevProps.baseUrl !== this.props.baseUrl ||
       prevProps.type !== this.props.type ||
       prevProps.feed_url !== this.props.feed_url
     ) {
@@ -54,7 +52,7 @@ class PriceFeedAsset extends Component {
     this.props.onLoadingPrice();
 
     var _this = this;
-    let currentRequest = fetchPrice.bind(this, this.props.baseUrl, this.props.type, this.props.feed_url);
+    let currentRequest = this.props.fetchPrice.bind(this);
     // we need to set the cached request to the current request so we always track the latest request we want processed
     this._asyncRequests["price"] = currentRequest;
     setTimeout(() => {
