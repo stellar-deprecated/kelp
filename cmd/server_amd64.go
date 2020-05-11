@@ -543,6 +543,7 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, assetsDirPat
 		return nil
 	}
 
+	// requires icon to be in /resources folder
 	trayIconBytes, e := resourcesKelpIcon18xPngBytes()
 	if e != nil {
 		return errors.Wrap(e, "could not fetch tray icon image bytes")
