@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Kelp GUI: fix issue of fiat currency dropdown not updating correctly ([fe19dcbaac0845e5bec7415528ffe02db93245af](https://github.com/stellar/kelp/commit/fe19dcbaac0845e5bec7415528ffe02db93245af))
+
 ### Security
 
 
