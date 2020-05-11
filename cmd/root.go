@@ -13,7 +13,7 @@ import (
 
 // build flags
 var version string
-var guiVersion = "v1.0.0-rc1"
+var guiVersion string
 var gitBranch string
 var gitHash string
 var buildDate string

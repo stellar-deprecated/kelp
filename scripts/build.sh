@@ -6,6 +6,7 @@ function usage() {
     echo "Flags:"
     echo "    -d,   --deploy        prepare tar archives in build/, only works on a tagged commit in the format v1.0.0 or v1.0.0-rc1"
     echo "    -f,   --force         force deploy, combined with the -d flag to release for non-tagged commits"
+    echo "    -n,   --nightly-gui   run a nightly build deployment of the GUI"
     echo "    -t,   --test-deploy   test prepare tar archives in build/ for your native platform only"
     echo "    -g,   --gen-ccxt      generate binary for ccxt-rest executable for to be uploaded to GitHub for use in building kelp binary, takes in arguments (linux, darwin)"
     echo "    -h,   --help          show this help info"
@@ -131,13 +132,21 @@ if [[ ($# -eq 1 && ("$1" == "-d" || "$1" == "--deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=0
     FORCE_RELEASE=0
+    IS_NIGHTLY_GUI=0
 elif [[ ($# -eq 1 && ("$1" == "-df" || "$1" == "-fd")) || ($# -eq 2 && ("$1" == "-d" || "$1" == "--deploy") && ("$2" == "-f" || "$2" == "--force")) || ($# -eq 2 && ("$1" == "-f" || "$1" == "--force") && ("$2" == "-d" || "$2" == "--deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=0
     FORCE_RELEASE=1
+    IS_NIGHTLY_GUI=0
 elif [[ ($# -eq 1 && ("$1" == "-t" || "$1" == "--test-deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=1
+    IS_NIGHTLY_GUI=0
+elif [[ ($# -eq 1 && ("$1" == "-n" || "$1" == "--nightly-gui")) ]]; then
+    ENV=release
+    IS_TEST_MODE=0
+    FORCE_RELEASE=1
+    IS_NIGHTLY_GUI=1
 elif [[ ($# -eq 1 && ("$1" == "-h" || "$1" == "--help")) ]]; then
     usage
     exit 0
@@ -173,12 +182,13 @@ else
 fi
 
 # version is git tag if it's available, otherwise git hash
+GUI_VERSION=v1.0.0-rc1
 VERSION=$(git describe --always --abbrev=8 --dirty --tags)
 GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV")
+LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.guiVersion=$GUI_VERSION" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV")
 
 LDFLAGS=""
 LDFLAGS_UI=""
@@ -284,6 +294,9 @@ PLATFORM_ARGS=("darwin amd64" "linux amd64" "windows amd64" "linux arm64" "linux
 if [[ IS_TEST_MODE -eq 1 ]]
 then
     PLATFORM_ARGS=("$(go env GOOS) $(go env GOARCH)")
+elif [[ IS_NIGHTLY_GUI -eq 1 ]]
+then
+    PLATFORM_ARGS=()
 fi
 for args in "${PLATFORM_ARGS[@]}"
 do
@@ -356,6 +369,9 @@ PLATFORM_ARGS_UI=("darwin -d" "linux -l" "windows -w")
 if [[ IS_TEST_MODE -eq 1 ]]
 then
     PLATFORM_ARGS_UI=("$(go env GOOS)")
+elif [[ IS_NIGHTLY_GUI -eq 1 ]]
+then
+    NIGHTLY_SUFFIX="__nightly_$DATE"
 fi
 for args in "${PLATFORM_ARGS_UI[@]}"
 do
@@ -414,8 +430,8 @@ do
     fi
     
     # rename/move folder after building
-    ARCHIVE_FOLDER_NAME=KelpGUI-$VERSION-$GOOS-$GOARCH$GOARM
-    ARCHIVE_FILENAME_UI_PREFIX=kelp_ui-$VERSION-$GOOS-$GOARCH$GOARM
+    ARCHIVE_FOLDER_NAME=KelpGUI__gui-${GUI_VERSION}__cli-${VERSION}__${GOOS}-${GOARCH}${GOARM}${NIGHTLY_SUFFIX}
+    ARCHIVE_FILENAME_UI_PREFIX=${ARCHIVE_FOLDER_NAME}
     mv $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH $ARCHIVE_DIR_SOURCE_UI/$ARCHIVE_FOLDER_NAME
     check_build_result $?
     cd $ARCHIVE_DIR_SOURCE_UI
@@ -464,7 +480,7 @@ do
         echo "done"
 
         echo -n "    create temporary writable dmg file $ARCHIVE_FILENAME_UI_TEMP ... "
-        hdiutil create -quiet $ARCHIVE_FILENAME_UI_TEMP -ov -volname "KelpGUI_$VERSION" -fs HFS+ -srcfolder $ARCHIVE_FOLDER_NAME
+        hdiutil create -quiet $ARCHIVE_FILENAME_UI_TEMP -ov -volname "${ARCHIVE_FOLDER_NAME}" -fs HFS+ -srcfolder $ARCHIVE_FOLDER_NAME
         check_build_result $?
         echo "done"
 
