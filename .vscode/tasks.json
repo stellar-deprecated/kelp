@@ -1,0 +1,74 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build: quick compile",
+            "type": "shell",
+            "command": "go build -ldflags=\"-X github.com/stellar/kelp/cmd.version=ide_compile -X github.com/stellar/kelp/cmd.guiVersion=ide_compile -X github.com/stellar/kelp/cmd.gitBranch=ide_compile -X github.com/stellar/kelp/cmd.gitHash=ide_compile -X github.com/stellar/kelp/cmd.buildDate=ide_compile -X github.com/stellar/kelp/cmd.env=dev\" -o /dev/null && echo \"BUILD SUCCESSFUL\"",
+            "problemMatcher": [
+                "$go"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "build: local",
+            "type": "shell",
+            "command": "./scripts/build.sh",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "run: local - version",
+            "type": "shell",
+            "command": "./bin/kelp version",
+            "problemMatcher": [
+                "$go"
+            ],
+            "group": "none",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "test: short",
+            "type": "shell",
+            "command": "GO_TEST_BINARY=\"go test\"; go-acc $(glide novendor) -- --short -ldflags=\"-X github.com/stellar/kelp/cmd.version=ide_compile -X github.com/stellar/kelp/cmd.guiVersion=ide_compile -X github.com/stellar/kelp/cmd.gitBranch=ide_compile -X github.com/stellar/kelp/cmd.gitHash=ide_compile -X github.com/stellar/kelp/cmd.buildDate=ide_compile -X github.com/stellar/kelp/cmd.env=dev\"",
+            "problemMatcher": [
+                "$go"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "test: code coverage",
+            "type": "shell",
+            "command": "go tool cover -html=coverage.txt",
+            "dependsOn": "test: short",
+            "problemMatcher": [
+                "$go"
+            ],
+            "group": "test",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+    ]
+}
