@@ -6,7 +6,7 @@
         {
             "label": "build: quick compile",
             "type": "shell",
-            "command": "go build -ldflags=\"-X github.com/stellar/kelp/cmd.version=ide_compile -X github.com/stellar/kelp/cmd.guiVersion=ide_compile -X github.com/stellar/kelp/cmd.gitBranch=ide_compile -X github.com/stellar/kelp/cmd.gitHash=ide_compile -X github.com/stellar/kelp/cmd.buildDate=ide_compile -X github.com/stellar/kelp/cmd.env=dev\" -o /dev/null && echo \"BUILD SUCCESSFUL\"",
+            "command": "go build -ldflags=\"-X github.com/stellar/kelp/cmd.version=ide_compile -X github.com/stellar/kelp/cmd.guiVersion=ide_compile -X github.com/stellar/kelp/cmd.gitBranch=ide_compile -X github.com/stellar/kelp/cmd.gitHash=ide_compile -X github.com/stellar/kelp/cmd.buildDate=ide_compile -X github.com/stellar/kelp/cmd.env=dev\" -o ./bin/kelp . && echo \"BUILD SUCCESSFUL\"",
             "problemMatcher": [
                 "$go"
             ],
@@ -45,7 +45,7 @@
         {
             "label": "test: short",
             "type": "shell",
-            "command": "GO_TEST_BINARY=\"go test\"; go-acc $(glide novendor) -- --short -ldflags=\"-X github.com/stellar/kelp/cmd.version=ide_compile -X github.com/stellar/kelp/cmd.guiVersion=ide_compile -X github.com/stellar/kelp/cmd.gitBranch=ide_compile -X github.com/stellar/kelp/cmd.gitHash=ide_compile -X github.com/stellar/kelp/cmd.buildDate=ide_compile -X github.com/stellar/kelp/cmd.env=dev\"",
+            "command": "GO_TEST_BINARY=\"go test\"; go-acc $(glide novendor) -- --short -ldflags=\"-X github.com/stellar/kelp/cmd.version=ide_compile -X github.com/stellar/kelp/cmd.guiVersion=ide_compile -X github.com/stellar/kelp/cmd.gitBranch=ide_compile -X github.com/stellar/kelp/cmd.gitHash=ide_compile -X github.com/stellar/kelp/cmd.buildDate=ide_compile -X github.com/stellar/kelp/cmd.env=dev\" && echo \"BUILD SUCCESSFUL\"",
             "problemMatcher": [
                 "$go"
             ],
@@ -60,7 +60,7 @@
         {
             "label": "test: code coverage",
             "type": "shell",
-            "command": "go tool cover -html=coverage.txt",
+            "command": "go tool cover -html=coverage.txt && echo \"BUILD SUCCESSFUL\"",
             "dependsOn": "test: short",
             "problemMatcher": [
                 "$go"
@@ -70,5 +70,18 @@
                 "cwd": "${workspaceFolder}"
             }
         },
+        {
+            "label": "run: local - gui server dev",
+            "type": "shell",
+            "command": "./bin/kelp server --dev",
+            "dependsOn": "build: quick compile",
+            "problemMatcher": [
+                "$go"
+            ],
+            "group": "none",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
     ]
 }
