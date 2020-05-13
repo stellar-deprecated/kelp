@@ -103,8 +103,18 @@ func (s *sdexFeed) GetPrice() (float64, error) {
 		return 0, fmt.Errorf("unable to get sdex price: %s", e)
 	}
 
-	topBidPrice := orderBook.Bids()[0].Price
-	topAskPrice := orderBook.Asks()[0].Price
+	bids := orderBook.Bids()
+	asks := orderBook.Asks()
+	if len(bids) == 0 && len(asks) == 0 {
+		return 0, fmt.Errorf("unable to get sdex price because there were no bids and no asks in the market")
+	} else if len(bids) == 0 {
+		return 0, fmt.Errorf("unable to get sdex price because there were no bids in the market")
+	} else if len(asks) == 0 {
+		return 0, fmt.Errorf("unable to get sdex price because there were no asks in the market")
+	}
+
+	topBidPrice := bids[0].Price
+	topAskPrice := asks[0].Price
 
 	midPrice := topBidPrice.Add(*topAskPrice).Scale(0.5).AsFloat()
 	return midPrice, nil
