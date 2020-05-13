@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/browser"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/kelp/gui"
@@ -347,10 +348,6 @@ func init() {
 
 		log.Printf("should not have reached here after starting the backend server")
 	}
-}
-
-func toUnixFilepath(path string) string {
-	return filepath.ToSlash(path)
 }
 
 func checkIsCcxtUpTwice(ccxtURL string) error {
