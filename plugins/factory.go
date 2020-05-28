@@ -110,17 +110,17 @@ var strategies = map[string]StrategyContainer{
 			return makeDeleteStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote), nil
 		},
 	},
-	"swing": {
+	"pendulum": {
 		SortOrder:   6,
-		Description: "Swings bids and asks based on last trade",
+		Description: "Oscillating bids and asks like a pendulum based on last trade price as the equilibrium poistion",
 		NeedsConfig: true,
 		Complexity:  "Beginner",
 		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
-			var cfg swingConfig
+			var cfg pendulumConfig
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			return makeSwingStrategy(
+			return makePendulumStrategy(
 				strategyFactoryData.sdex,
 				strategyFactoryData.exchangeShim,
 				strategyFactoryData.ieif,

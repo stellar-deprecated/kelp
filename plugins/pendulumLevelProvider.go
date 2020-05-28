@@ -19,8 +19,8 @@ var price2LastPrice map[float64]float64 = map[float64]float64{}
 // of rounding to the same offerPrice key)
 const offerPriceLargePrecision int8 = 15
 
-// swingLevelProvider provides levels based on the concept of a swinging price
-type swingLevelProvider struct {
+// pendulumLevelProvider provides levels based on the concept of a pendulum that swings from one side to another
+type pendulumLevelProvider struct {
 	spread                        float64
 	offsetSpread                  float64
 	amountBase                    float64
@@ -38,10 +38,10 @@ type swingLevelProvider struct {
 }
 
 // ensure it implements LevelProvider
-var _ api.LevelProvider = &swingLevelProvider{}
+var _ api.LevelProvider = &pendulumLevelProvider{}
 
-// makeSwingLevelProvider is the factory method
-func makeSwingLevelProvider(
+// makePendulumLevelProvider is the factory method
+func makePendulumLevelProvider(
 	spread float64,
 	offsetSpread float64,
 	useMaxQuoteInTargetAmountCalc bool,
@@ -55,8 +55,8 @@ func makeSwingLevelProvider(
 	lastTradeCursor interface{},
 	incrementTimestampCursor bool,
 	orderConstraints *model.OrderConstraints,
-) *swingLevelProvider {
-	return &swingLevelProvider{
+) *pendulumLevelProvider {
+	return &pendulumLevelProvider{
 		spread:                        spread,
 		offsetSpread:                  offsetSpread,
 		useMaxQuoteInTargetAmountCalc: useMaxQuoteInTargetAmountCalc,
@@ -141,12 +141,12 @@ func getLastPriceFromMap(price2LastPriceMap map[float64]float64, tradePrice floa
 }
 
 // GetFillHandlers impl
-func (s *swingLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
+func (p *pendulumLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
 	return nil, nil
 }
 
 // GetLevels impl.
-func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
+func (p *pendulumLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	if maxAssetBase <= p.minBase {
 		return []api.Level{}, nil
 	}
@@ -229,7 +229,7 @@ func (p *swingLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float
 	return levels, nil
 }
 
-func (p *swingLevelProvider) fetchLatestTradePrice() (float64, interface{}, bool, error) {
+func (p *pendulumLevelProvider) fetchLatestTradePrice() (float64, interface{}, bool, error) {
 	lastPrice := p.lastTradePrice
 	lastCursor := p.lastTradeCursor
 	lastIsBuy := false

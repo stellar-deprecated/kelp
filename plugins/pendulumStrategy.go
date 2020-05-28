@@ -7,8 +7,8 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
-// swingConfig contains the configuration params for this Strategy
-type swingConfig struct {
+// pendulumConfig contains the configuration params for this Strategy
+type pendulumConfig struct {
 	PriceTolerance     float64 `valid:"-" toml:"PRICE_TOLERANCE"`
 	AmountTolerance    float64 `valid:"-" toml:"AMOUNT_TOLERANCE"`
 	AmountBaseBuy      float64 `valid:"-" toml:"AMOUNT_BASE_BUY"`
@@ -42,28 +42,28 @@ For now we hardcode offsetSpread to be 0.5 * spread to keep it less confusing fo
 */
 
 // String impl.
-func (c swingConfig) String() string {
+func (c pendulumConfig) String() string {
 	return utils.StructString(c, 0, nil)
 }
 
-// makeSwingStrategy is a factory method for swingStrategy
-func makeSwingStrategy(
+// makePendulumStrategy is a factory method for pendulumStrategy
+func makePendulumStrategy(
 	sdex *SDEX,
 	exchangeShim api.ExchangeShim,
 	ieif *IEIF,
 	assetBase *hProtocol.Asset,
 	assetQuote *hProtocol.Asset,
-	config *swingConfig,
+	config *pendulumConfig,
 	tradeFetcher api.TradeFetcher,
 	tradingPair *model.TradingPair,
 	incrementTimestampCursor bool, // only do this if we are on ccxt
 ) api.Strategy {
 	if config.AmountTolerance != 1.0 {
-		panic("swing strategy needs to be configured with AMOUNT_TOLERANCE = 1.0")
+		panic("pendulum strategy needs to be configured with AMOUNT_TOLERANCE = 1.0")
 	}
 
 	orderConstraints := exchangeShim.GetOrderConstraints(tradingPair)
-	sellLevelProvider := makeSwingLevelProvider(
+	sellLevelProvider := makePendulumLevelProvider(
 		config.Spread,
 		config.Spread/2,
 		false,
@@ -89,13 +89,13 @@ func makeSwingStrategy(
 		config.AmountTolerance,
 		false,
 	)
-	buyLevelProvider := makeSwingLevelProvider(
+	buyLevelProvider := makePendulumLevelProvider(
 		config.Spread,
 		config.Spread/2,
 		true, // real base is passed in as quote so pass in true
 		config.AmountBaseBuy,
 		config.MaxLevels,
-		config.SeedLastTradePrice, // we don't invert seed last trade price for the buy side because it's handeld in the swingLevelProvider
+		config.SeedLastTradePrice, // we don't invert seed last trade price for the buy side because it's handeld in the pendulumLevelProvider
 		config.MinPrice,           // use minPrice for buy side
 		config.MinQuote,           // use minQuote for buying side
 		tradeFetcher,
