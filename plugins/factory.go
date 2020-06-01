@@ -15,12 +15,15 @@ import (
 // strategyFactoryData is a data container that has all the information needed to make a strategy
 type strategyFactoryData struct {
 	sdex            *SDEX
+	exchangeShim    api.ExchangeShim
+	tradeFetcher    api.TradeFetcher
 	ieif            *IEIF
 	tradingPair     *model.TradingPair
 	assetBase       *hProtocol.Asset
 	assetQuote      *hProtocol.Asset
 	stratConfigPath string
 	simMode         bool
+	isTradingSdex   bool
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -52,7 +55,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"mirror": {
-		SortOrder:   4,
+		SortOrder:   5,
 		Description: "Mirrors an orderbook from another exchange by placing the same orders on Stellar",
 		NeedsConfig: true,
 		Complexity:  "Advanced",
@@ -86,7 +89,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"balanced": {
-		SortOrder:   3,
+		SortOrder:   4,
 		Description: "Dynamically prices two tokens based on their relative demand",
 		NeedsConfig: true,
 		Complexity:  "Intermediate",
@@ -99,7 +102,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"delete": {
-		SortOrder:   2,
+		SortOrder:   3,
 		Description: "Deletes all orders for the configured orderbook",
 		NeedsConfig: false,
 		Complexity:  "Beginner",
@@ -107,11 +110,36 @@ var strategies = map[string]StrategyContainer{
 			return makeDeleteStrategy(strategyFactoryData.sdex, strategyFactoryData.assetBase, strategyFactoryData.assetQuote), nil
 		},
 	},
+	"pendulum": {
+		SortOrder:   2,
+		Description: "Oscillating bids and asks like a pendulum based on last trade price as the equilibrium poistion",
+		NeedsConfig: true,
+		Complexity:  "Beginner",
+		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			var cfg pendulumConfig
+			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
+			utils.LogConfig(cfg)
+			return makePendulumStrategy(
+				strategyFactoryData.sdex,
+				strategyFactoryData.exchangeShim,
+				strategyFactoryData.ieif,
+				strategyFactoryData.assetBase,
+				strategyFactoryData.assetQuote,
+				&cfg,
+				strategyFactoryData.tradeFetcher,
+				strategyFactoryData.tradingPair,
+				!strategyFactoryData.isTradingSdex,
+			), nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy
 func MakeStrategy(
 	sdex *SDEX,
+	exchangeShim api.ExchangeShim,
+	tradeFetcher api.TradeFetcher,
 	ieif *IEIF,
 	tradingPair *model.TradingPair,
 	assetBase *hProtocol.Asset,
@@ -119,6 +147,7 @@ func MakeStrategy(
 	strategy string,
 	stratConfigPath string,
 	simMode bool,
+	isTradingSdex bool,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
 	if s, ok := strategies[strategy]; ok {
@@ -128,12 +157,15 @@ func MakeStrategy(
 
 		s, e := s.makeFn(strategyFactoryData{
 			sdex:            sdex,
+			exchangeShim:    exchangeShim,
+			tradeFetcher:    tradeFetcher,
 			ieif:            ieif,
 			tradingPair:     tradingPair,
 			assetBase:       assetBase,
 			assetQuote:      assetQuote,
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
+			isTradingSdex:   isTradingSdex,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)
@@ -182,6 +214,7 @@ func loadExchanges() {
 	testedCcxtExchanges := map[string]bool{
 		"kraken":      true,
 		"binance":     true,
+		"poloniex":    true,
 		"coinbasepro": true,
 	}
 

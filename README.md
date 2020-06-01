@@ -141,7 +141,7 @@ These are the following commands available from the `kelp` binary:
 The `trade` command has three required parameters which are:
 
 - **botConf**: full path to the _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
-- **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _mirror_, _delete_).
+- **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _pendulum_, _mirror_, _delete_).
 - **stratConf**: full path to the _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
 Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.
@@ -218,10 +218,18 @@ The following strategies are available **out of the box** with Kelp:
     - **Complexity:** Beginner
 
 - balanced ([source](plugins/balancedStrategy.go)):
-    - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B.
+
+    - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B. This strategy does not allow you to configure the order size but can run out of assets. This is a mean-reversion strategy.
     - **Why:** To let the market surface the _true price_ for one token in terms of another.
-    - **Who:** Market makers and traders for tokens that trade only on Stellar 
+    - **Who:** Market makers and traders for tokens that have a neutral view on the market
     - **Complexity:** Intermediate
+
+- pendulum ([source](plugins/pendulumStrategy.go)):
+
+    - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B. This strategy allows you to configure the order size but runs the risk of running out of one of the two assets. This is a mean-reversion strategy.
+    - **Why:** To let the market surface the _true price_ for one token in terms of another.
+    - **Who:** Market makers and traders for tokens that have a neutral view on the market
+    - **Complexity:** Beginner
 
 - mirror ([source](plugins/mirrorStrategy.go)):
 
@@ -327,6 +335,7 @@ It's easier to learn with examples! Take a look at the walkthrough guides and sa
 - [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the _buysell_ strategy to provide liquidity for a stablecoin. 
 - [ICO sale](examples/walkthroughs/trader/sell.md): This guide uses the `sell` strategy to make a market using sell offers for native tokens in a hypothetical ICO. 
 - [Create liquidity for a Stellar-based token](examples/walkthroughs/trader/balanced.md): This guide uses the `balanced` strategy to create liquidty for a token which only trades on the Stellar network. 
+- [Create wide liquidity within a bounded price range](examples/walkthroughs/trader/pendulum.md): This guide uses the `pendulum` strategy to create liquidty for a token. 
 
 ## Configuration Files
 
@@ -335,6 +344,7 @@ Reference config files are in the [examples folder](examples/configs/trader). Sp
 - [Sample Sell strategy config file](examples/configs/trader/sample_sell.cfg)
 - [Sample BuySell strategy config file](examples/configs/trader/sample_buysell.cfg)
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
+- [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
 
 # Changelog

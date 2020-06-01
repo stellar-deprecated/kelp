@@ -15,37 +15,46 @@ type Asset string
 // this is the list of assets understood by the bot.
 // This string can be converted by the specific exchange adapter as is needed by the exchange's API
 const (
-	XLM  Asset = "XLM"
-	BTC  Asset = "BTC"
-	USD  Asset = "USD"
-	ETH  Asset = "ETH"
-	LTC  Asset = "LTC"
-	REP  Asset = "REP"
-	ADA  Asset = "ADA"
-	BCH  Asset = "BCH"
-	DASH Asset = "DASH"
-	EOS  Asset = "EOS"
-	GNO  Asset = "GNO"
-	FEE  Asset = "FEE"
-	QTUM Asset = "QTUM"
-	USDT Asset = "USDT"
-	USDC Asset = "USDC"
-	DAO  Asset = "DAO"
-	ETC  Asset = "ETC"
-	ICN  Asset = "ICN"
-	MLN  Asset = "MLN"
-	NMC  Asset = "NMC"
-	XDG  Asset = "XDG"
-	XMR  Asset = "XMR"
-	XRP  Asset = "XRP"
-	XVN  Asset = "XVN"
-	ZEC  Asset = "ZEC"
-	CAD  Asset = "CAD"
-	EUR  Asset = "EUR"
-	GBP  Asset = "GBP"
-	JPY  Asset = "JPY"
-	KRW  Asset = "KRW"
-	OMG  Asset = "OMG"
+	XLM     Asset = "XLM"
+	BTC     Asset = "BTC"
+	USD     Asset = "USD"
+	ETH     Asset = "ETH"
+	LTC     Asset = "LTC"
+	REP     Asset = "REP"
+	ADA     Asset = "ADA"
+	BCH     Asset = "BCH"
+	DASH    Asset = "DASH"
+	EOS     Asset = "EOS"
+	GNO     Asset = "GNO"
+	GRIN    Asset = "GRIN"
+	FEE     Asset = "FEE"
+	QTUM    Asset = "QTUM"
+	USDT    Asset = "USDT"
+	TUSD    Asset = "TUSD"
+	USDC    Asset = "USDC"
+	USDS    Asset = "USDS"
+	PAX     Asset = "PAX"
+	BUSD    Asset = "BUSD"
+	DAI     Asset = "DAI"
+	DAO     Asset = "DAO"
+	ETC     Asset = "ETC"
+	ICN     Asset = "ICN"
+	MLN     Asset = "MLN"
+	NMC     Asset = "NMC"
+	XDG     Asset = "XDG"
+	XMR     Asset = "XMR"
+	XRP     Asset = "XRP"
+	XVN     Asset = "XVN"
+	ZEC     Asset = "ZEC"
+	CAD     Asset = "CAD"
+	EUR     Asset = "EUR"
+	GBP     Asset = "GBP"
+	JPY     Asset = "JPY"
+	KRW     Asset = "KRW"
+	OMG     Asset = "OMG"
+	MANA    Asset = "MANA"
+	BULL    Asset = "BULL"
+	ETHBULL Asset = "ETHBULL"
 )
 
 // AssetConverterInterface is the interface which allows the creation of asset converters with logic instead of static bindings
@@ -169,9 +178,12 @@ var KrakenAssetConverter = makeAssetConverter(map[Asset]string{
 
 // KrakenAssetConverterOpenOrders is the asset converter for the Kraken exchange's GetOpenOrders API
 var KrakenAssetConverterOpenOrders = makeAssetConverter(map[Asset]string{
-	XLM: "XLM",
-	BTC: "XBT",
-	USD: "USD",
+	XLM:  "XLM",
+	BTC:  "XBT",
+	USD:  "USD",
+	USDT: "USDT",
+	REP:  "REP",
+	ETH:  "ETH",
 })
 
 // FromHorizonAsset is a factory method
