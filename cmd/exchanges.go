@@ -9,13 +9,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var exchanagesCmd = &cobra.Command{
+var exchangesCmd = &cobra.Command{
 	Use:   "exchanges",
 	Short: "Lists the available exchange integrations",
 }
 
 func init() {
-	exchanagesCmd.Run = func(ccmd *cobra.Command, args []string) {
+	exchangesCmd.Run = func(ccmd *cobra.Command, args []string) {
 		checkInitRootFlags()
 		// call sdk.GetExchangeList() here so we pre-load exchanges before displaying the table
 		sdk.GetExchangeList()

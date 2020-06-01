@@ -67,7 +67,7 @@ func init() {
 	RootCmd.AddCommand(tradeCmd)
 	RootCmd.AddCommand(serverCmd)
 	RootCmd.AddCommand(strategiesCmd)
-	RootCmd.AddCommand(exchanagesCmd)
+	RootCmd.AddCommand(exchangesCmd)
 	RootCmd.AddCommand(terminateCmd)
 	RootCmd.AddCommand(versionCmd)
 }
