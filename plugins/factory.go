@@ -55,7 +55,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"mirror": {
-		SortOrder:   4,
+		SortOrder:   5,
 		Description: "Mirrors an orderbook from another exchange by placing the same orders on Stellar",
 		NeedsConfig: true,
 		Complexity:  "Advanced",
@@ -89,7 +89,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"balanced": {
-		SortOrder:   3,
+		SortOrder:   4,
 		Description: "Dynamically prices two tokens based on their relative demand",
 		NeedsConfig: true,
 		Complexity:  "Intermediate",
@@ -102,7 +102,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"delete": {
-		SortOrder:   2,
+		SortOrder:   3,
 		Description: "Deletes all orders for the configured orderbook",
 		NeedsConfig: false,
 		Complexity:  "Beginner",
@@ -111,7 +111,7 @@ var strategies = map[string]StrategyContainer{
 		},
 	},
 	"pendulum": {
-		SortOrder:   6,
+		SortOrder:   2,
 		Description: "Oscillating bids and asks like a pendulum based on last trade price as the equilibrium poistion",
 		NeedsConfig: true,
 		Complexity:  "Beginner",
