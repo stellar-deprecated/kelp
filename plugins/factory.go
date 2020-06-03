@@ -24,6 +24,7 @@ type strategyFactoryData struct {
 	stratConfigPath string
 	simMode         bool
 	isTradingSdex   bool
+	filterFactory   *FilterFactory
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -147,7 +148,15 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeSellTwapStrategy(strategyFactoryData.sdex, strategyFactoryData.tradingPair, strategyFactoryData.ieif, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg)
+			s, e := makeSellTwapStrategy(
+				strategyFactoryData.sdex,
+				strategyFactoryData.tradingPair,
+				strategyFactoryData.ieif,
+				strategyFactoryData.assetBase,
+				strategyFactoryData.assetQuote,
+				strategyFactoryData.filterFactory,
+				&cfg,
+			)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -169,6 +178,7 @@ func MakeStrategy(
 	stratConfigPath string,
 	simMode bool,
 	isTradingSdex bool,
+	filterFactory *FilterFactory,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
 	if s, ok := strategies[strategy]; ok {
@@ -187,6 +197,7 @@ func MakeStrategy(
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
 			isTradingSdex:   isTradingSdex,
+			filterFactory:   filterFactory,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)

@@ -50,6 +50,7 @@ func makeSellTwapStrategy(
 	ieif *IEIF,
 	assetBase *hProtocol.Asset,
 	assetQuote *hProtocol.Asset,
+	filterFactory *FilterFactory,
 	config *sellTwapConfig,
 ) (api.Strategy, error) {
 	startPf, e := MakePriceFeed(config.StartAskFeedType, config.StartAskFeedURL)
@@ -63,7 +64,10 @@ func makeSellTwapStrategy(
 		absolute:     config.RateOffset,
 		percentFirst: config.RateOffsetPercentFirst,
 	}
-	dowFilter := makeDowFilter(config.DayOfWeekDailyCap)
+	dowFilter, e := makeDowFilter(filterFactory, config.DayOfWeekDailyCap)
+	if e != nil {
+		return nil, fmt.Errorf("error when making dowFilter: %s", e)
+	}
 	levelProvider, e := makeSellTwapLevelProvider(
 		startPf,
 		offset,
@@ -101,7 +105,44 @@ func makeSellTwapStrategy(
 	), nil
 }
 
-func makeDowFilter(dowDailyCap DayOfWeekFilterConfig) map[string]SubmitFilter {
-	// TODO
-	return nil
+func makeDowFilter(filterFactory *FilterFactory, dowDailyCap DayOfWeekFilterConfig) (map[string]SubmitFilter, error) {
+	m := map[string]SubmitFilter{}
+	var e error
+
+	m["Monday"], e = filterFactory.MakeFilter(dowDailyCap.Mo)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Monday: %s", e)
+	}
+
+	m["Tuesday"], e = filterFactory.MakeFilter(dowDailyCap.Tu)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Tuesday: %s", e)
+	}
+
+	m["Wednesday"], e = filterFactory.MakeFilter(dowDailyCap.We)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Wednesday: %s", e)
+	}
+
+	m["Thursday"], e = filterFactory.MakeFilter(dowDailyCap.Th)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Thursday: %s", e)
+	}
+
+	m["Friday"], e = filterFactory.MakeFilter(dowDailyCap.Fr)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Friday: %s", e)
+	}
+
+	m["Saturday"], e = filterFactory.MakeFilter(dowDailyCap.Sa)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Saturday: %s", e)
+	}
+
+	m["Sunday"], e = filterFactory.MakeFilter(dowDailyCap.Su)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make filter for entry Sunday: %s", e)
+	}
+
+	return m, nil
 }
