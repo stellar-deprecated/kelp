@@ -1,4 +1,4 @@
-# Create Wide Liquidity Within A Bounded Price Range
+# Create Targeted Liquidity Within A Bounded Price Range
 
 This guide shows you how to setup the **kelp** bot using the [pendulum](../../../plugins/pendulumStrategy.go) strategy. We'll configure it to create liquidity for a `COUPON` token. `COUPON` can be any token you want and is only used as a sample token for the purpose of this walkthrough guide.
 
