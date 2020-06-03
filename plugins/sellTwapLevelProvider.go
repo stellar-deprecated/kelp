@@ -2,19 +2,24 @@ package plugins
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
 
+const secondsInDay = 24 * 60 * 60
+
 // sellTwapLevelProvider provides a fixed number of levels using a static percentage spread
 type sellTwapLevelProvider struct {
-	staticLevels     []StaticLevel
-	amountOfBase     float64
-	offset           rateOffset
-	pf               *api.FeedPair
-	orderConstraints *model.OrderConstraints
+	startPf                                               api.PriceFeed
+	offset                                                rateOffset
+	orderConstraints                                      *model.OrderConstraints
+	dowFilter                                             map[string]SubmitFilter
+	numHoursToSell                                        int
+	parentBucketSizeSeconds                               int
+	distributeSurplusOverRemainingIntervalsPercentCeiling float64
+	exponentialSmoothingFactor                            float64
+	minChildOrderSizePercentOfParent                      float64
 }
 
 // ensure it implements the LevelProvider interface
@@ -22,54 +27,57 @@ var _ api.LevelProvider = &sellTwapLevelProvider{}
 
 // makeSellTwapLevelProvider is a factory method
 func makeSellTwapLevelProvider(
-	staticLevels []StaticLevel,
-	amountOfBase float64,
+	startPf api.PriceFeed,
 	offset rateOffset,
-	pf *api.FeedPair,
 	orderConstraints *model.OrderConstraints,
-) api.LevelProvider {
-	return &sellTwapLevelProvider{
-		staticLevels:     staticLevels,
-		amountOfBase:     amountOfBase,
-		offset:           offset,
-		pf:               pf,
-		orderConstraints: orderConstraints,
+	dowFilter map[string]SubmitFilter,
+	numHoursToSell int,
+	parentBucketSizeSeconds int,
+	distributeSurplusOverRemainingIntervalsPercentCeiling float64,
+	exponentialSmoothingFactor float64,
+	minChildOrderSizePercentOfParent float64,
+) (api.LevelProvider, error) {
+	if numHoursToSell <= 0 || numHoursToSell > 24 {
+		return nil, fmt.Errorf("invalid number of hours to sell, expected 0 < numHoursToSell <= 24; was %d", numHoursToSell)
 	}
+
+	if parentBucketSizeSeconds <= 0 || parentBucketSizeSeconds > secondsInDay {
+		return nil, fmt.Errorf("invalid value for parentBucketSizeSeconds, expected 0 < parentBucketSizeSeconds <= %d (secondsInDay); was %d", secondsInDay, parentBucketSizeSeconds)
+	}
+
+	if (secondsInDay % parentBucketSizeSeconds) != 0 {
+		return nil, fmt.Errorf("parentBucketSizeSeconds needs to perfectly divide secondsInDay but it does not; secondsInDay is %d and parentBucketSizeSeconds was %d", secondsInDay, parentBucketSizeSeconds)
+	}
+
+	if distributeSurplusOverRemainingIntervalsPercentCeiling < 0.0 || distributeSurplusOverRemainingIntervalsPercentCeiling > 1.0 {
+		return nil, fmt.Errorf("distributeSurplusOverRemainingIntervalsPercentCeiling is invalid, expected 0.0 <= distributeSurplusOverRemainingIntervalsPercentCeiling <= 1.0; was %.f", distributeSurplusOverRemainingIntervalsPercentCeiling)
+	}
+
+	if exponentialSmoothingFactor < 0.0 || exponentialSmoothingFactor > 1.0 {
+		return nil, fmt.Errorf("exponentialSmoothingFactor is invalid, expected 0.0 <= exponentialSmoothingFactor <= 1.0; was %.f", exponentialSmoothingFactor)
+	}
+
+	if minChildOrderSizePercentOfParent < 0.0 || minChildOrderSizePercentOfParent > 1.0 {
+		return nil, fmt.Errorf("minChildOrderSizePercentOfParent is invalid, expected 0.0 <= minChildOrderSizePercentOfParent <= 1.0; was %.f", exponentialSmoothingFactor)
+	}
+
+	return &sellTwapLevelProvider{
+		startPf:                 startPf,
+		offset:                  offset,
+		orderConstraints:        orderConstraints,
+		dowFilter:               dowFilter,
+		numHoursToSell:          numHoursToSell,
+		parentBucketSizeSeconds: parentBucketSizeSeconds,
+		distributeSurplusOverRemainingIntervalsPercentCeiling: distributeSurplusOverRemainingIntervalsPercentCeiling,
+		exponentialSmoothingFactor:                            exponentialSmoothingFactor,
+		minChildOrderSizePercentOfParent:                      minChildOrderSizePercentOfParent,
+	}, nil
 }
 
 // GetLevels impl.
 func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	midPrice, e := p.pf.GetFeedPairPrice()
-	if e != nil {
-		return nil, fmt.Errorf("mid price couldn't be loaded: %s", e)
-	}
-	if p.offset.percent != 0.0 || p.offset.absolute != 0 {
-		// if inverted, we want to invert before we compute the adjusted price, and then invert back
-		if p.offset.invert {
-			midPrice = 1 / midPrice
-		}
-		scaleFactor := 1 + p.offset.percent
-		if p.offset.percentFirst {
-			midPrice = (midPrice * scaleFactor) + p.offset.absolute
-		} else {
-			midPrice = (midPrice + p.offset.absolute) * scaleFactor
-		}
-		if p.offset.invert {
-			midPrice = 1 / midPrice
-		}
-		log.Printf("mid price (adjusted): %.7f\n", midPrice)
-	}
-
-	levels := []api.Level{}
-	for _, sl := range p.staticLevels {
-		absoluteSpread := midPrice * sl.SPREAD
-		levels = append(levels, api.Level{
-			// we always add here because it is only used in the context of selling so we always charge a higher price to include a spread
-			Price:  *model.NumberFromFloat(midPrice+absoluteSpread, p.orderConstraints.PricePrecision),
-			Amount: *model.NumberFromFloat(sl.AMOUNT*p.amountOfBase, p.orderConstraints.VolumePrecision),
-		})
-	}
-	return levels, nil
+	// TODO
+	return []api.Level{}, nil
 }
 
 // GetFillHandlers impl
