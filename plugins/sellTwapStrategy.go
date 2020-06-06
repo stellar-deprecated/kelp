@@ -34,7 +34,7 @@ type sellTwapConfig struct {
 	NumHoursToSell                                        int                   `valid:"-" toml:"NUM_HOURS_TO_SELL"`
 	ParentBucketSizeSeconds                               int                   `valid:"-" toml:"PARENT_BUCKET_SIZE_SECONDS"`
 	DistributeSurplusOverRemainingIntervalsPercentCeiling float64               `valid:"-" toml:"DISTRIBUTE_SURPLUS_OVER_REMAINING_INTERVALS_PERCENT_CEILING"`
-	ExponentialSmoothingFactor                            float64               `valid:"-" toml:"EXPONENTIAL_SMOOTHING_FACTOR"` // a larger number results in a smoother distribution across the remaining intervals; 0 < x <= 1; set to 1.0 for a linear distribution and 0.0 to sell the entire surplus in the next interval
+	ExponentialSmoothingFactor                            float64               `valid:"-" toml:"EXPONENTIAL_SMOOTHING_FACTOR"`
 	MinChildOrderSizePercentOfParent                      float64               `valid:"-" toml:"MIN_CHILD_ORDER_SIZE_PERCENT_OF_PARENT"`
 }
 
