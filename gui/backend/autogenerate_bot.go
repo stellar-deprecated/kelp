@@ -226,6 +226,8 @@ func (s *APIServer) makeSampleTrader(seed string) *trader.BotConfig {
 		0,
 		s.horizonTestnetURI,
 		nil,
+		"",
+		"",
 		&trader.FeeConfig{
 			CapacityTrigger: 0.8,
 			Percentile:      90,
