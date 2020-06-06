@@ -395,7 +395,7 @@ func (c ccxtExchange) convertOpenOrderFromCcxt(pair *model.TradingPair, o sdk.Cc
 }
 
 // AddOrder impl
-func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
+func (c ccxtExchange) AddOrder(order *model.Order, submitMode api.SubmitMode) (*model.TransactionID, error) {
 	pairString, e := order.Pair.ToString(c.assetConverter, c.delimiter)
 	if e != nil {
 		return nil, fmt.Errorf("error converting pair to string: %s", e)

@@ -6,22 +6,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stellar/kelp/api"
-
 	"github.com/Beldur/kraken-go-api-client"
-	"github.com/stellar/kelp/model"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 )
 
 var testKrakenExchange api.Exchange = &krakenExchange{
 	assetConverter:           model.KrakenAssetConverter,
 	assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-	apis:               []*krakenapi.KrakenApi{krakenapi.New("", "")},
-	apiNextIndex:       0,
-	delimiter:          "",
-	ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
-	withdrawKeys:       asset2Address2Key{},
-	isSimulated:        true,
+	apis:                     []*krakenapi.KrakenApi{krakenapi.New("", "")},
+	apiNextIndex:             0,
+	delimiter:                "",
+	ocOverridesHandler:       MakeEmptyOrderConstraintsOverridesHandler(),
+	withdrawKeys:             asset2Address2Key{},
+	isSimulated:              true,
 }
 
 func TestGetTickerPrice(t *testing.T) {
@@ -199,13 +199,16 @@ func TestAddOrder(t *testing.T) {
 	}
 
 	tradingPair := &model.TradingPair{Base: model.XLM, Quote: model.USD}
-	txID, e := testKrakenExchange.AddOrder(&model.Order{
-		Pair:        tradingPair,
-		OrderAction: model.OrderActionSell,
-		OrderType:   model.OrderTypeLimit,
-		Price:       model.NumberFromFloat(5.123456, testKrakenExchange.GetOrderConstraints(tradingPair).PricePrecision),
-		Volume:      model.NumberFromFloat(30.12345678, testKrakenExchange.GetOrderConstraints(tradingPair).VolumePrecision),
-	})
+	txID, e := testKrakenExchange.AddOrder(
+		&model.Order{
+			Pair:        tradingPair,
+			OrderAction: model.OrderActionSell,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(5.123456, testKrakenExchange.GetOrderConstraints(tradingPair).PricePrecision),
+			Volume:      model.NumberFromFloat(30.12345678, testKrakenExchange.GetOrderConstraints(tradingPair).VolumePrecision),
+		},
+		api.SubmitModeBoth,
+	)
 	if !assert.NoError(t, e) {
 		return
 	}

@@ -112,7 +112,7 @@ type TradeAPI interface {
 
 	GetOpenOrders(pairs []*model.TradingPair) (map[model.TradingPair][]model.OpenOrder, error)
 
-	AddOrder(order *model.Order) (*model.TransactionID, error)
+	AddOrder(order *model.Order, submitMode SubmitMode) (*model.TransactionID, error)
 
 	CancelOrder(txID *model.TransactionID, pair model.TradingPair) (model.CancelOrderResult, error)
 }
@@ -226,8 +226,8 @@ type Balance struct {
 
 // ExchangeShim is the interface we use as a generic API for all crypto exchanges
 type ExchangeShim interface {
-	SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error
-	SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
+	SubmitOps(ops []build.TransactionMutator, submitMode SubmitMode, asyncCallback func(hash string, e error)) error
+	SubmitOpsSynch(ops []build.TransactionMutator, submitMode SubmitMode, asyncCallback func(hash string, e error)) error // forced synchronous version of SubmitOps
 	GetBalanceHack(asset hProtocol.Asset) (*Balance, error)
 	LoadOffersHack() ([]hProtocol.Offer, error)
 	Constrainable

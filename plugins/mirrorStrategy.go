@@ -520,7 +520,8 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat())
-	transactionID, e := s.exchange.AddOrder(&newOrder)
+	// when offsetting trades we always submit as a taker order so use api.SubmitModeBoth
+	transactionID, e := s.exchange.AddOrder(&newOrder, api.SubmitModeBoth)
 	if e != nil {
 		return fmt.Errorf("error when offsetting trade (newOrder=%s): %s", newOrder, e)
 	}

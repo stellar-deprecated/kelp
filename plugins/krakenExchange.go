@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Beldur/kraken-go-api-client"
+
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/networking"
@@ -65,12 +66,12 @@ func makeKrakenExchange(apiKeys []api.ExchangeAPIKey, isSimulated bool) (api.Exc
 	return &krakenExchange{
 		assetConverter:           model.KrakenAssetConverter,
 		assetConverterOpenOrders: model.KrakenAssetConverterOpenOrders,
-		apis:               krakenAPIs,
-		apiNextIndex:       0,
-		delimiter:          "",
-		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
-		withdrawKeys:       asset2Address2Key{},
-		isSimulated:        isSimulated,
+		apis:                     krakenAPIs,
+		apiNextIndex:             0,
+		delimiter:                "",
+		ocOverridesHandler:       MakeEmptyOrderConstraintsOverridesHandler(),
+		withdrawKeys:             asset2Address2Key{},
+		isSimulated:              isSimulated,
 	}, nil
 }
 
@@ -84,7 +85,7 @@ func (k *krakenExchange) nextAPI() *krakenapi.KrakenApi {
 }
 
 // AddOrder impl.
-func (k *krakenExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
+func (k *krakenExchange) AddOrder(order *model.Order, submitMode api.SubmitMode) (*model.TransactionID, error) {
 	pairStr, e := order.Pair.ToString(k.assetConverter, k.delimiter)
 	if e != nil {
 		return nil, e

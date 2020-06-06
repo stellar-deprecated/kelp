@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
+
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -34,6 +35,7 @@ type Trader struct {
 	strategy              api.Strategy // the instance of this bot is bound to this strategy
 	timeController        api.TimeController
 	deleteCyclesThreshold int64
+	submitMode            api.SubmitMode
 	submitFilters         []plugins.SubmitFilter
 	threadTracker         *multithreading.ThreadTracker
 	fixedIterations       *uint64
@@ -66,6 +68,7 @@ func MakeTrader(
 	strategy api.Strategy,
 	timeController api.TimeController,
 	deleteCyclesThreshold int64,
+	submitMode api.SubmitMode,
 	submitFilters []plugins.SubmitFilter,
 	threadTracker *multithreading.ThreadTracker,
 	fixedIterations *uint64,
@@ -85,6 +88,7 @@ func MakeTrader(
 		strategy:              strategy,
 		timeController:        timeController,
 		deleteCyclesThreshold: deleteCyclesThreshold,
+		submitMode:            submitMode,
 		submitFilters:         submitFilters,
 		threadTracker:         threadTracker,
 		fixedIterations:       fixedIterations,
@@ -148,7 +152,8 @@ func (t *Trader) deleteAllOffers() {
 
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
-		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), nil)
+		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
+		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, nil)
 		if e != nil {
 			log.Println(e)
 			return
@@ -200,7 +205,8 @@ func (t *Trader) update() bool {
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strategy.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
 	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
 	if len(pruneOps) > 0 {
-		e = t.exchangeShim.SubmitOps(pruneOps, nil)
+		// to prune/delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
+		e = t.exchangeShim.SubmitOps(pruneOps, api.SubmitModeBoth, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()
@@ -244,7 +250,7 @@ func (t *Trader) update() bool {
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), nil)
+		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), t.submitMode, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers()

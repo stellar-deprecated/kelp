@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
-	"github.com/stretchr/testify/assert"
 )
 
 var supportedExchanges = []string{"binance", "kraken"}
@@ -394,13 +395,16 @@ func TestAddOrder_Ccxt(t *testing.T) {
 					return
 				}
 
-				txID, e := testCcxtExchange.AddOrder(&model.Order{
-					Pair:        kase.pair,
-					OrderAction: kase.orderAction,
-					OrderType:   kase.orderType,
-					Price:       kase.price,
-					Volume:      kase.volume,
-				})
+				txID, e := testCcxtExchange.AddOrder(
+					&model.Order{
+						Pair:        kase.pair,
+						OrderAction: kase.orderAction,
+						OrderType:   kase.orderType,
+						Price:       kase.price,
+						Volume:      kase.volume,
+					},
+					api.SubmitModeBoth,
+				)
 				if !assert.NoError(t, e) {
 					return
 				}
