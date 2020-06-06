@@ -35,6 +35,9 @@ type StrategyContainer struct {
 	makeFn      func(strategyFactoryData strategyFactoryData) (api.Strategy, error)
 }
 
+var ccxtExchangeSpecificParamFactoryMap = map[string]ccxtExchangeSpecificParamFactory{
+}
+
 // strategies is a map of all the strategies available
 var strategies = map[string]StrategyContainer{
 	"buysell": {
@@ -241,6 +244,8 @@ func loadExchanges() {
 			}
 			boundExchangeName := exchangeName
 
+			// maybeEsParamFactory can be nil
+			maybeEsParamFactory := ccxtExchangeSpecificParamFactoryMap[key]
 			(*exchanges)[key] = ExchangeContainer{
 				SortOrder:    uint16(sortOrderIndex),
 				Description:  exchangeName + " is automatically added via ccxt-rest",
@@ -254,6 +259,7 @@ func loadExchanges() {
 						exchangeFactoryData.exchangeParams,
 						exchangeFactoryData.headers,
 						exchangeFactoryData.simMode,
+						maybeEsParamFactory,
 					)
 				},
 			}

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/networking"
 )
@@ -541,7 +542,7 @@ func (c *Ccxt) FetchOpenOrders(tradingPairs []string) (map[string][]CcxtOpenOrde
 }
 
 // CreateLimitOrder calls the /createOrder endpoint on CCXT with a limit price and the order type set to "limit"
-func (c *Ccxt) CreateLimitOrder(tradingPair string, side string, amount float64, price float64) (*CcxtOpenOrder, error) {
+func (c *Ccxt) CreateLimitOrder(tradingPair string, side string, amount float64, price float64, maybeExchangeSpecificParams interface{}) (*CcxtOpenOrder, error) {
 	orderType := "limit"
 	e := c.symbolExists(tradingPair)
 	if e != nil {
@@ -555,6 +556,9 @@ func (c *Ccxt) CreateLimitOrder(tradingPair string, side string, amount float64,
 		side,
 		amount,
 		price,
+	}
+	if maybeExchangeSpecificParams != nil {
+		inputData = append(inputData, maybeExchangeSpecificParams)
 	}
 	data, e := json.Marshal(&inputData)
 	if e != nil {

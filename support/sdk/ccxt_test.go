@@ -6,9 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestHashString(t *testing.T) {
@@ -533,7 +534,7 @@ func TestCreateLimitOrder(t *testing.T) {
 				return
 			}
 
-			openOrder, e := c.CreateLimitOrder(k.tradingPair.String(), k.side, k.amount, k.price)
+			openOrder, e := c.CreateLimitOrder(k.tradingPair.String(), k.side, k.amount, k.price, nil)
 			if !assert.NoError(t, e) {
 				return
 			}
