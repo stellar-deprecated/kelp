@@ -26,6 +26,8 @@ type Trader struct {
 	ieif                  *plugins.IEIF
 	assetBase             hProtocol.Asset
 	assetQuote            hProtocol.Asset
+	valueBaseFeed         api.PriceFeed
+	valueQuoteFeed        api.PriceFeed
 	tradingAccount        string
 	sdex                  *plugins.SDEX
 	exchangeShim          api.ExchangeShim
@@ -56,6 +58,8 @@ func MakeTrader(
 	ieif *plugins.IEIF,
 	assetBase hProtocol.Asset,
 	assetQuote hProtocol.Asset,
+	valueBaseFeed api.PriceFeed,
+	valueQuoteFeed api.PriceFeed,
 	tradingAccount string,
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
@@ -73,6 +77,8 @@ func MakeTrader(
 		ieif:                  ieif,
 		assetBase:             assetBase,
 		assetQuote:            assetQuote,
+		valueBaseFeed:         valueBaseFeed,
+		valueQuoteFeed:        valueQuoteFeed,
 		tradingAccount:        tradingAccount,
 		sdex:                  sdex,
 		exchangeShim:          exchangeShim,
@@ -287,6 +293,29 @@ func (t *Trader) load() {
 
 	log.Printf(" (base) assetA=%s, maxA=%.8f, trustA=%s\n", utils.Asset2String(t.assetBase), t.maxAssetA, trustAString)
 	log.Printf("(quote) assetB=%s, maxB=%.8f, trustB=%s\n", utils.Asset2String(t.assetQuote), t.maxAssetB, trustBString)
+
+	if t.valueBaseFeed != nil && t.valueQuoteFeed != nil {
+		baseUsdPrice, e := t.valueBaseFeed.GetPrice()
+		if e != nil {
+			log.Println(e)
+			return
+		}
+		quoteUsdPrice, e := t.valueQuoteFeed.GetPrice()
+		if e != nil {
+			log.Println(e)
+			return
+		}
+
+		totalUSDValue := (t.maxAssetA * baseUsdPrice) + (t.maxAssetB * quoteUsdPrice)
+		log.Printf("value of total assets in terms of USD=%.12f, base=%.12f, quote=%.12f, baseUSDPrice=%.12f, quoteUSDPrice=%.12f, baseQuotePrice=%.12f\n",
+			totalUSDValue,
+			totalUSDValue/baseUsdPrice,
+			totalUSDValue/quoteUsdPrice,
+			baseUsdPrice,
+			quoteUsdPrice,
+			baseUsdPrice/quoteUsdPrice,
+		)
+	}
 }
 
 func (t *Trader) loadExistingOffers() error {

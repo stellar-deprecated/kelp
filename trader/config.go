@@ -36,6 +36,8 @@ type BotConfig struct {
 	FillTrackerLastTradeCursorOverride string     `valid:"-" toml:"FILL_TRACKER_LAST_TRADE_CURSOR_OVERRIDE"`
 	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL" json:"horizon_url"`
 	CcxtRestURL                        *string    `valid:"-" toml:"CCXT_REST_URL" json:"ccxt_rest_url"`
+	DollarValueFeedBaseAsset           string     `valid:"-" toml:"DOLLAR_VALUE_FEED_BASE_ASSET" json:"dollar_value_feed_base_asset"`
+	DollarValueFeedQuoteAsset          string     `valid:"-" toml:"DOLLAR_VALUE_FEED_QUOTE_ASSET" json:"dollar_value_feed_quote_asset"`
 	Fee                                *FeeConfig `valid:"-" toml:"FEE" json:"fee"`
 	CentralizedPricePrecisionOverride  *int8      `valid:"-" toml:"CENTRALIZED_PRICE_PRECISION_OVERRIDE" json:"centralized_price_precision_override"`
 	CentralizedVolumePrecisionOverride *int8      `valid:"-" toml:"CENTRALIZED_VOLUME_PRECISION_OVERRIDE" json:"centralized_volume_precision_override"`
@@ -82,6 +84,8 @@ func MakeBotConfig(
 	fillTrackerDeleteCyclesThreshold int64,
 	horizonURL string,
 	ccxtRestURL *string,
+	dollarValueFeedBaseAsset string,
+	dollarValueFeedQuoteAsset string,
 	fee *FeeConfig,
 	centralizedPricePrecisionOverride *int8,
 	centralizedVolumePrecisionOverride *int8,
@@ -103,6 +107,8 @@ func MakeBotConfig(
 		FillTrackerDeleteCyclesThreshold:   fillTrackerDeleteCyclesThreshold,
 		HorizonURL:                         horizonURL,
 		CcxtRestURL:                        ccxtRestURL,
+		DollarValueFeedBaseAsset:           dollarValueFeedBaseAsset,
+		DollarValueFeedQuoteAsset:          dollarValueFeedQuoteAsset,
 		Fee:                                fee,
 		CentralizedPricePrecisionOverride:  centralizedPricePrecisionOverride,
 		CentralizedVolumePrecisionOverride: centralizedVolumePrecisionOverride,

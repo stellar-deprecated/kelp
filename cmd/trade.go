@@ -380,6 +380,26 @@ func makeBot(
 		l.Infof("Unable to set up monitoring for alert type '%s' with the given API key\n", botConfig.AlertType)
 	}
 
+	var valueBaseFeed api.PriceFeed
+	var valueQuoteFeed api.PriceFeed
+	if botConfig.DollarValueFeedBaseAsset != "" && botConfig.DollarValueFeedQuoteAsset != "" {
+		valueBaseFeed, e = parseValueFeed(botConfig.DollarValueFeedBaseAsset)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+
+		valueQuoteFeed, e = parseValueFeed(botConfig.DollarValueFeedQuoteAsset)
+		if e != nil {
+			log.Println()
+			log.Println(e)
+			// we want to delete all the offers and exit here since there is something wrong with our setup
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+	}
+
 	// start make filters
 	submitFilters := []plugins.SubmitFilter{}
 	if submitMode == api.SubmitModeMakerOnly {
@@ -423,6 +443,8 @@ func makeBot(
 		ieif,
 		assetBase,
 		assetQuote,
+		valueBaseFeed,
+		valueQuoteFeed,
 		botConfig.TradingAccount(),
 		sdex,
 		exchangeShim,
@@ -799,4 +821,18 @@ func makeLogFilename(logPrefix string, botConfig trader.BotConfig) string {
 		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
 	}
 	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
+}
+
+func parseValueFeed(valueFeed string) (api.PriceFeed, error) {
+	parts := strings.Split(valueFeed, ":")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("could not parse value feed '%s'", valueFeed)
+	}
+
+	pf, e := plugins.MakePriceFeed(parts[0], parts[1])
+	if e != nil {
+		return nil, fmt.Errorf("could not make value price feed '%s': %s", valueFeed, e)
+	}
+
+	return pf, nil
 }
