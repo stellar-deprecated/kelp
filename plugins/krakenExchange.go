@@ -107,8 +107,11 @@ func (k *krakenExchange) AddOrder(order *model.Order, submitMode api.SubmitMode)
 	args := map[string]string{
 		"price": order.Price.AsString(),
 	}
-	log.Printf("kraken is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
-		pairStr, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString())
+	if submitMode == api.SubmitModeMakerOnly {
+		args["oflags"] = "post" // csv list as a string for multiple flags
+	}
+	log.Printf("kraken is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s, submitMode=%s\n",
+		pairStr, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString(), submitMode.String())
 	resp, e := k.nextAPI().AddOrder(
 		pairStr,
 		order.OrderAction.String(),
