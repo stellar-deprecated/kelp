@@ -146,12 +146,15 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	}
 
 	// load desiredLevels only once here
-	var e error
-	s.desiredLevels, e = s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
+	newLevels, e := s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
 	if e != nil {
 		log.Printf("levels couldn't be loaded: %s\n", e)
 		return e
 	}
+	log.Printf("levels returned (side = %s): %v\n", s.action, newLevels)
+
+	// set desiredLevels only once here
+	s.desiredLevels = newLevels
 	return nil
 }
 

@@ -222,8 +222,6 @@ func (p *pendulumLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 
 		baseExposed += expectedBaseUsage
 	}
-
-	log.Printf("levels created (sideIsBuy=%v): %v\n", p.useMaxQuoteInTargetAmountCalc, levels)
 	printPrice2LastPriceMap()
 
 	return levels, nil
