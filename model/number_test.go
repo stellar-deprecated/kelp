@@ -241,7 +241,7 @@ func TestUnaryOperations(t *testing.T) {
 			n:          NumberFromFloat(0.2812, 3),
 			wantAbs:    0.281,
 			wantNegate: -0.281,
-			wantInvert: 3.559,
+			wantInvert: 3.558718861209964,
 		},
 	}
 
@@ -259,6 +259,9 @@ func TestUnaryOperations(t *testing.T) {
 
 			inverted := InvertNumber(kase.n)
 			if !assert.Equal(t, kase.wantInvert, inverted.AsFloat()) {
+				return
+			}
+			if !assert.Equal(t, int8(15), inverted.precision) {
 				return
 			}
 		})
