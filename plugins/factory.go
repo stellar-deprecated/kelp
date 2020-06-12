@@ -217,7 +217,6 @@ func getExchanges() map[string]ExchangeContainer {
 func loadExchanges() {
 	// marked as tested if key exists in this map (regardless of bool value)
 	testedCcxtExchanges := map[string]bool{
-		"kraken":      true,
 		"binance":     true,
 		"poloniex":    true,
 		"coinbasepro": true,
@@ -234,7 +233,7 @@ func loadExchanges() {
 			SortOrder:    0,
 			Description:  "Kraken is a popular centralized cryptocurrency exchange",
 			TradeEnabled: true,
-			Tested:       true,
+			Tested:       false,
 			makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 				return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
 			},
