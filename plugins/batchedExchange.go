@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"reflect"
 	"strconv"
 	"time"
-
-	"math/rand"
 
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -175,12 +174,12 @@ func (b BatchedExchange) GetLatestTradeCursor() (interface{}, error) {
 }
 
 // SubmitOpsSynch is the forced synchronous version of SubmitOps below (same for batchedExchange)
-func (b BatchedExchange) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
-	return b.SubmitOps(ops, asyncCallback)
+func (b BatchedExchange) SubmitOpsSynch(ops []build.TransactionMutator, submitMode api.SubmitMode, asyncCallback func(hash string, e error)) error {
+	return b.SubmitOps(ops, submitMode, asyncCallback)
 }
 
 // SubmitOps performs any finalization or submission step needed by the exchange
-func (b BatchedExchange) SubmitOps(opsOld []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+func (b BatchedExchange) SubmitOps(opsOld []build.TransactionMutator, submitMode api.SubmitMode, asyncCallback func(hash string, e error)) error {
 	ops := api.ConvertTM2Operation(opsOld)
 
 	var e error
@@ -203,7 +202,7 @@ func (b BatchedExchange) SubmitOps(opsOld []build.TransactionMutator, asyncCallb
 	results := []submitResult{}
 	numProcessed := 0
 	for _, c := range b.commands {
-		r := c.exec(b.inner)
+		r := c.exec(b.inner, submitMode)
 		if r == nil {
 			// remove all processed commands
 			// b.commands = b.commands[numProcessed:]
@@ -247,10 +246,10 @@ func (b BatchedExchange) logResults(results []submitResult) {
 	}
 }
 
-func (c Command) exec(x api.Exchange) *submitResult {
+func (c Command) exec(x api.Exchange, submitMode api.SubmitMode) *submitResult {
 	switch c.op {
 	case OpAdd:
-		v, e := x.AddOrder(c.add)
+		v, e := x.AddOrder(c.add, submitMode)
 		return &submitResult{
 			op:  c.op,
 			e:   e,

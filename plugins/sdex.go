@@ -12,6 +12,7 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
+
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -98,12 +99,12 @@ func MakeSDEX(
 		threadTracker:                 threadTracker,
 		operationalBuffer:             operationalBuffer,
 		operationalBufferNonNativePct: operationalBufferNonNativePct,
-		simMode:            simMode,
-		pair:               pair,
-		assetMap:           assetMap,
-		opFeeStroopsFn:     opFeeStroopsFn,
-		tradingOnSdex:      exchangeShim == nil,
-		ocOverridesHandler: MakeEmptyOrderConstraintsOverridesHandler(),
+		simMode:                       simMode,
+		pair:                          pair,
+		assetMap:                      assetMap,
+		opFeeStroopsFn:                opFeeStroopsFn,
+		tradingOnSdex:                 exchangeShim == nil,
+		ocOverridesHandler:            MakeEmptyOrderConstraintsOverridesHandler(),
 	}
 
 	if exchangeShim == nil {
@@ -353,12 +354,14 @@ func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtoco
 }
 
 // SubmitOpsSynch is the forced synchronous version of SubmitOps below
-func (sdex *SDEX) SubmitOpsSynch(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+func (sdex *SDEX) SubmitOpsSynch(ops []build.TransactionMutator, submitMode api.SubmitMode, asyncCallback func(hash string, e error)) error {
+	// sdex does not have a post-only type of flag for their trading API so do not propagate submitMode
 	return sdex.submitOps(ops, asyncCallback, false)
 }
 
 // SubmitOps submits the passed in operations to the network asynchronously in a single transaction
-func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, asyncCallback func(hash string, e error)) error {
+func (sdex *SDEX) SubmitOps(ops []build.TransactionMutator, submitMode api.SubmitMode, asyncCallback func(hash string, e error)) error {
+	// sdex does not have a post-only type of flag for their trading API so do not propagate submitMode
 	return sdex.submitOps(ops, asyncCallback, true)
 }
 

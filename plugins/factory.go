@@ -35,6 +35,10 @@ type StrategyContainer struct {
 	makeFn      func(strategyFactoryData strategyFactoryData) (api.Strategy, error)
 }
 
+var ccxtExchangeSpecificParamFactoryMap = map[string]ccxtExchangeSpecificParamFactory{
+	"ccxt-coinbasepro": &ccxtExchangeSpecificParamFactoryCoinbasepro{},
+}
+
 // strategies is a map of all the strategies available
 var strategies = map[string]StrategyContainer{
 	"buysell": {
@@ -191,11 +195,12 @@ type exchangeFactoryData struct {
 
 // ExchangeContainer contains the exchange factory method along with some metadata
 type ExchangeContainer struct {
-	SortOrder    uint16
-	Description  string
-	TradeEnabled bool
-	Tested       bool
-	makeFn       func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error)
+	SortOrder      uint16
+	Description    string
+	TradeEnabled   bool
+	Tested         bool
+	AtomicPostOnly bool
+	makeFn         func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error)
 }
 
 // exchanges is a map of all the exchange integrations available
@@ -212,9 +217,14 @@ func getExchanges() map[string]ExchangeContainer {
 func loadExchanges() {
 	// marked as tested if key exists in this map (regardless of bool value)
 	testedCcxtExchanges := map[string]bool{
-		"kraken":      true,
 		"binance":     true,
 		"poloniex":    true,
+		"coinbasepro": true,
+	}
+
+	// marked as atomicPostOnly if key exists in this map (regardless of bool value)
+	atomicPostOnlyCcxtExchanges := map[string]bool{
+		"kraken":      true,
 		"coinbasepro": true,
 	}
 
@@ -223,7 +233,7 @@ func loadExchanges() {
 			SortOrder:    0,
 			Description:  "Kraken is a popular centralized cryptocurrency exchange",
 			TradeEnabled: true,
-			Tested:       true,
+			Tested:       false,
 			makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 				return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
 			},
@@ -241,11 +251,15 @@ func loadExchanges() {
 			}
 			boundExchangeName := exchangeName
 
+			_, atomicPostOnly := atomicPostOnlyCcxtExchanges[exchangeName]
+			// maybeEsParamFactory can be nil
+			maybeEsParamFactory := ccxtExchangeSpecificParamFactoryMap[key]
 			(*exchanges)[key] = ExchangeContainer{
-				SortOrder:    uint16(sortOrderIndex),
-				Description:  exchangeName + " is automatically added via ccxt-rest",
-				TradeEnabled: true,
-				Tested:       tested,
+				SortOrder:      uint16(sortOrderIndex),
+				Description:    exchangeName + " is automatically added via ccxt-rest",
+				TradeEnabled:   true,
+				Tested:         tested,
+				AtomicPostOnly: atomicPostOnly,
 				makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 					return makeCcxtExchange(
 						boundExchangeName,
@@ -254,6 +268,7 @@ func loadExchanges() {
 						exchangeFactoryData.exchangeParams,
 						exchangeFactoryData.headers,
 						exchangeFactoryData.simMode,
+						maybeEsParamFactory,
 					)
 				},
 			}

@@ -18,6 +18,11 @@ const ccxtBalancePrecision = 10
 // ensure that ccxtExchange conforms to the Exchange interface
 var _ api.Exchange = ccxtExchange{}
 
+// ccxtExchangeSpecificParamFactory knows how to create the exchange-specific params for each exchange
+type ccxtExchangeSpecificParamFactory interface {
+	getParamsForAddOrder(submitMode api.SubmitMode) interface{}
+}
+
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
 type ccxtExchange struct {
 	assetConverter     model.AssetConverterInterface
@@ -25,6 +30,7 @@ type ccxtExchange struct {
 	ocOverridesHandler *OrderConstraintsOverridesHandler
 	api                *sdk.Ccxt
 	simMode            bool
+	esParamFactory     ccxtExchangeSpecificParamFactory
 }
 
 // makeCcxtExchange is a factory method to make an exchange using the CCXT interface
@@ -35,6 +41,7 @@ func makeCcxtExchange(
 	exchangeParams []api.ExchangeParam,
 	headers []api.ExchangeHeader,
 	simMode bool,
+	esParamFactory ccxtExchangeSpecificParamFactory,
 ) (api.Exchange, error) {
 	if len(apiKeys) == 0 {
 		return nil, fmt.Errorf("need at least 1 ExchangeAPIKey, even if it is an empty key")
@@ -60,6 +67,7 @@ func makeCcxtExchange(
 		ocOverridesHandler: ocOverridesHandler,
 		api:                c,
 		simMode:            simMode,
+		esParamFactory:     esParamFactory,
 	}, nil
 }
 
@@ -395,7 +403,7 @@ func (c ccxtExchange) convertOpenOrderFromCcxt(pair *model.TradingPair, o sdk.Cc
 }
 
 // AddOrder impl
-func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error) {
+func (c ccxtExchange) AddOrder(order *model.Order, submitMode api.SubmitMode) (*model.TransactionID, error) {
 	pairString, e := order.Pair.ToString(c.assetConverter, c.delimiter)
 	if e != nil {
 		return nil, fmt.Errorf("error converting pair to string: %s", e)
@@ -406,9 +414,14 @@ func (c ccxtExchange) AddOrder(order *model.Order) (*model.TransactionID, error)
 		side = "buy"
 	}
 
-	log.Printf("ccxt is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s\n",
-		pairString, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString())
-	ccxtOpenOrder, e := c.api.CreateLimitOrder(pairString, side, order.Volume.AsFloat(), order.Price.AsFloat())
+	log.Printf("ccxt is submitting order: pair=%s, orderAction=%s, orderType=%s, volume=%s, price=%s, submitMode=%s\n",
+		pairString, order.OrderAction.String(), order.OrderType.String(), order.Volume.AsString(), order.Price.AsString(), submitMode.String())
+
+	var maybeExchangeSpecificParams interface{}
+	if c.esParamFactory != nil {
+		maybeExchangeSpecificParams = c.esParamFactory.getParamsForAddOrder(submitMode)
+	}
+	ccxtOpenOrder, e := c.api.CreateLimitOrder(pairString, side, order.Volume.AsFloat(), order.Price.AsFloat(), maybeExchangeSpecificParams)
 	if e != nil {
 		return nil, fmt.Errorf("error while creating limit order %s: %s", *order, e)
 	}

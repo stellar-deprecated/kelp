@@ -13,6 +13,7 @@ import (
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
+
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/support/config"
@@ -451,6 +452,7 @@ func makeBot(
 		strategy,
 		timeController,
 		botConfig.DeleteCyclesThreshold,
+		submitMode,
 		submitFilters,
 		threadTracker,
 		options.fixedIterations,
@@ -779,7 +781,8 @@ func deleteAllOffersAndExit(
 	l.Infof("created %d operations to delete offers\n", len(dOps))
 
 	if len(dOps) > 0 {
-		e := exchangeShim.SubmitOpsSynch(api.ConvertOperation2TM(dOps), func(hash string, e error) {
+		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
+		e := exchangeShim.SubmitOpsSynch(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
 			if e != nil {
 				logger.Fatal(l, e)
 				return
