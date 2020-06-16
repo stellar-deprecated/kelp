@@ -97,10 +97,24 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	}
 	log.Printf("daily limit being used: %.8f base units\n", dailyLimit)
 
+	dayStartTime := floorDate(now)
+	dayEndTime := ceilDate(now)
+	secondsToday := dayEndTime.Unix() - dayStartTime.Unix()
+	bucketIdx := (secondsToday / int64(p.parentBucketSizeSeconds))
+	log.Printf("calculated index of bucket: %d\n", bucketIdx)
+
 	return []api.Level{}, nil
 }
 
 // GetFillHandlers impl
 func (p *sellTwapLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
 	return nil, nil
+}
+
+func floorDate(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+func ceilDate(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, t.Location())
 }
