@@ -14,7 +14,7 @@ type sellTwapLevelProvider struct {
 	startPf                                               api.PriceFeed
 	offset                                                rateOffset
 	orderConstraints                                      *model.OrderConstraints
-	dowFilter                                             map[string]SubmitFilter
+	dowFilter                                             [7]SubmitFilter
 	numHoursToSell                                        int
 	parentBucketSizeSeconds                               int
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64
@@ -30,7 +30,7 @@ func makeSellTwapLevelProvider(
 	startPf api.PriceFeed,
 	offset rateOffset,
 	orderConstraints *model.OrderConstraints,
-	dowFilter map[string]SubmitFilter,
+	dowFilter [7]SubmitFilter,
 	numHoursToSell int,
 	parentBucketSizeSeconds int,
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64,

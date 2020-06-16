@@ -105,44 +105,45 @@ func makeSellTwapStrategy(
 	), nil
 }
 
-func makeDowFilter(filterFactory *FilterFactory, dowDailyCap DayOfWeekFilterConfig) (map[string]SubmitFilter, error) {
-	m := map[string]SubmitFilter{}
+func makeDowFilter(filterFactory *FilterFactory, dowDailyCap DayOfWeekFilterConfig) ([7]SubmitFilter, error) {
+	var dowFilter [7]SubmitFilter
 	var e error
 
-	m["Monday"], e = filterFactory.MakeFilter(dowDailyCap.Mo)
+	// time.Weekday begins with Sunday so we set the first value in the array to be Sunday
+	dowFilter[0], e = filterFactory.MakeFilter(dowDailyCap.Su)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Monday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Sunday: %s", e)
 	}
 
-	m["Tuesday"], e = filterFactory.MakeFilter(dowDailyCap.Tu)
+	dowFilter[1], e = filterFactory.MakeFilter(dowDailyCap.Mo)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Tuesday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Monday: %s", e)
 	}
 
-	m["Wednesday"], e = filterFactory.MakeFilter(dowDailyCap.We)
+	dowFilter[2], e = filterFactory.MakeFilter(dowDailyCap.Tu)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Wednesday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Tuesday: %s", e)
 	}
 
-	m["Thursday"], e = filterFactory.MakeFilter(dowDailyCap.Th)
+	dowFilter[3], e = filterFactory.MakeFilter(dowDailyCap.We)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Thursday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Wednesday: %s", e)
 	}
 
-	m["Friday"], e = filterFactory.MakeFilter(dowDailyCap.Fr)
+	dowFilter[4], e = filterFactory.MakeFilter(dowDailyCap.Th)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Friday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Thursday: %s", e)
 	}
 
-	m["Saturday"], e = filterFactory.MakeFilter(dowDailyCap.Sa)
+	dowFilter[5], e = filterFactory.MakeFilter(dowDailyCap.Fr)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Saturday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Friday: %s", e)
 	}
 
-	m["Sunday"], e = filterFactory.MakeFilter(dowDailyCap.Su)
+	dowFilter[6], e = filterFactory.MakeFilter(dowDailyCap.Sa)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make filter for entry Sunday: %s", e)
+		return dowFilter, fmt.Errorf("unable to make filter for entry Saturday: %s", e)
 	}
 
-	return m, nil
+	return dowFilter, nil
 }
