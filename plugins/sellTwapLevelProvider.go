@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/stellar/kelp/api"
@@ -82,28 +83,66 @@ func makeSellTwapLevelProvider(
 	}, nil
 }
 
+type bucketInfo struct {
+	ID             int64
+	totalBuckets   int64
+	now            time.Time
+	secondsElapsed int64
+	volFilter      volumeFilter
+	dailyLimit     float64
+}
+
+// String is the Stringer method
+func (b *bucketInfo) String() string {
+	return fmt.Sprintf(
+		"BucketInfo[ID=%d, totalBuckets=%d, now=%s (day=%s, secondsElapsed=%d), volFilter=%s, dailyLimit=%.8f]",
+		b.ID,
+		b.totalBuckets,
+		b.now.Format(time.RFC3339),
+		b.now.Weekday().String(),
+		b.secondsElapsed,
+		b.volFilter.String(),
+		b.dailyLimit,
+	)
+}
+
 // GetLevels impl.
 func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	now := time.Now().UTC()
 	log.Printf("GetLevels, unix timestamp for 'now' in UTC = %d (%s)\n", now.Unix(), now)
+	bucket, e := p.makeBucketInfo(now)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make bucketInfo: %s", e)
+	}
+	log.Printf("bucketInfo for this update round: %s\n", bucket)
 
-	weekday := now.Weekday()
-	volumeFilter := p.dowFilter[weekday]
-	log.Printf("selecting filter for day '%s': %s\n", weekday.String(), volumeFilter.configValue)
+	return []api.Level{}, nil
+}
+
+func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time) (*bucketInfo, error) {
+	volumeFilter := p.dowFilter[now.Weekday()]
 
 	dailyLimit, e := volumeFilter.mustGetBaseAssetCapInBaseUnits()
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
 	}
-	log.Printf("daily limit being used: %.8f base units\n", dailyLimit)
 
 	dayStartTime := floorDate(now)
 	dayEndTime := ceilDate(now)
 	secondsToday := dayEndTime.Unix() - dayStartTime.Unix()
-	bucketIdx := (secondsToday / int64(p.parentBucketSizeSeconds))
-	log.Printf("calculated index of bucket: %d\n", bucketIdx)
+	totalBuckets := int64(math.Ceil(float64(secondsToday) / float64(p.parentBucketSizeSeconds)))
 
-	return []api.Level{}, nil
+	secondsElapsed := now.Unix() - dayStartTime.Unix()
+	bucketIdx := secondsElapsed / int64(p.parentBucketSizeSeconds)
+
+	return &bucketInfo{
+		ID:             bucketIdx,
+		totalBuckets:   totalBuckets,
+		now:            now,
+		secondsElapsed: secondsElapsed,
+		volFilter:      volumeFilter,
+		dailyLimit:     dailyLimit,
+	}, nil
 }
 
 // GetFillHandlers impl
