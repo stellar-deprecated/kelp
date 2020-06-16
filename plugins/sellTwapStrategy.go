@@ -105,45 +105,55 @@ func makeSellTwapStrategy(
 	), nil
 }
 
-func makeDowFilter(filterFactory *FilterFactory, dowDailyCap DayOfWeekFilterConfig) ([7]SubmitFilter, error) {
+func makeDowFilter(filterFactory *FilterFactory, dowDailyCap DayOfWeekFilterConfig) ([7]volumeFilter, error) {
+	var dowVolumeFilters [7]volumeFilter
 	var dowFilter [7]SubmitFilter
 	var e error
 
 	// time.Weekday begins with Sunday so we set the first value in the array to be Sunday
 	dowFilter[0], e = filterFactory.MakeFilter(dowDailyCap.Su)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Sunday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Sunday: %s", e)
 	}
 
 	dowFilter[1], e = filterFactory.MakeFilter(dowDailyCap.Mo)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Monday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Monday: %s", e)
 	}
 
 	dowFilter[2], e = filterFactory.MakeFilter(dowDailyCap.Tu)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Tuesday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Tuesday: %s", e)
 	}
 
 	dowFilter[3], e = filterFactory.MakeFilter(dowDailyCap.We)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Wednesday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Wednesday: %s", e)
 	}
 
 	dowFilter[4], e = filterFactory.MakeFilter(dowDailyCap.Th)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Thursday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Thursday: %s", e)
 	}
 
 	dowFilter[5], e = filterFactory.MakeFilter(dowDailyCap.Fr)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Friday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Friday: %s", e)
 	}
 
 	dowFilter[6], e = filterFactory.MakeFilter(dowDailyCap.Sa)
 	if e != nil {
-		return dowFilter, fmt.Errorf("unable to make filter for entry Saturday: %s", e)
+		return dowVolumeFilters, fmt.Errorf("unable to make filter for entry Saturday: %s", e)
 	}
 
-	return dowFilter, nil
+	// enforce the filters to be of type volumeFilter
+	for i, f := range dowFilter {
+		vf, ok := f.(*volumeFilter)
+		if !ok {
+			return dowVolumeFilters, fmt.Errorf("could not cast %d-th filter to a volumeFilter", i)
+		}
+		dowVolumeFilters[i] = *vf
+	}
+
+	return dowVolumeFilters, nil
 }

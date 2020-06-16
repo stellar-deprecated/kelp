@@ -2,6 +2,8 @@ package plugins
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
@@ -14,7 +16,7 @@ type sellTwapLevelProvider struct {
 	startPf                                               api.PriceFeed
 	offset                                                rateOffset
 	orderConstraints                                      *model.OrderConstraints
-	dowFilter                                             [7]SubmitFilter
+	dowFilter                                             [7]volumeFilter
 	numHoursToSell                                        int
 	parentBucketSizeSeconds                               int
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64
@@ -30,7 +32,7 @@ func makeSellTwapLevelProvider(
 	startPf api.PriceFeed,
 	offset rateOffset,
 	orderConstraints *model.OrderConstraints,
-	dowFilter [7]SubmitFilter,
+	dowFilter [7]volumeFilter,
 	numHoursToSell int,
 	parentBucketSizeSeconds int,
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64,
@@ -61,6 +63,12 @@ func makeSellTwapLevelProvider(
 		return nil, fmt.Errorf("minChildOrderSizePercentOfParent is invalid, expected 0.0 <= minChildOrderSizePercentOfParent <= 1.0; was %.f", exponentialSmoothingFactor)
 	}
 
+	for i, f := range dowFilter {
+		if !f.isSellingBase() {
+			return nil, fmt.Errorf("volume filter at index %d was not selling the base asset as expected: %s", i, f.configValue)
+		}
+	}
+
 	return &sellTwapLevelProvider{
 		startPf:                 startPf,
 		offset:                  offset,
@@ -76,8 +84,19 @@ func makeSellTwapLevelProvider(
 
 // GetLevels impl.
 func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
-	// TODO
-	// start here
+	now := time.Now().UTC()
+	log.Printf("GetLevels, unix timestamp for 'now' in UTC = %d (%s)\n", now.Unix(), now)
+
+	weekday := now.Weekday()
+	volumeFilter := p.dowFilter[weekday]
+	log.Printf("selecting filter for day '%s': %s\n", weekday.String(), volumeFilter.configValue)
+
+	dailyLimit, e := volumeFilter.mustGetBaseAssetCapInBaseUnits()
+	if e != nil {
+		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
+	}
+	log.Printf("daily limit being used: %.8f base units\n", dailyLimit)
+
 	return []api.Level{}, nil
 }
 
