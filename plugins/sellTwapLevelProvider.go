@@ -12,7 +12,8 @@ import (
 	"github.com/stellar/kelp/support/postgresdb"
 )
 
-const secondsInDay = 24 * 60 * 60
+const secondsInHour = 60 * 60
+const secondsInDay = 24 * secondsInHour
 const timeFormat = time.RFC3339
 
 // sellTwapLevelProvider provides a fixed number of levels using a static percentage spread
@@ -97,28 +98,30 @@ func makeSellTwapLevelProvider(
 type bucketID int64
 
 type bucketInfo struct {
-	ID               bucketID
-	startTime        time.Time
-	endTime          time.Time
-	totalBuckets     int64
-	dayBaseSoldStart float64
-	dayBaseCapacity  float64
-	dayBaseSold      float64
-	dayBaseRemaining float64
-	baseSurplus      float64
-	baseCapacity     float64
-	minOrderSizeBase float64
-	baseSold         float64
-	baseRemaining    float64
+	ID                   bucketID
+	startTime            time.Time
+	endTime              time.Time
+	totalBuckets         int64
+	totalBucketsTargeted int64
+	dayBaseSoldStart     float64
+	dayBaseCapacity      float64
+	dayBaseSold          float64
+	dayBaseRemaining     float64
+	baseSurplus          float64
+	baseCapacity         float64
+	minOrderSizeBase     float64
+	baseSold             float64
+	baseRemaining        float64
 }
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSurplus=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, baseSold=%.8f, baseRemaining=%.8f]",
+	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSurplus=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, baseSold=%.8f, baseRemaining=%.8f]",
 		b.ID,
 		b.startTime.Format(timeFormat),
 		b.endTime.Format(timeFormat),
 		b.totalBuckets,
+		b.totalBucketsTargeted,
 		b.dayBaseSoldStart,
 		b.dayBaseCapacity,
 		b.dayBaseSold,
@@ -185,6 +188,7 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	startTime := floorDate(now)
 	endTime := ceilDate(now)
 	totalBuckets := int64(math.Ceil(float64(endTime.Unix()-startTime.Unix()) / float64(p.parentBucketSizeSeconds)))
+	totalBucketsTargeted := int64(math.Ceil(float64(p.numHoursToSell*secondsInHour) / float64(p.parentBucketSizeSeconds)))
 
 	secondsElapsedToday := now.Unix() - startTime.Unix()
 	bID := bucketID(secondsElapsedToday / int64(p.parentBucketSizeSeconds))
@@ -200,10 +204,11 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	}
 	dayBaseSold := dailyVolumeValues.baseVol
 
-	remainingBuckets := totalBuckets - int64(bID)
+	totalRemainingBuckets := totalBuckets - int64(bID)
 	dayBaseSoldStart := p.calculateDayBaseSoldStart(bID, dayBaseSold)
-	baseSurplus := p.calculateBaseSurplus(bID, remainingBuckets)
-	baseCapacity := p.calculateBaseCapacity(bID, dayBaseCapacity, totalBuckets, baseSurplus)
+	// distrbute baseSurplus over all buckets but calculate capacity based on targeted buckets
+	baseSurplus := p.calculateBaseSurplus(bID, totalRemainingBuckets)
+	baseCapacity := p.calculateBaseCapacity(bID, dayBaseCapacity, totalBucketsTargeted, baseSurplus)
 	baseSold := dayBaseSold - dayBaseSoldStart
 	minOrderSizeBase := p.minChildOrderSizePercentOfParent * baseCapacity
 
@@ -212,6 +217,7 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 		startTime:        startTime,
 		endTime:          endTime,
 		totalBuckets:     totalBuckets,
+		totalBucketsTargeted: totalBucketsTargeted,
 		dayBaseSoldStart: dayBaseSoldStart,
 		dayBaseCapacity:  dayBaseCapacity,
 		dayBaseSold:      dayBaseSold,
@@ -237,7 +243,7 @@ func (p *sellTwapLevelProvider) calculateDayBaseSoldStart(bID bucketID, dayBaseS
 	return p.activeBucket.dayBaseSold
 }
 
-func (p *sellTwapLevelProvider) calculateBaseSurplus(bID bucketID, remainingBuckets int64) float64 {
+func (p *sellTwapLevelProvider) calculateBaseSurplus(bID bucketID, totalRemainingBuckets int64) float64 {
 	if p.activeBucket == nil {
 		return 0.0
 	}
@@ -247,7 +253,7 @@ func (p *sellTwapLevelProvider) calculateBaseSurplus(bID bucketID, remainingBuck
 	}
 
 	// the base value remaining from the previous bucket gets distributed over the remaining buckets
-	return p.firstDistributionOfBaseSurplus(bID, p.activeBucket.baseRemaining, remainingBuckets)
+	return p.firstDistributionOfBaseSurplus(bID, p.activeBucket.baseRemaining, totalRemainingBuckets)
 }
 
 /*
@@ -259,10 +265,10 @@ a = 8,000 * (-0.5) / (0.0625 - 1)
 a = 8,000 * (0.5/0.9375)
 a = 4,266.67
 */
-func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(bID bucketID, totalSurplus float64, remainingBuckets int64) float64 {
+func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(bID bucketID, totalSurplus float64, totalRemainingBuckets int64) float64 {
 	Sn := totalSurplus
 	r := p.exponentialSmoothingFactor
-	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(remainingBuckets))
+	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(totalRemainingBuckets))
 
 	a := Sn * (r - 1.0) / (math.Pow(r, n) - 1.0)
 	return a
@@ -271,10 +277,10 @@ func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(bID bucketID, tot
 func (p *sellTwapLevelProvider) calculateBaseCapacity(
 	bID bucketID,
 	dayBaseCapacity float64,
-	totalBuckets int64,
+	totalBucketsTargeted int64,
 	baseSurplus float64,
 ) float64 {
-	averageBaseCapacity := dayBaseCapacity / float64(totalBuckets)
+	averageBaseCapacity := dayBaseCapacity / float64(totalBucketsTargeted)
 	if p.activeBucket == nil {
 		return averageBaseCapacity
 	}
