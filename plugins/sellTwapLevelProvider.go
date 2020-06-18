@@ -180,6 +180,10 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	}
 	log.Printf("roundInfo: %s\n", round)
 
+	// save bucket and round for future rounds
+	p.activeBucket = bucket
+	p.previousRound = round
+
 	// TODO check bucket is not exhausted and return levels accordingly
 	return []api.Level{}, nil
 }
