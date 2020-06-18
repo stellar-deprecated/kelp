@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/postgresdb"
 )
 
 const secondsInDay = 24 * 60 * 60
+const timeFormat = time.RFC3339
 
 // sellTwapLevelProvider provides a fixed number of levels using a static percentage spread
 type sellTwapLevelProvider struct {
@@ -23,6 +26,10 @@ type sellTwapLevelProvider struct {
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64
 	exponentialSmoothingFactor                            float64
 	minChildOrderSizePercentOfParent                      float64
+
+	// uninitialized
+	activeBucket  *bucketInfo
+	previousRound *roundInfo
 }
 
 // ensure it implements the LevelProvider interface
@@ -83,26 +90,65 @@ func makeSellTwapLevelProvider(
 	}, nil
 }
 
+type bucketID int64
+
 type bucketInfo struct {
-	ID             int64
-	totalBuckets   int64
-	now            time.Time
-	secondsElapsed int64
-	volFilter      volumeFilter
-	dailyLimit     float64
+	ID               bucketID
+	startTime        time.Time
+	endTime          time.Time
+	totalBuckets     int64
+	dayBaseSoldStart float64
+	dayBaseCapacity  float64
+	dayBaseSold      float64
+	dayBaseRemaining float64
+	baseSurplus      float64
+	baseCapacity     float64
+	minOrderSizeBase float64
+	baseSold         float64
+	baseRemaining    float64
 }
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf(
-		"BucketInfo[ID=%d, totalBuckets=%d, now=%s (day=%s, secondsElapsed=%d), volFilter=%s, dailyLimit=%.8f]",
+	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSurplus=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, baseSold=%.8f, baseRemaining=%.8f]",
 		b.ID,
+		b.startTime.Format(timeFormat),
+		b.endTime.Format(timeFormat),
 		b.totalBuckets,
-		b.now.Format(time.RFC3339),
-		b.now.Weekday().String(),
-		b.secondsElapsed,
-		b.volFilter.String(),
-		b.dailyLimit,
+		b.dayBaseSoldStart,
+		b.dayBaseCapacity,
+		b.dayBaseSold,
+		b.dayBaseRemaining,
+		b.baseSurplus,
+		b.baseCapacity,
+		b.minOrderSizeBase,
+		b.baseSold,
+		b.baseRemaining,
+	)
+}
+
+type roundID uint64
+
+type roundInfo struct {
+	ID                  roundID
+	bucketID            bucketID
+	now                 time.Time
+	secondsElapsedToday int64
+	sizeCapped          float64
+	price               float64
+}
+
+// String is the Stringer method
+func (r *roundInfo) String() string {
+	return fmt.Sprintf(
+		"RoundInfo[roundID=%d, bucketID=%d, now=%s (day=%s, secondsElapsedToday=%d), sizeCapped=%.8f, price=%.8f]",
+		r.ID,
+		r.bucketID,
+		r.now.Format(timeFormat),
+		r.now.Weekday().String(),
+		r.secondsElapsedToday,
+		r.sizeCapped,
+		r.price,
 	)
 }
 
@@ -110,38 +156,165 @@ func (b *bucketInfo) String() string {
 func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote float64) ([]api.Level, error) {
 	now := time.Now().UTC()
 	log.Printf("GetLevels, unix timestamp for 'now' in UTC = %d (%s)\n", now.Unix(), now)
-	bucket, e := p.makeBucketInfo(now)
+
+	volFilter := p.dowFilter[now.Weekday()]
+	log.Printf("volumeFilter = %s\n", volFilter.String())
+
+	bucket, e := p.makeBucketInfo(now, volFilter)
 	if e != nil {
 		return nil, fmt.Errorf("unable to make bucketInfo: %s", e)
 	}
-	log.Printf("bucketInfo for this update round: %s\n", bucket)
+	log.Printf("bucketInfo: %s\n", bucket)
 
+	round, e := p.makeRoundInfo(p.makeRoundID(), now, bucket)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make roundInfo: %s", e)
+	}
+	log.Printf("roundInfo: %s\n", round)
+
+	// TODO check bucket is not exhausted and return levels accordingly
 	return []api.Level{}, nil
 }
 
-func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time) (*bucketInfo, error) {
-	volumeFilter := p.dowFilter[now.Weekday()]
+// TODO simplify by checking if we need to create a new bucket here etc., instead of recalculating all fields
+func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFilter) (*bucketInfo, error) {
+	startTime := floorDate(now)
+	endTime := ceilDate(now)
+	totalBuckets := int64(math.Ceil(float64(endTime.Unix()-startTime.Unix()) / float64(p.parentBucketSizeSeconds)))
 
-	dailyLimit, e := volumeFilter.mustGetBaseAssetCapInBaseUnits()
+	secondsElapsedToday := now.Unix() - startTime.Unix()
+	bID := bucketID(secondsElapsedToday / int64(p.parentBucketSizeSeconds))
+
+	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
 	}
 
-	dayStartTime := floorDate(now)
-	dayEndTime := ceilDate(now)
-	secondsToday := dayEndTime.Unix() - dayStartTime.Unix()
-	totalBuckets := int64(math.Ceil(float64(secondsToday) / float64(p.parentBucketSizeSeconds)))
+	dailyVolumeValues, e := volFilter.dailyValuesByDate(now.Format(postgresdb.DateFormatString))
+	if e != nil {
+		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
+	}
+	dayBaseSold := dailyVolumeValues.baseVol
 
-	secondsElapsed := now.Unix() - dayStartTime.Unix()
-	bucketIdx := secondsElapsed / int64(p.parentBucketSizeSeconds)
+	remainingBuckets := totalBuckets - int64(bID)
+	dayBaseSoldStart := p.calculateDayBaseSoldStart(bID, dayBaseSold)
+	baseSurplus := p.calculateBaseSurplus(bID, remainingBuckets)
+	baseCapacity := p.calculateBaseCapacity(bID, dayBaseCapacity, totalBuckets, baseSurplus)
+	baseSold := dayBaseSold - dayBaseSoldStart
+	minOrderSizeBase := p.minChildOrderSizePercentOfParent * baseCapacity
 
 	return &bucketInfo{
-		ID:             bucketIdx,
-		totalBuckets:   totalBuckets,
-		now:            now,
-		secondsElapsed: secondsElapsed,
-		volFilter:      volumeFilter,
-		dailyLimit:     dailyLimit,
+		ID:               bID,
+		startTime:        startTime,
+		endTime:          endTime,
+		totalBuckets:     totalBuckets,
+		dayBaseSoldStart: dayBaseSoldStart,
+		dayBaseCapacity:  dayBaseCapacity,
+		dayBaseSold:      dayBaseSold,
+		dayBaseRemaining: dayBaseCapacity - dayBaseSold,
+		baseSurplus:      baseSurplus,
+		baseCapacity:     baseCapacity,
+		minOrderSizeBase: minOrderSizeBase,
+		baseSold:         baseSold,
+		baseRemaining:    baseCapacity - baseSold,
+	}, nil
+}
+
+func (p *sellTwapLevelProvider) calculateDayBaseSoldStart(bID bucketID, dayBaseSold float64) float64 {
+	if p.activeBucket == nil {
+		return dayBaseSold
+	}
+
+	if bID == p.activeBucket.ID {
+		return p.activeBucket.dayBaseSoldStart
+	}
+
+	// new buckets use the dayBaseSold value of the previous bucket
+	return p.activeBucket.dayBaseSold
+}
+
+func (p *sellTwapLevelProvider) calculateBaseSurplus(bID bucketID, remainingBuckets int64) float64 {
+	if p.activeBucket == nil {
+		return 0.0
+	}
+
+	if bID == p.activeBucket.ID {
+		return p.activeBucket.baseSurplus
+	}
+
+	// the base value remaining from the previous bucket gets distributed over the remaining buckets
+	return p.firstDistributionOfBaseSurplus(bID, p.activeBucket.baseRemaining, remainingBuckets)
+}
+
+/*
+Using a geometric series calculation:
+Sn = a * (r^n - 1) / (r - 1)
+a = Sn * (r - 1) / (r^n - 1)
+a = 8,000 * (0.5 - 1) / (0.5^4 - 1)
+a = 8,000 * (-0.5) / (0.0625 - 1)
+a = 8,000 * (0.5/0.9375)
+a = 4,266.67
+*/
+func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(bID bucketID, totalSurplus float64, remainingBuckets int64) float64 {
+	Sn := totalSurplus
+	r := p.exponentialSmoothingFactor
+	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(remainingBuckets))
+
+	a := Sn * (r - 1.0) / (math.Pow(r, n) - 1.0)
+	return a
+}
+
+func (p *sellTwapLevelProvider) calculateBaseCapacity(
+	bID bucketID,
+	dayBaseCapacity float64,
+	totalBuckets int64,
+	baseSurplus float64,
+) float64 {
+	averageBaseCapacity := dayBaseCapacity / float64(totalBuckets)
+	if p.activeBucket == nil {
+		return averageBaseCapacity
+	}
+
+	if bID == p.activeBucket.ID {
+		return p.activeBucket.baseCapacity
+	}
+
+	return averageBaseCapacity + baseSurplus
+}
+
+func (p *sellTwapLevelProvider) makeRoundID() roundID {
+	if p.previousRound == nil {
+		return roundID(0)
+	}
+	return p.previousRound.ID + 1
+}
+
+func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket *bucketInfo) (*roundInfo, error) {
+	secondsElapsedToday := now.Unix() - bucket.startTime.Unix()
+
+	var sizeCapped float64
+	if bucket.baseRemaining <= bucket.minOrderSizeBase {
+		sizeCapped = bucket.minOrderSizeBase
+	} else {
+		sizeCapped = bucket.minOrderSizeBase + (rand.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
+	}
+
+	price, e := p.startPf.GetPrice()
+	if e != nil {
+		return nil, fmt.Errorf("could not get price from feed: %s", e)
+	}
+	adjustedPrice, wasModified := p.offset.apply(price)
+	if wasModified {
+		log.Printf("feed price (adjusted): %.8f\n", adjustedPrice)
+	}
+
+	return &roundInfo{
+		ID:                  rID,
+		bucketID:            bucket.ID,
+		now:                 now,
+		secondsElapsedToday: secondsElapsedToday,
+		sizeCapped:          sizeCapped,
+		price:               adjustedPrice,
 	}, nil
 }
 
