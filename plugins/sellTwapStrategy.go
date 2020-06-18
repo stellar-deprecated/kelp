@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/api"
@@ -78,6 +79,7 @@ func makeSellTwapStrategy(
 		config.DistributeSurplusOverRemainingIntervalsPercentCeiling,
 		config.ExponentialSmoothingFactor,
 		config.MinChildOrderSizePercentOfParent,
+		time.Now().UnixNano(),
 	)
 	if e != nil {
 		return nil, fmt.Errorf("error when making a sellTwapLevelProvider: %s", e)

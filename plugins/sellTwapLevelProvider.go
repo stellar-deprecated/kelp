@@ -26,6 +26,7 @@ type sellTwapLevelProvider struct {
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64
 	exponentialSmoothingFactor                            float64
 	minChildOrderSizePercentOfParent                      float64
+	random                                                *rand.Rand
 
 	// uninitialized
 	activeBucket  *bucketInfo
@@ -46,6 +47,7 @@ func makeSellTwapLevelProvider(
 	distributeSurplusOverRemainingIntervalsPercentCeiling float64,
 	exponentialSmoothingFactor float64,
 	minChildOrderSizePercentOfParent float64,
+	randSeed int64,
 ) (api.LevelProvider, error) {
 	if numHoursToSell <= 0 || numHoursToSell > 24 {
 		return nil, fmt.Errorf("invalid number of hours to sell, expected 0 < numHoursToSell <= 24; was %d", numHoursToSell)
@@ -77,6 +79,7 @@ func makeSellTwapLevelProvider(
 		}
 	}
 
+	random := rand.New(rand.NewSource(randSeed))
 	return &sellTwapLevelProvider{
 		startPf:                 startPf,
 		offset:                  offset,
@@ -87,6 +90,7 @@ func makeSellTwapLevelProvider(
 		distributeSurplusOverRemainingIntervalsPercentCeiling: distributeSurplusOverRemainingIntervalsPercentCeiling,
 		exponentialSmoothingFactor:                            exponentialSmoothingFactor,
 		minChildOrderSizePercentOfParent:                      minChildOrderSizePercentOfParent,
+		random:                                                random,
 	}, nil
 }
 
@@ -296,7 +300,7 @@ func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket
 	if bucket.baseRemaining <= bucket.minOrderSizeBase {
 		sizeCapped = bucket.minOrderSizeBase
 	} else {
-		sizeCapped = bucket.minOrderSizeBase + (rand.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
+		sizeCapped = bucket.minOrderSizeBase + (p.random.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
 	}
 
 	price, e := p.startPf.GetPrice()
