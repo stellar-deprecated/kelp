@@ -107,7 +107,7 @@ type bucketInfo struct {
 	dayBaseCapacity      float64
 	dayBaseSold          float64
 	dayBaseRemaining     float64
-	baseSurplus          float64
+	baseSurplusIncluded  float64
 	baseCapacity         float64
 	minOrderSizeBase     float64
 	baseSold             float64
@@ -116,7 +116,7 @@ type bucketInfo struct {
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSurplus=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, baseSold=%.8f, baseRemaining=%.8f]",
+	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%]",
 		b.ID,
 		b.startTime.Format(timeFormat),
 		b.endTime.Format(timeFormat),
@@ -126,11 +126,12 @@ func (b *bucketInfo) String() string {
 		b.dayBaseCapacity,
 		b.dayBaseSold,
 		b.dayBaseRemaining,
-		b.baseSurplus,
+		b.baseSurplusIncluded,
 		b.baseCapacity,
 		b.minOrderSizeBase,
 		b.baseSold,
 		b.baseRemaining,
+		100.0*b.baseSold/b.baseCapacity,
 	)
 }
 
@@ -213,20 +214,20 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	minOrderSizeBase := p.minChildOrderSizePercentOfParent * baseCapacity
 
 	return &bucketInfo{
-		ID:               bID,
-		startTime:        startTime,
-		endTime:          endTime,
-		totalBuckets:     totalBuckets,
+		ID:                   bID,
+		startTime:            startTime,
+		endTime:              endTime,
+		totalBuckets:         totalBuckets,
 		totalBucketsTargeted: totalBucketsTargeted,
-		dayBaseSoldStart: dayBaseSoldStart,
-		dayBaseCapacity:  dayBaseCapacity,
-		dayBaseSold:      dayBaseSold,
-		dayBaseRemaining: dayBaseCapacity - dayBaseSold,
-		baseSurplus:      baseSurplus,
-		baseCapacity:     baseCapacity,
-		minOrderSizeBase: minOrderSizeBase,
-		baseSold:         baseSold,
-		baseRemaining:    baseCapacity - baseSold,
+		dayBaseSoldStart:     dayBaseSoldStart,
+		dayBaseCapacity:      dayBaseCapacity,
+		dayBaseSold:          dayBaseSold,
+		dayBaseRemaining:     dayBaseCapacity - dayBaseSold,
+		baseSurplusIncluded:  baseSurplus,
+		baseCapacity:         baseCapacity,
+		minOrderSizeBase:     minOrderSizeBase,
+		baseSold:             baseSold,
+		baseRemaining:        baseCapacity - baseSold,
 	}, nil
 }
 
@@ -249,7 +250,7 @@ func (p *sellTwapLevelProvider) calculateBaseSurplus(bID bucketID, totalRemainin
 	}
 
 	if bID == p.activeBucket.ID {
-		return p.activeBucket.baseSurplus
+		return p.activeBucket.baseSurplusIncluded
 	}
 
 	// the base value remaining from the previous bucket gets distributed over the remaining buckets
