@@ -398,7 +398,8 @@ func (p *sellTwapLevelProvider) makeRoundID() roundID {
 }
 
 func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket *bucketInfo) (*roundInfo, error) {
-	secondsElapsedToday := now.Unix() - bucket.startTime.Unix()
+	dayStartTime := floorDate(now)
+	secondsElapsedToday := now.Unix() - dayStartTime.Unix()
 
 	var sizeBaseCapped float64
 	if bucket.baseRemaining() <= bucket.minOrderSizeBase {
