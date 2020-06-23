@@ -176,6 +176,7 @@ type roundID uint64
 type roundInfo struct {
 	ID                  roundID
 	bucketID            bucketID
+	bucketUUID          string
 	now                 time.Time
 	secondsElapsedToday int64
 	sizeBaseCapped      float64
@@ -185,9 +186,10 @@ type roundInfo struct {
 // String is the Stringer method
 func (r *roundInfo) String() string {
 	return fmt.Sprintf(
-		"RoundInfo[roundID=%d, bucketID=%d, now=%s (day=%s, secondsElapsedToday=%d), sizeBaseCapped=%.8f, price=%.8f]",
+		"RoundInfo[roundID=%d, bucketID=%d, bucketUUID=%s, now=%s (day=%s, secondsElapsedToday=%d), sizeBaseCapped=%.8f, price=%.8f]",
 		r.ID,
 		r.bucketID,
+		r.bucketUUID,
 		r.now.Format(timeFormat),
 		r.now.Weekday().String(),
 		r.secondsElapsedToday,
@@ -417,6 +419,7 @@ func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket
 	return &roundInfo{
 		ID:                  rID,
 		bucketID:            bucket.ID,
+		bucketUUID:          bucket.UUID(),
 		now:                 now,
 		secondsElapsedToday: secondsElapsedToday,
 		sizeBaseCapped:      sizeBaseCapped,
