@@ -142,20 +142,20 @@ type roundInfo struct {
 	bucketID            bucketID
 	now                 time.Time
 	secondsElapsedToday int64
-	sizeCapped          float64
+	sizeBaseCapped      float64
 	price               float64
 }
 
 // String is the Stringer method
 func (r *roundInfo) String() string {
 	return fmt.Sprintf(
-		"RoundInfo[roundID=%d, bucketID=%d, now=%s (day=%s, secondsElapsedToday=%d), sizeCapped=%.8f, price=%.8f]",
+		"RoundInfo[roundID=%d, bucketID=%d, now=%s (day=%s, secondsElapsedToday=%d), sizeBaseCapped=%.8f, price=%.8f]",
 		r.ID,
 		r.bucketID,
 		r.now.Format(timeFormat),
 		r.now.Weekday().String(),
 		r.secondsElapsedToday,
-		r.sizeCapped,
+		r.sizeBaseCapped,
 		r.price,
 	)
 }
@@ -307,11 +307,11 @@ func (p *sellTwapLevelProvider) makeRoundID() roundID {
 func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket *bucketInfo) (*roundInfo, error) {
 	secondsElapsedToday := now.Unix() - bucket.startTime.Unix()
 
-	var sizeCapped float64
+	var sizeBaseCapped float64
 	if bucket.baseRemaining <= bucket.minOrderSizeBase {
-		sizeCapped = bucket.baseRemaining
+		sizeBaseCapped = bucket.baseRemaining
 	} else {
-		sizeCapped = bucket.minOrderSizeBase + (p.random.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
+		sizeBaseCapped = bucket.minOrderSizeBase + (p.random.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
 	}
 
 	price, e := p.startPf.GetPrice()
@@ -328,7 +328,7 @@ func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket
 		bucketID:            bucket.ID,
 		now:                 now,
 		secondsElapsedToday: secondsElapsedToday,
-		sizeCapped:          sizeCapped,
+		sizeBaseCapped:      sizeBaseCapped,
 		price:               adjustedPrice,
 	}, nil
 }
