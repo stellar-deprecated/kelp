@@ -184,8 +184,10 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	p.activeBucket = bucket
 	p.previousRoundID = &round.ID
 
-	// TODO check bucket is not exhausted and return levels accordingly
-	return []api.Level{}, nil
+	return []api.Level{{
+		Price:  *model.NumberFromFloat(round.price, p.orderConstraints.PricePrecision),
+		Amount: *model.NumberFromFloat(round.sizeBaseCapped, p.orderConstraints.VolumePrecision),
+	}}, nil
 }
 
 // TODO simplify by checking if we need to create a new bucket here etc., instead of recalculating all fields
