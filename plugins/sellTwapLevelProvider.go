@@ -102,6 +102,7 @@ type dynamicBucketValues struct {
 	roundID     roundID
 	dayBaseSold float64
 	baseSold    float64
+	now         time.Time
 }
 
 type bucketInfo struct {
@@ -129,7 +130,7 @@ func (b *bucketInfo) baseRemaining() float64 {
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%]]",
+	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
 		b.ID,
 		b.startTime.Format(timeFormat),
 		b.endTime.Format(timeFormat),
@@ -148,6 +149,7 @@ func (b *bucketInfo) String() string {
 		b.dynamicValues.baseSold,
 		b.baseRemaining(),
 		100.0*b.dynamicValues.baseSold/b.baseCapacity,
+		100.0*float64(b.dynamicValues.now.Unix()-b.startTime.Unix())/float64(b.endTime.Unix()-b.startTime.Unix()),
 	)
 }
 
@@ -239,6 +241,7 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 		roundID:     rID,
 		dayBaseSold: dayBaseSoldStart,
 		baseSold:    0.0,
+		now:         now,
 	}
 
 	return &bucketInfo{
@@ -272,6 +275,7 @@ func (p *sellTwapLevelProvider) updateExistingBucket(now time.Time, volFilter vo
 		roundID:     rID,
 		dayBaseSold: dayBaseSold,
 		baseSold:    dayBaseSold - bucket.dayBaseSoldStart,
+		now:         now,
 	}
 	return bucket, nil
 }
@@ -290,6 +294,7 @@ func (p *sellTwapLevelProvider) cutoverToNewBucketSameDay(newBucket *bucketInfo)
 		roundID:     newBucket.dynamicValues.roundID,
 		dayBaseSold: thisBucketDayBaseSold,
 		baseSold:    thisBucketDayBaseSold - thisBucketDayBaseSoldStart,
+		now:         newBucket.dynamicValues.now,
 	}
 
 	// the total surplus remaining up until this point gets distributed over the remaining buckets
