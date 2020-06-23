@@ -97,6 +97,11 @@ func makeSellTwapLevelProvider(
 
 type bucketID int64
 
+type dynamicBucketValues struct {
+	dayBaseSold float64
+	baseSold    float64
+}
+
 type bucketInfo struct {
 	ID                   bucketID
 	startTime            time.Time
@@ -105,18 +110,23 @@ type bucketInfo struct {
 	totalBucketsTargeted int64
 	dayBaseSoldStart     float64
 	dayBaseCapacity      float64
-	dayBaseSold          float64
-	dayBaseRemaining     float64
 	baseSurplusIncluded  float64
 	baseCapacity         float64
 	minOrderSizeBase     float64
-	baseSold             float64
-	baseRemaining        float64
+	dynamicValues        *dynamicBucketValues
+}
+
+func (b *bucketInfo) dayBaseRemaining() float64 {
+	return b.dayBaseCapacity - b.dynamicValues.dayBaseSold
+}
+
+func (b *bucketInfo) baseRemaining() float64 {
+	return b.baseCapacity - b.dynamicValues.baseSold
 }
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%]",
+	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%]]",
 		b.ID,
 		b.startTime.Format(timeFormat),
 		b.endTime.Format(timeFormat),
@@ -124,14 +134,14 @@ func (b *bucketInfo) String() string {
 		b.totalBucketsTargeted,
 		b.dayBaseSoldStart,
 		b.dayBaseCapacity,
-		b.dayBaseSold,
-		b.dayBaseRemaining,
 		b.baseSurplusIncluded,
 		b.baseCapacity,
 		b.minOrderSizeBase,
-		b.baseSold,
-		b.baseRemaining,
-		100.0*b.baseSold/b.baseCapacity,
+		b.dynamicValues.dayBaseSold,
+		b.dayBaseRemaining(),
+		b.dynamicValues.baseSold,
+		b.baseRemaining(),
+		100.0*b.dynamicValues.baseSold/b.baseCapacity,
 	)
 }
 
@@ -190,15 +200,16 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	}}, nil
 }
 
-// TODO simplify by checking if we need to create a new bucket here etc., instead of recalculating all fields
-func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFilter) (*bucketInfo, error) {
-	startTime := floorDate(now)
+func (p *sellTwapLevelProvider) makeFirstBucketFrame(
+	now time.Time,
+	volFilter volumeFilter,
+	startTime time.Time,
+	secondsElapsedToday int64,
+	bID bucketID,
+) (*bucketInfo, error) {
 	endTime := ceilDate(now)
 	totalBuckets := int64(math.Ceil(float64(endTime.Unix()-startTime.Unix()) / float64(p.parentBucketSizeSeconds)))
 	totalBucketsTargeted := int64(math.Ceil(float64(p.numHoursToSell*secondsInHour) / float64(p.parentBucketSizeSeconds)))
-
-	secondsElapsedToday := now.Unix() - startTime.Unix()
-	bID := bucketID(secondsElapsedToday / int64(p.parentBucketSizeSeconds))
 
 	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
 	if e != nil {
@@ -209,15 +220,16 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
 	}
-	dayBaseSold := dailyVolumeValues.baseVol
+	dayBaseSoldStart := dailyVolumeValues.baseVol
 
-	totalRemainingBuckets := totalBuckets - int64(bID)
-	dayBaseSoldStart := p.calculateDayBaseSoldStart(bID, dayBaseSold)
-	// distrbute baseSurplus over all buckets but calculate capacity based on targeted buckets
-	baseSurplus := p.calculateBaseSurplus(bID, totalRemainingBuckets)
-	baseCapacity := p.calculateBaseCapacity(bID, dayBaseCapacity, totalBucketsTargeted, baseSurplus)
-	baseSold := dayBaseSold - dayBaseSoldStart
+	baseSurplus := 0.0
+	baseCapacity := float64(dayBaseCapacity) / float64(totalBucketsTargeted)
 	minOrderSizeBase := p.minChildOrderSizePercentOfParent * baseCapacity
+	// upon instantiation the first bucket frame does not have anything sold beyond the starting values
+	dynamicValues := &dynamicBucketValues{
+		dayBaseSold: dayBaseSoldStart,
+		baseSold:    0.0,
+	}
 
 	return &bucketInfo{
 		ID:                   bID,
@@ -227,40 +239,92 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 		totalBucketsTargeted: totalBucketsTargeted,
 		dayBaseSoldStart:     dayBaseSoldStart,
 		dayBaseCapacity:      dayBaseCapacity,
-		dayBaseSold:          dayBaseSold,
-		dayBaseRemaining:     dayBaseCapacity - dayBaseSold,
 		baseSurplusIncluded:  baseSurplus,
 		baseCapacity:         baseCapacity,
 		minOrderSizeBase:     minOrderSizeBase,
-		baseSold:             baseSold,
-		baseRemaining:        baseCapacity - baseSold,
+		dynamicValues:        dynamicValues,
 	}, nil
 }
 
-func (p *sellTwapLevelProvider) calculateDayBaseSoldStart(bID bucketID, dayBaseSold float64) float64 {
-	if p.activeBucket == nil {
-		return dayBaseSold
-	}
+func (p *sellTwapLevelProvider) updateExistingBucket(now time.Time, volFilter volumeFilter) (*bucketInfo, error) {
+	bucketCopy := *p.activeBucket
+	bucket := &bucketCopy
 
-	if bID == p.activeBucket.ID {
-		return p.activeBucket.dayBaseSoldStart
+	dailyVolumeValues, e := volFilter.dailyValuesByDate(now.Format(postgresdb.DateFormatString))
+	if e != nil {
+		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
 	}
+	dayBaseSold := dailyVolumeValues.baseVol
 
-	// new buckets use the dayBaseSold value of the previous bucket
-	return p.activeBucket.dayBaseSold
+	bucket.dynamicValues = &dynamicBucketValues{
+		dayBaseSold: dayBaseSold,
+		baseSold:    dayBaseSold - bucket.dayBaseSoldStart,
+	}
+	return bucket, nil
 }
 
-func (p *sellTwapLevelProvider) calculateBaseSurplus(bID bucketID, totalRemainingBuckets int64) float64 {
+func (p *sellTwapLevelProvider) cutoverToNewBucket(
+	now time.Time,
+	volFilter volumeFilter,
+	startTime time.Time,
+	secondsElapsedToday int64,
+	bID bucketID,
+) (*bucketInfo, error) {
+	if bID != p.activeBucket.ID+1 {
+		// TODO think about day boundaries!!
+		return nil, fmt.Errorf("new bucketID (%d) was not one more than the previous bucketID (%d)", bID, p.activeBucket.ID)
+	}
+
+	// start from a new bucket
+	bucket, e := p.makeFirstBucketFrame(now, volFilter, startTime, secondsElapsedToday, bID)
+	if e != nil {
+		return nil, fmt.Errorf("unable to make first bucket frame when cutting over with new bucketID (ID=%d): %s", bID, e)
+	}
+
+	// update values that will change from a brand new bucket
+	thisBucketDayBaseSoldStart := p.activeBucket.dynamicValues.dayBaseSold
+	thisBucketDayBaseSold := bucket.dayBaseSoldStart // pull dayBaseSold from what was queried, this can be more than what was eventually sold in last bucket
+	// TODO think about day boundaries!!
+	bucket.dayBaseSoldStart = thisBucketDayBaseSoldStart // start new bucket with ending value of previous bucket
+	bucket.dynamicValues = &dynamicBucketValues{
+		dayBaseSold: thisBucketDayBaseSold,
+		baseSold:    thisBucketDayBaseSold - thisBucketDayBaseSoldStart,
+	}
+
+	// the total surplus remaining up until this point gets distributed over the remaining buckets
+	averageBaseCapacity := bucket.baseCapacity
+	numPreviousBuckets := bID // buckets are 0-indexed, so bID is equal to numbers of previous buckets
+	expectedSold := averageBaseCapacity * float64(numPreviousBuckets)
+	totalSurplus := expectedSold - thisBucketDayBaseSoldStart
+	totalRemainingBuckets := bucket.totalBuckets - int64(numPreviousBuckets)
+	bucket.baseSurplusIncluded = p.firstDistributionOfBaseSurplus(totalSurplus, totalRemainingBuckets)
+	bucket.baseCapacity = averageBaseCapacity + bucket.baseSurplusIncluded
+
+	return bucket, nil
+}
+
+func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFilter) (*bucketInfo, error) {
+	startTime := floorDate(now)
+	secondsElapsedToday := now.Unix() - startTime.Unix()
+	bID := bucketID(secondsElapsedToday / int64(p.parentBucketSizeSeconds))
+
 	if p.activeBucket == nil {
-		return 0.0
+		bucket, e := p.makeFirstBucketFrame(now, volFilter, startTime, secondsElapsedToday, bID)
+		if e != nil {
+			return nil, fmt.Errorf("could not make first bucket: %s", e)
+		}
+		return bucket, nil
 	}
 
 	if bID == p.activeBucket.ID {
-		return p.activeBucket.baseSurplusIncluded
+		bucket, e := p.updateExistingBucket(now, volFilter)
+		if e != nil {
+			return nil, fmt.Errorf("could not update existing bucket (ID=%d): %s", bID, e)
+		}
+		return bucket, nil
 	}
 
-	// the base value remaining from the previous bucket gets distributed over the remaining buckets
-	return p.firstDistributionOfBaseSurplus(bID, p.activeBucket.baseRemaining, totalRemainingBuckets)
+	return p.cutoverToNewBucket(now, volFilter, startTime, secondsElapsedToday, bID)
 }
 
 /*
@@ -272,31 +336,13 @@ a = 8,000 * (-0.5) / (0.0625 - 1)
 a = 8,000 * (0.5/0.9375)
 a = 4,266.67
 */
-func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(bID bucketID, totalSurplus float64, totalRemainingBuckets int64) float64 {
+func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(totalSurplus float64, totalRemainingBuckets int64) float64 {
 	Sn := totalSurplus
 	r := p.exponentialSmoothingFactor
 	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(totalRemainingBuckets))
 
 	a := Sn * (r - 1.0) / (math.Pow(r, n) - 1.0)
 	return a
-}
-
-func (p *sellTwapLevelProvider) calculateBaseCapacity(
-	bID bucketID,
-	dayBaseCapacity float64,
-	totalBucketsTargeted int64,
-	baseSurplus float64,
-) float64 {
-	averageBaseCapacity := dayBaseCapacity / float64(totalBucketsTargeted)
-	if p.activeBucket == nil {
-		return averageBaseCapacity
-	}
-
-	if bID == p.activeBucket.ID {
-		return p.activeBucket.baseCapacity
-	}
-
-	return averageBaseCapacity + baseSurplus
 }
 
 func (p *sellTwapLevelProvider) makeRoundID() roundID {
@@ -310,10 +356,10 @@ func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket
 	secondsElapsedToday := now.Unix() - bucket.startTime.Unix()
 
 	var sizeBaseCapped float64
-	if bucket.baseRemaining <= bucket.minOrderSizeBase {
-		sizeBaseCapped = bucket.baseRemaining
+	if bucket.baseRemaining() <= bucket.minOrderSizeBase {
+		sizeBaseCapped = bucket.baseRemaining()
 	} else {
-		sizeBaseCapped = bucket.minOrderSizeBase + (p.random.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
+		sizeBaseCapped = bucket.minOrderSizeBase + (p.random.Float64() * (bucket.baseRemaining() - bucket.minOrderSizeBase))
 	}
 
 	price, e := p.startPf.GetPrice()
