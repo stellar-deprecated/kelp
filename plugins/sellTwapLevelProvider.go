@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"log"
 	"math"
@@ -131,7 +132,8 @@ func (b *bucketInfo) baseRemaining() float64 {
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsToSell=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
+	return fmt.Sprintf("BucketInfo[UUID=%s, date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsToSell=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
+		b.UUID(),
 		b.startTime.Format("2006-01-02"),
 		b.startTime.Weekday(),
 		b.startTime.Weekday().String(),
@@ -156,6 +158,17 @@ func (b *bucketInfo) String() string {
 		100.0*b.dynamicValues.baseSold/b.baseCapacity,
 		100.0*float64(b.dynamicValues.now.Unix()-b.startTime.Unix())/float64(b.endTime.Unix()-b.startTime.Unix()),
 	)
+}
+
+// UUID gives a unique hash ID for this bucket that is unique to this specific configuration and time interval
+// this should be constant for all bucket instances that overlap with this time interval and configuration
+func (b *bucketInfo) UUID() string {
+	timePartition := fmt.Sprintf("startTime=%s_endTime=%s", b.startTime.Format(time.RFC3339Nano), b.endTime.Format(time.RFC3339Nano))
+	configPartition := fmt.Sprintf("totalBuckets=%d_totalBucketsToSell=%d_minOrderSizeBase=%.8f", b.totalBuckets, b.totalBucketsToSell, b.minOrderSizeBase)
+	s := fmt.Sprintf("timePartition=%s__configPartition=%s", timePartition, configPartition)
+
+	hash := sha1.Sum([]byte(s))
+	return fmt.Sprintf("%x", hash)
 }
 
 type roundID uint64
