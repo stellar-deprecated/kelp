@@ -111,7 +111,7 @@ type bucketInfo struct {
 	endTime               time.Time
 	sizeSeconds           int
 	totalBuckets          int64
-	totalBucketsTargeted  int64
+	totalBucketsToSell    int64
 	dayBaseSoldStart      float64
 	dayBaseCapacity       float64
 	totalBaseSurplusStart float64
@@ -131,7 +131,7 @@ func (b *bucketInfo) baseRemaining() float64 {
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
+	return fmt.Sprintf("BucketInfo[date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsToSell=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
 		b.startTime.Format("2006-01-02"),
 		b.startTime.Weekday(),
 		b.startTime.Weekday().String(),
@@ -140,7 +140,7 @@ func (b *bucketInfo) String() string {
 		b.endTime.Format(timeFormat),
 		b.sizeSeconds,
 		b.totalBuckets,
-		b.totalBucketsTargeted,
+		b.totalBucketsToSell,
 		b.dayBaseSoldStart,
 		b.dayBaseCapacity,
 		b.totalBaseSurplusStart,
@@ -223,7 +223,7 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 	bID bucketID,
 	rID roundID,
 ) (*bucketInfo, error) {
-	totalBucketsTargeted := int64(math.Ceil(float64(p.numHoursToSell*secondsInHour) / float64(p.parentBucketSizeSeconds)))
+	totalBucketsToSell := int64(math.Ceil(float64(p.numHoursToSell*secondsInHour) / float64(p.parentBucketSizeSeconds)))
 
 	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
 	if e != nil {
@@ -238,7 +238,7 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 
 	totalBaseSurplusStart := 0.0
 	baseSurplus := 0.0
-	baseCapacity := float64(dayBaseCapacity) / float64(totalBucketsTargeted)
+	baseCapacity := float64(dayBaseCapacity) / float64(totalBucketsToSell)
 	minOrderSizeBase := p.minChildOrderSizePercentOfParent * baseCapacity
 	// upon instantiation the first bucket frame does not have anything sold beyond the starting values
 	dynamicValues := &dynamicBucketValues{
@@ -255,7 +255,7 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 		endTime:               endTime,
 		sizeSeconds:           p.parentBucketSizeSeconds,
 		totalBuckets:          totalBuckets,
-		totalBucketsTargeted:  totalBucketsTargeted,
+		totalBucketsToSell:    totalBucketsToSell,
 		dayBaseSoldStart:      dayBaseSoldStart,
 		dayBaseCapacity:       dayBaseCapacity,
 		totalBaseSurplusStart: totalBaseSurplusStart,
