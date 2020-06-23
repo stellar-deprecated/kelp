@@ -109,6 +109,7 @@ type bucketInfo struct {
 	ID                    bucketID
 	startTime             time.Time
 	endTime               time.Time
+	sizeSeconds           int
 	totalBuckets          int64
 	totalBucketsTargeted  int64
 	dayBaseSoldStart      float64
@@ -130,10 +131,14 @@ func (b *bucketInfo) baseRemaining() float64 {
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[bucketID=%d, startTime=%s, endTime=%s, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
+	return fmt.Sprintf("BucketInfo[date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsTargeted=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
+		b.startTime.Format("2006-01-02"),
+		b.startTime.Weekday(),
+		b.startTime.Weekday().String(),
 		b.ID,
 		b.startTime.Format(timeFormat),
 		b.endTime.Format(timeFormat),
+		b.sizeSeconds,
 		b.totalBuckets,
 		b.totalBucketsTargeted,
 		b.dayBaseSoldStart,
@@ -248,6 +253,7 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 		ID:                    bID,
 		startTime:             startTime,
 		endTime:               endTime,
+		sizeSeconds:           p.parentBucketSizeSeconds,
 		totalBuckets:          totalBuckets,
 		totalBucketsTargeted:  totalBucketsTargeted,
 		dayBaseSoldStart:      dayBaseSoldStart,
