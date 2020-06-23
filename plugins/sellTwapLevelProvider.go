@@ -30,8 +30,8 @@ type sellTwapLevelProvider struct {
 	random                                                *rand.Rand
 
 	// uninitialized
-	activeBucket  *bucketInfo
-	previousRound *roundInfo
+	activeBucket    *bucketInfo
+	previousRoundID *roundID
 }
 
 // ensure it implements the LevelProvider interface
@@ -182,7 +182,7 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 
 	// save bucket and round for future rounds
 	p.activeBucket = bucket
-	p.previousRound = round
+	p.previousRoundID = &round.ID
 
 	// TODO check bucket is not exhausted and return levels accordingly
 	return []api.Level{}, nil
@@ -298,10 +298,10 @@ func (p *sellTwapLevelProvider) calculateBaseCapacity(
 }
 
 func (p *sellTwapLevelProvider) makeRoundID() roundID {
-	if p.previousRound == nil {
+	if p.previousRoundID == nil {
 		return roundID(0)
 	}
-	return p.previousRound.ID + 1
+	return *p.previousRoundID + 1
 }
 
 func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket *bucketInfo) (*roundInfo, error) {
