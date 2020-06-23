@@ -309,7 +309,7 @@ func (p *sellTwapLevelProvider) makeRoundInfo(rID roundID, now time.Time, bucket
 
 	var sizeCapped float64
 	if bucket.baseRemaining <= bucket.minOrderSizeBase {
-		sizeCapped = bucket.minOrderSizeBase
+		sizeCapped = bucket.baseRemaining
 	} else {
 		sizeCapped = bucket.minOrderSizeBase + (p.random.Float64() * (bucket.baseRemaining - bucket.minOrderSizeBase))
 	}
