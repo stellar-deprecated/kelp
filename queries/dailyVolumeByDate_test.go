@@ -3,6 +3,7 @@ package queries
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -19,8 +20,10 @@ func connectTestDb() *sql.DB {
 		Host:      "localhost",
 		Port:      5432,
 		DbName:    "test_database",
+		User:      os.Getenv("POSTGRES_USER"),
 		SSLEnable: false,
 	}
+
 	_, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
 	if e != nil {
 		panic(e)
