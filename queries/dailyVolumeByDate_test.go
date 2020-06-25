@@ -115,6 +115,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 	if !assert.NoError(t, e) {
 		return
 	}
+	assert.Equal(t, "DailyVolumeByDate", dailyVolumeByDateQuery.Name())
 
 	runQueryAndVerifyValues(t, dailyVolumeByDateQuery, yesterday, 100.0, 10.0)
 	runQueryAndVerifyValues(t, dailyVolumeByDateQuery, today, 107.0, 11.83)

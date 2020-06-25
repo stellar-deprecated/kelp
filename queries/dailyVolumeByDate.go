@@ -44,6 +44,11 @@ func MakeDailyVolumeByDateForMarketIdsAction(
 	}, nil
 }
 
+// Name impl.
+func (q *DailyVolumeByDate) Name() string {
+	return "DailyVolumeByDate"
+}
+
 // QueryRow impl.
 func (q *DailyVolumeByDate) QueryRow(args ...interface{}) (interface{}, error) {
 	if len(args) != 1 {
