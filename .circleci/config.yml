@@ -63,6 +63,9 @@ jobs:
       - image: circleci/golang:1.13
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
+      - image: circleci/postgres:12.1-alpine-ram
+    environment:
+      POSTGRES_USER: postgres
 
     steps:
       - install_deps
