@@ -234,12 +234,14 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 	now time.Time,
 	startTime time.Time,
 	endTime time.Time,
-	totalBuckets int64,
 	bID bucketID,
 	rID roundID,
 	dayBaseCapacity float64,
 	dailyVolumeValues *queries.DailyVolume,
 ) (*bucketInfo, error) {
+	dayStartTime := floorDate(now)
+	dayEndTime := ceilDate(now)
+	totalBuckets := int64(math.Ceil(float64(dayEndTime.Unix()-dayStartTime.Unix()) / float64(p.parentBucketSizeSeconds)))
 	totalBucketsToSell := int64(math.Ceil(float64(p.numHoursToSell*secondsInHour) / float64(p.parentBucketSizeSeconds)))
 	dayBaseSoldStart := dailyVolumeValues.BaseVol
 
@@ -319,14 +321,11 @@ func (p *sellTwapLevelProvider) cutoverToNewBucketSameDay(newBucket *bucketInfo)
 
 func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFilter, rID roundID) (*bucketInfo, error) {
 	dayStartTime := floorDate(now)
-	dayEndTime := ceilDate(now)
-
 	secondsElapsedToday := now.Unix() - dayStartTime.Unix()
 	bID := bucketID(secondsElapsedToday / int64(p.parentBucketSizeSeconds))
 	startTime := dayStartTime.Add(time.Second * time.Duration(bID) * time.Duration(p.parentBucketSizeSeconds))
 	endTime := startTime.Add(time.Second*time.Duration(p.parentBucketSizeSeconds) - time.Nanosecond)
 
-	totalBuckets := int64(math.Ceil(float64(dayEndTime.Unix()-dayStartTime.Unix()) / float64(p.parentBucketSizeSeconds)))
 	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
 	if e != nil {
 		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
@@ -342,7 +341,7 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 
 	// bucket on bot load
 	if p.activeBucket == nil {
-		bucket, e := p.makeFirstBucketFrame(now, startTime, endTime, totalBuckets, bID, rID, dayBaseCapacity, dailyVolumeValues)
+		bucket, e := p.makeFirstBucketFrame(now, startTime, endTime, bID, rID, dayBaseCapacity, dailyVolumeValues)
 		if e != nil {
 			return nil, fmt.Errorf("could not make first bucket: %s", e)
 		}
@@ -359,7 +358,7 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	}
 
 	// new bucket needs to be created
-	newBucket, e := p.makeFirstBucketFrame(now, startTime, endTime, totalBuckets, bID, rID, dayBaseCapacity, dailyVolumeValues)
+	newBucket, e := p.makeFirstBucketFrame(now, startTime, endTime, bID, rID, dayBaseCapacity, dailyVolumeValues)
 	if e != nil {
 		return nil, fmt.Errorf("unable to make first bucket frame when cutting over with new bucketID (ID=%d): %s", bID, e)
 	}

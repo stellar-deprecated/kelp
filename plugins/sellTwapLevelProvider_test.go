@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/queries"
 )
 
 func TestDateFloorCeil(t *testing.T) {
@@ -47,4 +50,76 @@ func TestDateFloorCeil(t *testing.T) {
 			assert.Equal(t, k.wantCeil, ceil, "ceil")
 		})
 	}
+}
+
+func makeTestSellTwapLevelProvider(seed int64) *sellTwapLevelProvider {
+	startPf, _ := newFixedFeed("10.0")
+	offset := rateOffset{
+		percent:      0.0,
+		absolute:     0.0,
+		percentFirst: true,
+	}
+	p, e := makeSellTwapLevelProvider(
+		startPf,
+		offset,
+		model.MakeOrderConstraints(7, 7, 0.1),
+		[7]volumeFilter{
+			volumeFilter{configValue: "/sell/base/"},
+			volumeFilter{configValue: "/sell/base/"},
+			volumeFilter{configValue: "/sell/base/"},
+			volumeFilter{configValue: "/sell/base/"},
+			volumeFilter{configValue: "/sell/base/"},
+			volumeFilter{configValue: "/sell/base/"},
+			volumeFilter{configValue: "/sell/base/"}},
+		2,
+		60,
+		0.05,
+		0.5,
+		0.2,
+		seed,
+	)
+	if e != nil {
+		panic(e)
+	}
+	return p.(*sellTwapLevelProvider)
+}
+
+func TestMakeFirstBucketFrame(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	p := makeTestSellTwapLevelProvider(0)
+	bucketInfo, e := p.makeFirstBucketFrame(
+		now,
+		floorDate(now),
+		ceilDate(now),
+		bucketID(0),
+		roundID(0),
+		1000.0,
+		&queries.DailyVolume{
+			BaseVol:  0.0,
+			QuoteVol: 0.0,
+		},
+	)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	assert.Equal(t, bucketID(0), bucketInfo.ID)
+	assert.Equal(t, 8.333333333333334, bucketInfo.baseCapacity)
+	assert.Equal(t, 8.333333333333334, bucketInfo.baseRemaining())
+	assert.Equal(t, 0.0, bucketInfo.baseSurplusIncluded)
+	assert.Equal(t, 1000.0, bucketInfo.dayBaseCapacity)
+	assert.Equal(t, 1000.0, bucketInfo.dayBaseRemaining())
+	assert.Equal(t, 0.0, bucketInfo.dayBaseSoldStart)
+	assert.Equal(t, 0.0, bucketInfo.dynamicValues.baseSold)
+	assert.Equal(t, 0.0, bucketInfo.dynamicValues.dayBaseSold)
+	assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
+	assert.Equal(t, now, bucketInfo.dynamicValues.now)
+	assert.Equal(t, roundID(0), bucketInfo.dynamicValues.roundID)
+	assert.Equal(t, ceilDate(now), bucketInfo.endTime)
+	assert.Equal(t, 1.666666666666667, bucketInfo.minOrderSizeBase)
+	assert.Equal(t, 60, bucketInfo.sizeSeconds)
+	assert.Equal(t, floorDate(now), bucketInfo.startTime)
+	assert.Equal(t, 0.0, bucketInfo.totalBaseSurplusStart)
+	assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
+	assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
 }
