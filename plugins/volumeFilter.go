@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
-	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/queries"
 	"github.com/stellar/kelp/support/postgresdb"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -44,14 +43,11 @@ type VolumeFilterConfig struct {
 }
 
 type volumeFilter struct {
-	name                string
-	baseAsset           hProtocol.Asset
-	quoteAsset          hProtocol.Asset
-	sqlQueryDailyValues string
-	marketIDs           []string
-	action              string
-	config              *VolumeFilterConfig
-	db                  *sql.DB
+	name                   string
+	baseAsset              hProtocol.Asset
+	quoteAsset             hProtocol.Asset
+	config                 *VolumeFilterConfig
+	dailyVolumeByDateQuery *queries.DailyVolumeByDate
 }
 
 // makeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
@@ -64,10 +60,6 @@ func makeFilterVolume(
 	db *sql.DB,
 	config *VolumeFilterConfig,
 ) (SubmitFilter, error) {
-	if db == nil {
-		return nil, fmt.Errorf("the provided db should be non-nil")
-	}
-
 	// use assetDisplayFn to make baseAssetString and quoteAssetString because it is issuer independent for non-sdex exchanges keeping a consistent marketID
 	baseAssetString, e := assetDisplayFn(tradingPair.Base)
 	if e != nil {
@@ -79,29 +71,18 @@ func makeFilterVolume(
 	}
 	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
-	sqlQueryDailyValues := makeSqlQueryDailyValues(marketIDs)
+	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell")
+	if e != nil {
+		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
+	}
 
 	return &volumeFilter{
-		name:                "volumeFilter",
-		baseAsset:           baseAsset,
-		quoteAsset:          quoteAsset,
-		sqlQueryDailyValues: sqlQueryDailyValues,
-		marketIDs:           marketIDs,
-		action:              "sell",
-		config:              config,
-		db:                  db,
+		name:                   "volumeFilter",
+		baseAsset:              baseAsset,
+		quoteAsset:             quoteAsset,
+		config:                 config,
+		dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 	}, nil
-}
-
-func makeSqlQueryDailyValues(marketIDs []string) string {
-	inClauseParts := []string{}
-	for _, mid := range marketIDs {
-		inValue := fmt.Sprintf("'%s'", mid)
-		inClauseParts = append(inClauseParts, inValue)
-	}
-	inClause := strings.Join(inClauseParts, ", ")
-
-	return fmt.Sprintf(kelpdb.SqlQueryDailyValuesTemplate, inClause)
 }
 
 var _ SubmitFilter = &volumeFilter{}
@@ -109,7 +90,7 @@ var _ SubmitFilter = &volumeFilter{}
 // Validate ensures validity
 func (c *VolumeFilterConfig) Validate() error {
 	if c.isEmpty() {
-		return fmt.Errorf("the volumeFilterConfig was empty\n")
+		return fmt.Errorf("the volumeFilterConfig was empty")
 	}
 	return nil
 }
@@ -123,18 +104,22 @@ func (c *VolumeFilterConfig) String() string {
 func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
 	dateString := time.Now().UTC().Format(postgresdb.DateFormatString)
 	// TODO do for buying base and also for flipped marketIDs
-	dailyValuesBaseSold, e := f.dailyValuesByDate(dateString)
+	queryResult, e := f.dailyVolumeByDateQuery.QueryRow(dateString)
 	if e != nil {
 		return nil, fmt.Errorf("could not load dailyValuesByDate for today (%s): %s", dateString, e)
 	}
+	dailyValuesBaseSold, ok := queryResult.(*queries.DailyVolume)
+	if !ok {
+		return nil, fmt.Errorf("incorrect type returned from DailyVolumeByDate query, expecting '*queries.DailyVolume' but was '%T'", queryResult)
+	}
 
 	log.Printf("dailyValuesByDate for today (%s): baseSoldUnits = %.8f %s, quoteCostUnits = %.8f %s (%s)\n",
-		dateString, dailyValuesBaseSold.baseVol, utils.Asset2String(f.baseAsset), dailyValuesBaseSold.quoteVol, utils.Asset2String(f.quoteAsset), f.config)
+		dateString, dailyValuesBaseSold.BaseVol, utils.Asset2String(f.baseAsset), dailyValuesBaseSold.QuoteVol, utils.Asset2String(f.quoteAsset), f.config)
 
 	// daily on-the-books
 	dailyOTB := &VolumeFilterConfig{
-		SellBaseAssetCapInBaseUnits:  &dailyValuesBaseSold.baseVol,
-		SellBaseAssetCapInQuoteUnits: &dailyValuesBaseSold.quoteVol,
+		SellBaseAssetCapInBaseUnits:  &dailyValuesBaseSold.BaseVol,
+		SellBaseAssetCapInQuoteUnits: &dailyValuesBaseSold.QuoteVol,
 	}
 	// daily to-be-booked starts out as empty and accumulates the values of the operations
 	dailyTbbSellBase := 0.0
@@ -239,39 +224,4 @@ func (c *VolumeFilterConfig) isEmpty() bool {
 	// 	return false
 	// }
 	return true
-}
-
-// dailyValues represents any volume value which can be either bought or sold depending on the query
-type dailyValues struct {
-	baseVol  float64
-	quoteVol float64
-}
-
-func (f *volumeFilter) dailyValuesByDate(dateUTC string) (*dailyValues, error) {
-	row := f.db.QueryRow(f.sqlQueryDailyValues, dateUTC, f.action)
-
-	var baseVol sql.NullFloat64
-	var quoteVol sql.NullFloat64
-	e := row.Scan(&baseVol, &quoteVol)
-	if e != nil {
-		if strings.Contains(e.Error(), "no rows in result set") {
-			return &dailyValues{
-				baseVol:  0,
-				quoteVol: 0,
-			}, nil
-		}
-		return nil, fmt.Errorf("could not read data from SqlQueryDailyValues query: %s", e)
-	}
-
-	if !baseVol.Valid {
-		return nil, fmt.Errorf("baseVol was invalid")
-	}
-	if !quoteVol.Valid {
-		return nil, fmt.Errorf("quoteVol was invalid")
-	}
-
-	return &dailyValues{
-		baseVol:  baseVol.Float64,
-		quoteVol: quoteVol.Float64,
-	}, nil
 }
