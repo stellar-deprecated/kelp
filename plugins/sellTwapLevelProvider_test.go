@@ -86,11 +86,13 @@ func makeTestSellTwapLevelProvider(seed int64) *sellTwapLevelProvider {
 
 func TestMakeFirstBucketFrame1(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	startDate := now.Add(time.Minute * -5)
+	endDate := now.Add(time.Minute * 5)
 	p := makeTestSellTwapLevelProvider(0)
 	bucketInfo, e := p.makeFirstBucketFrame(
 		now,
-		floorDate(now),
-		ceilDate(now),
+		startDate,
+		endDate,
 		bucketID(0),
 		roundID(0),
 		1000.0,
@@ -115,10 +117,10 @@ func TestMakeFirstBucketFrame1(t *testing.T) {
 	assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
 	assert.Equal(t, now, bucketInfo.dynamicValues.now)
 	assert.Equal(t, roundID(0), bucketInfo.dynamicValues.roundID)
-	assert.Equal(t, ceilDate(now), bucketInfo.endTime)
+	assert.Equal(t, endDate, bucketInfo.endTime)
 	assert.Equal(t, 1.666666666666667, bucketInfo.minOrderSizeBase)
 	assert.Equal(t, 60, bucketInfo.sizeSeconds)
-	assert.Equal(t, floorDate(now), bucketInfo.startTime)
+	assert.Equal(t, startDate, bucketInfo.startTime)
 	assert.Equal(t, 0.0, bucketInfo.totalBaseSurplusStart)
 	assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
 	assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
@@ -126,11 +128,13 @@ func TestMakeFirstBucketFrame1(t *testing.T) {
 
 func TestMakeFirstBucketFrame2(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	startDate := now.Add(time.Minute * -5)
+	endDate := now.Add(time.Minute * 5)
 	p := makeTestSellTwapLevelProvider(0)
 	bucketInfo, e := p.makeFirstBucketFrame(
 		now,
-		floorDate(now),
-		ceilDate(now),
+		startDate,
+		endDate,
 		bucketID(0),
 		roundID(1),
 		1000.0,
@@ -155,10 +159,10 @@ func TestMakeFirstBucketFrame2(t *testing.T) {
 	assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
 	assert.Equal(t, now, bucketInfo.dynamicValues.now)
 	assert.Equal(t, roundID(1), bucketInfo.dynamicValues.roundID)
-	assert.Equal(t, ceilDate(now), bucketInfo.endTime)
+	assert.Equal(t, endDate, bucketInfo.endTime)
 	assert.Equal(t, 1.666666666666667, bucketInfo.minOrderSizeBase)
 	assert.Equal(t, 60, bucketInfo.sizeSeconds)
-	assert.Equal(t, floorDate(now), bucketInfo.startTime)
+	assert.Equal(t, startDate, bucketInfo.startTime)
 	assert.Equal(t, 0.0, bucketInfo.totalBaseSurplusStart)
 	assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
 	assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
@@ -166,11 +170,13 @@ func TestMakeFirstBucketFrame2(t *testing.T) {
 
 func TestUpdateExistingBucket(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	startDate := now.Add(time.Minute * -5)
+	endDate := now.Add(time.Minute * 5)
 	p := makeTestSellTwapLevelProvider(0)
 	bucketInfo, e := p.makeFirstBucketFrame(
 		now,
-		floorDate(now),
-		ceilDate(now),
+		startDate,
+		endDate,
 		bucketID(0),
 		roundID(0),
 		1000.0,
@@ -209,10 +215,10 @@ func TestUpdateExistingBucket(t *testing.T) {
 	assert.Equal(t, false, updatedBucketInfo.dynamicValues.isNew)
 	assert.Equal(t, now2, updatedBucketInfo.dynamicValues.now)
 	assert.Equal(t, roundID(3), updatedBucketInfo.dynamicValues.roundID)
-	assert.Equal(t, ceilDate(now), updatedBucketInfo.endTime)
+	assert.Equal(t, endDate, updatedBucketInfo.endTime)
 	assert.Equal(t, 1.666666666666667, updatedBucketInfo.minOrderSizeBase)
 	assert.Equal(t, 60, updatedBucketInfo.sizeSeconds)
-	assert.Equal(t, floorDate(now), updatedBucketInfo.startTime)
+	assert.Equal(t, startDate, updatedBucketInfo.startTime)
 	assert.Equal(t, 0.0, updatedBucketInfo.totalBaseSurplusStart)
 	assert.Equal(t, int64(1440), updatedBucketInfo.totalBuckets)
 	assert.Equal(t, int64(120), updatedBucketInfo.totalBucketsToSell)
