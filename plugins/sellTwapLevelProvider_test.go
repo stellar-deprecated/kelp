@@ -163,3 +163,57 @@ func TestMakeFirstBucketFrame2(t *testing.T) {
 	assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
 	assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
 }
+
+func TestUpdateExistingBucket(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	p := makeTestSellTwapLevelProvider(0)
+	bucketInfo, e := p.makeFirstBucketFrame(
+		now,
+		floorDate(now),
+		ceilDate(now),
+		bucketID(0),
+		roundID(0),
+		1000.0,
+		&queries.DailyVolume{
+			BaseVol:  0.0,
+			QuoteVol: 0.0,
+		},
+	)
+	if e != nil {
+		panic(e)
+	}
+
+	p.activeBucket = bucketInfo
+	now2 := now.Add(time.Second * 30)
+	updatedBucketInfo, e := p.updateExistingBucket(
+		now2,
+		&queries.DailyVolume{
+			BaseVol:  5.0,
+			QuoteVol: 1.0,
+		},
+		roundID(3),
+	)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	assert.Equal(t, bucketID(0), updatedBucketInfo.ID)
+	assert.Equal(t, 8.333333333333334, updatedBucketInfo.baseCapacity)
+	assert.Equal(t, 3.333333333333334, updatedBucketInfo.baseRemaining())
+	assert.Equal(t, 0.0, updatedBucketInfo.baseSurplusIncluded)
+	assert.Equal(t, 1000.0, updatedBucketInfo.dayBaseCapacity)
+	assert.Equal(t, 995.0, updatedBucketInfo.dayBaseRemaining())
+	assert.Equal(t, 0.0, updatedBucketInfo.dayBaseSoldStart)
+	assert.Equal(t, 5.0, updatedBucketInfo.dynamicValues.baseSold)
+	assert.Equal(t, 5.0, updatedBucketInfo.dynamicValues.dayBaseSold)
+	assert.Equal(t, false, updatedBucketInfo.dynamicValues.isNew)
+	assert.Equal(t, now2, updatedBucketInfo.dynamicValues.now)
+	assert.Equal(t, roundID(3), updatedBucketInfo.dynamicValues.roundID)
+	assert.Equal(t, ceilDate(now), updatedBucketInfo.endTime)
+	assert.Equal(t, 1.666666666666667, updatedBucketInfo.minOrderSizeBase)
+	assert.Equal(t, 60, updatedBucketInfo.sizeSeconds)
+	assert.Equal(t, floorDate(now), updatedBucketInfo.startTime)
+	assert.Equal(t, 0.0, updatedBucketInfo.totalBaseSurplusStart)
+	assert.Equal(t, int64(1440), updatedBucketInfo.totalBuckets)
+	assert.Equal(t, int64(120), updatedBucketInfo.totalBucketsToSell)
+}
