@@ -10,6 +10,7 @@ import (
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/queries"
 	"github.com/stellar/kelp/support/postgresdb"
 )
 
@@ -231,25 +232,16 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 
 func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 	now time.Time,
-	volFilter volumeFilter,
 	startTime time.Time,
 	endTime time.Time,
 	totalBuckets int64,
 	bID bucketID,
 	rID roundID,
+	dayBaseCapacity float64,
+	dailyVolumeValues *queries.DailyVolume,
 ) (*bucketInfo, error) {
 	totalBucketsToSell := int64(math.Ceil(float64(p.numHoursToSell*secondsInHour) / float64(p.parentBucketSizeSeconds)))
-
-	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
-	if e != nil {
-		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
-	}
-
-	dailyVolumeValues, e := volFilter.dailyValuesByDate(now.Format(postgresdb.DateFormatString))
-	if e != nil {
-		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
-	}
-	dayBaseSoldStart := dailyVolumeValues.baseVol
+	dayBaseSoldStart := dailyVolumeValues.BaseVol
 
 	totalBaseSurplusStart := 0.0
 	baseSurplus := 0.0
@@ -281,15 +273,10 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 	}, nil
 }
 
-func (p *sellTwapLevelProvider) updateExistingBucket(now time.Time, volFilter volumeFilter, rID roundID) (*bucketInfo, error) {
+func (p *sellTwapLevelProvider) updateExistingBucket(now time.Time, dailyVolumeValues *queries.DailyVolume, rID roundID) (*bucketInfo, error) {
 	bucketCopy := *p.activeBucket
 	bucket := &bucketCopy
-
-	dailyVolumeValues, e := volFilter.dailyValuesByDate(now.Format(postgresdb.DateFormatString))
-	if e != nil {
-		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
-	}
-	dayBaseSold := dailyVolumeValues.baseVol
+	dayBaseSold := dailyVolumeValues.BaseVol
 
 	bucket.dynamicValues = &dynamicBucketValues{
 		isNew:       false,
@@ -340,10 +327,22 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	endTime := startTime.Add(time.Second*time.Duration(p.parentBucketSizeSeconds) - time.Nanosecond)
 
 	totalBuckets := int64(math.Ceil(float64(dayEndTime.Unix()-dayStartTime.Unix()) / float64(p.parentBucketSizeSeconds)))
+	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
+	if e != nil {
+		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
+	}
+	queryResult, e := volFilter.dailyVolumeByDateQuery.QueryRow(now.Format(postgresdb.DateFormatString))
+	if e != nil {
+		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
+	}
+	dailyVolumeValues, ok := queryResult.(*queries.DailyVolume)
+	if !ok {
+		return nil, fmt.Errorf("could not cast query result from dailyValuesByDateQuery as a *queries.DailyVolume, was type '%T'", queryResult)
+	}
 
 	// bucket on bot load
 	if p.activeBucket == nil {
-		bucket, e := p.makeFirstBucketFrame(now, volFilter, startTime, endTime, totalBuckets, bID, rID)
+		bucket, e := p.makeFirstBucketFrame(now, startTime, endTime, totalBuckets, bID, rID, dayBaseCapacity, dailyVolumeValues)
 		if e != nil {
 			return nil, fmt.Errorf("could not make first bucket: %s", e)
 		}
@@ -352,7 +351,7 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 
 	// new round in the same bucket
 	if bID == p.activeBucket.ID {
-		bucket, e := p.updateExistingBucket(now, volFilter, rID)
+		bucket, e := p.updateExistingBucket(now, dailyVolumeValues, rID)
 		if e != nil {
 			return nil, fmt.Errorf("could not update existing bucket (ID=%d): %s", bID, e)
 		}
@@ -360,7 +359,7 @@ func (p *sellTwapLevelProvider) makeBucketInfo(now time.Time, volFilter volumeFi
 	}
 
 	// new bucket needs to be created
-	newBucket, e := p.makeFirstBucketFrame(now, volFilter, startTime, endTime, totalBuckets, bID, rID)
+	newBucket, e := p.makeFirstBucketFrame(now, startTime, endTime, totalBuckets, bID, rID, dayBaseCapacity, dailyVolumeValues)
 	if e != nil {
 		return nil, fmt.Errorf("unable to make first bucket frame when cutting over with new bucketID (ID=%d): %s", bID, e)
 	}
