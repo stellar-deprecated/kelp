@@ -312,9 +312,15 @@ func (p *sellTwapLevelProvider) cutoverToNewBucketSameDay(newBucket *bucketInfo)
 	numPreviousBuckets := newBucket.ID // buckets are 0-indexed, so bucketID is equal to numbers of previous buckets
 	expectedSold := averageBaseCapacity * float64(numPreviousBuckets)
 	newBucket.totalBaseSurplusStart = expectedSold - thisBucketDayBaseSoldStart
-	remainingBucketsOverWhichToDistribute := newBucket.totalBucketsToSell - int64(numPreviousBuckets)
-	newBucket.baseSurplusIncluded = p.firstDistributionOfBaseSurplus(newBucket.totalBaseSurplusStart, remainingBucketsOverWhichToDistribute)
-	newBucket.baseCapacity = averageBaseCapacity + newBucket.baseSurplusIncluded
+	remainingBucketsToSell := newBucket.totalBucketsToSell - int64(numPreviousBuckets)
+	newBucket.baseSurplusIncluded = p.firstDistributionOfBaseSurplus(newBucket.totalBaseSurplusStart, remainingBucketsToSell)
+	newBucket.baseCapacity = newBucket.baseSurplusIncluded
+	if remainingBucketsToSell > 0 {
+		// only include the averageBaseCapacity if we are within the number of total buckets to sell
+		// else we are in a state where there is no "new" capacity for every bucket and we are only
+		// trying to get rid of past surplus values
+		newBucket.baseCapacity += averageBaseCapacity
+	}
 	newBucket.minOrderSizeBase = p.minChildOrderSizePercentOfParent * newBucket.baseCapacity
 
 	return newBucket, nil
@@ -380,10 +386,14 @@ a = 8,000 * (-0.5) / (0.0625 - 1)
 a = 8,000 * (0.5/0.9375)
 a = 4,266.67
 */
-func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(totalSurplus float64, remainingBucketsOverWhichToDistribute int64) float64 {
+func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(totalSurplus float64, remainingBucketsToSell int64) float64 {
+	if remainingBucketsToSell <= 0 {
+		return totalSurplus
+	}
+
 	Sn := totalSurplus
 	r := p.exponentialSmoothingFactor
-	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(remainingBucketsOverWhichToDistribute))
+	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(remainingBucketsToSell))
 
 	a := Sn * (r - 1.0) / (math.Pow(r, n) - 1.0)
 	return a

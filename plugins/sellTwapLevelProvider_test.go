@@ -289,3 +289,69 @@ func TestCutoverToNewBucketSameDay_InsideNumHoursToSell(t *testing.T) {
 	assert.Equal(t, int64(1440), cutoverBucket.totalBuckets)
 	assert.Equal(t, int64(120), cutoverBucket.totalBucketsToSell)
 }
+
+func TestCutoverToNewBucketSameDay_OutsideNumHoursToSell(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	startDate := now.Add(time.Minute * -5)
+	endDate := now.Add(time.Minute * 5)
+	p := makeTestSellTwapLevelProvider(0)
+	activeBucket, e := p.makeFirstBucketFrame(
+		now,
+		startDate,
+		endDate,
+		bucketID(119), // last bucket inside num hours to sell based on test levelProvider
+		roundID(3),
+		1000.0,
+		&queries.DailyVolume{
+			BaseVol:  983.333412,
+			QuoteVol: 98.3333412,
+		},
+	)
+	if e != nil {
+		panic(e)
+	}
+
+	p.activeBucket = activeBucket
+	now2 := now.Add(time.Second * 30)
+	startDate2 := now2.Add(time.Minute * -5)
+	endDate2 := now2.Add(time.Minute * 5)
+	newBucket, e := p.makeFirstBucketFrame(
+		now2,
+		startDate2,
+		endDate2,
+		bucketID(120),
+		roundID(4),
+		1000.0,
+		&queries.DailyVolume{
+			BaseVol:  983.333412,
+			QuoteVol: 98.3333412,
+		},
+	)
+	if e != nil {
+		panic(e)
+	}
+	cutoverBucket, e := p.cutoverToNewBucketSameDay(newBucket)
+	if !assert.NoError(t, e) {
+		return
+	}
+
+	assert.Equal(t, bucketID(120), cutoverBucket.ID)
+	assert.Equal(t, 16.66658800000016, cutoverBucket.baseCapacity) // remainingBucketsToSell == 0, so equals exactly the entire surplus
+	assert.Equal(t, 16.66658800000016, cutoverBucket.baseRemaining())
+	assert.Equal(t, 16.66658800000016, cutoverBucket.baseSurplusIncluded) // remainingBucketsToSell == 0, so include entire surplus
+	assert.Equal(t, 1000.0, cutoverBucket.dayBaseCapacity)
+	assert.Equal(t, 16.666588000000047, cutoverBucket.dayBaseRemaining())
+	assert.Equal(t, 983.333412, cutoverBucket.dayBaseSoldStart)
+	assert.Equal(t, 0.0, cutoverBucket.dynamicValues.baseSold)
+	assert.Equal(t, 983.333412, cutoverBucket.dynamicValues.dayBaseSold)
+	assert.Equal(t, true, cutoverBucket.dynamicValues.isNew)
+	assert.Equal(t, now2, cutoverBucket.dynamicValues.now)
+	assert.Equal(t, roundID(4), cutoverBucket.dynamicValues.roundID)
+	assert.Equal(t, endDate2, cutoverBucket.endTime)
+	assert.Equal(t, 3.3333176000000324, cutoverBucket.minOrderSizeBase)
+	assert.Equal(t, 60, cutoverBucket.sizeSeconds)
+	assert.Equal(t, startDate2, cutoverBucket.startTime)
+	assert.Equal(t, 16.66658800000016, cutoverBucket.totalBaseSurplusStart) // 120*8.333333333333334 - 983.333412
+	assert.Equal(t, int64(1440), cutoverBucket.totalBuckets)
+	assert.Equal(t, int64(120), cutoverBucket.totalBucketsToSell)
+}
