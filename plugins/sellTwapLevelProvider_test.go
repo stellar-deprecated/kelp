@@ -476,3 +476,30 @@ func TestFirstDistributionOfBaseSurplus(t *testing.T) {
 		})
 	}
 }
+
+func TestBucketInfoString(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	startDate := now.Add(time.Minute * -5)
+	endDate := now.Add(time.Minute * 5)
+	p := makeTestSellTwapLevelProvider(0)
+	bucketInfo, e := p.makeFirstBucketFrame(
+		now,
+		startDate,
+		endDate,
+		bucketID(12),
+		roundID(16),
+		1000.0,
+		&queries.DailyVolume{
+			BaseVol:  5.0,
+			QuoteVol: 1.0,
+		},
+	)
+	if e != nil {
+		panic(e)
+	}
+
+	wantString := "BucketInfo[UUID=2ee675ac04d8e817bab462f5ca18c74eea315c6f, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
+		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
+		" DynamicBucketValues[isNew=true, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
+	assert.Equal(t, wantString, bucketInfo.String())
+}
