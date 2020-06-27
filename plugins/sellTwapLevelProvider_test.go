@@ -422,3 +422,57 @@ func TestCutoverToNewBucketSameDay_WithNewVolumeSold(t *testing.T) {
 	assert.Equal(t, int64(1440), cutoverBucket.totalBuckets)
 	assert.Equal(t, int64(120), cutoverBucket.totalBucketsToSell)
 }
+
+func TestFirstDistributionOfBaseSurplus(t *testing.T) {
+	testCases := []struct {
+		name                   string
+		totalSurplus           float64
+		remainingBucketsToSell int64
+		want                   float64
+	}{
+		{
+			name:                   "no buckets remaining",
+			totalSurplus:           100.0,
+			remainingBucketsToSell: 0,
+			want:                   100.0,
+		}, {
+			name:                   "negative buckets remaining",
+			totalSurplus:           7236.24,
+			remainingBucketsToSell: -1,
+			want:                   7236.24,
+		}, {
+			name:                   "1 bucket remaining",
+			totalSurplus:           7236.24,
+			remainingBucketsToSell: 1,
+			want:                   7236.24,
+		}, {
+			name:                   "20 buckets remaining (n = 1)",
+			totalSurplus:           7236.24,
+			remainingBucketsToSell: 20,
+			want:                   7236.24,
+		}, {
+			name:                   "21 buckets remaining (n = 2)",
+			totalSurplus:           7236.24,
+			remainingBucketsToSell: 21,
+			want:                   4824.16, // 7236.24 * (0.5-1.0) / (0.5^ceil(0.05*21) - 1.0)
+		}, {
+			name:                   "22 buckets remaining (n = 2)",
+			totalSurplus:           7236.24,
+			remainingBucketsToSell: 22,
+			want:                   4824.16, // 7236.24 * (0.5-1.0) / (0.5^ceil(0.05*22) - 1.0)
+		}, {
+			name:                   "170 buckets remaining (n = 9)",
+			totalSurplus:           7236.24,
+			remainingBucketsToSell: 170,
+			want:                   3625.200469667319, // 7236.24 * (0.5-1.0) / (0.5^ceil(0.05*170) - 1.0)
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			p := makeTestSellTwapLevelProvider(0)
+			output := p.firstDistributionOfBaseSurplus(k.totalSurplus, k.remainingBucketsToSell)
+			assert.Equal(t, k.want, output)
+		})
+	}
+}
