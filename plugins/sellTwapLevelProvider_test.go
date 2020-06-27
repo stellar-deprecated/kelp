@@ -53,6 +53,20 @@ func TestDateFloorCeil(t *testing.T) {
 }
 
 func makeTestSellTwapLevelProvider(seed int64) *sellTwapLevelProvider {
+	return makeTestSellTwapLevelProvider2(
+		seed,
+		2,
+		60,
+		0.2,
+	)
+}
+
+func makeTestSellTwapLevelProvider2(
+	seed int64,
+	numHoursToSell int,
+	parentBucketSizeSeconds int,
+	minChildOrderSizePercentOfParent float64,
+) *sellTwapLevelProvider {
 	startPf, _ := newFixedFeed("10.0")
 	offset := rateOffset{
 		percent:      0.0,
@@ -71,11 +85,11 @@ func makeTestSellTwapLevelProvider(seed int64) *sellTwapLevelProvider {
 			volumeFilter{configValue: "/sell/base/"},
 			volumeFilter{configValue: "/sell/base/"},
 			volumeFilter{configValue: "/sell/base/"}},
-		2,
-		60,
+		numHoursToSell,
+		parentBucketSizeSeconds,
 		0.05,
 		0.5,
-		0.2,
+		minChildOrderSizePercentOfParent,
 		seed,
 	)
 	if e != nil {
@@ -502,4 +516,120 @@ func TestBucketInfoString(t *testing.T) {
 		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
 		" DynamicBucketValues[isNew=true, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
 	assert.Equal(t, wantString, bucketInfo.String())
+}
+
+func TestBucketInfoUUID(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	testCases := []struct {
+		startTime                        time.Time
+		endTime                          time.Time
+		numHoursToSell                   int
+		parentBucketSizeSeconds          int
+		minChildOrderSizePercentOfParent float64
+		bucketID                         int64
+		roundID                          int64
+		want                             string
+	}{
+		{
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         1,
+			roundID:                          1,
+			want:                             "2ee675ac04d8e817bab462f5ca18c74eea315c6f",
+		}, {
+			startTime:                        now.Add(time.Minute * -6),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         1,
+			roundID:                          1,
+			want:                             "7ff6568ada4c40a600666eb54c2a16ce795288eb",
+		}, {
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 6),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         1,
+			roundID:                          1,
+			want:                             "90fc50d697e1bd0628d636a0843efefc293250b9",
+		}, {
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   3,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         1,
+			roundID:                          1,
+			want:                             "76c08ea1358f4512b7fd3d2a7f4eac0f6accf9c5",
+		}, {
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          12,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         1,
+			roundID:                          1,
+			want:                             "739ac890a6cdb102dbb3edc812ede8c122fc252f",
+		}, {
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.3,
+			bucketID:                         1,
+			roundID:                          1,
+			want:                             "f92fc2499fad8ddd3211e5aa3a9b2b3228b57469",
+		}, {
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         2,
+			roundID:                          1,
+			want:                             "2ee675ac04d8e817bab462f5ca18c74eea315c6f",
+		}, {
+			startTime:                        now.Add(time.Minute * -5),
+			endTime:                          now.Add(time.Minute * 5),
+			numHoursToSell:                   2,
+			parentBucketSizeSeconds:          60,
+			minChildOrderSizePercentOfParent: 0.2,
+			bucketID:                         1,
+			roundID:                          2,
+			want:                             "2ee675ac04d8e817bab462f5ca18c74eea315c6f",
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.want, func(t *testing.T) {
+			p := makeTestSellTwapLevelProvider2(
+				0,
+				k.numHoursToSell,
+				k.parentBucketSizeSeconds,
+				k.minChildOrderSizePercentOfParent,
+			)
+			bucketInfo, e := p.makeFirstBucketFrame(
+				now,
+				k.startTime,
+				k.endTime,
+				bucketID(k.bucketID),
+				roundID(k.roundID),
+				1000.0,
+				&queries.DailyVolume{
+					BaseVol:  5.0,
+					QuoteVol: 1.0,
+				},
+			)
+			if e != nil {
+				panic(e)
+			}
+
+			assert.Equal(t, k.want, bucketInfo.UUID())
+		})
+	}
 }
