@@ -312,9 +312,10 @@ func (p *sellTwapLevelProvider) cutoverToNewBucketSameDay(newBucket *bucketInfo)
 	numPreviousBuckets := newBucket.ID // buckets are 0-indexed, so bucketID is equal to numbers of previous buckets
 	expectedSold := averageBaseCapacity * float64(numPreviousBuckets)
 	newBucket.totalBaseSurplusStart = expectedSold - thisBucketDayBaseSoldStart
-	totalRemainingBuckets := newBucket.totalBuckets - int64(numPreviousBuckets)
-	newBucket.baseSurplusIncluded = p.firstDistributionOfBaseSurplus(newBucket.totalBaseSurplusStart, totalRemainingBuckets)
+	remainingBucketsOverWhichToDistribute := newBucket.totalBucketsToSell - int64(numPreviousBuckets)
+	newBucket.baseSurplusIncluded = p.firstDistributionOfBaseSurplus(newBucket.totalBaseSurplusStart, remainingBucketsOverWhichToDistribute)
 	newBucket.baseCapacity = averageBaseCapacity + newBucket.baseSurplusIncluded
+	newBucket.minOrderSizeBase = p.minChildOrderSizePercentOfParent * newBucket.baseCapacity
 
 	return newBucket, nil
 }
@@ -379,10 +380,10 @@ a = 8,000 * (-0.5) / (0.0625 - 1)
 a = 8,000 * (0.5/0.9375)
 a = 4,266.67
 */
-func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(totalSurplus float64, totalRemainingBuckets int64) float64 {
+func (p *sellTwapLevelProvider) firstDistributionOfBaseSurplus(totalSurplus float64, remainingBucketsOverWhichToDistribute int64) float64 {
 	Sn := totalSurplus
 	r := p.exponentialSmoothingFactor
-	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(totalRemainingBuckets))
+	n := math.Ceil(p.distributeSurplusOverRemainingIntervalsPercentCeiling * float64(remainingBucketsOverWhichToDistribute))
 
 	a := Sn * (r - 1.0) / (math.Pow(r, n) - 1.0)
 	return a
