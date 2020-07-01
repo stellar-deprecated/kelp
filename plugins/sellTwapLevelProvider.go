@@ -212,13 +212,14 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	if e != nil {
 		return nil, fmt.Errorf("unable to make bucketInfo: %s", e)
 	}
-	log.Printf("bucketInfo: %s\n", bucket)
 
 	round, e := p.makeRoundInfo(rID, now, bucket)
 	if e != nil {
 		return nil, fmt.Errorf("unable to make roundInfo: %s", e)
 	}
-	log.Printf("roundInfo: %s\n", round)
+
+	// structured log line for metric tracking via log files
+	log.Printf("bucketInfo: %s; roundInfo: %s\n", bucket, round)
 
 	// save bucket and round for future rounds
 	p.activeBucket = bucket
