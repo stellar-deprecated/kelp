@@ -8,6 +8,7 @@ import (
 
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/queries"
+	"github.com/stellar/kelp/support/utils"
 )
 
 func TestDateFloorCeil(t *testing.T) {
@@ -98,88 +99,341 @@ func makeTestSellTwapLevelProvider2(
 	return p.(*sellTwapLevelProvider)
 }
 
-func TestMakeFirstBucketFrame1(t *testing.T) {
-	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
-	startDate := now.Add(time.Minute * -5)
-	endDate := now.Add(time.Minute * 5)
-	p := makeTestSellTwapLevelProvider(0)
-	bucketInfo, e := p.makeFirstBucketFrame(
-		now,
-		startDate,
-		endDate,
-		bucketID(0),
-		roundID(0),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  0.0,
-			QuoteVol: 0.0,
+func TestMakeFirstBucketFrame(t *testing.T) {
+	testCases := []struct {
+		name                      string
+		bucketID                  int64
+		roundID                   int64
+		dayBaseCapacity           float64
+		dailyVolumeBase           float64
+		wantDayBaseCapacity       float64
+		wantDayBaseRemaining      float64
+		wantDayBaseSoldStart      float64
+		wantTotalBaseSurplusStart float64
+		wantBaseSurplusIncluded   float64
+		wantBaseCapacity          float64
+		wantMinOrderSizeBase      float64
+	}{
+		/*
+			the following test cases cover combinations of the following:
+			- bucketID
+				- bucketID = 0
+				- 0 < bucketID < lastBucketID
+				- bucketID = lastBucketID
+				- bucketID = lastBucketID + 1
+				- bucketID = lastBucketID + 2
+			- expectedSold
+				- less than expected (positive surplus)
+				- exactly expected (no surplus)
+				- more than expected (negative surplus)
+				- full day capacity sold (negative surplus)
+		*/
+		{
+			name:                      "bucket0 no surplus",
+			bucketID:                  0,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           0.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      1000.0,
+			wantDayBaseSoldStart:      0.0,
+			wantTotalBaseSurplusStart: 0.0,
+			wantBaseSurplusIncluded:   0.0,
+			wantBaseCapacity:          8.333333333333334,
+			wantMinOrderSizeBase:      1.666666666666667,
+		}, {
+			name:                      "bucket0 roundID has no effect",
+			bucketID:                  0,
+			roundID:                   1,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           0.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      1000.0,
+			wantDayBaseSoldStart:      0.0,
+			wantTotalBaseSurplusStart: 0.0,
+			wantBaseSurplusIncluded:   0.0,
+			wantBaseCapacity:          8.333333333333334,
+			wantMinOrderSizeBase:      1.666666666666667,
+		}, {
+			name:                      "bucket0 starts off with positive amount sold, i.e. negative surplus",
+			bucketID:                  0,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           5.0, // there is already an amount sold when starting off this bucket, which should be distributed
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      995.0,
+			wantDayBaseSoldStart:      5.0,
+			wantTotalBaseSurplusStart: -5.0,
+			wantBaseSurplusIncluded:   -2.5396825397, // -5.0*(.5-1)/((.5^ceil(.05*(120-0)))-1)
+			wantBaseCapacity:          5.7936507936,  // 8.333333333333334 - 2.5396825397
+			wantMinOrderSizeBase:      1.1587301587,  // 0.2 * 5.7936507936
+		}, {
+			name:                      "non-zero bucket within selling hours, exact amount sold as expected, i.e. no surplus",
+			bucketID:                  5,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           41.66666666666667,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      958.3333333333334,
+			wantDayBaseSoldStart:      41.66666666666667,
+			wantTotalBaseSurplusStart: 0.0,               // there is no surplus becuase we have sold the exact amount expected
+			wantBaseSurplusIncluded:   0.0,               // therefore, no surplus to be included
+			wantBaseCapacity:          8.333333333333334, // therefore this is the average selling amount
+			wantMinOrderSizeBase:      1.666666666666667, // 0.2 * 8.333333333333334
+		}, {
+			name:                      "non-zero bucket within selling hours, nothing sold, i.e. everything as a surplus",
+			bucketID:                  5,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           0.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      1000.0,
+			wantDayBaseSoldStart:      0.0,
+			wantTotalBaseSurplusStart: 41.66666666666667,  // 5 * 8.333333333333334 - 0.0
+			wantBaseSurplusIncluded:   21.164021164021168, // 41.66666666666667*(.5-1)/((.5^ceil(.05*(120-5)))-1)
+			wantBaseCapacity:          29.4973544973545,   //  8.333333333333334 + 21.164021164021168
+			wantMinOrderSizeBase:      5.8994708994709,    // 0.2 * 29.4973544973545
+		}, {
+			name:                      "non-zero bucket within selling hours, partial amount sold, i.e. partial surplus",
+			bucketID:                  5,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           40.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      960.0,
+			wantDayBaseSoldStart:      40.0,         // always equal to dailyVolumeBase
+			wantTotalBaseSurplusStart: 1.6666666667, // 5 * 8.333333333333334 - 40.0
+			wantBaseSurplusIncluded:   0.8465608466, // 1.6666666667*(.5-1)/((.5^ceil(.05*(120-5)))-1)
+			wantBaseCapacity:          9.1798941799, // 8.333333333333334 + 0.8465608466
+			wantMinOrderSizeBase:      1.835978836,  // 0.2 * 9.1798941799
+		}, {
+			name:                      "non-zero bucket within selling hours, extra amount sold, i.e. negative surplus",
+			bucketID:                  5,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           45.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      955.0,
+			wantDayBaseSoldStart:      45.0,          // always equal to dailyVolumeBase
+			wantTotalBaseSurplusStart: -3.3333333333, // 5 * 8.333333333333334 - 45.0
+			wantBaseSurplusIncluded:   -1.6931216931, // -3.3333333333*(.5-1)/((.5^ceil(.05*(120-5)))-1)
+			wantBaseCapacity:          6.6402116402,  // 8.333333333333334 - 1.6931216931
+			wantMinOrderSizeBase:      1.328042328,   // 0.2 * 6.6402116402
+		}, {
+			name:                      "last bucket within selling hours, nothing sold, i.e. everything as a surplus included in current bucket",
+			bucketID:                  119,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           0.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      1000.0,
+			wantDayBaseSoldStart:      0.0,
+			wantTotalBaseSurplusStart: 991.6666666666667, // 119 * 8.333333333333334 - 0.0
+			wantBaseSurplusIncluded:   991.6666666666667, // 991.6666666666667*(.5-1)/((.5^ceil(.05*(120-119)))-1)
+			wantBaseCapacity:          1000.0,            // 8.333333333333334 + 991.6666666666667
+			wantMinOrderSizeBase:      200.0,             // 0.2 * 1000.0
+		}, {
+			name:                      "last bucket within selling hours, partial sold, i.e. everything as a surplus included in current bucket",
+			bucketID:                  119,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           5.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      995.0,
+			wantDayBaseSoldStart:      5.0,
+			wantTotalBaseSurplusStart: 986.6666666666667, // 119 * 8.333333333333334 - 5.0
+			wantBaseSurplusIncluded:   986.6666666666667, // 986.6666666666667*(.5-1)/((.5^ceil(.05*(120-119)))-1)
+			wantBaseCapacity:          995.0,             // 8.333333333333334 + 986.6666666666667
+			wantMinOrderSizeBase:      199.0,             // 0.2 * 995.0
+		}, {
+			name:                      "last bucket within selling hours, exact sold as expected, i.e. no surplus",
+			bucketID:                  119,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           991.6666666667,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      8.3333333333,
+			wantDayBaseSoldStart:      991.6666666667,
+			wantTotalBaseSurplusStart: 0.0,               // 119 * 8.333333333333334 - 991.6666666667
+			wantBaseSurplusIncluded:   0.0,               // 0.0*(.5-1)/((.5^ceil(.05*(120-119)))-1)
+			wantBaseCapacity:          8.333333333333334, // 8.333333333333334 + 0.0
+			wantMinOrderSizeBase:      1.6666666667,      // 0.2 * 8.333333333333334
+		}, {
+			name:                      "last bucket within selling hours, a little extra sold but less than everything, i.e. negative surplus",
+			bucketID:                  119,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           995.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      5.0,
+			wantDayBaseSoldStart:      995.0,
+			wantTotalBaseSurplusStart: -3.3333333333, // 119 * 8.333333333333334 - 995.0
+			wantBaseSurplusIncluded:   -3.3333333333, // -3.3333333333*(.5-1)/((.5^ceil(.05*(120-119)))-1)
+			wantBaseCapacity:          5.0,           // 8.333333333333334 - 3.3333333333
+			wantMinOrderSizeBase:      1.0,           // 0.2 * 5.0
+		}, {
+			name:                      "last bucket within selling hours, everything sold, i.e. negative surplus",
+			bucketID:                  119,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           1000.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      0.0,
+			wantDayBaseSoldStart:      1000.0,
+			wantTotalBaseSurplusStart: -8.333333333333334, // 119 * 8.333333333333334 - 1000.0
+			wantBaseSurplusIncluded:   -8.333333333333334, // -8.333333333333334*(.5-1)/((.5^ceil(.05*(120-119)))-1)
+			wantBaseCapacity:          0.0,                // 8.333333333333334 - 8.333333333333334
+			wantMinOrderSizeBase:      0.0,                // 0.2 * 0.0
+		}, {
+			name:                      "first bucket outside selling hours, nothing sold, i.e. everything as a surplus included in current bucket",
+			bucketID:                  120,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           0.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      1000.0,
+			wantDayBaseSoldStart:      0.0,
+			wantTotalBaseSurplusStart: 1000.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   1000.0, // we have special logic to do this assignment equal to the full surplus when outside selling hours
+			wantBaseCapacity:          1000.0, // no allotted capacity so this is only the suruplus
+			wantMinOrderSizeBase:      200.0,  // 0.2 * 1000.0
+		}, {
+			name:                      "second bucket outside selling hours, nothing sold, i.e. everything as a surplus included in current bucket",
+			bucketID:                  121,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           0.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      1000.0,
+			wantDayBaseSoldStart:      0.0,
+			wantTotalBaseSurplusStart: 1000.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   1000.0, // we have special logic to do this assignment equal to the full surplus when outside selling hours
+			wantBaseCapacity:          1000.0, // no allotted capacity so this is only the suruplus
+			wantMinOrderSizeBase:      200.0,  // 0.2 * 1000.0
+		}, {
+			name:                      "first bucket outside selling hours, everything sold, i.e. no surplus",
+			bucketID:                  120,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           1000.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      0.0,
+			wantDayBaseSoldStart:      1000.0,
+			wantTotalBaseSurplusStart: 0.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   0.0,
+			wantBaseCapacity:          0.0,
+			wantMinOrderSizeBase:      0.0,
+		}, {
+			name:                      "second bucket outside selling hours, everything sold, i.e. no surplus",
+			bucketID:                  121,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           1000.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      0.0,
+			wantDayBaseSoldStart:      1000.0,
+			wantTotalBaseSurplusStart: 0.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   0.0,
+			wantBaseCapacity:          0.0,
+			wantMinOrderSizeBase:      0.0,
+		}, {
+			name:                      "first bucket outside selling hours, partial sold, i.e. partial surplus all of which included in current bucket",
+			bucketID:                  120,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           200.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      800.0,
+			wantDayBaseSoldStart:      200.0,
+			wantTotalBaseSurplusStart: 800.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   800.0, // we have special logic to do this assignment equal to the full surplus when outside selling hours
+			wantBaseCapacity:          800.0, // no allotted capacity so this is only the suruplus
+			wantMinOrderSizeBase:      160.0, // 0.2 * 800.0
+		}, {
+			name:                      "second bucket outside selling hours, partial sold, i.e. partial surplus all of which included in current bucket",
+			bucketID:                  121,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           200.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      800.0,
+			wantDayBaseSoldStart:      200.0,
+			wantTotalBaseSurplusStart: 800.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   800.0, // we have special logic to do this assignment equal to the full surplus when outside selling hours
+			wantBaseCapacity:          800.0, // no allotted capacity so this is only the suruplus
+			wantMinOrderSizeBase:      160.0, // 0.2 * 800.0
+		}, {
+			name:                      "first bucket outside selling hours, extra amount sold, i.e. negative surplus",
+			bucketID:                  120,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           1001.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      -1.0,
+			wantDayBaseSoldStart:      1001.0,
+			wantTotalBaseSurplusStart: -1.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   -1.0, // always include full surplus start outside selling hours,
+			wantBaseCapacity:          -1.0, // 0 - 1.0	(we let this be negative and do not have extra logic to "fix this up" in the bucket math)
+			wantMinOrderSizeBase:      -0.2, // 0.2 * -1.0 (we don't "fix up" baseCapacity in the bucket math)
+		}, {
+			name:                      "second bucket outside selling hours, extra amount sold, i.e. negative surplus",
+			bucketID:                  121,
+			roundID:                   0,
+			dayBaseCapacity:           1000.0,
+			dailyVolumeBase:           1001.0,
+			wantDayBaseCapacity:       1000.0,
+			wantDayBaseRemaining:      -1.0,
+			wantDayBaseSoldStart:      1001.0,
+			wantTotalBaseSurplusStart: -1.0, // always equal to dayBaseRemaining outside selling hours
+			wantBaseSurplusIncluded:   -1.0, // always include full surplus start outside selling hours,
+			wantBaseCapacity:          -1.0, // 0 - 1.0	(we let this be negative and do not have extra logic to "fix this up" in the bucket math)
+			wantMinOrderSizeBase:      -0.2, // 0.2 * -1.0 (we don't "fix up" baseCapacity in the bucket math)
 		},
-	)
-	if !assert.NoError(t, e) {
-		return
 	}
 
-	assert.Equal(t, bucketID(0), bucketInfo.ID)
-	assert.Equal(t, 8.333333333333334, bucketInfo.baseCapacity)
-	assert.Equal(t, 8.333333333333334, bucketInfo.baseRemaining())
-	assert.Equal(t, 0.0, bucketInfo.baseSurplusIncluded)
-	assert.Equal(t, 1000.0, bucketInfo.dayBaseCapacity)
-	assert.Equal(t, 1000.0, bucketInfo.dayBaseRemaining())
-	assert.Equal(t, 0.0, bucketInfo.dayBaseSoldStart)
-	assert.Equal(t, 0.0, bucketInfo.dynamicValues.baseSold)
-	assert.Equal(t, 0.0, bucketInfo.dynamicValues.dayBaseSold)
-	assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
-	assert.Equal(t, now, bucketInfo.dynamicValues.now)
-	assert.Equal(t, roundID(0), bucketInfo.dynamicValues.roundID)
-	assert.Equal(t, endDate, bucketInfo.endTime)
-	assert.Equal(t, 1.666666666666667, bucketInfo.minOrderSizeBase)
-	assert.Equal(t, 60, bucketInfo.sizeSeconds)
-	assert.Equal(t, startDate, bucketInfo.startTime)
-	assert.Equal(t, 0.0, bucketInfo.totalBaseSurplusStart)
-	assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
-	assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
-}
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+			startDate := now.Add(time.Minute * -5)
+			endDate := now.Add(time.Minute * 5)
+			p := makeTestSellTwapLevelProvider(0)
+			bucketInfo, e := p.makeFirstBucketFrame(
+				now,
+				startDate,
+				endDate,
+				bucketID(k.bucketID),
+				roundID(k.roundID),
+				k.dayBaseCapacity,
+				&queries.DailyVolume{
+					BaseVol:  k.dailyVolumeBase,
+					QuoteVol: 0.0, // this value does not matter
+				},
+			)
+			if !assert.NoError(t, e) {
+				return
+			}
 
-func TestMakeFirstBucketFrame2(t *testing.T) {
-	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
-	startDate := now.Add(time.Minute * -5)
-	endDate := now.Add(time.Minute * 5)
-	p := makeTestSellTwapLevelProvider(0)
-	bucketInfo, e := p.makeFirstBucketFrame(
-		now,
-		startDate,
-		endDate,
-		bucketID(0),
-		roundID(1),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  5.0,
-			QuoteVol: 1.0,
-		},
-	)
-	if !assert.NoError(t, e) {
-		return
+			assert.Equal(t, bucketID(k.bucketID), bucketInfo.ID)
+			utils.AssetFloatEquals(t, k.wantBaseCapacity, bucketInfo.baseCapacity)
+			utils.AssetFloatEquals(t, 0.0, bucketInfo.dynamicValues.baseSold)         // this is always 0.0
+			utils.AssetFloatEquals(t, k.wantBaseCapacity, bucketInfo.baseRemaining()) // this is always equal to baseCapacity because nothing has been sold in this bucket yet
+			utils.AssetFloatEquals(t, k.wantBaseSurplusIncluded, bucketInfo.baseSurplusIncluded)
+			utils.AssetFloatEquals(t, k.wantDayBaseCapacity, bucketInfo.dayBaseCapacity)
+			utils.AssetFloatEquals(t, k.wantDayBaseRemaining, bucketInfo.dayBaseRemaining())
+			utils.AssetFloatEquals(t, k.wantDayBaseSoldStart, bucketInfo.dayBaseSoldStart)
+			utils.AssetFloatEquals(t, k.wantDayBaseSoldStart, bucketInfo.dynamicValues.dayBaseSold) // this is always equal to dayBaseSoldStart because the bucket has not sold anything
+			assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
+			assert.Equal(t, now, bucketInfo.dynamicValues.now)
+			assert.Equal(t, roundID(k.roundID), bucketInfo.dynamicValues.roundID)
+			assert.Equal(t, endDate, bucketInfo.endTime)
+			utils.AssetFloatEquals(t, k.wantMinOrderSizeBase, bucketInfo.minOrderSizeBase)
+			assert.Equal(t, 60, bucketInfo.sizeSeconds)
+			assert.Equal(t, startDate, bucketInfo.startTime)
+			utils.AssetFloatEquals(t, k.wantTotalBaseSurplusStart, bucketInfo.totalBaseSurplusStart)
+			assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
+			assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
+		})
 	}
-
-	assert.Equal(t, bucketID(0), bucketInfo.ID)
-	assert.Equal(t, 8.333333333333334, bucketInfo.baseCapacity)
-	assert.Equal(t, 8.333333333333334, bucketInfo.baseRemaining())
-	assert.Equal(t, 0.0, bucketInfo.baseSurplusIncluded)
-	assert.Equal(t, 1000.0, bucketInfo.dayBaseCapacity)
-	assert.Equal(t, 995.0, bucketInfo.dayBaseRemaining())
-	assert.Equal(t, 5.0, bucketInfo.dayBaseSoldStart)
-	assert.Equal(t, 0.0, bucketInfo.dynamicValues.baseSold)
-	assert.Equal(t, 5.0, bucketInfo.dynamicValues.dayBaseSold)
-	assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
-	assert.Equal(t, now, bucketInfo.dynamicValues.now)
-	assert.Equal(t, roundID(1), bucketInfo.dynamicValues.roundID)
-	assert.Equal(t, endDate, bucketInfo.endTime)
-	assert.Equal(t, 1.666666666666667, bucketInfo.minOrderSizeBase)
-	assert.Equal(t, 60, bucketInfo.sizeSeconds)
-	assert.Equal(t, startDate, bucketInfo.startTime)
-	assert.Equal(t, 0.0, bucketInfo.totalBaseSurplusStart)
-	assert.Equal(t, int64(1440), bucketInfo.totalBuckets)
-	assert.Equal(t, int64(120), bucketInfo.totalBucketsToSell)
 }
 
 func TestUpdateExistingBucket(t *testing.T) {
@@ -238,205 +492,6 @@ func TestUpdateExistingBucket(t *testing.T) {
 	assert.Equal(t, int64(120), updatedBucketInfo.totalBucketsToSell)
 }
 
-func TestCutoverToNewBucketSameDay_InsideNumHoursToSell(t *testing.T) {
-	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
-	startDate := now.Add(time.Minute * -5)
-	endDate := now.Add(time.Minute * 5)
-	p := makeTestSellTwapLevelProvider(0)
-	activeBucket, e := p.makeFirstBucketFrame(
-		now,
-		startDate,
-		endDate,
-		bucketID(3),
-		roundID(1),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  5.0,
-			QuoteVol: 1.0,
-		},
-	)
-	if e != nil {
-		panic(e)
-	}
-
-	p.activeBucket = activeBucket
-	now2 := now.Add(time.Second * 30)
-	startDate2 := now2.Add(time.Minute * -5)
-	endDate2 := now2.Add(time.Minute * 5)
-	newBucket, e := p.makeFirstBucketFrame(
-		now2,
-		startDate2,
-		endDate2,
-		bucketID(4),
-		roundID(2),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  5.0,
-			QuoteVol: 1.0,
-		},
-	)
-	if e != nil {
-		panic(e)
-	}
-	cutoverBucket, e := p.cutoverToNewBucketSameDay(newBucket)
-	if !assert.NoError(t, e) {
-		return
-	}
-
-	assert.Equal(t, bucketID(4), cutoverBucket.ID)
-	assert.Equal(t, 22.724867724867728, cutoverBucket.baseCapacity) // 8.333333333333334 + 14.391534391534393
-	assert.Equal(t, 22.724867724867728, cutoverBucket.baseRemaining())
-	assert.Equal(t, 14.391534391534393, cutoverBucket.baseSurplusIncluded) // 28.333333333333334*(.5-1)/((.5^ceil(.05*(120-4)))-1)
-	assert.Equal(t, 1000.0, cutoverBucket.dayBaseCapacity)
-	assert.Equal(t, 995.0, cutoverBucket.dayBaseRemaining())
-	assert.Equal(t, 5.0, cutoverBucket.dayBaseSoldStart)
-	assert.Equal(t, 0.0, cutoverBucket.dynamicValues.baseSold)
-	assert.Equal(t, 5.0, cutoverBucket.dynamicValues.dayBaseSold)
-	assert.Equal(t, true, cutoverBucket.dynamicValues.isNew)
-	assert.Equal(t, now2, cutoverBucket.dynamicValues.now)
-	assert.Equal(t, roundID(2), cutoverBucket.dynamicValues.roundID)
-	assert.Equal(t, endDate2, cutoverBucket.endTime)
-	assert.Equal(t, 4.544973544973546, cutoverBucket.minOrderSizeBase)
-	assert.Equal(t, 60, cutoverBucket.sizeSeconds)
-	assert.Equal(t, startDate2, cutoverBucket.startTime)
-	assert.Equal(t, 28.333333333333334, cutoverBucket.totalBaseSurplusStart)
-	assert.Equal(t, int64(1440), cutoverBucket.totalBuckets)
-	assert.Equal(t, int64(120), cutoverBucket.totalBucketsToSell)
-}
-
-func TestCutoverToNewBucketSameDay_OutsideNumHoursToSell(t *testing.T) {
-	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
-	startDate := now.Add(time.Minute * -5)
-	endDate := now.Add(time.Minute * 5)
-	p := makeTestSellTwapLevelProvider(0)
-	activeBucket, e := p.makeFirstBucketFrame(
-		now,
-		startDate,
-		endDate,
-		bucketID(119), // last bucket inside num hours to sell based on test levelProvider
-		roundID(3),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  983.333412,
-			QuoteVol: 98.3333412,
-		},
-	)
-	if e != nil {
-		panic(e)
-	}
-
-	p.activeBucket = activeBucket
-	now2 := now.Add(time.Second * 30)
-	startDate2 := now2.Add(time.Minute * -5)
-	endDate2 := now2.Add(time.Minute * 5)
-	newBucket, e := p.makeFirstBucketFrame(
-		now2,
-		startDate2,
-		endDate2,
-		bucketID(120),
-		roundID(4),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  983.333412,
-			QuoteVol: 98.3333412,
-		},
-	)
-	if e != nil {
-		panic(e)
-	}
-	cutoverBucket, e := p.cutoverToNewBucketSameDay(newBucket)
-	if !assert.NoError(t, e) {
-		return
-	}
-
-	assert.Equal(t, bucketID(120), cutoverBucket.ID)
-	assert.Equal(t, 16.66658800000016, cutoverBucket.baseCapacity) // remainingBucketsToSell == 0, so equals exactly the entire surplus
-	assert.Equal(t, 16.66658800000016, cutoverBucket.baseRemaining())
-	assert.Equal(t, 16.66658800000016, cutoverBucket.baseSurplusIncluded) // remainingBucketsToSell == 0, so include entire surplus
-	assert.Equal(t, 1000.0, cutoverBucket.dayBaseCapacity)
-	assert.Equal(t, 16.666588000000047, cutoverBucket.dayBaseRemaining())
-	assert.Equal(t, 983.333412, cutoverBucket.dayBaseSoldStart)
-	assert.Equal(t, 0.0, cutoverBucket.dynamicValues.baseSold)
-	assert.Equal(t, 983.333412, cutoverBucket.dynamicValues.dayBaseSold)
-	assert.Equal(t, true, cutoverBucket.dynamicValues.isNew)
-	assert.Equal(t, now2, cutoverBucket.dynamicValues.now)
-	assert.Equal(t, roundID(4), cutoverBucket.dynamicValues.roundID)
-	assert.Equal(t, endDate2, cutoverBucket.endTime)
-	assert.Equal(t, 3.3333176000000324, cutoverBucket.minOrderSizeBase)
-	assert.Equal(t, 60, cutoverBucket.sizeSeconds)
-	assert.Equal(t, startDate2, cutoverBucket.startTime)
-	assert.Equal(t, 16.66658800000016, cutoverBucket.totalBaseSurplusStart) // 120*8.333333333333334 - 983.333412
-	assert.Equal(t, int64(1440), cutoverBucket.totalBuckets)
-	assert.Equal(t, int64(120), cutoverBucket.totalBucketsToSell)
-}
-
-func TestCutoverToNewBucketSameDay_WithNewVolumeSold(t *testing.T) {
-	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
-	startDate := now.Add(time.Minute * -5)
-	endDate := now.Add(time.Minute * 5)
-	p := makeTestSellTwapLevelProvider(0)
-	activeBucket, e := p.makeFirstBucketFrame(
-		now,
-		startDate,
-		endDate,
-		bucketID(3),
-		roundID(1),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  5.0,
-			QuoteVol: 1.0,
-		},
-	)
-	if e != nil {
-		panic(e)
-	}
-
-	p.activeBucket = activeBucket
-	now2 := now.Add(time.Second * 30)
-	startDate2 := now2.Add(time.Minute * -5)
-	endDate2 := now2.Add(time.Minute * 5)
-	newBucket, e := p.makeFirstBucketFrame(
-		now2,
-		startDate2,
-		endDate2,
-		bucketID(4),
-		roundID(2),
-		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  6.0,
-			QuoteVol: 1.1,
-		},
-	)
-	if e != nil {
-		panic(e)
-	}
-	cutoverBucket, e := p.cutoverToNewBucketSameDay(newBucket)
-	if !assert.NoError(t, e) {
-		return
-	}
-
-	// when there is additional volume in a cutover scenario then we include the volume in the newly created bucket for simplicity of calculations
-	assert.Equal(t, bucketID(4), cutoverBucket.ID)
-	assert.Equal(t, 22.724867724867728, cutoverBucket.baseCapacity) // 8.333333333333334 + 14.391534391534393
-	assert.Equal(t, 21.724867724867728, cutoverBucket.baseRemaining())
-	assert.Equal(t, 14.391534391534393, cutoverBucket.baseSurplusIncluded) // 28.333333333333334*(.5-1)/((.5^ceil(.05*(120-4)))-1)
-	assert.Equal(t, 1000.0, cutoverBucket.dayBaseCapacity)
-	assert.Equal(t, 994.0, cutoverBucket.dayBaseRemaining())
-	assert.Equal(t, 5.0, cutoverBucket.dayBaseSoldStart)
-	assert.Equal(t, 1.0, cutoverBucket.dynamicValues.baseSold)
-	assert.Equal(t, 6.0, cutoverBucket.dynamicValues.dayBaseSold)
-	assert.Equal(t, true, cutoverBucket.dynamicValues.isNew)
-	assert.Equal(t, now2, cutoverBucket.dynamicValues.now)
-	assert.Equal(t, roundID(2), cutoverBucket.dynamicValues.roundID)
-	assert.Equal(t, endDate2, cutoverBucket.endTime)
-	assert.Equal(t, 4.544973544973546, cutoverBucket.minOrderSizeBase)
-	assert.Equal(t, 60, cutoverBucket.sizeSeconds)
-	assert.Equal(t, startDate2, cutoverBucket.startTime)
-	assert.Equal(t, 28.333333333333334, cutoverBucket.totalBaseSurplusStart)
-	assert.Equal(t, int64(1440), cutoverBucket.totalBuckets)
-	assert.Equal(t, int64(120), cutoverBucket.totalBucketsToSell)
-}
-
 func TestFirstDistributionOfBaseSurplus(t *testing.T) {
 	testCases := []struct {
 		name                   string
@@ -493,29 +548,34 @@ func TestFirstDistributionOfBaseSurplus(t *testing.T) {
 
 func TestBucketInfoString(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
-	startDate := now.Add(time.Minute * -5)
-	endDate := now.Add(time.Minute * 5)
-	p := makeTestSellTwapLevelProvider(0)
-	bucketInfo, e := p.makeFirstBucketFrame(
-		now,
-		startDate,
-		endDate,
+	startTime := now.Add(time.Minute * -5)
+	endTime := now.Add(time.Minute * 5)
+	bucket := makeBucketInfo(
 		bucketID(12),
-		roundID(16),
+		startTime,
+		endTime,
+		60,
+		1440,
+		120,
+		5.0,
 		1000.0,
-		&queries.DailyVolume{
-			BaseVol:  5.0,
-			QuoteVol: 1.0,
+		0.0,
+		0.0,
+		8.33333333,
+		1.66666667,
+		&dynamicBucketValues{
+			isNew:       true,
+			roundID:     roundID(16),
+			dayBaseSold: 5.0,
+			baseSold:    0.0,
+			now:         now,
 		},
 	)
-	if e != nil {
-		panic(e)
-	}
 
 	wantString := "BucketInfo[UUID=2ee675ac04d8e817bab462f5ca18c74eea315c6f, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
 		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
 		" DynamicBucketValues[isNew=true, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
-	assert.Equal(t, wantString, bucketInfo.String())
+	assert.Equal(t, wantString, bucket.String())
 }
 
 func TestBucketInfoUUID(t *testing.T) {
@@ -565,7 +625,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "76c08ea1358f4512b7fd3d2a7f4eac0f6accf9c5",
+			want:                             "c3950c8d14b3a04abb23755348d1e5bfc44c6a94",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -574,7 +634,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "739ac890a6cdb102dbb3edc812ede8c122fc252f",
+			want:                             "bf6ecbd020519dc3eade87ad04b3ed88362ec1cd",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -607,29 +667,29 @@ func TestBucketInfoUUID(t *testing.T) {
 
 	for _, k := range testCases {
 		t.Run(k.want, func(t *testing.T) {
-			p := makeTestSellTwapLevelProvider2(
-				0,
-				k.numHoursToSell,
-				k.parentBucketSizeSeconds,
-				k.minChildOrderSizePercentOfParent,
-			)
-			bucketInfo, e := p.makeFirstBucketFrame(
-				now,
+			bucket := makeBucketInfo(
+				bucketID(k.bucketID),
 				k.startTime,
 				k.endTime,
-				bucketID(k.bucketID),
-				roundID(k.roundID),
+				k.parentBucketSizeSeconds,
+				int64(24*60*60/k.parentBucketSizeSeconds),
+				int64(k.numHoursToSell*60*60/k.parentBucketSizeSeconds),
+				5.0,
 				1000.0,
-				&queries.DailyVolume{
-					BaseVol:  5.0,
-					QuoteVol: 1.0,
+				0.0,
+				0.0,
+				8.33333333,
+				k.minChildOrderSizePercentOfParent*8.33333333,
+				&dynamicBucketValues{
+					isNew:       true,
+					roundID:     roundID(k.roundID),
+					dayBaseSold: 5.0,
+					baseSold:    0.0,
+					now:         now,
 				},
 			)
-			if e != nil {
-				panic(e)
-			}
 
-			assert.Equal(t, k.want, bucketInfo.UUID())
+			assert.Equal(t, k.want, bucket.UUID())
 		})
 	}
 }
