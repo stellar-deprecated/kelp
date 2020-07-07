@@ -114,6 +114,45 @@ func checkTableExists(db *sql.DB, tableName string) bool {
 	return tablesQueryResult.Next()
 }
 
+type tableColumn struct {
+	columnName             string      // `db:"column_name"`
+	ordinalPosition        int         // `db:"ordinal_position"`
+	columnDefault          interface{} // `db:"column_default"`
+	isNullable             string      // `db:"is_nullable"`        // uses "YES" / "NO" instead of a boolean
+	dataType               string      // `db:"data_type"`
+	characterMaximumLength interface{} // `db:"character_maximum_length"`
+}
+
+func assertTableColumnsEqual(t *testing.T, want *tableColumn, actual *tableColumn) {
+	assert.Equal(t, want.columnName, actual.columnName)
+	assert.Equal(t, want.ordinalPosition, actual.ordinalPosition)
+	assert.Equal(t, want.columnDefault, actual.columnDefault)
+	assert.Equal(t, want.isNullable, actual.isNullable)
+	assert.Equal(t, want.dataType, actual.dataType)
+	assert.Equal(t, want.characterMaximumLength, actual.characterMaximumLength)
+}
+
+func getTableSchema(db *sql.DB, tableName string) []tableColumn {
+	schemaQueryResult, e := db.Query(fmt.Sprintf("SELECT column_name, ordinal_position, column_default, is_nullable, data_type, character_maximum_length FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '%s'", tableName))
+	if e != nil {
+		panic(e)
+	}
+	defer schemaQueryResult.Close() // remembering to defer closing the query
+
+	items := []tableColumn{}
+	for schemaQueryResult.Next() { // remembering to call Next() before Scan()
+		var item tableColumn
+		e = schemaQueryResult.Scan(&item.columnName, &item.ordinalPosition, &item.columnDefault, &item.isNullable, &item.dataType, &item.characterMaximumLength)
+		if e != nil {
+			panic(e)
+		}
+
+		items = append(items, item)
+	}
+
+	return items
+}
+
 func TestCurrentClassTestInfra(t *testing.T) {
 	// run the preTest
 	db, dbname := preTest(t)
@@ -140,6 +179,50 @@ func TestUpgradeScripts(t *testing.T) {
 	// assert current state of the database
 	assert.Equal(t, 1, getNumTablesInDb(db))
 	assert.True(t, checkTableExists(db, "db_version"))
-	// TODO check schema of db_version table
+
+	// check schema of db_version table
+	columns := getTableSchema(db, "db_version")
+	assert.Equal(t, 5, len(columns), fmt.Sprintf("%v", columns))
+	assertTableColumnsEqual(t, &tableColumn{
+		columnName:             "version",
+		ordinalPosition:        1,
+		columnDefault:          nil,
+		isNullable:             "NO",
+		dataType:               "integer",
+		characterMaximumLength: nil,
+	}, &columns[0])
+	assertTableColumnsEqual(t, &tableColumn{
+		columnName:             "date_completed_utc",
+		ordinalPosition:        2,
+		columnDefault:          nil,
+		isNullable:             "NO",
+		dataType:               "timestamp without time zone",
+		characterMaximumLength: nil,
+	}, &columns[1])
+	assertTableColumnsEqual(t, &tableColumn{
+		columnName:             "num_scripts",
+		ordinalPosition:        3,
+		columnDefault:          nil,
+		isNullable:             "NO",
+		dataType:               "integer",
+		characterMaximumLength: nil,
+	}, &columns[2])
+	assertTableColumnsEqual(t, &tableColumn{
+		columnName:             "time_elapsed_millis",
+		ordinalPosition:        4,
+		columnDefault:          nil,
+		isNullable:             "NO",
+		dataType:               "bigint",
+		characterMaximumLength: nil,
+	}, &columns[3])
+	assertTableColumnsEqual(t, &tableColumn{
+		columnName:             "code_version_string",
+		ordinalPosition:        5,
+		columnDefault:          nil,
+		isNullable:             "YES",
+		dataType:               "text",
+		characterMaximumLength: nil,
+	}, &columns[4])
+
 	// TODO check entries of db_version table
 }
