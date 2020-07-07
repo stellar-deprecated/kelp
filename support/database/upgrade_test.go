@@ -86,6 +86,34 @@ func checkDatabaseExistsWithNewConnection(dbname string) bool {
 	return hasDatabase
 }
 
+func getNumTablesInDb(db *sql.DB) int {
+	// run the query -- note that we need to be connected to the database of interest
+	tablesQueryResult, e := db.Query("select COUNT(*) from pg_stat_user_tables")
+	if e != nil {
+		panic(e)
+	}
+	defer tablesQueryResult.Close() // remembering to defer closing the query
+
+	tablesQueryResult.Next() // remembering to call Next() before Scan()
+	var count int
+	e = tablesQueryResult.Scan(&count)
+	if e != nil {
+		panic(e)
+	}
+
+	return count
+}
+
+func checkTableExists(db *sql.DB, tableName string) bool {
+	tablesQueryResult, e := db.Query(fmt.Sprintf("select tablename from pg_catalog.pg_tables where tablename = '%s'", tableName))
+	if e != nil {
+		panic(e)
+	}
+	defer tablesQueryResult.Close() // remembering to defer closing the query
+
+	return tablesQueryResult.Next()
+}
+
 func TestCurrentClassTestInfra(t *testing.T) {
 	// run the preTest
 	db, dbname := preTest(t)
@@ -93,14 +121,25 @@ func TestCurrentClassTestInfra(t *testing.T) {
 	assert.NotNil(t, db)
 	assert.Equal(t, strings.ToLower(dbname), dbname)
 	assert.True(t, checkDatabaseExistsWithNewConnection(dbname))
-	// assert that there are no tables in the database we just created
-	tablesQueryResult, e := db.Query("select * from pg_stat_user_tables")
-	assert.NoError(t, e)
-	assert.False(t, tablesQueryResult.Next()) // this should have 0 rows
-	tablesQueryResult.Close()                 // remembering to close the query, otherwise the connection will remain open in the postTestWithDbClose function
+	assert.Equal(t, 0, getNumTablesInDb(db))
 
 	// run the postTest
 	postTestWithDbClose(db, dbname)
 	// assert state after the postTest
 	assert.False(t, checkDatabaseExistsWithNewConnection(dbname))
+}
+
+func TestUpgradeScripts(t *testing.T) {
+	// run the preTest and defer running the postTest
+	db, dbname := preTest(t)
+	defer postTestWithDbClose(db, dbname)
+
+	// run the upgrade scripts
+	runUpgradeScripts(db, UpgradeScripts)
+
+	// assert current state of the database
+	assert.Equal(t, 1, getNumTablesInDb(db))
+	assert.True(t, checkTableExists(db, "db_version"))
+	// TODO check schema of db_version table
+	// TODO check entries of db_version table
 }

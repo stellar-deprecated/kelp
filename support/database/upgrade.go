@@ -31,6 +31,11 @@ func MakeUpgradeScript(version uint32, command string, moreCommands ...string) *
 	}
 }
 
+var UpgradeScripts = []*UpgradeScript{
+	MakeUpgradeScript(1, SqlDbVersionTableCreate),
+	MakeUpgradeScript(2, SqlDbVersionTableAlter1),
+}
+
 // ConnectInitializedDatabase creates a database with the required metadata tables
 func ConnectInitializedDatabase(postgresDbConfig *postgresdb.Config, upgradeScripts []*UpgradeScript) (*sql.DB, error) {
 	dbCreated, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
