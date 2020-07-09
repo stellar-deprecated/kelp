@@ -539,7 +539,7 @@ func runTradeCmd(options inputs) {
 		}
 
 		var e error
-		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig, upgradeScripts)
+		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig, upgradeScripts, version)
 		if e != nil {
 			logger.Fatal(l, fmt.Errorf("problem encountered while initializing the db: %s", e))
 		}

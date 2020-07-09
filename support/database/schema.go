@@ -10,6 +10,7 @@ import (
 	tables
 */
 const SqlDbVersionTableCreate = "CREATE TABLE IF NOT EXISTS db_version (version INTEGER NOT NULL, date_completed_utc TIMESTAMP WITHOUT TIME ZONE NOT NULL, num_scripts INTEGER NOT NULL, time_elapsed_millis BIGINT NOT NULL, PRIMARY KEY (version))"
+const SqlDbVersionTableAlter1 = "ALTER TABLE db_version ADD COLUMN code_version_string TEXT"
 
 /*
 	queries
