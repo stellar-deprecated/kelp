@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -25,7 +27,7 @@ func preTest(t *testing.T) (*sql.DB, string) {
 	}
 
 	// create empty database
-	db, e := ConnectInitializedDatabase(postgresDbConfig, []*UpgradeScript{})
+	db, e := ConnectInitializedDatabase(postgresDbConfig, []*UpgradeScript{}, "")
 	if e != nil {
 		panic(e)
 	}
@@ -153,6 +155,36 @@ func getTableSchema(db *sql.DB, tableName string) []tableColumn {
 	return items
 }
 
+func queryAllRows(db *sql.DB, tableName string) [][]interface{} {
+	queryResult, e := db.Query(fmt.Sprintf("SELECT * FROM %s", tableName))
+	if e != nil {
+		panic(e)
+	}
+	defer queryResult.Close() // remembering to defer closing the query
+
+	allRows := [][]interface{}{}
+	for queryResult.Next() { // remembering to call Next() before Scan()
+		// we want to generically query the table
+		colTypes, e := queryResult.ColumnTypes()
+		if e != nil {
+			panic(e)
+		}
+		columnValues := []interface{}{}
+		for i := 0; i < len(colTypes); i++ {
+			columnValues = append(columnValues, new(interface{}))
+		}
+
+		e = queryResult.Scan(columnValues...)
+		if e != nil {
+			panic(e)
+		}
+
+		allRows = append(allRows, columnValues)
+	}
+
+	return allRows
+}
+
 func TestCurrentClassTestInfra(t *testing.T) {
 	// run the preTest
 	db, dbname := preTest(t)
@@ -174,7 +206,8 @@ func TestUpgradeScripts(t *testing.T) {
 	defer postTestWithDbClose(db, dbname)
 
 	// run the upgrade scripts
-	runUpgradeScripts(db, UpgradeScripts)
+	codeVersionString := "someCodeVersion"
+	runUpgradeScripts(db, UpgradeScripts, codeVersionString)
 
 	// assert current state of the database
 	assert.Equal(t, 1, getNumTablesInDb(db))
@@ -224,5 +257,37 @@ func TestUpgradeScripts(t *testing.T) {
 		characterMaximumLength: nil,
 	}, &columns[4])
 
-	// TODO check entries of db_version table
+	// check entries of db_version table
+	allRows := queryAllRows(db, "db_version")
+	assert.Equal(t, 2, len(allRows))
+	// first code_version_string is nil becuase the field was not supported at the time when the upgrade script was run, and only in version 2 of
+	// the database do we add the field. See UpgradeScripts and runUpgradeScripts() for more details
+	validateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 10, nil)
+	validateDBVersionRow(t, allRows[1], 2, time.Now(), 1, 10, &codeVersionString)
+}
+
+func validateDBVersionRow(
+	t *testing.T,
+	actualRow []interface{},
+	wantVersion int,
+	wantDateCompletedUTC time.Time,
+	wantNumScripts int,
+	wantTimeElapsedMillis int,
+	wantCodeVersionString *string,
+) {
+	// first check length
+	if assert.Equal(t, 5, len(actualRow)) {
+		assert.Equal(t, fmt.Sprintf("%d", wantVersion), fmt.Sprintf("%v", reflect.ValueOf(actualRow[0]).Elem()))
+		assert.Equal(t, wantDateCompletedUTC.Format("20060102"), reflect.ValueOf(actualRow[1]).Elem().Interface().(time.Time).Format("20060102"))
+		assert.Equal(t, fmt.Sprintf("%v", wantNumScripts), fmt.Sprintf("%v", reflect.ValueOf(actualRow[2]).Elem()))
+		elapsed, e := strconv.Atoi(fmt.Sprintf("%v", reflect.ValueOf(actualRow[3]).Elem()))
+		if assert.Nil(t, e) {
+			assert.LessOrEqual(t, elapsed, wantTimeElapsedMillis)
+		}
+		if wantCodeVersionString == nil {
+			assert.Equal(t, "<nil>", fmt.Sprintf("%v", reflect.ValueOf(actualRow[4]).Elem()))
+		} else {
+			assert.Equal(t, *wantCodeVersionString, fmt.Sprintf("%v", reflect.ValueOf(actualRow[4]).Elem()))
+		}
+	}
 }
