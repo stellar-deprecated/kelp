@@ -59,7 +59,7 @@ func ConnectInitializedDatabase(postgresDbConfig *postgresdb.Config, upgradeScri
 	// don't defer db.Close() here becuase we want it open for the life of the application for now
 
 	log.Printf("creating db schema and running upgrade scripts ...\n")
-	e = runUpgradeScripts(db, upgradeScripts, codeVersionString)
+	e = RunUpgradeScripts(db, upgradeScripts, codeVersionString)
 	if e != nil {
 		return nil, fmt.Errorf("could not run upgrade scripts: %s", e)
 	}
@@ -68,7 +68,8 @@ func ConnectInitializedDatabase(postgresDbConfig *postgresdb.Config, upgradeScri
 	return db, nil
 }
 
-func runUpgradeScripts(db *sql.DB, scripts []*UpgradeScript, codeVersionString string) error {
+// RunUpgradeScripts is a utility function that can be run from outside this package so we need to export it
+func RunUpgradeScripts(db *sql.DB, scripts []*UpgradeScript, codeVersionString string) error {
 	// save feature flags for the db_version table here
 	hasCodeVersionString := false
 

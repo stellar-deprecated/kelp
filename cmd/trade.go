@@ -32,7 +32,9 @@ import (
 )
 
 var upgradeScripts = []*database.UpgradeScript{
-	database.MakeUpgradeScript(1, database.SqlDbVersionTableCreate),
+	database.MakeUpgradeScript(1,
+		database.SqlDbVersionTableCreate,
+	),
 	database.MakeUpgradeScript(2,
 		kelpdb.SqlMarketsTableCreate,
 		kelpdb.SqlTradesTableCreate,
@@ -41,6 +43,9 @@ var upgradeScripts = []*database.UpgradeScript{
 	database.MakeUpgradeScript(3,
 		kelpdb.SqlTradesIndexDrop,
 		kelpdb.SqlTradesIndexCreate2,
+	),
+	database.MakeUpgradeScript(4,
+		database.SqlDbVersionTableAlter1,
 	),
 }
 

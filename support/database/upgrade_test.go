@@ -31,7 +31,7 @@ func TestUpgradeScripts(t *testing.T) {
 
 	// run the upgrade scripts
 	codeVersionString := "someCodeVersion"
-	runUpgradeScripts(db, UpgradeScripts, codeVersionString)
+	RunUpgradeScripts(db, UpgradeScripts, codeVersionString)
 
 	// assert current state of the database
 	assert.Equal(t, 1, GetNumTablesInDb(db))
@@ -41,51 +41,51 @@ func TestUpgradeScripts(t *testing.T) {
 	columns := GetTableSchema(db, "db_version")
 	assert.Equal(t, 5, len(columns), fmt.Sprintf("%v", columns))
 	AssertTableColumnsEqual(t, &TableColumn{
-		columnName:             "version",
-		ordinalPosition:        1,
-		columnDefault:          nil,
-		isNullable:             "NO",
-		dataType:               "integer",
-		characterMaximumLength: nil,
+		ColumnName:             "version",
+		OrdinalPosition:        1,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "integer",
+		CharacterMaximumLength: nil,
 	}, &columns[0])
 	AssertTableColumnsEqual(t, &TableColumn{
-		columnName:             "date_completed_utc",
-		ordinalPosition:        2,
-		columnDefault:          nil,
-		isNullable:             "NO",
-		dataType:               "timestamp without time zone",
-		characterMaximumLength: nil,
+		ColumnName:             "date_completed_utc",
+		OrdinalPosition:        2,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "timestamp without time zone",
+		CharacterMaximumLength: nil,
 	}, &columns[1])
 	AssertTableColumnsEqual(t, &TableColumn{
-		columnName:             "num_scripts",
-		ordinalPosition:        3,
-		columnDefault:          nil,
-		isNullable:             "NO",
-		dataType:               "integer",
-		characterMaximumLength: nil,
+		ColumnName:             "num_scripts",
+		OrdinalPosition:        3,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "integer",
+		CharacterMaximumLength: nil,
 	}, &columns[2])
 	AssertTableColumnsEqual(t, &TableColumn{
-		columnName:             "time_elapsed_millis",
-		ordinalPosition:        4,
-		columnDefault:          nil,
-		isNullable:             "NO",
-		dataType:               "bigint",
-		characterMaximumLength: nil,
+		ColumnName:             "time_elapsed_millis",
+		OrdinalPosition:        4,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "bigint",
+		CharacterMaximumLength: nil,
 	}, &columns[3])
 	AssertTableColumnsEqual(t, &TableColumn{
-		columnName:             "code_version_string",
-		ordinalPosition:        5,
-		columnDefault:          nil,
-		isNullable:             "YES",
-		dataType:               "text",
-		characterMaximumLength: nil,
+		ColumnName:             "code_version_string",
+		OrdinalPosition:        5,
+		ColumnDefault:          nil,
+		IsNullable:             "YES",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
 	}, &columns[4])
 
 	// check entries of db_version table
 	allRows := QueryAllRows(db, "db_version")
 	assert.Equal(t, 2, len(allRows))
 	// first code_version_string is nil becuase the field was not supported at the time when the upgrade script was run, and only in version 2 of
-	// the database do we add the field. See UpgradeScripts and runUpgradeScripts() for more details
+	// the database do we add the field. See UpgradeScripts and RunUpgradeScripts() for more details
 	ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 10, nil)
 	ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 1, 10, &codeVersionString)
 }

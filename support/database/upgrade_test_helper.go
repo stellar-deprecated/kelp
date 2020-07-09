@@ -93,22 +93,22 @@ func CheckTableExists(db *sql.DB, tableName string) bool {
 
 // TableColumn is a column in a table specefied generically
 type TableColumn struct {
-	columnName             string      // `db:"column_name"`
-	ordinalPosition        int         // `db:"ordinal_position"`
-	columnDefault          interface{} // `db:"column_default"`
-	isNullable             string      // `db:"is_nullable"`        // uses "YES" / "NO" instead of a boolean
-	dataType               string      // `db:"data_type"`
-	characterMaximumLength interface{} // `db:"character_maximum_length"`
+	ColumnName             string      // `db:"column_name"`
+	OrdinalPosition        int         // `db:"ordinal_position"`
+	ColumnDefault          interface{} // `db:"column_default"`
+	IsNullable             string      // `db:"is_nullable"`        // uses "YES" / "NO" instead of a boolean
+	DataType               string      // `db:"data_type"`
+	CharacterMaximumLength interface{} // `db:"character_maximum_length"`
 }
 
 // AssertTableColumnsEqual is well-named
 func AssertTableColumnsEqual(t *testing.T, want *TableColumn, actual *TableColumn) {
-	assert.Equal(t, want.columnName, actual.columnName)
-	assert.Equal(t, want.ordinalPosition, actual.ordinalPosition)
-	assert.Equal(t, want.columnDefault, actual.columnDefault)
-	assert.Equal(t, want.isNullable, actual.isNullable)
-	assert.Equal(t, want.dataType, actual.dataType)
-	assert.Equal(t, want.characterMaximumLength, actual.characterMaximumLength)
+	assert.Equal(t, want.ColumnName, actual.ColumnName)
+	assert.Equal(t, want.OrdinalPosition, actual.OrdinalPosition)
+	assert.Equal(t, want.ColumnDefault, actual.ColumnDefault)
+	assert.Equal(t, want.IsNullable, actual.IsNullable)
+	assert.Equal(t, want.DataType, actual.DataType)
+	assert.Equal(t, want.CharacterMaximumLength, actual.CharacterMaximumLength)
 }
 
 // GetTableSchema is well-named
@@ -122,7 +122,7 @@ func GetTableSchema(db *sql.DB, tableName string) []TableColumn {
 	items := []TableColumn{}
 	for schemaQueryResult.Next() { // remembering to call Next() before Scan()
 		var item TableColumn
-		e = schemaQueryResult.Scan(&item.columnName, &item.ordinalPosition, &item.columnDefault, &item.isNullable, &item.dataType, &item.characterMaximumLength)
+		e = schemaQueryResult.Scan(&item.ColumnName, &item.OrdinalPosition, &item.ColumnDefault, &item.IsNullable, &item.DataType, &item.CharacterMaximumLength)
 		if e != nil {
 			panic(e)
 		}
