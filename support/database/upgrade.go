@@ -93,6 +93,10 @@ func RunUpgradeScripts(db *sql.DB, scripts []*UpgradeScript, codeVersionString s
 		if e != nil {
 			return fmt.Errorf("could not start transaction before upgrading db to version %d: %s", script.version, e)
 		}
+		// issue a ROLLBACK command to handle the case of the transaction failing. it's a noop if the transaction commits successfully
+		defer func() {
+			postgresdb.ExecuteStatement(db, "ROLLBACK")
+		}()
 
 		startTime := time.Now()
 		startTimeMillis := startTime.UnixNano() / int64(time.Millisecond)
