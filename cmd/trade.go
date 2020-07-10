@@ -47,6 +47,10 @@ var upgradeScripts = []*database.UpgradeScript{
 	database.MakeUpgradeScript(4,
 		database.SqlDbVersionTableAlter1,
 	),
+	database.MakeUpgradeScript(5,
+		kelpdb.SqlTradesTableAlter1,
+		kelpdb.SqlTradesIndexCreate3,
+	),
 }
 
 const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg

@@ -5,6 +5,7 @@ package kelpdb
 */
 const SqlMarketsTableCreate = "CREATE TABLE IF NOT EXISTS markets (market_id TEXT PRIMARY KEY, exchange_name TEXT NOT NULL, base TEXT NOT NULL, quote TEXT NOT NULL)"
 const SqlTradesTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT NOT NULL, txid TEXT NOT NULL, date_utc TIMESTAMP WITHOUT TIME ZONE NOT NULL, action TEXT NOT NULL, type TEXT NOT NULL, counter_price DOUBLE PRECISION NOT NULL, base_volume DOUBLE PRECISION NOT NULL, counter_cost DOUBLE PRECISION NOT NULL, fee DOUBLE PRECISION NOT NULL, PRIMARY KEY (market_id, txid))"
+const SqlTradesTableAlter1 = "ALTER TABLE trades ADD COLUMN account_id TEXT"
 
 /*
 	indexes
@@ -12,6 +13,11 @@ const SqlTradesTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT 
 const SqlTradesIndexCreate = "CREATE INDEX IF NOT EXISTS date ON trades (market_id, date_utc)"
 const SqlTradesIndexDrop = "DROP INDEX IF EXISTS date"
 const SqlTradesIndexCreate2 = "CREATE INDEX IF NOT EXISTS trades_mdd ON trades (market_id, DATE(date_utc), date_utc)"
+
+// We don't include account_id in the primary key of the trades table because the account_id will initially be null until we clean that up (later)
+// For now we add it as a unique index on which we will later base the primary key. This does not provide us with any immediate benefit because the PK is a subset
+// of this unique index and we don't use this index for queries yet (we will later)
+const SqlTradesIndexCreate3 = "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS trades_amt ON trades (account_id, market_id, txid)"
 
 /*
 	insert statements
