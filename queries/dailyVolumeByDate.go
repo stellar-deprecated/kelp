@@ -8,8 +8,11 @@ import (
 	"github.com/stellar/kelp/api"
 )
 
-// sqlQueryDailyValuesTemplate queries the trades table to get the values for a given day
-const sqlQueryDailyValuesTemplate = "SELECT SUM(base_volume) as total_base_volume, SUM(counter_cost) as total_counter_volume FROM trades WHERE market_id IN (%s) AND DATE(date_utc) = $1 and action = $2 group by DATE(date_utc)"
+// sqlQueryDailyValuesTemplateAllAccounts queries the trades table to get the values for a given day
+const sqlQueryDailyValuesTemplateAllAccounts = "SELECT SUM(base_volume) as total_base_volume, SUM(counter_cost) as total_counter_volume FROM trades WHERE market_id IN (%s) AND DATE(date_utc) = $1 and action = $2 group by DATE(date_utc)"
+
+// sqlQueryDailyValuesTemplateSpecificAccounts queries the trades table to get the values for a given day filtered by specific accounts
+const sqlQueryDailyValuesTemplateSpecificAccounts = "SELECT SUM(base_volume) as total_base_volume, SUM(counter_cost) as total_counter_volume FROM trades WHERE market_id IN (%s) AND account_id IN (%s) AND DATE(date_utc) = $1 and action = $2 group by DATE(date_utc)"
 
 // DailyVolumeByDate is a query that fetches the daily volume of sales
 type DailyVolumeByDate struct {
@@ -31,12 +34,13 @@ func MakeDailyVolumeByDateForMarketIdsAction(
 	db *sql.DB,
 	marketIDs []string,
 	action string,
+	optionalAccountIDs []string,
 ) (*DailyVolumeByDate, error) {
 	if db == nil {
 		return nil, fmt.Errorf("the provided db should be non-nil")
 	}
 
-	sqlQuery := makeSQLQueryDailyVolume(marketIDs)
+	sqlQuery := makeSQLQueryDailyVolume(marketIDs, optionalAccountIDs)
 	return &DailyVolumeByDate{
 		db:       db,
 		sqlQuery: sqlQuery,
@@ -85,13 +89,24 @@ func (q *DailyVolumeByDate) QueryRow(args ...interface{}) (interface{}, error) {
 	}, nil
 }
 
-func makeSQLQueryDailyVolume(marketIDs []string) string {
-	inClauseParts := []string{}
+func makeSQLQueryDailyVolume(marketIDs []string, optionalAccountIDs []string) string {
+	// add filter on marketIDs
+	marketsInClauseParts := []string{}
 	for _, mid := range marketIDs {
-		inValue := fmt.Sprintf("'%s'", mid)
-		inClauseParts = append(inClauseParts, inValue)
+		marketsInValue := fmt.Sprintf("'%s'", mid)
+		marketsInClauseParts = append(marketsInClauseParts, marketsInValue)
 	}
-	inClause := strings.Join(inClauseParts, ", ")
+	marketsInClause := strings.Join(marketsInClauseParts, ", ")
+	if len(optionalAccountIDs) == 0 {
+		return fmt.Sprintf(sqlQueryDailyValuesTemplateAllAccounts, marketsInClause)
+	}
 
-	return fmt.Sprintf(sqlQueryDailyValuesTemplate, inClause)
+	// include filter on account_id
+	accountsInClauseParts := []string{}
+	for _, aid := range optionalAccountIDs {
+		accountsInValue := fmt.Sprintf("'%s'", aid)
+		accountsInClauseParts = append(accountsInClauseParts, accountsInValue)
+	}
+	accountsInClause := strings.Join(accountsInClauseParts, ", ")
+	return fmt.Sprintf(sqlQueryDailyValuesTemplateSpecificAccounts, marketsInClause, accountsInClause)
 }

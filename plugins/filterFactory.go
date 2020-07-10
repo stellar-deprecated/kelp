@@ -85,6 +85,8 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 		}
 
 		config.additionalMarketIDs = marketIds
+
+		// TODO set config.optionalAccountIDs based on new input format
 	} else if len(limitWindowParts) != 1 {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
 	}

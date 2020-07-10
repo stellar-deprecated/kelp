@@ -26,7 +26,7 @@ const SqlTradesIndexCreate3 = "CREATE UNIQUE INDEX IF NOT EXISTS trades_amt ON t
 const SqlMarketsInsertTemplate = "INSERT INTO markets (market_id, exchange_name, base, quote) VALUES ('%s', '%s', '%s', '%s')"
 
 // SqlTradesInsertTemplate inserts into the trades table
-const SqlTradesInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee) VALUES ('%s', '%s', '%s', '%s', '%s', %.15f, %.15f, %.15f, %.15f)"
+const SqlTradesInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee, account_id) VALUES ('%s', '%s', '%s', '%s', '%s', %.15f, %.15f, %.15f, %.15f, '%s')"
 
 /*
 	queries

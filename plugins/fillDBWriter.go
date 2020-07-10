@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
@@ -41,6 +42,7 @@ type FillDBWriter struct {
 	db             *sql.DB
 	assetDisplayFn model.AssetDisplayFn
 	exchangeName   string
+	accountID      string
 
 	// uninitialized
 	market *tradingMarket
@@ -73,11 +75,12 @@ func (m *tradingMarket) String() string {
 var _ api.FillHandler = &FillDBWriter{}
 
 // MakeFillDBWriter is a factory method
-func MakeFillDBWriter(db *sql.DB, assetDisplayFn model.AssetDisplayFn, exchangeName string) api.FillHandler {
+func MakeFillDBWriter(db *sql.DB, assetDisplayFn model.AssetDisplayFn, exchangeName string, accountID string) api.FillHandler {
 	return &FillDBWriter{
 		db:             db,
 		assetDisplayFn: assetDisplayFn,
 		exchangeName:   exchangeName,
+		accountID:      accountID,
 	}
 }
 
@@ -176,6 +179,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		f.checkedFloat(trade.Volume),
 		f.checkedFloat(trade.Cost),
 		f.checkedFloat(trade.Fee),
+		f.accountID,
 	)
 	_, e = f.db.Exec(sqlInsert)
 	if e != nil {

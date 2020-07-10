@@ -46,6 +46,7 @@ type BotConfig struct {
 	CentralizedMinBaseVolumeOverride   *float64                 `valid:"-" toml:"CENTRALIZED_MIN_BASE_VOLUME_OVERRIDE" json:"centralized_min_base_volume_override"`
 	CentralizedMinQuoteVolumeOverride  *float64                 `valid:"-" toml:"CENTRALIZED_MIN_QUOTE_VOLUME_OVERRIDE" json:"centralized_min_quote_volume_override"`
 	PostgresDbConfig                   *postgresdb.Config       `valid:"-" toml:"POSTGRES_DB" json:"postgres_db"`
+	DbOverrideAccountID                string                   `valid:"-" toml:"DB_OVERRIDE__ACCOUNT_ID" json:"db_override__account_id"`
 	Filters                            []string                 `valid:"-" toml:"FILTERS" json:"filters"`
 	AlertType                          string                   `valid:"-" toml:"ALERT_TYPE" json:"alert_type"`
 	AlertAPIKey                        string                   `valid:"-" toml:"ALERT_API_KEY" json:"alert_api_key"`
