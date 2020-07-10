@@ -31,7 +31,10 @@ func TestUpgradeScripts(t *testing.T) {
 
 	// run the upgrade scripts
 	codeVersionString := "someCodeVersion"
-	RunUpgradeScripts(db, UpgradeScripts, codeVersionString)
+	e := RunUpgradeScripts(db, UpgradeScripts, codeVersionString)
+	if e != nil {
+		panic(e)
+	}
 
 	// assert current state of the database
 	assert.Equal(t, 1, GetNumTablesInDb(db))
