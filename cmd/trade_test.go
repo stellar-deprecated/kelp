@@ -69,6 +69,10 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "text",
 		CharacterMaximumLength: nil,
 	}, &columns[4])
+	// check indexes of db_version table
+	indexes := database.GetTableIndexes(db, "db_version")
+	assert.Equal(t, 1, len(indexes))
+	database.AssertIndex(t, "db_version", "db_version_pkey", "CREATE UNIQUE INDEX db_version_pkey ON public.db_version USING btree (version)", indexes)
 
 	// check schema of markets table
 	columns = database.GetTableSchema(db, "markets")
@@ -105,6 +109,10 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "text",
 		CharacterMaximumLength: nil,
 	}, &columns[3])
+	// check indexes of markets table
+	indexes = database.GetTableIndexes(db, "markets")
+	assert.Equal(t, 1, len(indexes))
+	database.AssertIndex(t, "markets", "markets_pkey", "CREATE UNIQUE INDEX markets_pkey ON public.markets USING btree (market_id)", indexes)
 
 	// check schema of trades table
 	columns = database.GetTableSchema(db, "trades")
@@ -181,6 +189,11 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "double precision",
 		CharacterMaximumLength: nil,
 	}, &columns[8])
+	// check indexes of trades table
+	indexes = database.GetTableIndexes(db, "trades")
+	assert.Equal(t, 2, len(indexes))
+	database.AssertIndex(t, "trades", "trades_pkey", "CREATE UNIQUE INDEX trades_pkey ON public.trades USING btree (market_id, txid)", indexes)
+	database.AssertIndex(t, "trades", "trades_mdd", "CREATE INDEX trades_mdd ON public.trades USING btree (market_id, date(date_utc), date_utc)", indexes)
 
 	// check entries of db_version table
 	var allRows [][]interface{}
@@ -189,7 +202,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	// first three code_version_string is nil becuase the field was not supported at the time when the upgrade script was run, and only in version 4 of
 	// the database do we add the field. See upgradeScripts and RunUpgradeScripts() for more details
 	database.ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 10, nil)
-	database.ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 3, 10, nil)
+	database.ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 3, 15, nil)
 	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 10, nil)
 	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 10, &codeVersionString)
 

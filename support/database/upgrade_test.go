@@ -81,6 +81,11 @@ func TestUpgradeScripts(t *testing.T) {
 		CharacterMaximumLength: nil,
 	}, &columns[4])
 
+	// check indexes of db_version table
+	indexes := GetTableIndexes(db, "db_version")
+	assert.Equal(t, 1, len(indexes))
+	AssertIndex(t, "db_version", "db_version_pkey", "CREATE UNIQUE INDEX db_version_pkey ON public.db_version USING btree (version)", indexes)
+
 	// check entries of db_version table
 	allRows := QueryAllRows(db, "db_version")
 	assert.Equal(t, 2, len(allRows))

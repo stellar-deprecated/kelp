@@ -133,6 +133,39 @@ func GetTableSchema(db *sql.DB, tableName string) []TableColumn {
 	return items
 }
 
+// IndexSearchResult captures the result from GetTableIndexes() and is used as input to AssertIndex()
+type IndexSearchResult map[string]string
+
+// GetTableIndexes is well-named
+func GetTableIndexes(db *sql.DB, tableName string) IndexSearchResult {
+	indexQueryResult, e := db.Query(fmt.Sprintf("SELECT indexname, indexdef from pg_indexes where schemaname = 'public' AND tablename = '%s'", tableName))
+	if e != nil {
+		panic(e)
+	}
+	defer indexQueryResult.Close() // remembering to defer closing the query
+
+	m := map[string]string{}
+	for indexQueryResult.Next() { // remembering to call Next() before Scan()
+		var name, def string
+		e = indexQueryResult.Scan(&name, &def)
+		if e != nil {
+			panic(e)
+		}
+
+		m[name] = def
+	}
+
+	return m
+}
+
+// AssertIndex validates that the index exists
+func AssertIndex(t *testing.T, tableName string, wantIndexName string, wantDefinition string, indexes IndexSearchResult) {
+	m := map[string]string(indexes)
+	if v, ok := m[wantIndexName]; assert.True(t, ok, fmt.Sprintf("index '%s' should exist in the table '%s'", wantIndexName, tableName)) {
+		assert.Equal(t, wantDefinition, v)
+	}
+}
+
 // QueryAllRows queries all the rows of a given table in a database
 func QueryAllRows(db *sql.DB, tableName string) [][]interface{} {
 	queryResult, e := db.Query(fmt.Sprintf("SELECT * FROM %s", tableName))
