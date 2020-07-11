@@ -21,6 +21,9 @@ func TestParseIdsArray(t *testing.T) {
 			arrayString: "[abcde1234Z]",
 			want:        []string{"abcde1234Z"},
 		}, {
+			arrayString: "[account1]",
+			want:        []string{"account1"},
+		}, {
 			arrayString: "[]",
 			want:        []string{},
 		},

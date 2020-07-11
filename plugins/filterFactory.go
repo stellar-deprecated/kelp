@@ -148,6 +148,13 @@ func parseVolumeFilterModifier(modifierMapping string) ([]string, string, error)
 		if len(ids) == 0 {
 			return nil, "market_ids", fmt.Errorf("array length required to be greater than 0")
 		}
+
+		for _, id := range ids {
+			if !filterIDRegex.MatchString(id) {
+				return nil, "", fmt.Errorf("invalid id entry '%s'", id)
+			}
+		}
+
 		return ids, "market_ids", nil
 	} else if strings.HasPrefix(modifierMapping, "account_ids=") {
 		return ids, "account_ids", nil
@@ -171,14 +178,12 @@ func parseIdsArray(arrayString string) ([]string, error) {
 	idsTrimmed := []string{}
 	for _, id := range ids {
 		trimmedID := strings.TrimSpace(id)
+
 		// skip empty items
 		if len(trimmedID) == 0 {
 			continue
 		}
 
-		if !filterIDRegex.MatchString(trimmedID) {
-			return nil, fmt.Errorf("invalid id entry '%s'", trimmedID)
-		}
 		idsTrimmed = append(idsTrimmed, trimmedID)
 	}
 	return idsTrimmed, nil
