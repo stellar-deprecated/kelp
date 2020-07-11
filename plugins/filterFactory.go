@@ -127,10 +127,12 @@ func addModifierToConfig(config *VolumeFilterConfig, modifierMapping string) err
 
 	if modifierType == "market_ids" {
 		config.additionalMarketIDs = ids
+		return nil
 	} else if modifierType == "account_ids" {
 		config.optionalAccountIDs = ids
+		return nil
 	}
-	return fmt.Errorf("programmer error? invalid modifier type, should have thrown an error above when calling parseVolumeFilterModifier")
+	return fmt.Errorf("programmer error? invalid modifier type '%s', should have thrown an error above when calling parseVolumeFilterModifier", modifierType)
 }
 
 func parseVolumeFilterModifier(modifierMapping string) ([]string, string, error) {

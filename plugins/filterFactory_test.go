@@ -101,3 +101,34 @@ func TestParseVolumeFilterModifier(t *testing.T) {
 		})
 	}
 }
+
+func TestAddModifierToConfig(t *testing.T) {
+	testCases := []struct {
+		modifierMapping string
+		wantConfig      *VolumeFilterConfig
+	}{
+		{
+			modifierMapping: "market_ids=[abcde1234Z]",
+			wantConfig:      &VolumeFilterConfig{additionalMarketIDs: []string{"abcde1234Z"}},
+		}, {
+			modifierMapping: "account_ids=[accountX]",
+			wantConfig:      &VolumeFilterConfig{optionalAccountIDs: []string{"accountX"}},
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.modifierMapping, func(t *testing.T) {
+			config := &VolumeFilterConfig{}
+			e := addModifierToConfig(config, k.modifierMapping)
+			if !assert.NoError(t, e) {
+				return
+			}
+			assert.Equal(t, k.wantConfig.SellBaseAssetCapInBaseUnits, config.SellBaseAssetCapInBaseUnits)
+			assert.Equal(t, k.wantConfig.SellBaseAssetCapInQuoteUnits, config.SellBaseAssetCapInQuoteUnits)
+			assert.Equal(t, k.wantConfig.mode, config.mode)
+			assert.Equal(t, k.wantConfig.additionalMarketIDs, config.additionalMarketIDs)
+			assert.Equal(t, k.wantConfig.optionalAccountIDs, config.optionalAccountIDs)
+		})
+	}
+
+}
