@@ -151,7 +151,7 @@ func parseVolumeFilterModifier(modifierMapping string) ([]string, string, error)
 
 		for _, id := range ids {
 			if !filterIDRegex.MatchString(id) {
-				return nil, "", fmt.Errorf("invalid id entry '%s'", id)
+				return nil, "market_ids", fmt.Errorf("invalid id entry '%s'", id)
 			}
 		}
 
