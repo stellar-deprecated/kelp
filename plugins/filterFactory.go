@@ -171,6 +171,11 @@ func parseIdsArray(arrayString string) ([]string, error) {
 	idsTrimmed := []string{}
 	for _, id := range ids {
 		trimmedID := strings.TrimSpace(id)
+		// skip empty items
+		if len(trimmedID) == 0 {
+			continue
+		}
+
 		if !filterIDRegex.MatchString(trimmedID) {
 			return nil, fmt.Errorf("invalid id entry '%s'", trimmedID)
 		}
