@@ -213,11 +213,11 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	assert.Equal(t, 5, len(allRows))
 	// first three code_version_string is nil becuase the field was not supported at the time when the upgrade script was run, and only in version 4 of
 	// the database do we add the field. See upgradeScripts and RunUpgradeScripts() for more details
-	database.ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 10, nil)
-	database.ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 3, 15, nil)
-	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 10, nil)
-	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 10, &codeVersionString)
-	database.ValidateDBVersionRow(t, allRows[4], 5, time.Now(), 2, 10, &codeVersionString)
+	database.ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 50, nil)
+	database.ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 3, 150, nil)
+	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 100, nil)
+	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 50, &codeVersionString)
+	database.ValidateDBVersionRow(t, allRows[4], 5, time.Now(), 2, 100, &codeVersionString)
 
 	// check entries of markets table
 	allRows = database.QueryAllRows(db, "markets")
