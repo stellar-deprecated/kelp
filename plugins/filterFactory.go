@@ -54,6 +54,23 @@ func (f *FilterFactory) MakeFilter(configInput string) (SubmitFilter, error) {
 }
 
 func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
+	config, e := makeVolumeFilterConfig(configInput)
+	if e != nil {
+		return nil, fmt.Errorf("could not make VolumeFilterConfig for configInput (%s): %s", configInput, e)
+	}
+
+	return makeFilterVolume(
+		f.ExchangeName,
+		f.TradingPair,
+		f.AssetDisplayFn,
+		f.BaseAsset,
+		f.QuoteAsset,
+		f.DB,
+		config,
+	)
+}
+
+func makeVolumeFilterConfig(configInput string) (*VolumeFilterConfig, error) {
 	parts := strings.Split(configInput, "/")
 	if len(parts) != 6 {
 		return nil, fmt.Errorf("invalid input (%s), needs 6 parts separated by the delimiter (/)", configInput)
@@ -104,19 +121,11 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	} else {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"base\" or \"quote\"", configInput)
 	}
-	if e := config.Validate(); e != nil {
+
+	if e = config.Validate(); e != nil {
 		return nil, fmt.Errorf("invalid input (%s), did not pass validation: %s", configInput, e)
 	}
-
-	return makeFilterVolume(
-		f.ExchangeName,
-		f.TradingPair,
-		f.AssetDisplayFn,
-		f.BaseAsset,
-		f.QuoteAsset,
-		f.DB,
-		config,
-	)
+	return config, nil
 }
 
 func addModifierToConfig(config *VolumeFilterConfig, modifierMapping string) error {

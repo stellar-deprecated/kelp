@@ -1,5 +1,5 @@
-hash: 1486c50ca5ac23649defc5471ee8a5c81914b5781c5c779f694056df4ee840f1
-updated: 2020-05-07T03:29:16.430592+05:30
+hash: 81ecd9a85e0426d4a6332659b95c7cc3f835614b02d5b9c007e90971359167f9
+updated: 2020-07-14T01:36:52.028479+05:30
 imports:
 - name: cloud.google.com/go
   version: 310d83b78255a1605c3bd3a9ffe1606cf09ebcac
@@ -106,6 +106,8 @@ imports:
   version: a26df67722de7fcf1a8e22cd934e63e553dd3875
   subpackages:
   - multithreading
+- name: github.com/openlyinc/pointy
+  version: 945de578d11bbf43bd9729c2ea0837735a21d475
 - name: github.com/PagerDuty/go-pagerduty
   version: 635c5ce271490fba94880e62cde4eea3c1c184b9
 - name: github.com/pelletier/go-toml

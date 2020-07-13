@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/openlyinc/pointy"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -123,12 +124,86 @@ func TestAddModifierToConfig(t *testing.T) {
 			if !assert.NoError(t, e) {
 				return
 			}
-			assert.Equal(t, k.wantConfig.SellBaseAssetCapInBaseUnits, config.SellBaseAssetCapInBaseUnits)
-			assert.Equal(t, k.wantConfig.SellBaseAssetCapInQuoteUnits, config.SellBaseAssetCapInQuoteUnits)
-			assert.Equal(t, k.wantConfig.mode, config.mode)
-			assert.Equal(t, k.wantConfig.additionalMarketIDs, config.additionalMarketIDs)
-			assert.Equal(t, k.wantConfig.optionalAccountIDs, config.optionalAccountIDs)
+			assertVolumeFilterConfigEqual(t, k.wantConfig, config)
 		})
 	}
+}
 
+func TestMakeVolumeFilterConfig(t *testing.T) {
+	testCases := []struct {
+		configInput string
+		wantError   error
+		wantConfig  *VolumeFilterConfig
+	}{
+		{
+			configInput: "volume/daily/sell/base/3500.0/exact",
+			wantConfig: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				SellBaseAssetCapInQuoteUnits: nil,
+				mode:                         volumeFilterModeExact,
+				additionalMarketIDs:          nil,
+				optionalAccountIDs:           nil,
+			},
+		}, {
+			configInput: "volume/daily/sell/quote/1000.0/ignore",
+			wantConfig: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  nil,
+				SellBaseAssetCapInQuoteUnits: pointy.Float64(1000.0),
+				mode:                         volumeFilterModeIgnore,
+				additionalMarketIDs:          nil,
+				optionalAccountIDs:           nil,
+			},
+		}, {
+			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]/sell/base/3500.0/exact",
+			wantConfig: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				SellBaseAssetCapInQuoteUnits: nil,
+				mode:                         volumeFilterModeExact,
+				additionalMarketIDs:          []string{"4c19915f47", "db4531d586"},
+				optionalAccountIDs:           nil,
+			},
+		}, {
+			configInput: "volume/daily:account_ids=[account1,account2]/sell/base/3500.0/exact",
+			wantConfig: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				SellBaseAssetCapInQuoteUnits: nil,
+				mode:                         volumeFilterModeExact,
+				additionalMarketIDs:          nil,
+				optionalAccountIDs:           []string{"account1", "account2"},
+			},
+		}, {
+			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]:account_ids=[account1,account2]/sell/base/3500.0/exact",
+			wantConfig: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				SellBaseAssetCapInQuoteUnits: nil,
+				mode:                         volumeFilterModeExact,
+				additionalMarketIDs:          []string{"4c19915f47", "db4531d586"},
+				optionalAccountIDs:           []string{"account1", "account2"},
+			},
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.configInput, func(t *testing.T) {
+			actual, e := makeVolumeFilterConfig(k.configInput)
+			if !assert.NoError(t, e) {
+				return
+			}
+			assertVolumeFilterConfigEqual(t, k.wantConfig, actual)
+		})
+	}
+}
+
+func assertVolumeFilterConfigEqual(t *testing.T, want *VolumeFilterConfig, actual *VolumeFilterConfig) {
+	if want == nil {
+		assert.Nil(t, actual)
+	} else if actual == nil {
+		assert.Fail(t, fmt.Sprintf("actual was nil but expected %v", *want))
+	} else {
+		assert.Equal(t, want.SellBaseAssetCapInBaseUnits, actual.SellBaseAssetCapInBaseUnits)
+		assert.Equal(t, want.SellBaseAssetCapInQuoteUnits, actual.SellBaseAssetCapInQuoteUnits)
+		assert.Equal(t, want.mode, actual.mode)
+		assert.Equal(t, want.additionalMarketIDs, actual.additionalMarketIDs)
+		assert.Equal(t, want.optionalAccountIDs, actual.optionalAccountIDs)
+	}
 }
