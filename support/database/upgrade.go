@@ -81,6 +81,7 @@ func RunUpgradeScripts(db *sql.DB, scripts []*UpgradeScript, codeVersionString s
 				return fmt.Errorf("could not fetch current db version: %s", e)
 			}
 			currentDbVersion = 0
+			log.Printf("this is the first run since we don't have the db_version table, so set currentDbVersion to 0\n")
 		}
 
 		if script.version <= currentDbVersion {
