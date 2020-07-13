@@ -17,7 +17,10 @@ func TestTradeUpgradeScripts(t *testing.T) {
 
 	// run the upgrade scripts
 	codeVersionString := "TestTradeUpgradeScripts"
-	database.RunUpgradeScripts(db, upgradeScripts, codeVersionString)
+	e := database.RunUpgradeScripts(db, upgradeScripts, codeVersionString)
+	if e != nil {
+		panic(e)
+	}
 
 	// assert current state of the database
 	assert.Equal(t, 3, database.GetNumTablesInDb(db))
@@ -116,7 +119,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 
 	// check schema of trades table
 	columns = database.GetTableSchema(db, "trades")
-	assert.Equal(t, 9, len(columns), fmt.Sprintf("%v", columns))
+	assert.Equal(t, 10, len(columns), fmt.Sprintf("%v", columns))
 	database.AssertTableColumnsEqual(t, &database.TableColumn{
 		ColumnName:             "market_id",
 		OrdinalPosition:        1,
@@ -189,22 +192,32 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "double precision",
 		CharacterMaximumLength: nil,
 	}, &columns[8])
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "account_id",
+		OrdinalPosition:        10,
+		ColumnDefault:          nil,
+		IsNullable:             "YES",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[9])
 	// check indexes of trades table
 	indexes = database.GetTableIndexes(db, "trades")
-	assert.Equal(t, 2, len(indexes))
+	assert.Equal(t, 3, len(indexes))
 	database.AssertIndex(t, "trades", "trades_pkey", "CREATE UNIQUE INDEX trades_pkey ON public.trades USING btree (market_id, txid)", indexes)
 	database.AssertIndex(t, "trades", "trades_mdd", "CREATE INDEX trades_mdd ON public.trades USING btree (market_id, date(date_utc), date_utc)", indexes)
+	database.AssertIndex(t, "trades", "trades_amt", "CREATE UNIQUE INDEX trades_amt ON public.trades USING btree (account_id, market_id, txid)", indexes)
 
 	// check entries of db_version table
 	var allRows [][]interface{}
 	allRows = database.QueryAllRows(db, "db_version")
-	assert.Equal(t, 4, len(allRows))
+	assert.Equal(t, 5, len(allRows))
 	// first three code_version_string is nil becuase the field was not supported at the time when the upgrade script was run, and only in version 4 of
 	// the database do we add the field. See upgradeScripts and RunUpgradeScripts() for more details
-	database.ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 10, nil)
-	database.ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 3, 15, nil)
-	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 10, nil)
-	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 10, &codeVersionString)
+	database.ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 50, nil)
+	database.ValidateDBVersionRow(t, allRows[1], 2, time.Now(), 3, 150, nil)
+	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 100, nil)
+	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 50, &codeVersionString)
+	database.ValidateDBVersionRow(t, allRows[4], 5, time.Now(), 2, 100, &codeVersionString)
 
 	// check entries of markets table
 	allRows = database.QueryAllRows(db, "markets")

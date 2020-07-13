@@ -47,6 +47,10 @@ var upgradeScripts = []*database.UpgradeScript{
 	database.MakeUpgradeScript(4,
 		database.SqlDbVersionTableAlter1,
 	),
+	database.MakeUpgradeScript(5,
+		kelpdb.SqlTradesTableAlter1,
+		kelpdb.SqlTradesIndexCreate3,
+	),
 }
 
 const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg
@@ -543,6 +547,12 @@ func runTradeCmd(options inputs) {
 			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set FILL_TRACKER_SLEEP_MILLIS"))
 		}
 
+		if botConfig.DbOverrideAccountID == "" {
+			log.Println()
+			utils.PrintErrorHintf("DB_OVERRIDE__ACCOUNT_ID needs to be set in the trader.cfg file when the POSTGRES_DB is enabled so we can assign an account_id to trades that are fetched before writing them in the db")
+			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set DB_OVERRIDE__ACCOUNT_ID"))
+		}
+
 		var e error
 		db, e = database.ConnectInitializedDatabase(botConfig.PostgresDbConfig, upgradeScripts, version)
 		if e != nil {
@@ -617,6 +627,7 @@ func runTradeCmd(options inputs) {
 		assetDisplayFn,
 		db,
 		threadTracker,
+		botConfig.DbOverrideAccountID,
 	)
 	// --- end initialization of services ---
 
@@ -675,6 +686,7 @@ func startFillTracking(
 	assetDisplayFn model.AssetDisplayFn,
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
+	accountID string,
 ) {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
@@ -696,7 +708,7 @@ func startFillTracking(
 		fillLogger := plugins.MakeFillLogger()
 		fillTracker.RegisterHandler(fillLogger)
 		if db != nil {
-			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName())
+			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName(), accountID)
 			fillTracker.RegisterHandler(fillDBWriter)
 		}
 		if strategyFillHandlers != nil {

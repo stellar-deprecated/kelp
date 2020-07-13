@@ -57,3 +57,5 @@ import:
   version: 155c2a10bbb1791fbafe89a9b64be05c64f16c81
 - package: github.com/lib/pq
   version: v1.2.0
+- package: github.com/openlyinc/pointy
+  version: 945de578d11bbf43bd9729c2ea0837735a21d475

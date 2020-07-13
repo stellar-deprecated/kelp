@@ -38,6 +38,7 @@ type VolumeFilterConfig struct {
 	SellBaseAssetCapInQuoteUnits *float64
 	mode                         volumeFilterMode
 	additionalMarketIDs          []string
+	optionalAccountIDs           []string
 	// buyBaseAssetCapInBaseUnits   *float64
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
@@ -71,7 +72,7 @@ func makeFilterVolume(
 	}
 	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
-	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell")
+	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", config.optionalAccountIDs)
 	if e != nil {
 		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
 	}
@@ -97,8 +98,8 @@ func (c *VolumeFilterConfig) Validate() error {
 
 // String is the stringer method
 func (c *VolumeFilterConfig) String() string {
-	return fmt.Sprintf("VolumeFilterConfig[SellBaseAssetCapInBaseUnits=%s, SellBaseAssetCapInQuoteUnits=%s, mode=%s, additionalMarketIDs=%v]",
-		utils.CheckedFloatPtr(c.SellBaseAssetCapInBaseUnits), utils.CheckedFloatPtr(c.SellBaseAssetCapInQuoteUnits), c.mode, c.additionalMarketIDs)
+	return fmt.Sprintf("VolumeFilterConfig[SellBaseAssetCapInBaseUnits=%s, SellBaseAssetCapInQuoteUnits=%s, mode=%s, additionalMarketIDs=%v, optionalAccountIDs=%v]",
+		utils.CheckedFloatPtr(c.SellBaseAssetCapInBaseUnits), utils.CheckedFloatPtr(c.SellBaseAssetCapInQuoteUnits), c.mode, c.additionalMarketIDs, c.optionalAccountIDs)
 }
 
 func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {

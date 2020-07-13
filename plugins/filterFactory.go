@@ -11,14 +11,14 @@ import (
 	"github.com/stellar/kelp/model"
 )
 
-var marketIDRegex *regexp.Regexp
+var filterIDRegex *regexp.Regexp
 
 func init() {
-	midRxp, e := regexp.Compile("^[a-zA-Z0-9]{10}$")
+	rxp, e := regexp.Compile("^[a-zA-Z0-9]{10}$")
 	if e != nil {
-		panic("unable to compile marketID regexp")
+		panic("unable to compile filterID regexp")
 	}
-	marketIDRegex = midRxp
+	filterIDRegex = rxp
 }
 
 var filterMap = map[string]func(f *FilterFactory, configInput string) (SubmitFilter, error){
@@ -54,6 +54,23 @@ func (f *FilterFactory) MakeFilter(configInput string) (SubmitFilter, error) {
 }
 
 func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
+	config, e := makeVolumeFilterConfig(configInput)
+	if e != nil {
+		return nil, fmt.Errorf("could not make VolumeFilterConfig for configInput (%s): %s", configInput, e)
+	}
+
+	return makeFilterVolume(
+		f.ExchangeName,
+		f.TradingPair,
+		f.AssetDisplayFn,
+		f.BaseAsset,
+		f.QuoteAsset,
+		f.DB,
+		config,
+	)
+}
+
+func makeVolumeFilterConfig(configInput string) (*VolumeFilterConfig, error) {
 	parts := strings.Split(configInput, "/")
 	if len(parts) != 6 {
 		return nil, fmt.Errorf("invalid input (%s), needs 6 parts separated by the delimiter (/)", configInput)
@@ -68,23 +85,24 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	limitWindowParts := strings.Split(parts[1], ":")
 	if limitWindowParts[0] != "daily" {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to equal or start with \"daily\"", configInput)
-	} else if len(limitWindowParts) == 2 {
-		errInvalid := fmt.Errorf("invalid input (%s), the modifier for \"daily\" can only be \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
-		if !strings.HasPrefix(limitWindowParts[1], "market_ids=") {
-			return nil, fmt.Errorf("%s: invalid modifier prefix in '%s'", errInvalid, limitWindowParts[1])
-		}
+	}
 
-		modifierParts := strings.Split(limitWindowParts[1], "=")
-		if len(modifierParts) != 2 {
-			return nil, fmt.Errorf("%s: invalid parts for modifier with length %d, should have been 2", errInvalid, len(modifierParts))
-		}
-
-		marketIds, e := parseMarketIdsArray(modifierParts[1])
+	errInvalid := fmt.Errorf("invalid input (%s), the modifier for \"daily\" can be either \"market_ids\" or \"account_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]' or 'daily:account_ids=[account1,account2]' or 'daily:market_ids=[4c19915f47,db4531d586]:account_ids=[account1,account2]'", configInput)
+	if len(limitWindowParts) == 2 {
+		e = addModifierToConfig(config, limitWindowParts[1])
 		if e != nil {
-			return nil, fmt.Errorf("%s: %s", errInvalid, e)
+			return nil, fmt.Errorf("%s: could not addModifierToConfig for %s: %s", errInvalid, limitWindowParts[1], e)
+		}
+	} else if len(limitWindowParts) == 3 {
+		e = addModifierToConfig(config, limitWindowParts[1])
+		if e != nil {
+			return nil, fmt.Errorf("%s: could not addModifierToConfig for %s: %s", errInvalid, limitWindowParts[1], e)
 		}
 
-		config.additionalMarketIDs = marketIds
+		e = addModifierToConfig(config, limitWindowParts[2])
+		if e != nil {
+			return nil, fmt.Errorf("%s: could not addModifierToConfig for %s: %s", errInvalid, limitWindowParts[2], e)
+		}
 	} else if len(limitWindowParts) != 1 {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
 	}
@@ -103,45 +121,83 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	} else {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"base\" or \"quote\"", configInput)
 	}
-	if e := config.Validate(); e != nil {
+
+	if e = config.Validate(); e != nil {
 		return nil, fmt.Errorf("invalid input (%s), did not pass validation: %s", configInput, e)
 	}
-
-	return makeFilterVolume(
-		f.ExchangeName,
-		f.TradingPair,
-		f.AssetDisplayFn,
-		f.BaseAsset,
-		f.QuoteAsset,
-		f.DB,
-		config,
-	)
+	return config, nil
 }
 
-func parseMarketIdsArray(marketIdsArrayString string) ([]string, error) {
-	if !strings.HasPrefix(marketIdsArrayString, "[") {
-		return nil, fmt.Errorf("market_ids array should begin with '['")
+func addModifierToConfig(config *VolumeFilterConfig, modifierMapping string) error {
+	ids, modifierType, e := parseVolumeFilterModifier(modifierMapping)
+	if e != nil {
+		return fmt.Errorf("could not parseVolumeFilterModifier: %s", e)
 	}
 
-	if !strings.HasSuffix(marketIdsArrayString, "]") {
-		return nil, fmt.Errorf("market_ids array should end with ']'")
+	if modifierType == "market_ids" {
+		config.additionalMarketIDs = ids
+		return nil
+	} else if modifierType == "account_ids" {
+		config.optionalAccountIDs = ids
+		return nil
+	}
+	return fmt.Errorf("programmer error? invalid modifier type '%s', should have thrown an error above when calling parseVolumeFilterModifier", modifierType)
+}
+
+func parseVolumeFilterModifier(modifierMapping string) ([]string, string, error) {
+	modifierParts := strings.Split(modifierMapping, "=")
+	if len(modifierParts) != 2 {
+		return nil, "", fmt.Errorf("invalid parts for modifier with length %d, should have been 2", len(modifierParts))
 	}
 
-	arrayStringCleaned := marketIdsArrayString[:len(marketIdsArrayString)-1][1:]
-	marketIds := strings.Split(arrayStringCleaned, ",")
-	if len(marketIds) == 0 {
-		return nil, fmt.Errorf("market_ids array length should be greater than 0")
+	ids, e := parseIdsArray(modifierParts[1])
+	if e != nil {
+		return nil, "", fmt.Errorf("%s", e)
 	}
 
-	marketIdsTrimmed := []string{}
-	for _, mid := range marketIds {
-		trimmedMid := strings.TrimSpace(mid)
-		if !marketIDRegex.MatchString(trimmedMid) {
-			return nil, fmt.Errorf("invalid market_id entry '%s'", trimmedMid)
+	if strings.HasPrefix(modifierMapping, "market_ids=") {
+		if len(ids) == 0 {
+			return nil, "market_ids", fmt.Errorf("array length required to be greater than 0")
 		}
-		marketIdsTrimmed = append(marketIdsTrimmed, trimmedMid)
+
+		for _, id := range ids {
+			if !filterIDRegex.MatchString(id) {
+				return nil, "market_ids", fmt.Errorf("invalid id entry '%s'", id)
+			}
+		}
+
+		return ids, "market_ids", nil
+	} else if strings.HasPrefix(modifierMapping, "account_ids=") {
+		return ids, "account_ids", nil
 	}
-	return marketIdsTrimmed, nil
+
+	return nil, "", fmt.Errorf("invalid prefix for volume filter modifier '%s'", modifierMapping)
+}
+
+func parseIdsArray(arrayString string) ([]string, error) {
+	if !strings.HasPrefix(arrayString, "[") {
+		return nil, fmt.Errorf("arrayString should begin with '['")
+	}
+
+	if !strings.HasSuffix(arrayString, "]") {
+		return nil, fmt.Errorf("arrayString should end with ']'")
+	}
+
+	arrayStringCleaned := arrayString[:len(arrayString)-1][1:]
+	ids := strings.Split(arrayStringCleaned, ",")
+
+	idsTrimmed := []string{}
+	for _, id := range ids {
+		trimmedID := strings.TrimSpace(id)
+
+		// skip empty items
+		if len(trimmedID) == 0 {
+			continue
+		}
+
+		idsTrimmed = append(idsTrimmed, trimmedID)
+	}
+	return idsTrimmed, nil
 }
 
 func filterPrice(f *FilterFactory, configInput string) (SubmitFilter, error) {
