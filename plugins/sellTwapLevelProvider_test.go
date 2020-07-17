@@ -423,6 +423,7 @@ func TestMakeFirstBucketFrame(t *testing.T) {
 			utils.AssetFloatEquals(t, k.wantDayBaseSoldStart, bucketInfo.dayBaseSoldStart)
 			utils.AssetFloatEquals(t, k.wantDayBaseSoldStart, bucketInfo.dynamicValues.dayBaseSold) // this is always equal to dayBaseSoldStart because the bucket has not sold anything
 			assert.Equal(t, true, bucketInfo.dynamicValues.isNew)
+			assert.Equal(t, false, bucketInfo.dynamicValues.isLast)
 			assert.Equal(t, now, bucketInfo.dynamicValues.now)
 			assert.Equal(t, roundID(k.roundID), bucketInfo.dynamicValues.roundID)
 			assert.Equal(t, endDate, bucketInfo.endTime)
@@ -481,6 +482,7 @@ func TestUpdateExistingBucket(t *testing.T) {
 	assert.Equal(t, 5.0, updatedBucketInfo.dynamicValues.baseSold)
 	assert.Equal(t, 5.0, updatedBucketInfo.dynamicValues.dayBaseSold)
 	assert.Equal(t, false, updatedBucketInfo.dynamicValues.isNew)
+	assert.Equal(t, false, updatedBucketInfo.dynamicValues.isLast)
 	assert.Equal(t, now2, updatedBucketInfo.dynamicValues.now)
 	assert.Equal(t, roundID(3), updatedBucketInfo.dynamicValues.roundID)
 	assert.Equal(t, endDate, updatedBucketInfo.endTime)
@@ -565,6 +567,7 @@ func TestBucketInfoString(t *testing.T) {
 		1.66666667,
 		&dynamicBucketValues{
 			isNew:       true,
+			isLast:      false,
 			roundID:     roundID(16),
 			dayBaseSold: 5.0,
 			baseSold:    0.0,
@@ -574,7 +577,7 @@ func TestBucketInfoString(t *testing.T) {
 
 	wantString := "BucketInfo[UUID=2ee675ac04d8e817bab462f5ca18c74eea315c6f, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
 		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
-		" DynamicBucketValues[isNew=true, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
+		" DynamicBucketValues[isNew=true, isLast=false, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
 	assert.Equal(t, wantString, bucket.String())
 }
 
@@ -682,6 +685,7 @@ func TestBucketInfoUUID(t *testing.T) {
 				k.minChildOrderSizePercentOfParent*8.33333333,
 				&dynamicBucketValues{
 					isNew:       true,
+					isLast:      false,
 					roundID:     roundID(k.roundID),
 					dayBaseSold: 5.0,
 					baseSold:    0.0,
@@ -692,4 +696,45 @@ func TestBucketInfoUUID(t *testing.T) {
 			assert.Equal(t, k.want, bucket.UUID())
 		})
 	}
+}
+
+func TestFinalizeBucket(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2020-05-21T15:00:00Z")
+	startTime := now.Add(time.Minute * -5)
+	endTime := now.Add(time.Minute * 5)
+	bucket := makeBucketInfo(
+		bucketID(12),
+		startTime,
+		endTime,
+		60,
+		1440,
+		120,
+		5.0,
+		1000.0,
+		0.0,
+		0.0,
+		8.33333333,
+		1.66666667,
+		&dynamicBucketValues{
+			isNew:       true,
+			isLast:      false,
+			roundID:     roundID(16),
+			dayBaseSold: 5.0,
+			baseSold:    0.0,
+			now:         now,
+		},
+	)
+
+	// make the call
+	bucket = finalizeBucket(bucket)
+	// ensure field we care about changed
+	if !assert.True(t, bucket.dynamicValues.isLast) {
+		return
+	}
+
+	// ensure nothing else changed
+	wantString := "BucketInfo[UUID=2ee675ac04d8e817bab462f5ca18c74eea315c6f, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
+		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
+		" DynamicBucketValues[isNew=true, isLast=true, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
+	assert.Equal(t, wantString, bucket.String())
 }

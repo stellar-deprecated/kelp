@@ -101,6 +101,7 @@ type bucketID int64
 
 type dynamicBucketValues struct {
 	isNew       bool
+	isLast      bool
 	roundID     roundID
 	dayBaseSold float64
 	baseSold    float64
@@ -167,7 +168,7 @@ func (b *bucketInfo) baseRemaining() float64 {
 
 // String is the Stringer method
 func (b *bucketInfo) String() string {
-	return fmt.Sprintf("BucketInfo[UUID=%s, date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsToSell=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
+	return fmt.Sprintf("BucketInfo[UUID=%s, date=%s, dayID=%d (%s), bucketID=%d, startTime=%s, endTime=%s, sizeSeconds=%d, totalBuckets=%d, totalBucketsToSell=%d, dayBaseSoldStart=%.8f, dayBaseCapacity=%.8f, totalBaseSurplusStart=%.8f, baseSurplusIncluded=%.8f, baseCapacity=%.8f, minOrderSizeBase=%.8f, DynamicBucketValues[isNew=%v, isLast=%v, roundID=%d, dayBaseSold=%.8f, dayBaseRemaining=%.8f, baseSold=%.8f, baseRemaining=%.8f, bucketProgress=%.2f%%, bucketTimeElapsed=%.2f%%]]",
 		b.UUID(),
 		b.startTime.Format("2006-01-02"),
 		b.startTime.Weekday(),
@@ -185,6 +186,7 @@ func (b *bucketInfo) String() string {
 		b.baseCapacity,
 		b.minOrderSizeBase,
 		b.dynamicValues.isNew,
+		b.dynamicValues.isLast,
 		b.dynamicValues.roundID,
 		b.dynamicValues.dayBaseSold,
 		b.dayBaseRemaining(),
@@ -242,21 +244,24 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	log.Printf("volumeFilter = %s\n", volFilter.String())
 
 	rID := p.makeRoundID()
-	bucket, e := p.makeActiveBucket(now, volFilter, rID)
+	oldBucket, activeBucket, e := p.makeActiveBucket(now, volFilter, rID)
 	if e != nil {
 		return nil, fmt.Errorf("unable to make bucketInfo: %s", e)
 	}
 
-	round, e := p.makeRoundInfo(rID, now, bucket)
+	round, e := p.makeRoundInfo(rID, now, activeBucket)
 	if e != nil {
 		return nil, fmt.Errorf("unable to make roundInfo: %s", e)
 	}
 
 	// structured log line for metric tracking via log files
-	log.Printf("bucketInfo: %s; roundInfo: %s\n", bucket, round)
+	if oldBucket != nil {
+		log.Printf("bucketInfo: %s; roundInfo: %s\n", oldBucket, round)
+	}
+	log.Printf("bucketInfo: %s; roundInfo: %s\n", activeBucket, round)
 
-	// save bucket and round for future rounds
-	p.activeBucket = bucket
+	// save activeBucket and round for future rounds
+	p.activeBucket = activeBucket
 	p.previousRoundID = &round.ID
 
 	if round.sizeBaseCapped <= 0.0 {
@@ -305,6 +310,7 @@ func (p *sellTwapLevelProvider) makeFirstBucketFrame(
 	// upon instantiation the first bucket frame does not have anything sold beyond the starting values
 	dynamicValues := &dynamicBucketValues{
 		isNew:       true,
+		isLast:      false,
 		roundID:     rID,
 		dayBaseSold: dayBaseSoldStart,
 		baseSold:    0.0, // always 0.0 for a new bucket
@@ -335,7 +341,8 @@ func (p *sellTwapLevelProvider) updateExistingBucket(now time.Time, dailyVolumeV
 	dayBaseSold := dailyVolumeValues.BaseVol
 
 	bucket.dynamicValues = &dynamicBucketValues{
-		isNew:       false,
+		isNew: false,
+		//isLast stays same
 		roundID:     rID,
 		dayBaseSold: dayBaseSold,
 		baseSold:    dayBaseSold - bucket.dayBaseSoldStart,
@@ -344,7 +351,12 @@ func (p *sellTwapLevelProvider) updateExistingBucket(now time.Time, dailyVolumeV
 	return bucket, nil
 }
 
-func (p *sellTwapLevelProvider) makeActiveBucket(now time.Time, volFilter volumeFilter, rID roundID) (*bucketInfo, error) {
+func finalizeBucket(bucket *bucketInfo) *bucketInfo {
+	bucket.dynamicValues.isLast = true
+	return bucket
+}
+
+func (p *sellTwapLevelProvider) makeActiveBucket(now time.Time, volFilter volumeFilter, rID roundID) ( /*oldBucket*/ *bucketInfo /*activeBucket*/, *bucketInfo, error) {
 	dayStartTime := floorDate(now)
 	secondsElapsedToday := now.Unix() - dayStartTime.Unix()
 	bID := bucketID(secondsElapsedToday / int64(p.parentBucketSizeSeconds))
@@ -353,49 +365,56 @@ func (p *sellTwapLevelProvider) makeActiveBucket(now time.Time, volFilter volume
 
 	dayBaseCapacity, e := volFilter.mustGetBaseAssetCapInBaseUnits()
 	if e != nil {
-		return nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
+		return nil, nil, fmt.Errorf("could not fetch base asset cap in base units: %s", e)
 	}
 	queryResult, e := volFilter.dailyVolumeByDateQuery.QueryRow(now.Format(postgresdb.DateFormatString))
 	if e != nil {
-		return nil, fmt.Errorf("could not fetch daily values for today: %s", e)
+		return nil, nil, fmt.Errorf("could not fetch daily values for today: %s", e)
 	}
 	dailyVolumeValues, ok := queryResult.(*queries.DailyVolume)
 	if !ok {
-		return nil, fmt.Errorf("could not cast query result from dailyValuesByDateQuery as a *queries.DailyVolume, was type '%T'", queryResult)
+		return nil, nil, fmt.Errorf("could not cast query result from dailyValuesByDateQuery as a *queries.DailyVolume, was type '%T'", queryResult)
 	}
 
 	// bucket on bot load
 	if p.activeBucket == nil {
 		bucket, e := p.makeFirstBucketFrame(now, startTime, endTime, bID, rID, dayBaseCapacity, dailyVolumeValues)
 		if e != nil {
-			return nil, fmt.Errorf("could not make first bucket: %s", e)
+			return nil, nil, fmt.Errorf("could not make first bucket: %s", e)
 		}
-		return bucket, nil
+		return nil, bucket, nil
 	}
 
-	// new round in the same bucket
-	if bID == p.activeBucket.ID {
-		bucket, e := p.updateExistingBucket(now, dailyVolumeValues, rID)
-		if e != nil {
-			return nil, fmt.Errorf("could not update existing bucket (ID=%d): %s", bID, e)
-		}
-		return bucket, nil
+	// always update existing bucket with latest volume numbers
+	bucket, e := p.updateExistingBucket(now, dailyVolumeValues, rID)
+	if e != nil {
+		return nil, nil, fmt.Errorf("could not update existing bucket (ID=%d): %s", bID, e)
 	}
+
+	// new round in the same bucket should be returned
+	if bID == p.activeBucket.ID {
+		return nil, bucket, nil
+	}
+
+	// finalize the current bucket
+	oldBucket := finalizeBucket(bucket)
 
 	// new bucket needs to be created
 	newBucket, e := p.makeFirstBucketFrame(now, startTime, endTime, bID, rID, dayBaseCapacity, dailyVolumeValues)
 	if e != nil {
-		return nil, fmt.Errorf("unable to make first bucket frame when cutting over with new bucketID (ID=%d): %s", bID, e)
+		return nil, nil, fmt.Errorf("unable to make first bucket frame when cutting over with new bucketID (ID=%d): %s", bID, e)
 	}
 	// on a new day
 	if newBucket.ID == 0 {
-		return newBucket, nil
+		// return oldBucket along with the newBucket
+		return oldBucket, newBucket, nil
 	}
 	// on the same day
-	if newBucket.ID != p.activeBucket.ID+1 {
-		return nil, fmt.Errorf("new bucketID (%d) needs to be one more than the previous bucketID (%d)", newBucket.ID, p.activeBucket.ID)
+	if newBucket.ID != oldBucket.ID+1 {
+		return nil, nil, fmt.Errorf("new bucketID (%d) needs to be one more than the previous bucketID (%d)", newBucket.ID, oldBucket.ID)
 	}
-	return newBucket, nil
+	// return oldBucket along with the newBucket
+	return oldBucket, newBucket, nil
 }
 
 /*
