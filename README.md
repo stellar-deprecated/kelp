@@ -210,6 +210,13 @@ The following strategies are available **out of the box** with Kelp:
     - **Who:** An issuer could use Sell to distribute tokens from an ICO pre-sale
     - **Complexity**: Beginner
 
+- sell_twap ([source](plugins/sellTwapStrategy.go)):
+
+    - **What:** creates sell offers based on a reference price spread over the day for a given daily sale amount
+    - **Why:** To sell tokens consistently using the time-weighted-average-price (TWAP) metric
+    - **Who:** An issuer could use SellTwap to distribute tokens from an ICO pre-sale in a consistent manner
+    - **Complexity**: Intermediate
+
 - buysell ([source](plugins/buysellStrategy.go)):
 
     - **What:** creates buy and sell offers based on a specific reference price and a pre-specified liquidity depth while maintaining a [spread][spread].
@@ -334,6 +341,7 @@ It's easier to learn with examples! Take a look at the walkthrough guides and sa
 - [Setting up a trading account](examples/walkthroughs/trader/account_setup.md): This guide uses an example token, `COUPON`, to show you how to set up your account before deploying the bot.
 - [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the _buysell_ strategy to provide liquidity for a stablecoin. 
 - [ICO sale](examples/walkthroughs/trader/sell.md): This guide uses the `sell` strategy to make a market using sell offers for native tokens in a hypothetical ICO. 
+- [TWAP sale](examples/walkthroughs/trader/sell_twap.md): This guide uses the `sell_twap` strategy to consistently sell tokens throughout the day. This can also be used for ICOs.
 - [Create liquidity for a Stellar-based token](examples/walkthroughs/trader/balanced.md): This guide uses the `balanced` strategy to create liquidty for a token which only trades on the Stellar network. 
 - [Create targeted liquidity within a bounded price range](examples/walkthroughs/trader/pendulum.md): This guide uses the `pendulum` strategy to create liquidty for a token. 
 
