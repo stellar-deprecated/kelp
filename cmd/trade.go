@@ -322,6 +322,7 @@ func makeStrategy(
 	assetQuote hProtocol.Asset,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
+	filterFactory *plugins.FilterFactory,
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
 ) api.Strategy {
@@ -346,6 +347,7 @@ func makeStrategy(
 		*options.stratConfigPath,
 		*options.simMode,
 		botConfig.IsTradingSdex(),
+		filterFactory,
 	)
 	if e != nil {
 		l.Info("")
@@ -364,9 +366,8 @@ func makeBot(
 	exchangeShim api.ExchangeShim,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
-	db *sql.DB,
+	filterFactory *plugins.FilterFactory,
 	strategy api.Strategy,
-	assetDisplayFn model.AssetDisplayFn,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 ) *trader.Trader {
@@ -417,19 +418,11 @@ func makeBot(
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
 		)
 	}
-	if len(botConfig.Filters) > 0 && *options.strategy != "sell" && *options.strategy != "delete" {
+	if len(botConfig.Filters) > 0 && *options.strategy != "sell" && *options.strategy != "sell_twap" && *options.strategy != "delete" {
 		log.Println()
 		utils.PrintErrorHintf("FILTERS currently only supported on 'sell' and 'delete' strategies, remove FILTERS from the trader config file")
 		// we want to delete all the offers and exit here since there is something wrong with our setup
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-	}
-	filterFactory := plugins.FilterFactory{
-		ExchangeName:   botConfig.TradingExchangeName(),
-		TradingPair:    tradingPair,
-		AssetDisplayFn: assetDisplayFn,
-		BaseAsset:      assetBase,
-		QuoteAsset:     assetQuote,
-		DB:             db,
 	}
 	for _, filterString := range botConfig.Filters {
 		filter, e := filterFactory.MakeFilter(filterString)
@@ -571,6 +564,14 @@ func runTradeCmd(options inputs) {
 		tradingPair,
 		sdexAssetMap,
 	)
+	filterFactory := &plugins.FilterFactory{
+		ExchangeName:   botConfig.TradingExchangeName(),
+		TradingPair:    tradingPair,
+		AssetDisplayFn: assetDisplayFn,
+		BaseAsset:      assetBase,
+		QuoteAsset:     assetQuote,
+		DB:             db,
+	}
 	strategy := makeStrategy(
 		l,
 		network,
@@ -582,6 +583,7 @@ func runTradeCmd(options inputs) {
 		assetQuote,
 		ieif,
 		tradingPair,
+		filterFactory,
 		options,
 		threadTracker,
 	)
@@ -593,9 +595,8 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		ieif,
 		tradingPair,
-		db,
+		filterFactory,
 		strategy,
-		assetDisplayFn,
 		threadTracker,
 		options,
 	)

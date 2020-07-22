@@ -60,6 +60,7 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 	}
 
 	return makeFilterVolume(
+		configInput,
 		f.ExchangeName,
 		f.TradingPair,
 		f.AssetDisplayFn,

@@ -62,20 +62,8 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 	if e != nil {
 		return nil, fmt.Errorf("mid price couldn't be loaded: %s", e)
 	}
-	if p.offset.percent != 0.0 || p.offset.absolute != 0 {
-		// if inverted, we want to invert before we compute the adjusted price, and then invert back
-		if p.offset.invert {
-			midPrice = 1 / midPrice
-		}
-		scaleFactor := 1 + p.offset.percent
-		if p.offset.percentFirst {
-			midPrice = (midPrice * scaleFactor) + p.offset.absolute
-		} else {
-			midPrice = (midPrice + p.offset.absolute) * scaleFactor
-		}
-		if p.offset.invert {
-			midPrice = 1 / midPrice
-		}
+	midPrice, wasModified := p.offset.apply(midPrice)
+	if wasModified {
 		log.Printf("mid price (adjusted): %.7f\n", midPrice)
 	}
 
@@ -94,4 +82,29 @@ func (p *staticSpreadLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuot
 // GetFillHandlers impl
 func (p *staticSpreadLevelProvider) GetFillHandlers() ([]api.FillHandler, error) {
 	return nil, nil
+}
+
+// apply returns the final price and a bool (true) to indicate if we updated the price or false
+func (o *rateOffset) apply(price float64) (float64, bool) {
+	if o.percent == 0.0 && o.absolute == 0 {
+		return price, false
+	}
+
+	// if inverted, we want to invert before we compute the adjusted price, and then invert back
+	if o.invert {
+		price = 1 / price
+	}
+
+	scaleFactor := 1 + o.percent
+	if o.percentFirst {
+		price = (price * scaleFactor) + o.absolute
+	} else {
+		price = (price + o.absolute) * scaleFactor
+	}
+
+	if o.invert {
+		price = 1 / price
+	}
+
+	return price, true
 }

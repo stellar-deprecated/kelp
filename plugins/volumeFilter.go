@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -45,6 +46,7 @@ type VolumeFilterConfig struct {
 
 type volumeFilter struct {
 	name                   string
+	configValue            string
 	baseAsset              hProtocol.Asset
 	quoteAsset             hProtocol.Asset
 	config                 *VolumeFilterConfig
@@ -53,6 +55,7 @@ type volumeFilter struct {
 
 // makeFilterVolume makes a submit filter that limits orders placed based on the daily volume traded
 func makeFilterVolume(
+	configValue string,
 	exchangeName string,
 	tradingPair *model.TradingPair,
 	assetDisplayFn model.AssetDisplayFn,
@@ -79,6 +82,7 @@ func makeFilterVolume(
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
+		configValue:            configValue,
 		baseAsset:              baseAsset,
 		quoteAsset:             quoteAsset,
 		config:                 config,
@@ -209,6 +213,24 @@ func (f *volumeFilter) volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *Vo
 
 	// we don't want to keep it so return the dropped command
 	return nil, nil
+}
+
+// String is the Stringer method
+func (f *volumeFilter) String() string {
+	return f.configValue
+}
+
+// isBase returns true if the filter is on the amount of the base asset sold, false otherwise
+func (f *volumeFilter) isSellingBase() bool {
+	return strings.Contains(f.configValue, "/sell/base/")
+}
+
+func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {
+	value := f.config.SellBaseAssetCapInBaseUnits
+	if value == nil {
+		return 0.0, fmt.Errorf("SellBaseAssetCapInBaseUnits is nil, config = %v", f.config)
+	}
+	return *value, nil
 }
 
 func (c *VolumeFilterConfig) isEmpty() bool {

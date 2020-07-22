@@ -24,6 +24,7 @@ type strategyFactoryData struct {
 	stratConfigPath string
 	simMode         bool
 	isTradingSdex   bool
+	filterFactory   *FilterFactory
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -137,6 +138,31 @@ var strategies = map[string]StrategyContainer{
 			), nil
 		},
 	},
+	"sell_twap": {
+		SortOrder:   6,
+		Description: "Creates sell offers by distributing orders over time for a given day using a twap metric",
+		NeedsConfig: true,
+		Complexity:  "Intermediate",
+		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			var cfg sellTwapConfig
+			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
+			utils.LogConfig(cfg)
+			s, e := makeSellTwapStrategy(
+				strategyFactoryData.sdex,
+				strategyFactoryData.tradingPair,
+				strategyFactoryData.ieif,
+				strategyFactoryData.assetBase,
+				strategyFactoryData.assetQuote,
+				strategyFactoryData.filterFactory,
+				&cfg,
+			)
+			if e != nil {
+				return nil, fmt.Errorf("makeFn failed: %s", e)
+			}
+			return s, nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy
@@ -152,6 +178,7 @@ func MakeStrategy(
 	stratConfigPath string,
 	simMode bool,
 	isTradingSdex bool,
+	filterFactory *FilterFactory,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
 	if s, ok := strategies[strategy]; ok {
@@ -170,6 +197,7 @@ func MakeStrategy(
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
 			isTradingSdex:   isTradingSdex,
+			filterFactory:   filterFactory,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)
