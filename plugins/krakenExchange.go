@@ -21,6 +21,7 @@ import (
 var _ api.Exchange = &krakenExchange{}
 
 const precisionBalances = 10
+const tradesFetchSleepTimeSeconds = 60
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
@@ -374,6 +375,13 @@ func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, m
 	for {
 		innerRes, e := k.getTradeHistoryFromEndAscLimit50(tradingPair, maybeCursorStartExclusive, maybeCursorEndInclusive)
 		if e != nil {
+			if strings.Contains(e.Error(), "EAPI:Rate limit exceeded") {
+				log.Printf("error fetching trade history 50 at a time from the end in ascending order from kraken (%s). Sleeping for 60 seconds and then retrying request...", e)
+				time.Sleep(time.Duration(tradesFetchSleepTimeSeconds) * time.Second)
+
+				log.Printf("... retrying fetching of trades now")
+				continue
+			}
 			return nil, fmt.Errorf("error fetching trade history 50 at a time from the end in ascending order from kraken: %s", e)
 		}
 
