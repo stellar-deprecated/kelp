@@ -389,6 +389,7 @@ func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, m
 		if res.Cursor == nil {
 			// for the first iteration we want to set the cursor and add all trades
 			res.Cursor = innerRes.Cursor
+			log.Printf("set cursor to innerRes.Cursor value '%s'\n", innerRes.Cursor)
 			tradesToPrepend = innerRes.Trades
 		} else if len(innerRes.Trades) > 1 {
 			// for subsequent iterations we want to only prepent all but the last item (which will be a repeat of the end cursor value)
@@ -396,6 +397,7 @@ func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, m
 		} // else don't prepend anything
 		// prepend to outer result since we are fetching from the back
 		res.Trades = append(tradesToPrepend, res.Trades...)
+		log.Printf("prepended %d trades, total length of trades is now %d\n", len(tradesToPrepend), len(res.Trades))
 
 		// this is the terminal condition for this function
 		// Kraken should return exactly 50 items, but this is a more future-proof check
@@ -406,6 +408,7 @@ func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, m
 		// update state to continue fetching trades; set first transactionID of inner result as the new cursor end (inclusive). leave cursor start as-is (exclusive).
 		firstTxID := innerRes.Trades[0].TransactionID.String()
 		maybeCursorEndInclusive = &firstTxID
+		log.Printf("updated value of maybeCursorEndInclusive pointer to '%s'\n", firstTxID)
 	}
 }
 
