@@ -412,13 +412,17 @@ func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, m
 // getTradeHistoryFromEndAscLimit50 fetches trades from the cursor end, in ascending order, limited to 50 entries.
 // the backwards iteration is a limitation of the Kraken API which requires us to have an intermediary getTradeHistoryAdapter() method
 func (k *krakenExchange) getTradeHistoryFromEndAscLimit50(tradingPair model.TradingPair, maybeCursorStartExclusive *string, maybeCursorEndInclusive *string) (*api.TradeHistoryResult, error) {
+	var startCursorLogString, endCursorLogString = "(nil)", "(nil)"
 	input := map[string]string{}
 	if maybeCursorStartExclusive != nil {
 		input["start"] = *maybeCursorStartExclusive
+		startCursorLogString = *maybeCursorStartExclusive
 	}
 	if maybeCursorEndInclusive != nil {
 		input["end"] = *maybeCursorEndInclusive
+		endCursorLogString = *maybeCursorEndInclusive
 	}
+	log.Printf("fetching trade history from end ascending with a limit of 50 tradingPair=%s, maybeCursorStartExclusive=%s, maybeCursorEndInclusive=%s\n", tradingPair.String(), startCursorLogString, endCursorLogString)
 
 	resp, e := k.nextAPI().Query("TradesHistory", input)
 	if e != nil {
