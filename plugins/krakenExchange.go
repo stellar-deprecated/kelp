@@ -360,20 +360,36 @@ func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStar
 		mce = &i
 	}
 
-	return k.getTradeHistoryAdapter(pair, mcs, mce)
+	fetchPartialTradesFromEndAsc := func(mcei *string) (*api.TradeHistoryResult, error) {
+		return k.getTradeHistoryFromEndAscLimit50(pair, mcs, mcei)
+	}
+	return getTradeHistoryAdapter(mce, fetchPartialTradesFromEndAsc)
 }
 
 // getTradeHistoryAdapter is an adapter method against the kraken API because the kraken API returns results from the end instead of the beginning and only 50 at a time.
-// we iterate over the getTradeHistoryFromEndAscLimit50() method to solve this problem
-func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, maybeCursorStartExclusive *string, maybeCursorEndInclusive *string) (*api.TradeHistoryResult, error) {
+// we iterate over the fetchPartialTradesFromEndAsc method to solve this problem
+// this is not attached to krakenExchange because we should be able to inject a fetchPartialTradesFromEndAsc that is unrelated to kraken for testing
+// fetchPartialTradesFromEndAsc:
+// fetchPartialTradesFromEndAsc will return an incomplete list of trades. If it returns a list of 0 items, or a list of items we have seen previously, then we have exhausted the search
+// the start cursor and trading pair is bound to fetchPartialTradesFromEndAsc already.
+// trades returned from fetchPartialTradesFromEndAsc are in ascending order with the cursor set to the last tradeID
+// example:
+// if we have trades with cursor1-cursor100 then calls to fetchPartialTradesFromEndAsc would return the following after
+// adjusting maybeCursorEndInclusive: 81-100, 61-80, 41-60, 21-40, 1-20
+func getTradeHistoryAdapter(
+	maybeCursorEndInclusive *string,
+	fetchPartialTradesFromEndAsc func(maybeCursorEndInclusive *string) (*api.TradeHistoryResult, error),
+) (*api.TradeHistoryResult, error) {
 	// accummulate results of the internal calls here, ignoring memory limits for now since these objects are small
 	res := &api.TradeHistoryResult{
 		Trades: []model.Trade{},
 		Cursor: nil,
 	}
+	// dedupe trades with the same transactionID using this map
+	seenTxIDs := map[string]bool{}
 
 	for {
-		innerRes, e := k.getTradeHistoryFromEndAscLimit50(tradingPair, maybeCursorStartExclusive, maybeCursorEndInclusive)
+		innerRes, e := fetchPartialTradesFromEndAsc(maybeCursorEndInclusive)
 		if e != nil {
 			if strings.Contains(e.Error(), "EAPI:Rate limit exceeded") {
 				log.Printf("error fetching trade history 50 at a time from the end in ascending order from kraken (%s). Sleeping for 60 seconds and then retrying request...", e)
@@ -391,17 +407,28 @@ func (k *krakenExchange) getTradeHistoryAdapter(tradingPair model.TradingPair, m
 			res.Cursor = innerRes.Cursor
 			log.Printf("set cursor to innerRes.Cursor value '%s'\n", innerRes.Cursor)
 			tradesToPrepend = innerRes.Trades
-		} else if len(innerRes.Trades) > 1 {
-			// for subsequent iterations we want to only prepent all but the last item (which will be a repeat of the end cursor value)
-			tradesToPrepend = innerRes.Trades[0 : len(innerRes.Trades)-1]
-		} // else don't prepend anything
+		} else {
+			// for subsequent iterations we want to only prepend new trades. sometimes trades can be repeated between API calls by the inner Kraken API :(
+			// this happens when there are multiple trades with the same timestamp
+			for _, trade := range innerRes.Trades {
+				if _, seen := seenTxIDs[trade.TransactionID.String()]; !seen {
+					tradesToPrepend = append(tradesToPrepend, trade)
+				}
+			}
+		}
+		// update seenTxIDs with the new trades
+		for _, trade := range tradesToPrepend {
+			seenTxIDs[trade.TransactionID.String()] = true
+		}
+
 		// prepend to outer result since we are fetching from the back
 		res.Trades = append(tradesToPrepend, res.Trades...)
 		log.Printf("prepended %d trades, total length of trades is now %d\n", len(tradesToPrepend), len(res.Trades))
 
 		// this is the terminal condition for this function
-		// Kraken should return exactly 50 items, but this is a more future-proof check
-		if len(innerRes.Trades) <= 1 {
+		// Kraken should return exactly 50 items, but this is a more future-proof check, since we only check that there are no new trades now
+		if len(tradesToPrepend) == 0 {
+			log.Printf("there were no new trades, returning from getTradeHistoryAdapter\n")
 			return res, nil
 		}
 

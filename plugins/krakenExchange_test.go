@@ -141,6 +141,215 @@ func TestGetTradeHistory(t *testing.T) {
 	assert.Fail(t, "force fail")
 }
 
+func makeTrade(txID string, ts time.Time) model.Trade {
+	pair := model.TradingPair{Base: model.XLM, Quote: model.USD}
+
+	return model.Trade{
+		Order: model.Order{
+			Pair:        &pair,
+			OrderAction: model.OrderActionBuy,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(1.0, 6),
+			Volume:      model.NumberFromFloat(10.0, 6),
+			Timestamp:   model.MakeTimestampFromTime(ts),
+		},
+		TransactionID: model.MakeTransactionID(txID),
+		Cost:          model.NumberFromFloat(10.0, 6),
+		Fee:           model.NumberFromFloat(0.0, 6),
+	}
+}
+
+func TestGetTradeHistoryAdapter(t *testing.T) {
+	t1 := time.Now()
+	t2 := t1.Add(time.Second)
+	t3 := t2.Add(time.Second)
+	t4 := t3.Add(time.Second)
+	t5 := t4.Add(time.Second)
+	tx1 := makeTrade("tx1", t1)
+	tx2 := makeTrade("tx2", t2)
+	tx3 := makeTrade("tx3", t3)
+	tx4 := makeTrade("tx4", t4)
+	tx5 := makeTrade("tx5", t5)
+
+	testCases := []struct {
+		name                    string
+		maxTrades               int
+		cursor2HistoryResult    map[string]*api.TradeHistoryResult
+		maybeCursorEndInclusive *model.TransactionID
+		wantCursor              string
+		wantTradeIDs            []string
+	}{
+		{
+			name:      "max 3 trades different timings, search key tx5",
+			maxTrades: 3,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"tx5": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx3, tx4, tx5},
+					Cursor: "tx5",
+				},
+				"tx3": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1, tx2, tx3},
+					Cursor: "tx3",
+				},
+				"tx1": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1},
+					Cursor: "tx1",
+				},
+			},
+			maybeCursorEndInclusive: tx5.TransactionID,
+			wantCursor:              "tx5",
+			wantTradeIDs:            []string{"tx1", "tx2", "tx3", "tx4", "tx5"},
+		}, {
+			name:      "max 3 trades different timings, search key tx3",
+			maxTrades: 3,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"tx3": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1, tx2, tx3},
+					Cursor: "tx3",
+				},
+				"tx1": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1},
+					Cursor: "tx1",
+				},
+			},
+			maybeCursorEndInclusive: tx3.TransactionID,
+			wantCursor:              "tx3",
+			wantTradeIDs:            []string{"tx1", "tx2", "tx3"},
+		}, {
+			name:      "max 3 trades different timings, search key nil",
+			maxTrades: 3,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"(nil)": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx3, tx4, tx5},
+					Cursor: "tx5",
+				},
+				"tx3": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1, tx2, tx3},
+					Cursor: "tx3",
+				},
+				"tx1": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1},
+					Cursor: "tx1",
+				},
+			},
+			maybeCursorEndInclusive: nil,
+			wantCursor:              "tx5",
+			wantTradeIDs:            []string{"tx1", "tx2", "tx3", "tx4", "tx5"},
+		}, {
+			name:      "max 5 trades different timings, search key tx5",
+			maxTrades: 5,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"tx5": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1, tx2, tx3, tx4, tx5},
+					Cursor: "tx5",
+				},
+				"tx1": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1},
+					Cursor: "tx1",
+				},
+			},
+			maybeCursorEndInclusive: tx5.TransactionID,
+			wantCursor:              "tx5",
+			wantTradeIDs:            []string{"tx1", "tx2", "tx3", "tx4", "tx5"},
+		}, {
+			name:      "max 6 trades different timings, search key tx5",
+			maxTrades: 6,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"tx5": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1, tx2, tx3, tx4, tx5},
+					Cursor: "tx5",
+				},
+				"tx1": &api.TradeHistoryResult{
+					Trades: []model.Trade{tx1},
+					Cursor: "tx1",
+				},
+			},
+			maybeCursorEndInclusive: tx5.TransactionID,
+			wantCursor:              "tx5",
+			wantTradeIDs:            []string{"tx1", "tx2", "tx3", "tx4", "tx5"},
+		}, {
+			name:      "max 3 trades repeat timings, search key tx5 - kraken API has this behavior :(",
+			maxTrades: 3,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"tx5": &api.TradeHistoryResult{
+					Trades: []model.Trade{makeTrade("tx3", t4), makeTrade("tx4", t4), makeTrade("tx5", t5)},
+					Cursor: "tx5",
+				},
+				"tx3": &api.TradeHistoryResult{
+					Trades: []model.Trade{makeTrade("tx2", t2), makeTrade("tx3", t4), makeTrade("tx4", t4)},
+					Cursor: "tx4",
+				},
+				"tx2": &api.TradeHistoryResult{
+					Trades: []model.Trade{makeTrade("tx1", t1), makeTrade("tx2", t2)},
+					Cursor: "tx2",
+				},
+				"tx1": &api.TradeHistoryResult{
+					Trades: []model.Trade{makeTrade("tx1", t1)},
+					Cursor: "tx1",
+				},
+			},
+			maybeCursorEndInclusive: tx5.TransactionID,
+			wantCursor:              "tx5",
+			wantTradeIDs:            []string{"tx1", "tx2", "tx3", "tx4", "tx5"},
+		}, {
+			name:      "max 3 trades repeat timings, search key tx5 - kraken API has this behavior :( - abridged",
+			maxTrades: 3,
+			cursor2HistoryResult: map[string]*api.TradeHistoryResult{
+				"tx5": &api.TradeHistoryResult{
+					Trades: []model.Trade{makeTrade("tx3", t4), makeTrade("tx4", t4), makeTrade("tx5", t5)},
+					Cursor: "tx5",
+				},
+				"tx3": &api.TradeHistoryResult{
+					Trades: []model.Trade{makeTrade("tx3", t4), makeTrade("tx4", t4)},
+					Cursor: "tx4",
+				},
+			},
+			maybeCursorEndInclusive: tx5.TransactionID,
+			wantCursor:              "tx5",
+			wantTradeIDs:            []string{"tx3", "tx4", "tx5"},
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			// build underlying function API call mock using cursor2HistoryResult
+			fetchPartialTradesFromEndAscMock := func(mcei *string) (*api.TradeHistoryResult, error) {
+				result, ok := k.cursor2HistoryResult[*mcei]
+				if !ok {
+					return nil, fmt.Errorf("searched for key in cursor2HistoryResult map that did not exist (%s). Either this is a bug in getTradeHistoryAdapter which should not have requested this key or the test should have included it", *mcei)
+				}
+
+				return result, nil
+			}
+
+			// convert *model.TransactionID to *string
+			mceiString := "(nil)"
+			if k.maybeCursorEndInclusive != nil {
+				mceiString = k.maybeCursorEndInclusive.String()
+			}
+
+			// call function being tested
+			tradeHistoryResult, e := getTradeHistoryAdapter(&mceiString, fetchPartialTradesFromEndAscMock)
+			if !assert.NoError(t, e) {
+				return
+			}
+
+			// assert cursor
+			if !assert.Equal(t, k.wantCursor, tradeHistoryResult.Cursor) {
+				return
+			}
+
+			// assert trades
+			if !assert.Equal(t, len(k.wantTradeIDs), len(tradeHistoryResult.Trades)) {
+				return
+			}
+			for i, wantTradeID := range k.wantTradeIDs {
+				assert.Equal(t, wantTradeID, tradeHistoryResult.Trades[i].TransactionID.String())
+			}
+		})
+	}
+}
+
 func TestGetLatestTradeCursor(t *testing.T) {
 	startIntervalSecs := time.Now().Unix() * 1000
 	cursor, e := testKrakenExchange.GetLatestTradeCursor()
