@@ -423,7 +423,8 @@ func getTradeHistoryAdapter(
 
 		// prepend to outer result since we are fetching from the back
 		res.Trades = append(tradesToPrepend, res.Trades...)
-		log.Printf("prepended %d trades, total length of trades is now %d\n", len(tradesToPrepend), len(res.Trades))
+		numSeen := len(innerRes.Trades) - len(tradesToPrepend)
+		log.Printf("prepended %d new trades from API result of %d trades (i.e. there were total %d trades seen earlier; expecting 1 seen earlier for all but the first request in the series); total length of trades is now %d\n", len(tradesToPrepend), len(innerRes.Trades), numSeen, len(res.Trades))
 
 		// this is the terminal condition for this function
 		// Kraken should return exactly 50 items, but this is a more future-proof check, since we only check that there are no new trades now
