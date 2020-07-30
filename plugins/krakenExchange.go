@@ -509,6 +509,7 @@ func (k *krakenExchange) getTradeHistoryFromEndAscLimit50(tradingPair model.Trad
 	// set correct value for cursor
 	if len(res.Trades) > 0 {
 		// use transaction IDs for updates to cursor
+		// TODO this should use timestamp in seconds based on email communication with kraken team
 		res.Cursor = res.Trades[len(res.Trades)-1].TransactionID.String()
 	} else if maybeCursorStartExclusive != nil {
 		res.Cursor = *maybeCursorStartExclusive
