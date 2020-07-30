@@ -136,6 +136,15 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 	s.maxAssetBase = maxAssetBase
 	s.maxAssetQuote = maxAssetQuote
 
+	// load desiredLevels only once here
+	// invoke before checking remaining capacity because we want to always execute GetLevels so it can update internal state (specifically applies to sellTwap)
+	newLevels, e := s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
+	if e != nil {
+		log.Printf("levels couldn't be loaded: %s\n", e)
+		return e
+	}
+	log.Printf("levels returned (side = %s): %v\n", s.action, newLevels)
+
 	// don't place orders if we have nothing to sell or if we cannot buy the asset in exchange
 	nothingToSell := maxAssetBase == 0
 	lineFull := maxAssetQuote == trustQuote
@@ -144,14 +153,6 @@ func (s *sellSideStrategy) PreUpdate(maxAssetBase float64, maxAssetQuote float64
 		log.Printf("no capacity to place sell orders (nothingToSell = %v, lineFull = %v)\n", nothingToSell, lineFull)
 		return nil
 	}
-
-	// load desiredLevels only once here
-	newLevels, e := s.levelsProvider.GetLevels(s.maxAssetBase, s.maxAssetQuote)
-	if e != nil {
-		log.Printf("levels couldn't be loaded: %s\n", e)
-		return e
-	}
-	log.Printf("levels returned (side = %s): %v\n", s.action, newLevels)
 
 	// set desiredLevels only once here
 	s.desiredLevels = newLevels
