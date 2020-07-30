@@ -351,12 +351,12 @@ func TestGetTradeHistoryAdapter(t *testing.T) {
 }
 
 func TestGetLatestTradeCursor(t *testing.T) {
-	startIntervalSecs := time.Now().Unix() * 1000
+	startIntervalSecs := time.Now().Unix()
 	cursor, e := testKrakenExchange.GetLatestTradeCursor()
 	if !assert.NoError(t, e) {
 		return
 	}
-	endIntervalSecs := time.Now().Unix() * 1000
+	endIntervalSecs := time.Now().Unix()
 
 	if !assert.IsType(t, "string", cursor) {
 		return

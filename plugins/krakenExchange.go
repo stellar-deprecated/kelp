@@ -522,8 +522,8 @@ func (k *krakenExchange) getTradeHistoryFromEndAscLimit50(tradingPair model.Trad
 
 // GetLatestTradeCursor impl.
 func (k *krakenExchange) GetLatestTradeCursor() (interface{}, error) {
-	timeNowMillis := time.Now().Unix() * 1000
-	latestTradeCursor := fmt.Sprintf("%d", timeNowMillis)
+	timeNowSecs := time.Now().Unix()
+	latestTradeCursor := fmt.Sprintf("%d", timeNowSecs)
 	return latestTradeCursor, nil
 }
 
