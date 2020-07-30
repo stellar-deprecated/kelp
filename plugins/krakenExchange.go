@@ -21,6 +21,7 @@ import (
 var _ api.Exchange = &krakenExchange{}
 
 const precisionBalances = 10
+const tradesFetchSleepTimeSeconds = 60
 
 // krakenExchange is the implementation for the Kraken Exchange
 type krakenExchange struct {
@@ -346,30 +347,113 @@ func values(m map[model.TradingPair]string) []string {
 }
 
 // GetTradeHistory impl.
-func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+func (k *krakenExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStartExclusive interface{}, maybeCursorEndInclusive interface{}) (*api.TradeHistoryResult, error) {
 	var mcs *string
-	if maybeCursorStart != nil {
-		i := maybeCursorStart.(string)
+	if maybeCursorStartExclusive != nil {
+		i := maybeCursorStartExclusive.(string)
 		mcs = &i
 	}
 
 	var mce *string
-	if maybeCursorEnd != nil {
-		i := maybeCursorEnd.(string)
+	if maybeCursorEndInclusive != nil {
+		i := maybeCursorEndInclusive.(string)
 		mce = &i
 	}
 
-	return k.getTradeHistory(pair, mcs, mce)
+	fetchPartialTradesFromEndAsc := func(mcei *string) (*api.TradeHistoryResult, error) {
+		return k.getTradeHistoryFromEndAscLimit50(pair, mcs, mcei)
+	}
+	return getTradeHistoryAdapter(mce, fetchPartialTradesFromEndAsc)
 }
 
-func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCursorStart *string, maybeCursorEnd *string) (*api.TradeHistoryResult, error) {
+// getTradeHistoryAdapter is an adapter method against the kraken API because the kraken API returns results from the end instead of the beginning and only 50 at a time.
+// we iterate over the fetchPartialTradesFromEndAsc method to solve this problem
+// this is not attached to krakenExchange because we should be able to inject a fetchPartialTradesFromEndAsc that is unrelated to kraken for testing
+// fetchPartialTradesFromEndAsc:
+// fetchPartialTradesFromEndAsc will return an incomplete list of trades. If it returns a list of 0 items, or a list of items we have seen previously, then we have exhausted the search
+// the start cursor and trading pair is bound to fetchPartialTradesFromEndAsc already.
+// trades returned from fetchPartialTradesFromEndAsc are in ascending order with the cursor set to the last tradeID
+// example:
+// if we have trades with cursor1-cursor100 then calls to fetchPartialTradesFromEndAsc would return the following after
+// adjusting maybeCursorEndInclusive: 81-100, 61-80, 41-60, 21-40, 1-20
+func getTradeHistoryAdapter(
+	maybeCursorEndInclusive *string,
+	fetchPartialTradesFromEndAsc func(maybeCursorEndInclusive *string) (*api.TradeHistoryResult, error),
+) (*api.TradeHistoryResult, error) {
+	// accummulate results of the internal calls here, ignoring memory limits for now since these objects are small
+	res := &api.TradeHistoryResult{
+		Trades: []model.Trade{},
+		Cursor: nil,
+	}
+	// dedupe trades with the same transactionID using this map
+	seenTxIDs := map[string]bool{}
+
+	for {
+		innerRes, e := fetchPartialTradesFromEndAsc(maybeCursorEndInclusive)
+		if e != nil {
+			if strings.Contains(e.Error(), "EAPI:Rate limit exceeded") {
+				log.Printf("error fetching trade history 50 at a time from the end in ascending order from kraken (%s). Sleeping for 60 seconds and then retrying request...", e)
+				time.Sleep(time.Duration(tradesFetchSleepTimeSeconds) * time.Second)
+
+				log.Printf("... retrying fetching of trades now")
+				continue
+			}
+			return nil, fmt.Errorf("error fetching trade history 50 at a time from the end in ascending order from kraken: %s", e)
+		}
+
+		var tradesToPrepend []model.Trade
+		if res.Cursor == nil {
+			// for the first iteration we want to set the cursor and add all trades
+			res.Cursor = innerRes.Cursor
+			log.Printf("set cursor to innerRes.Cursor value '%s'\n", innerRes.Cursor)
+			tradesToPrepend = innerRes.Trades
+		} else {
+			// for subsequent iterations we want to only prepend new trades. sometimes trades can be repeated between API calls by the inner Kraken API :(
+			// this happens when there are multiple trades with the same timestamp
+			for _, trade := range innerRes.Trades {
+				if _, seen := seenTxIDs[trade.TransactionID.String()]; !seen {
+					tradesToPrepend = append(tradesToPrepend, trade)
+				}
+			}
+		}
+		// update seenTxIDs with the new trades
+		for _, trade := range tradesToPrepend {
+			seenTxIDs[trade.TransactionID.String()] = true
+		}
+
+		// prepend to outer result since we are fetching from the back
+		res.Trades = append(tradesToPrepend, res.Trades...)
+		numSeen := len(innerRes.Trades) - len(tradesToPrepend)
+		log.Printf("prepended %d new trades from API result of %d trades (i.e. there were total %d trades seen earlier; expecting 1 seen earlier for all but the first request in the series); total length of trades is now %d\n", len(tradesToPrepend), len(innerRes.Trades), numSeen, len(res.Trades))
+
+		// this is the terminal condition for this function
+		// Kraken should return exactly 50 items, but this is a more future-proof check, since we only check that there are no new trades now
+		if len(tradesToPrepend) == 0 {
+			log.Printf("there were no new trades, returning from getTradeHistoryAdapter\n")
+			return res, nil
+		}
+
+		// update state to continue fetching trades; set first transactionID of inner result as the new cursor end (inclusive). leave cursor start as-is (exclusive).
+		firstTxID := innerRes.Trades[0].TransactionID.String()
+		maybeCursorEndInclusive = &firstTxID
+		log.Printf("updated value of maybeCursorEndInclusive pointer to '%s'\n", firstTxID)
+	}
+}
+
+// getTradeHistoryFromEndAscLimit50 fetches trades from the cursor end, in ascending order, limited to 50 entries.
+// the backwards iteration is a limitation of the Kraken API which requires us to have an intermediary getTradeHistoryAdapter() method
+func (k *krakenExchange) getTradeHistoryFromEndAscLimit50(tradingPair model.TradingPair, maybeCursorStartExclusive *string, maybeCursorEndInclusive *string) (*api.TradeHistoryResult, error) {
+	var startCursorLogString, endCursorLogString = "(nil)", "(nil)"
 	input := map[string]string{}
-	if maybeCursorStart != nil {
-		input["start"] = *maybeCursorStart
+	if maybeCursorStartExclusive != nil {
+		input["start"] = *maybeCursorStartExclusive
+		startCursorLogString = *maybeCursorStartExclusive
 	}
-	if maybeCursorEnd != nil {
-		input["end"] = *maybeCursorEnd
+	if maybeCursorEndInclusive != nil {
+		input["end"] = *maybeCursorEndInclusive
+		endCursorLogString = *maybeCursorEndInclusive
 	}
+	log.Printf("fetching trade history from end ascending with a limit of 50 tradingPair=%s, maybeCursorStartExclusive=%s, maybeCursorEndInclusive=%s\n", tradingPair.String(), startCursorLogString, endCursorLogString)
 
 	resp, e := k.nextAPI().Query("TradesHistory", input)
 	if e != nil {
@@ -393,7 +477,7 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 		var pair *model.TradingPair
 		pair, e = model.TradingPairFromString(4, k.assetConverter, _pair)
 		if e != nil {
-			return nil, fmt.Errorf("error parsing trading pair '%s' in krakenExchange#getTradeHistory: %s", _pair, e)
+			return nil, fmt.Errorf("error parsing trading pair '%s' in krakenExchange#getTradeHistoryFromEndAscLimit50: %s", _pair, e)
 		}
 		orderConstraints := k.GetOrderConstraints(pair)
 		// for now use the max precision between price and volume for fee and cost
@@ -425,9 +509,10 @@ func (k *krakenExchange) getTradeHistory(tradingPair model.TradingPair, maybeCur
 	// set correct value for cursor
 	if len(res.Trades) > 0 {
 		// use transaction IDs for updates to cursor
+		// TODO this should use timestamp in seconds based on email communication with kraken team
 		res.Cursor = res.Trades[len(res.Trades)-1].TransactionID.String()
-	} else if maybeCursorStart != nil {
-		res.Cursor = *maybeCursorStart
+	} else if maybeCursorStartExclusive != nil {
+		res.Cursor = *maybeCursorStartExclusive
 	} else {
 		res.Cursor = nil
 	}
