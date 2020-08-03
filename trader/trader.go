@@ -43,7 +43,8 @@ type Trader struct {
 	alert                 api.Alert
 
 	// initialized runtime vars
-	deleteCycles int64
+	deleteCycles        int64
+	stateSyncMaxRetries int
 
 	// uninitialized runtime vars
 	maxAssetA          float64
@@ -96,7 +97,8 @@ func MakeTrader(
 		dataKey:               dataKey,
 		alert:                 alert,
 		// initialized runtime vars
-		deleteCycles: 0,
+		deleteCycles:        0,
+		stateSyncMaxRetries: 3,
 	}
 }
 
@@ -173,26 +175,60 @@ func (t *Trader) deleteAllOffers() {
 	}
 }
 
+func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
+	for i := 0; i < t.stateSyncMaxRetries+1; i++ {
+		baseBalance1, quoteBalance1, e := t.getBalances()
+		if e != nil {
+			return fmt.Errorf("unable to get balances1, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+		}
+		sellingAOffers1, buyingAOffers1, e := t.getExistingOffers()
+		if e != nil {
+			return fmt.Errorf("unable to get offers1, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+		}
+		// f.triggerFillTracker should never be nil
+		// we pivot balances and offers around trades to ensure nothing changed w.r.t. trades
+		trades, e := t.triggerFillTracker()
+		if e != nil {
+			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+		}
+
+		// run it again once we have fetched trades so we can compare that nothing changed and the data is in sync
+		baseBalance2, quoteBalance2, e := t.getBalances()
+		if e != nil {
+			return fmt.Errorf("unable to get balances2, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+		}
+		sellingAOffers2, buyingAOffers2, e := t.getExistingOffers()
+		if e != nil {
+			return fmt.Errorf("unable to get offers2, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+		}
+
+		hasNewTrades := len(trades) > 0
+		baseBalanceSame := baseBalance1.Balance == baseBalance2.Balance
+		quoteBalanceSame := quoteBalance1.Balance == quoteBalance2.Balance
+		sellOffersSame := len(sellingAOffers1) == len(sellingAOffers2)
+		buyOffersSame := len(buyingAOffers1) == len(buyingAOffers2)
+		if !hasNewTrades && baseBalanceSame && quoteBalanceSame && sellOffersSame && buyOffersSame {
+			t.setBalances(baseBalance1, quoteBalance1)
+			t.setExistingOffers(sellingAOffers1, buyingAOffers1)
+			// this is the only success case
+			return nil
+		}
+
+		log.Printf("something changed when fetching trades (!hasNewTrades=%v), balances (baseBalanceSame=%v, quoteBalanceSame=%v), and offers (sellOffersSame=%v, buyOffersSame=%v) [all should be true for success] so could not synchronize data in attempt %d of %d (1-indexed), trying again...",
+			!hasNewTrades, baseBalanceSame, quoteBalanceSame, sellOffersSame, buyOffersSame, i+1, t.stateSyncMaxRetries+1)
+	}
+	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.stateSyncMaxRetries+1)
+}
+
 // time to update the order book and possibly readjust the offers
 // returns true if the update was successful, otherwise false
 func (t *Trader) update() bool {
-	var e error
-	t.load()
-	e = t.loadExistingOffers()
+	e := t.synchronizeFetchBalancesOffersTrades()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
 		return false
 	}
-	// f.triggerFillTracker should never be nil
-	var trades []model.Trade
-	trades, e = t.triggerFillTracker()
-	if e != nil {
-		log.Println(e)
-		t.deleteAllOffers()
-		return false
-	}
-	// TODO do something with the returned trades
 
 	pair := &model.TradingPair{
 		Base:  model.FromHorizonAsset(t.assetBase),
@@ -291,19 +327,21 @@ func (t *Trader) update() bool {
 	return true
 }
 
-func (t *Trader) load() {
-	// load the maximum amounts we can offer for each asset
+func (t *Trader) getBalances() (*api.Balance /*baseBalance*/, *api.Balance /*quoteBalance*/, error) {
 	baseBalance, e := t.exchangeShim.GetBalanceHack(t.assetBase)
 	if e != nil {
-		log.Println(e)
-		return
-	}
-	quoteBalance, e := t.exchangeShim.GetBalanceHack(t.assetQuote)
-	if e != nil {
-		log.Println(e)
-		return
+		return nil, nil, fmt.Errorf("error fetching base balance: %s", e)
 	}
 
+	quoteBalance, e := t.exchangeShim.GetBalanceHack(t.assetQuote)
+	if e != nil {
+		return nil, nil, fmt.Errorf("error fetching quote balance: %s", e)
+	}
+
+	return baseBalance, quoteBalance, nil
+}
+
+func (t *Trader) setBalances(baseBalance *api.Balance, quoteBalance *api.Balance) {
 	t.maxAssetA = baseBalance.Balance
 	t.maxAssetB = quoteBalance.Balance
 	t.trustAssetA = baseBalance.Trust
@@ -345,14 +383,18 @@ func (t *Trader) load() {
 	}
 }
 
-func (t *Trader) loadExistingOffers() error {
+func (t *Trader) getExistingOffers() ([]hProtocol.Offer /*sellingAOffers*/, []hProtocol.Offer /*buyingAOffers*/, error) {
 	offers, e := t.exchangeShim.LoadOffersHack()
 	if e != nil {
-		return fmt.Errorf("unable to load existing offers: %s", e)
+		return nil, nil, fmt.Errorf("unable to load existing offers: %s", e)
 	}
-	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)
+	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, t.assetBase, t.assetQuote)
 
-	sort.Sort(utils.ByPrice(t.buyingAOffers))
-	sort.Sort(utils.ByPrice(t.sellingAOffers)) // don't reverse since prices are inverse
-	return nil
+	sort.Sort(utils.ByPrice(buyingAOffers))
+	sort.Sort(utils.ByPrice(sellingAOffers)) // don't reverse since prices are inverse
+	return sellingAOffers, buyingAOffers, nil
+}
+
+func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffers []hProtocol.Offer) {
+	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
 }
