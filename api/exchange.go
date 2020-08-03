@@ -64,6 +64,7 @@ type FillTracker interface {
 	GetPair() (pair *model.TradingPair)
 	// TrackFills should be executed in a new thread
 	TrackFills() error
+	FillTrackSingleIteration() ([]model.Trade, error)
 	RegisterHandler(handler FillHandler)
 	NumHandlers() uint8
 }

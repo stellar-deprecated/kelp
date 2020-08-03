@@ -46,12 +46,13 @@ type Trader struct {
 	deleteCycles int64
 
 	// uninitialized runtime vars
-	maxAssetA      float64
-	maxAssetB      float64
-	trustAssetA    float64
-	trustAssetB    float64
-	buyingAOffers  []hProtocol.Offer // quoted A/B
-	sellingAOffers []hProtocol.Offer // quoted B/A
+	maxAssetA          float64
+	maxAssetB          float64
+	trustAssetA        float64
+	trustAssetB        float64
+	buyingAOffers      []hProtocol.Offer // quoted A/B
+	sellingAOffers     []hProtocol.Offer // quoted B/A
+	triggerFillTracker func() ([]model.Trade, error)
 }
 
 // MakeTrader is the factory method for the Trader struct
@@ -97,6 +98,17 @@ func MakeTrader(
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
+}
+
+// SetTriggerFillTracker sets the fill tracker on this bot
+// LOH-3 - triggerFillTracker should be injected into the bot instead of being set after creation
+func (t *Trader) SetTriggerFillTracker(triggerFillTracker func() ([]model.Trade, error)) error {
+	if t.triggerFillTracker != nil {
+		return fmt.Errorf("(programmer error?) triggerFillTracker is already set, cannot reset")
+	}
+
+	t.triggerFillTracker = triggerFillTracker
+	return nil
 }
 
 // Start starts the bot with the injected strategy
@@ -172,6 +184,15 @@ func (t *Trader) update() bool {
 		t.deleteAllOffers()
 		return false
 	}
+	// f.triggerFillTracker should never be nil
+	var trades []model.Trade
+	trades, e = t.triggerFillTracker()
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers()
+		return false
+	}
+	// TODO do something with the returned trades
 
 	pair := &model.TradingPair{
 		Base:  model.FromHorizonAsset(t.assetBase),

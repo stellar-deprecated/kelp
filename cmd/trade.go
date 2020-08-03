@@ -617,7 +617,7 @@ func runTradeCmd(options inputs) {
 			}
 		}()
 	}
-	startFillTracking(
+	triggerFillTracker := startFillTracking(
 		l,
 		strategy,
 		botConfig,
@@ -630,6 +630,12 @@ func runTradeCmd(options inputs) {
 		threadTracker,
 		botConfig.DbOverrideAccountID,
 	)
+	e := bot.SetTriggerFillTracker(triggerFillTracker)
+	if e != nil {
+		l.Info("")
+		l.Errorf("unable set triggerFillTracker: %s", e)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+	}
 	// --- end initialization of services ---
 
 	l.Info("Starting the trader bot...")
@@ -688,7 +694,7 @@ func startFillTracking(
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 	accountID string,
-) {
+) /* triggerFillTracker */ func() ([]model.Trade, error) {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
 		l.Info("")
@@ -697,6 +703,10 @@ func startFillTracking(
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
 
+	// triggerFillTracker initialized to default nop function
+	triggerFillTracker := func() ([]model.Trade, error) {
+		return nil, nil
+	}
 	if botConfig.FillTrackerSleepMillis != 0 {
 		var lastTradeCursorOverride interface{}
 		if botConfig.FillTrackerLastTradeCursorOverride == "" {
@@ -728,12 +738,16 @@ func startFillTracking(
 				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 			}
 		}()
+
+		triggerFillTracker = fillTracker.FillTrackSingleIteration
 	} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
 		l.Info("")
 		l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
 		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
+
+	return triggerFillTracker
 }
 
 func validateTrustlines(l logger.Logger, client *horizonclient.Client, botConfig *trader.BotConfig) {
