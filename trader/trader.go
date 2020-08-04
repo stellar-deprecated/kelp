@@ -210,6 +210,9 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
 		}
 
+		// reset cache of balances to get actual balances from network
+		t.sdex.IEIF().ResetCachedBalances()
+
 		// run it again once we have fetched trades so we can compare that nothing changed and the data is in sync
 		baseBalance2, quoteBalance2, e := t.getBalances()
 		if e != nil {
