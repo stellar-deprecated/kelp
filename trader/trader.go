@@ -109,6 +109,10 @@ func (t *Trader) SetTriggerFillTracker(triggerFillTracker func() ([]model.Trade,
 		return fmt.Errorf("(programmer error?) triggerFillTracker is already set, cannot reset")
 	}
 
+	if triggerFillTracker == nil {
+		return fmt.Errorf("cannot set triggerFillTracker to a nil value")
+	}
+
 	t.triggerFillTracker = triggerFillTracker
 	return nil
 }
@@ -202,7 +206,7 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			return fmt.Errorf("unable to get offers2, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
 		}
 
-		hasNewTrades := len(trades) > 0
+		hasNewTrades := trades != nil && len(trades) > 0
 		baseBalanceSame := baseBalance1.Balance == baseBalance2.Balance
 		quoteBalanceSame := quoteBalance1.Balance == quoteBalance2.Balance
 		sellOffersSame := len(sellingAOffers1) == len(sellingAOffers2)

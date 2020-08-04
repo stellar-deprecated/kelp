@@ -633,7 +633,7 @@ func runTradeCmd(options inputs) {
 	e := bot.SetTriggerFillTracker(triggerFillTracker)
 	if e != nil {
 		l.Info("")
-		l.Errorf("unable set triggerFillTracker: %s", e)
+		l.Errorf("unable to set triggerFillTracker: %s", e)
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
 	// --- end initialization of services ---
