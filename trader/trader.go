@@ -36,6 +36,7 @@ type Trader struct {
 	timeController                 api.TimeController
 	synchronizeStateLoadEnable     bool
 	synchronizeStateLoadMaxRetries int
+	triggerFillTracker             func() ([]model.Trade, error)
 	deleteCyclesThreshold          int64
 	submitMode                     api.SubmitMode
 	submitFilters                  []plugins.SubmitFilter
@@ -48,13 +49,12 @@ type Trader struct {
 	deleteCycles int64
 
 	// uninitialized runtime vars
-	maxAssetA          float64
-	maxAssetB          float64
-	trustAssetA        float64
-	trustAssetB        float64
-	buyingAOffers      []hProtocol.Offer // quoted A/B
-	sellingAOffers     []hProtocol.Offer // quoted B/A
-	triggerFillTracker func() ([]model.Trade, error)
+	maxAssetA      float64
+	maxAssetB      float64
+	trustAssetA    float64
+	trustAssetB    float64
+	buyingAOffers  []hProtocol.Offer // quoted A/B
+	sellingAOffers []hProtocol.Offer // quoted B/A
 }
 
 // MakeTrader is the factory method for the Trader struct
@@ -72,6 +72,7 @@ func MakeTrader(
 	timeController api.TimeController,
 	synchronizeStateLoadEnable bool,
 	synchronizeStateLoadMaxRetries int,
+	triggerFillTracker func() ([]model.Trade, error),
 	deleteCyclesThreshold int64,
 	submitMode api.SubmitMode,
 	submitFilters []plugins.SubmitFilter,
@@ -94,6 +95,7 @@ func MakeTrader(
 		timeController:                 timeController,
 		synchronizeStateLoadEnable:     synchronizeStateLoadEnable,
 		synchronizeStateLoadMaxRetries: synchronizeStateLoadMaxRetries,
+		triggerFillTracker:             triggerFillTracker,
 		deleteCyclesThreshold:          deleteCyclesThreshold,
 		submitMode:                     submitMode,
 		submitFilters:                  submitFilters,
@@ -104,21 +106,6 @@ func MakeTrader(
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
-}
-
-// SetTriggerFillTracker sets the fill tracker on this bot
-// LOH-3 - triggerFillTracker should be injected into the bot instead of being set after creation
-func (t *Trader) SetTriggerFillTracker(triggerFillTracker func() ([]model.Trade, error)) error {
-	if t.triggerFillTracker != nil {
-		return fmt.Errorf("(programmer error?) triggerFillTracker is already set, cannot reset")
-	}
-
-	if triggerFillTracker == nil {
-		return fmt.Errorf("cannot set triggerFillTracker to a nil value")
-	}
-
-	t.triggerFillTracker = triggerFillTracker
-	return nil
 }
 
 // Start starts the bot with the injected strategy
@@ -212,10 +199,13 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 		return nil
 	}
 
+	if t.triggerFillTracker == nil {
+		return fmt.Errorf("triggerFillTracker should have been set at this point")
+	}
+
 	// on the first iteration, and every subsequent iteration, we want to fetch trades, balances, and offers.
 	// this ensures that we reuse the last fetch of balances and offers when retrying.
 	for i := 0; i < t.synchronizeStateLoadMaxRetries+1; i++ {
-		// f.triggerFillTracker should never be nil
 		trades, e := t.triggerFillTracker()
 		if e != nil {
 			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
