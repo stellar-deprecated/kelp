@@ -463,7 +463,7 @@ func makeBot(
 		timeController,
 		botConfig.SynchronizeStateLoadEnable,
 		botConfig.SynchronizeStateLoadMaxRetries,
-		fillTracker.FillTrackSingleIteration,
+		fillTracker,
 		botConfig.DeleteCyclesThreshold,
 		submitMode,
 		submitFilters,

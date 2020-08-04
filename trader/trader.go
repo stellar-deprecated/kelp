@@ -36,7 +36,7 @@ type Trader struct {
 	timeController                 api.TimeController
 	synchronizeStateLoadEnable     bool
 	synchronizeStateLoadMaxRetries int
-	triggerFillTracker             func() ([]model.Trade, error)
+	fillTracker                    api.FillTracker
 	deleteCyclesThreshold          int64
 	submitMode                     api.SubmitMode
 	submitFilters                  []plugins.SubmitFilter
@@ -72,7 +72,7 @@ func MakeTrader(
 	timeController api.TimeController,
 	synchronizeStateLoadEnable bool,
 	synchronizeStateLoadMaxRetries int,
-	triggerFillTracker func() ([]model.Trade, error),
+	fillTracker api.FillTracker,
 	deleteCyclesThreshold int64,
 	submitMode api.SubmitMode,
 	submitFilters []plugins.SubmitFilter,
@@ -95,7 +95,7 @@ func MakeTrader(
 		timeController:                 timeController,
 		synchronizeStateLoadEnable:     synchronizeStateLoadEnable,
 		synchronizeStateLoadMaxRetries: synchronizeStateLoadMaxRetries,
-		triggerFillTracker:             triggerFillTracker,
+		fillTracker:                    fillTracker,
 		deleteCyclesThreshold:          deleteCyclesThreshold,
 		submitMode:                     submitMode,
 		submitFilters:                  submitFilters,
@@ -182,6 +182,18 @@ func (t *Trader) deleteAllOffers() {
 //        which would cause multiple failures, is unlikely. Even if that happens, it does not necessarily indicate a failed API as
 //        that could just be a coincidence, which is exactly what this synchronization function is preventing against.
 func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
+	if t.synchronizeStateLoadEnable && !t.fillTracker.IsRunningInBackground() {
+		// this is purely an optimization block.
+		// run the trades query here so the synchronization logic is cheaper.
+		// we will catch any trades that occur here with 1 network call instead of having to retry the synchronization block below.
+		// Moreover, we will not consume 1 attempt whenever a legitimate trade does occur (which otherwise is handled by the background
+		// fill tracker thread)
+		_, e := t.fillTracker.FillTrackSingleIteration()
+		if e != nil {
+			return fmt.Errorf("unable to get trades: %s", e)
+		}
+	}
+
 	// run initial query for balanecs and offers
 	baseBalance1, quoteBalance1, e := t.getBalances()
 	if e != nil {
@@ -199,14 +211,10 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 		return nil
 	}
 
-	if t.triggerFillTracker == nil {
-		return fmt.Errorf("triggerFillTracker should have been set at this point")
-	}
-
 	// on the first iteration, and every subsequent iteration, we want to fetch trades, balances, and offers.
 	// this ensures that we reuse the last fetch of balances and offers when retrying.
 	for i := 0; i < t.synchronizeStateLoadMaxRetries+1; i++ {
-		trades, e := t.triggerFillTracker()
+		trades, e := t.fillTracker.FillTrackSingleIteration()
 		if e != nil {
 			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
 		}

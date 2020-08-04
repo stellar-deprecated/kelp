@@ -25,6 +25,7 @@ type FillTracker struct {
 	// initialized runtime vars
 	fillTrackerDeleteCycles int64
 	lockFill                *sync.Mutex
+	isRunningInBackground   bool
 
 	// uninitialized
 	lastCursor interface{}
@@ -53,7 +54,13 @@ func MakeFillTracker(
 		// initialized runtime vars
 		fillTrackerDeleteCycles: 0,
 		lockFill:                &sync.Mutex{},
+		isRunningInBackground:   false,
 	}
+}
+
+// IsRunningInBackground impl
+func (f *FillTracker) IsRunningInBackground() bool {
+	return f.isRunningInBackground
 }
 
 // GetPair impl
@@ -80,6 +87,11 @@ func (f *FillTracker) countError() bool {
 
 // TrackFills impl
 func (f *FillTracker) TrackFills() error {
+	f.isRunningInBackground = true
+	defer func() {
+		f.isRunningInBackground = false
+	}()
+
 	f.lastCursor = f.lastTradeCursorOverride
 	var e error
 	if f.lastCursor == nil {
