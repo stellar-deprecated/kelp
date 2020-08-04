@@ -206,12 +206,17 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			return fmt.Errorf("unable to get offers2, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
 		}
 
-		hasNewTrades := trades != nil && len(trades) > 0
-		baseBalanceSame := baseBalance1.Balance == baseBalance2.Balance
-		quoteBalanceSame := quoteBalance1.Balance == quoteBalance2.Balance
-		sellOffersSame := len(sellingAOffers1) == len(sellingAOffers2)
-		buyOffersSame := len(buyingAOffers1) == len(buyingAOffers2)
-		if !hasNewTrades && baseBalanceSame && quoteBalanceSame && sellOffersSame && buyOffersSame {
+		if isStateSynchronized(
+			trades,
+			baseBalance1,
+			quoteBalance1,
+			sellingAOffers1,
+			buyingAOffers1,
+			baseBalance2,
+			quoteBalance2,
+			sellingAOffers2,
+			buyingAOffers2,
+		) {
 			t.setBalances(baseBalance1, quoteBalance1)
 			t.setExistingOffers(sellingAOffers1, buyingAOffers1)
 			// this is the only success case
@@ -222,6 +227,37 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			!hasNewTrades, baseBalanceSame, quoteBalanceSame, sellOffersSame, buyOffersSame, i+1, t.stateSyncMaxRetries+1)
 	}
 	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.stateSyncMaxRetries+1)
+}
+
+func isStateSynchronized(
+	trades []model.Trade,
+	baseBalance1 *api.Balance,
+	quoteBalance1 *api.Balance,
+	sellingAOffers1 []hProtocol.Offer,
+	buyingAOffers1 []hProtocol.Offer,
+	baseBalance2 *api.Balance,
+	quoteBalance2 *api.Balance,
+	sellingAOffers2 []hProtocol.Offer,
+	buyingAOffers2 []hProtocol.Offer,
+) bool {
+	hasNewTrades := trades != nil && len(trades) > 0
+	if hasNewTrades {
+		return false
+	}
+
+	baseBalanceSame := baseBalance1.Balance == baseBalance2.Balance
+	quoteBalanceSame := quoteBalance1.Balance == quoteBalance2.Balance
+	if !baseBalanceSame || !quoteBalanceSame {
+		return false
+	}
+
+	sellOffersSame := len(sellingAOffers1) == len(sellingAOffers2)
+	buyOffersSame := len(buyingAOffers1) == len(buyingAOffers2)
+	if !sellOffersSame || !buyOffersSame {
+		return false
+	}
+
+	return true
 }
 
 // time to update the order book and possibly readjust the offers
