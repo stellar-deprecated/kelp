@@ -179,18 +179,32 @@ func (t *Trader) deleteAllOffers() {
 	}
 }
 
+// synchronizeFetchBalancesOffersTrades pivots checking the balances and offers around trades, ensuring that:
+// 1) we fetch and process the latest trades and
+// 2) the balances and offers are consistent with the fetched trades
+//
+// Note1: we cannot pivot around balances and/or offers by checking if if there are 0 trades because it's possible that the
+//        background thread has fetched the trades during this time. This is why we check if the balances/offers have changed.
+// Note2: if the trade API is not working (like sometimes on Kraken) then this will fail once but will not crash the bot (we
+//        want the bot to crash in this scenario). We will end up retring here and subsequent runs will likely succeed to because
+//        the bot allows occassional failures. The likelihood that a trade happens exactly during our critical section many times,
+//        which would cause multiple failures, is unlikely. Even if that happens, it does not necessarily indicate a failed API as
+//        that could just be a coincidence, which is exactly what this synchronization function is preventing against.
 func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
+	// run initial query for balanecs and offers
+	baseBalance1, quoteBalance1, e := t.getBalances()
+	if e != nil {
+		return fmt.Errorf("unable to get balances1: %s", e)
+	}
+	sellingAOffers1, buyingAOffers1, e := t.getExistingOffers()
+	if e != nil {
+		return fmt.Errorf("unable to get offers1: %s", e)
+	}
+
+	// on the first iteration, and every subsequent iteration, we want to fetch trades, balances, and offers.
+	// this ensures that we reuse the last fetch of balances and offers when retrying.
 	for i := 0; i < t.stateSyncMaxRetries+1; i++ {
-		baseBalance1, quoteBalance1, e := t.getBalances()
-		if e != nil {
-			return fmt.Errorf("unable to get balances1, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
-		}
-		sellingAOffers1, buyingAOffers1, e := t.getExistingOffers()
-		if e != nil {
-			return fmt.Errorf("unable to get offers1, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
-		}
 		// f.triggerFillTracker should never be nil
-		// we pivot balances and offers around trades to ensure nothing changed w.r.t. trades
 		trades, e := t.triggerFillTracker()
 		if e != nil {
 			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
@@ -217,13 +231,16 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			sellingAOffers2,
 			buyingAOffers2,
 		) {
+			// this is the only success case
 			t.setBalances(baseBalance1, quoteBalance1)
 			t.setExistingOffers(sellingAOffers1, buyingAOffers1)
-			// this is the only success case
 			return nil
 		}
-
 		log.Printf("could not synchronize data in attempt %d of %d (1-indexed), trying again...\n", i+1, t.stateSyncMaxRetries+1)
+
+		// set recently fetched values of balances and offers as our first set of values for the next run
+		baseBalance1, quoteBalance1 = baseBalance2, quoteBalance2
+		sellingAOffers1, buyingAOffers1 = sellingAOffers2, buyingAOffers2
 	}
 	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.stateSyncMaxRetries+1)
 }
