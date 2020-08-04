@@ -383,6 +383,13 @@ func makeBot(
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
 
+	if botConfig.SynchronizeStateLoadEnable && botConfig.SynchronizeStateLoadMaxRetries < 0 {
+		log.Println()
+		utils.PrintErrorHintf("SYNCHRONIZE_STATE_LOAD_MAX_RETRIES needs to be greater than or equal to 0 when SYNCHRONIZE_STATE_LOAD_ENABLE is set to true")
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+	}
+
 	assetBase := botConfig.AssetBase()
 	assetQuote := botConfig.AssetQuote()
 	dataKey := model.MakeSortedBotKey(assetBase, assetQuote)
@@ -453,6 +460,8 @@ func makeBot(
 		exchangeShim,
 		strategy,
 		timeController,
+		botConfig.SynchronizeStateLoadEnable,
+		botConfig.SynchronizeStateLoadMaxRetries,
 		botConfig.DeleteCyclesThreshold,
 		submitMode,
 		submitFilters,

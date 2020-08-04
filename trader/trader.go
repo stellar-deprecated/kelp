@@ -23,28 +23,29 @@ const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
-	api                   *horizonclient.Client
-	ieif                  *plugins.IEIF
-	assetBase             hProtocol.Asset
-	assetQuote            hProtocol.Asset
-	valueBaseFeed         api.PriceFeed
-	valueQuoteFeed        api.PriceFeed
-	tradingAccount        string
-	sdex                  *plugins.SDEX
-	exchangeShim          api.ExchangeShim
-	strategy              api.Strategy // the instance of this bot is bound to this strategy
-	timeController        api.TimeController
-	deleteCyclesThreshold int64
-	submitMode            api.SubmitMode
-	submitFilters         []plugins.SubmitFilter
-	threadTracker         *multithreading.ThreadTracker
-	fixedIterations       *uint64
-	dataKey               *model.BotKey
-	alert                 api.Alert
+	api                            *horizonclient.Client
+	ieif                           *plugins.IEIF
+	assetBase                      hProtocol.Asset
+	assetQuote                     hProtocol.Asset
+	valueBaseFeed                  api.PriceFeed
+	valueQuoteFeed                 api.PriceFeed
+	tradingAccount                 string
+	sdex                           *plugins.SDEX
+	exchangeShim                   api.ExchangeShim
+	strategy                       api.Strategy // the instance of this bot is bound to this strategy
+	timeController                 api.TimeController
+	synchronizeStateLoadEnable     bool
+	synchronizeStateLoadMaxRetries int
+	deleteCyclesThreshold          int64
+	submitMode                     api.SubmitMode
+	submitFilters                  []plugins.SubmitFilter
+	threadTracker                  *multithreading.ThreadTracker
+	fixedIterations                *uint64
+	dataKey                        *model.BotKey
+	alert                          api.Alert
 
 	// initialized runtime vars
-	deleteCycles        int64
-	stateSyncMaxRetries int
+	deleteCycles int64
 
 	// uninitialized runtime vars
 	maxAssetA          float64
@@ -69,6 +70,8 @@ func MakeTrader(
 	exchangeShim api.ExchangeShim,
 	strategy api.Strategy,
 	timeController api.TimeController,
+	synchronizeStateLoadEnable bool,
+	synchronizeStateLoadMaxRetries int,
 	deleteCyclesThreshold int64,
 	submitMode api.SubmitMode,
 	submitFilters []plugins.SubmitFilter,
@@ -78,27 +81,28 @@ func MakeTrader(
 	alert api.Alert,
 ) *Trader {
 	return &Trader{
-		api:                   api,
-		ieif:                  ieif,
-		assetBase:             assetBase,
-		assetQuote:            assetQuote,
-		valueBaseFeed:         valueBaseFeed,
-		valueQuoteFeed:        valueQuoteFeed,
-		tradingAccount:        tradingAccount,
-		sdex:                  sdex,
-		exchangeShim:          exchangeShim,
-		strategy:              strategy,
-		timeController:        timeController,
-		deleteCyclesThreshold: deleteCyclesThreshold,
-		submitMode:            submitMode,
-		submitFilters:         submitFilters,
-		threadTracker:         threadTracker,
-		fixedIterations:       fixedIterations,
-		dataKey:               dataKey,
-		alert:                 alert,
+		api:                            api,
+		ieif:                           ieif,
+		assetBase:                      assetBase,
+		assetQuote:                     assetQuote,
+		valueBaseFeed:                  valueBaseFeed,
+		valueQuoteFeed:                 valueQuoteFeed,
+		tradingAccount:                 tradingAccount,
+		sdex:                           sdex,
+		exchangeShim:                   exchangeShim,
+		strategy:                       strategy,
+		timeController:                 timeController,
+		synchronizeStateLoadEnable:     synchronizeStateLoadEnable,
+		synchronizeStateLoadMaxRetries: synchronizeStateLoadMaxRetries,
+		deleteCyclesThreshold:          deleteCyclesThreshold,
+		submitMode:                     submitMode,
+		submitFilters:                  submitFilters,
+		threadTracker:                  threadTracker,
+		fixedIterations:                fixedIterations,
+		dataKey:                        dataKey,
+		alert:                          alert,
 		// initialized runtime vars
-		deleteCycles:        0,
-		stateSyncMaxRetries: 3,
+		deleteCycles: 0,
 	}
 }
 
@@ -201,13 +205,20 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 		return fmt.Errorf("unable to get offers1: %s", e)
 	}
 
+	if !t.synchronizeStateLoadEnable {
+		log.Printf("synchronized state loading is disabled\n")
+		t.setBalances(baseBalance1, quoteBalance1)
+		t.setExistingOffers(sellingAOffers1, buyingAOffers1)
+		return nil
+	}
+
 	// on the first iteration, and every subsequent iteration, we want to fetch trades, balances, and offers.
 	// this ensures that we reuse the last fetch of balances and offers when retrying.
-	for i := 0; i < t.stateSyncMaxRetries+1; i++ {
+	for i := 0; i < t.synchronizeStateLoadMaxRetries+1; i++ {
 		// f.triggerFillTracker should never be nil
 		trades, e := t.triggerFillTracker()
 		if e != nil {
-			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
 		}
 
 		// reset cache of balances to get actual balances from network
@@ -216,11 +227,11 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 		// run it again once we have fetched trades so we can compare that nothing changed and the data is in sync
 		baseBalance2, quoteBalance2, e := t.getBalances()
 		if e != nil {
-			return fmt.Errorf("unable to get balances2, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+			return fmt.Errorf("unable to get balances2, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
 		}
 		sellingAOffers2, buyingAOffers2, e := t.getExistingOffers()
 		if e != nil {
-			return fmt.Errorf("unable to get offers2, iteration %d of %d attempts (1-indexed): %s", i+1, t.stateSyncMaxRetries+1, e)
+			return fmt.Errorf("unable to get offers2, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
 		}
 
 		if isStateSynchronized(
@@ -239,13 +250,13 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			t.setExistingOffers(sellingAOffers1, buyingAOffers1)
 			return nil
 		}
-		log.Printf("could not synchronize data in attempt %d of %d (1-indexed), trying again...\n", i+1, t.stateSyncMaxRetries+1)
+		log.Printf("could not synchronize data in attempt %d of %d (1-indexed), trying again...\n", i+1, t.synchronizeStateLoadMaxRetries+1)
 
 		// set recently fetched values of balances and offers as our first set of values for the next run
 		baseBalance1, quoteBalance1 = baseBalance2, quoteBalance2
 		sellingAOffers1, buyingAOffers1 = sellingAOffers2, buyingAOffers2
 	}
-	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.stateSyncMaxRetries+1)
+	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.synchronizeStateLoadMaxRetries+1)
 }
 
 func isStateSynchronized(

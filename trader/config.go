@@ -34,6 +34,8 @@ type BotConfig struct {
 	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS" json:"fill_tracker_sleep_millis"`
 	FillTrackerDeleteCyclesThreshold   int64      `valid:"-" toml:"FILL_TRACKER_DELETE_CYCLES_THRESHOLD" json:"fill_tracker_delete_cycles_threshold"`
 	FillTrackerLastTradeCursorOverride string     `valid:"-" toml:"FILL_TRACKER_LAST_TRADE_CURSOR_OVERRIDE"`
+	SynchronizeStateLoadEnable         bool       `valid:"-" toml:"SYNCHRONIZE_STATE_LOAD_ENABLE"`
+	SynchronizeStateLoadMaxRetries     int        `valid:"-" toml:"SYNCHRONIZE_STATE_LOAD_MAX_RETRIES"`
 	HorizonURL                         string     `valid:"-" toml:"HORIZON_URL" json:"horizon_url"`
 	CcxtRestURL                        *string    `valid:"-" toml:"CCXT_REST_URL" json:"ccxt_rest_url"`
 	DollarValueFeedBaseAsset           string     `valid:"-" toml:"DOLLAR_VALUE_FEED_BASE_ASSET" json:"dollar_value_feed_base_asset"`
