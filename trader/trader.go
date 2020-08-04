@@ -223,8 +223,7 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			return nil
 		}
 
-		log.Printf("something changed when fetching trades (!hasNewTrades=%v), balances (baseBalanceSame=%v, quoteBalanceSame=%v), and offers (sellOffersSame=%v, buyOffersSame=%v) [all should be true for success] so could not synchronize data in attempt %d of %d (1-indexed), trying again...",
-			!hasNewTrades, baseBalanceSame, quoteBalanceSame, sellOffersSame, buyOffersSame, i+1, t.stateSyncMaxRetries+1)
+		log.Printf("could not synchronize data in attempt %d of %d (1-indexed), trying again...\n", i+1, t.stateSyncMaxRetries+1)
 	}
 	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.stateSyncMaxRetries+1)
 }
@@ -241,23 +240,19 @@ func isStateSynchronized(
 	buyingAOffers2 []hProtocol.Offer,
 ) bool {
 	hasNewTrades := trades != nil && len(trades) > 0
-	if hasNewTrades {
-		return false
-	}
-
 	baseBalanceSame := baseBalance1.Balance == baseBalance2.Balance
 	quoteBalanceSame := quoteBalance1.Balance == quoteBalance2.Balance
-	if !baseBalanceSame || !quoteBalanceSame {
-		return false
-	}
-
 	sellOffersSame := len(sellingAOffers1) == len(sellingAOffers2)
 	buyOffersSame := len(buyingAOffers1) == len(buyingAOffers2)
-	if !sellOffersSame || !buyOffersSame {
-		return false
-	}
 
-	return true
+	isStateSynchronized := !hasNewTrades && baseBalanceSame && quoteBalanceSame && sellOffersSame && buyOffersSame
+	if isStateSynchronized {
+		log.Printf("isStateSynchronized is %v\n", isStateSynchronized)
+	} else {
+		log.Printf("isStateSynchronized is %v, values (all should be true for success): !hasNewTrades=%v, baseBalanceSame=%v, quoteBalanceSame=%v, sellOffersSame=%v, buyOffersSame=%v\n",
+			isStateSynchronized, !hasNewTrades, baseBalanceSame, quoteBalanceSame, sellOffersSame, buyOffersSame)
+	}
+	return isStateSynchronized
 }
 
 // time to update the order book and possibly readjust the offers
