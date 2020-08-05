@@ -109,14 +109,20 @@ type dynamicBucketValues struct {
 }
 
 type bucketInfo struct {
-	ID                    bucketID
-	startTime             time.Time
-	endTime               time.Time
-	sizeSeconds           int
-	totalBuckets          int64
-	totalBucketsToSell    int64
-	dayBaseSoldStart      float64
-	dayBaseCapacity       float64
+	ID                 bucketID
+	startTime          time.Time
+	endTime            time.Time
+	sizeSeconds        int
+	totalBuckets       int64
+	totalBucketsToSell int64
+	dayBaseSoldStart   float64
+	dayBaseCapacity    float64
+	// surplus can be negative because offers are outstanding and can be consumed while we run these level calculations. i.e. it can never be atomic.
+	// the probability of this happening is small and as the execution speed of the update loop improves (with better code) the probability will go down.
+	// It can be made logically atomic (with more guarantees than the fix in #456) by deleting outstanding offers in the pre-update data synchronization.
+	// I think that is unnecessary since we'd rather keep the offer open for simplicity since we are not promising a perfect twap execution.
+	// Alternatively, if we want to be perfect but also keep an offer outstanding at all times then in these level calculations we can assume that 100%
+	// of the outstanding offer is consumed and we can pick an order size between baseCapacity - existingOfferBaseAmount. I think this is unnecessary too.
 	totalBaseSurplusStart float64
 	baseSurplusIncluded   float64
 	baseCapacity          float64
