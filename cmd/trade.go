@@ -732,14 +732,24 @@ func makeFillTracker(
 	}
 
 	// start initializing the fill tracker
-	var lastTradeCursorOverride interface{}
+	var lastCursor interface{}
 	if botConfig.FillTrackerLastTradeCursorOverride == "" {
-		lastTradeCursorOverride = nil
+		// loads cursor by fetching from exchange
+		lastCursor, e = exchangeShim.GetLatestTradeCursor()
+		if e != nil {
+			l.Info("")
+			l.Error(fmt.Sprintf("could not get last trade cursor from exchangeShim: %s", e))
+			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working correctly
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		}
+		log.Printf("set latest trade cursor from where to start tracking fills (no override specified): %v\n", lastCursor)
 	} else {
-		lastTradeCursorOverride = botConfig.FillTrackerLastTradeCursorOverride
+		// loads cursor from config file
+		lastCursor = botConfig.FillTrackerLastTradeCursorOverride
+		log.Printf("set latest trade cursor from where to start tracking fills (used override value): %v\n", lastCursor)
 	}
 
-	fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold, lastTradeCursorOverride)
+	fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold, lastCursor)
 	fillLogger := plugins.MakeFillLogger()
 	fillTracker.RegisterHandler(fillLogger)
 	if db != nil {

@@ -20,7 +20,7 @@ type FillTracker struct {
 	fillTrackable                    api.FillTrackable
 	fillTrackerSleepMillis           uint32
 	fillTrackerDeleteCyclesThreshold int64
-	lastTradeCursorOverride          interface{}
+	lastCursor                       interface{}
 
 	// initialized runtime vars
 	fillTrackerDeleteCycles int64
@@ -28,8 +28,7 @@ type FillTracker struct {
 	isRunningInBackground   bool
 
 	// uninitialized
-	lastCursor interface{}
-	handlers   []api.FillHandler
+	handlers []api.FillHandler
 }
 
 // enforce FillTracker implementing api.FillTracker
@@ -42,7 +41,7 @@ func MakeFillTracker(
 	fillTrackable api.FillTrackable,
 	fillTrackerSleepMillis uint32,
 	fillTrackerDeleteCyclesThreshold int64,
-	lastTradeCursorOverride interface{},
+	lastCursor interface{},
 ) api.FillTracker {
 	return &FillTracker{
 		pair:                             pair,
@@ -50,7 +49,7 @@ func MakeFillTracker(
 		fillTrackable:                    fillTrackable,
 		fillTrackerSleepMillis:           fillTrackerSleepMillis,
 		fillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
-		lastTradeCursorOverride:          lastTradeCursorOverride,
+		lastCursor:                       lastCursor,
 		// initialized runtime vars
 		fillTrackerDeleteCycles: 0,
 		lockFill:                &sync.Mutex{},
@@ -92,19 +91,8 @@ func (f *FillTracker) TrackFills() error {
 		f.isRunningInBackground = false
 	}()
 
-	f.lastCursor = f.lastTradeCursorOverride
-	var e error
-	if f.lastCursor == nil {
-		// get the last cursor so we only start querying from the current position
-		f.lastCursor, e = f.fillTrackable.GetLatestTradeCursor()
-		if e != nil {
-			return fmt.Errorf("error while getting last trade: %s", e)
-		}
-	}
-	log.Printf("got latest trade cursor from where to start tracking fills: %v\n", f.lastCursor)
-
 	for {
-		_, e = f.FillTrackSingleIteration()
+		_, e := f.FillTrackSingleIteration()
 		if e != nil {
 			eMsg := fmt.Sprintf("error when running an iteration of fill tracker: %s", e)
 			if f.countError() {
