@@ -545,10 +545,10 @@ func runTradeCmd(options inputs) {
 
 	var db *sql.DB
 	if botConfig.PostgresDbConfig != nil {
-		if botConfig.FillTrackerSleepMillis == 0 {
+		if !botConfig.SynchronizeStateLoadEnable && botConfig.FillTrackerSleepMillis == 0 {
 			log.Println()
-			utils.PrintErrorHintf("FILL_TRACKER_SLEEP_MILLIS needs to be set in the trader.cfg file when the POSTGRES_DB is enabled so we can fetch trades to be saved in the db")
-			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set FILL_TRACKER_SLEEP_MILLIS"))
+			utils.PrintErrorHintf("SYNCHRONIZE_STATE_LOAD_ENABLE needs to be enabled and/or FILL_TRACKER_SLEEP_MILLIS needs to be set in the trader.cfg file when the POSTGRES_DB is enabled so we can fetch trades to be saved in the db")
+			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set SYNCHRONIZE_STATE_LOAD_ENABLE and/or FILL_TRACKER_SLEEP_MILLIS"))
 		}
 
 		if botConfig.DbOverrideAccountID == "" {
