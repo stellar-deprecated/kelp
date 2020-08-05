@@ -368,6 +368,7 @@ func makeBot(
 	tradingPair *model.TradingPair,
 	filterFactory *plugins.FilterFactory,
 	strategy api.Strategy,
+	fillTracker api.FillTracker,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 ) *trader.Trader {
@@ -379,6 +380,13 @@ func makeBot(
 	if e != nil {
 		log.Println()
 		log.Println(e)
+		// we want to delete all the offers and exit here since there is something wrong with our setup
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+	}
+
+	if botConfig.SynchronizeStateLoadEnable && botConfig.SynchronizeStateLoadMaxRetries < 0 {
+		log.Println()
+		utils.PrintErrorHintf("SYNCHRONIZE_STATE_LOAD_MAX_RETRIES needs to be greater than or equal to 0 when SYNCHRONIZE_STATE_LOAD_ENABLE is set to true")
 		// we want to delete all the offers and exit here since there is something wrong with our setup
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
@@ -453,6 +461,9 @@ func makeBot(
 		exchangeShim,
 		strategy,
 		timeController,
+		botConfig.SynchronizeStateLoadEnable,
+		botConfig.SynchronizeStateLoadMaxRetries,
+		fillTracker,
 		botConfig.DeleteCyclesThreshold,
 		submitMode,
 		submitFilters,
@@ -534,10 +545,10 @@ func runTradeCmd(options inputs) {
 
 	var db *sql.DB
 	if botConfig.PostgresDbConfig != nil {
-		if botConfig.FillTrackerSleepMillis == 0 {
+		if !botConfig.SynchronizeStateLoadEnable && botConfig.FillTrackerSleepMillis == 0 {
 			log.Println()
-			utils.PrintErrorHintf("FILL_TRACKER_SLEEP_MILLIS needs to be set in the trader.cfg file when the POSTGRES_DB is enabled so we can fetch trades to be saved in the db")
-			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set FILL_TRACKER_SLEEP_MILLIS"))
+			utils.PrintErrorHintf("SYNCHRONIZE_STATE_LOAD_ENABLE needs to be enabled and/or FILL_TRACKER_SLEEP_MILLIS needs to be set in the trader.cfg file when the POSTGRES_DB is enabled so we can fetch trades to be saved in the db")
+			logger.Fatal(l, fmt.Errorf("invalid trader.cfg config, need to set SYNCHRONIZE_STATE_LOAD_ENABLE and/or FILL_TRACKER_SLEEP_MILLIS"))
 		}
 
 		if botConfig.DbOverrideAccountID == "" {
@@ -587,6 +598,19 @@ func runTradeCmd(options inputs) {
 		options,
 		threadTracker,
 	)
+	fillTracker := makeFillTracker(
+		l,
+		strategy,
+		botConfig,
+		client,
+		sdex,
+		exchangeShim,
+		tradingPair,
+		assetDisplayFn,
+		db,
+		threadTracker,
+		botConfig.DbOverrideAccountID,
+	)
 	bot := makeBot(
 		l,
 		botConfig,
@@ -597,6 +621,7 @@ func runTradeCmd(options inputs) {
 		tradingPair,
 		filterFactory,
 		strategy,
+		fillTracker,
 		threadTracker,
 		options,
 	)
@@ -617,19 +642,18 @@ func runTradeCmd(options inputs) {
 			}
 		}()
 	}
-	startFillTracking(
-		l,
-		strategy,
-		botConfig,
-		client,
-		sdex,
-		exchangeShim,
-		tradingPair,
-		assetDisplayFn,
-		db,
-		threadTracker,
-		botConfig.DbOverrideAccountID,
-	)
+	if fillTracker != nil && botConfig.FillTrackerSleepMillis != 0 {
+		l.Infof("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
+		go func() {
+			e := fillTracker.TrackFills()
+			if e != nil {
+				l.Info("")
+				l.Errorf("problem encountered while running the fill tracker: %s", e)
+				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			}
+		}()
+	}
 	// --- end initialization of services ---
 
 	l.Info("Starting the trader bot...")
@@ -676,7 +700,7 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 	return server.StartServer(botConfig.MonitoringPort, botConfig.MonitoringTLSCert, botConfig.MonitoringTLSKey)
 }
 
-func startFillTracking(
+func makeFillTracker(
 	l logger.Logger,
 	strategy api.Strategy,
 	botConfig trader.BotConfig,
@@ -688,7 +712,7 @@ func startFillTracking(
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 	accountID string,
-) {
+) api.FillTracker {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
 		l.Info("")
@@ -697,43 +721,38 @@ func startFillTracking(
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
 	}
 
-	if botConfig.FillTrackerSleepMillis != 0 {
-		var lastTradeCursorOverride interface{}
-		if botConfig.FillTrackerLastTradeCursorOverride == "" {
-			lastTradeCursorOverride = nil
-		} else {
-			lastTradeCursorOverride = botConfig.FillTrackerLastTradeCursorOverride
-		}
-
-		fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold, lastTradeCursorOverride)
-		fillLogger := plugins.MakeFillLogger()
-		fillTracker.RegisterHandler(fillLogger)
-		if db != nil {
-			fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName(), accountID)
-			fillTracker.RegisterHandler(fillDBWriter)
-		}
-		if strategyFillHandlers != nil {
-			for _, h := range strategyFillHandlers {
-				fillTracker.RegisterHandler(h)
-			}
-		}
-
-		l.Infof("Starting fill tracker with %d handlers\n", fillTracker.NumHandlers())
-		go func() {
-			e := fillTracker.TrackFills()
-			if e != nil {
-				l.Info("")
-				l.Errorf("problem encountered while running the fill tracker: %s", e)
-				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
-			}
-		}()
-	} else if strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
+	fillTrackerEnabled := botConfig.SynchronizeStateLoadEnable || botConfig.FillTrackerSleepMillis != 0
+	if !fillTrackerEnabled && strategyFillHandlers != nil && len(strategyFillHandlers) > 0 {
 		l.Info("")
 		l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
 		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+	} else if !fillTrackerEnabled {
+		return nil
 	}
+
+	// start initializing the fill tracker
+	var lastTradeCursorOverride interface{}
+	if botConfig.FillTrackerLastTradeCursorOverride == "" {
+		lastTradeCursorOverride = nil
+	} else {
+		lastTradeCursorOverride = botConfig.FillTrackerLastTradeCursorOverride
+	}
+
+	fillTracker := plugins.MakeFillTracker(tradingPair, threadTracker, exchangeShim, botConfig.FillTrackerSleepMillis, botConfig.FillTrackerDeleteCyclesThreshold, lastTradeCursorOverride)
+	fillLogger := plugins.MakeFillLogger()
+	fillTracker.RegisterHandler(fillLogger)
+	if db != nil {
+		fillDBWriter := plugins.MakeFillDBWriter(db, assetDisplayFn, botConfig.TradingExchangeName(), accountID)
+		fillTracker.RegisterHandler(fillDBWriter)
+	}
+	if strategyFillHandlers != nil {
+		for _, h := range strategyFillHandlers {
+			fillTracker.RegisterHandler(h)
+		}
+	}
+
+	return fillTracker
 }
 
 func validateTrustlines(l logger.Logger, client *horizonclient.Client, botConfig *trader.BotConfig) {

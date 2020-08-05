@@ -23,24 +23,27 @@ const maxLumenTrust float64 = math.MaxFloat64
 
 // Trader represents a market making bot, which is composed of various parts include the strategy and various APIs.
 type Trader struct {
-	api                   *horizonclient.Client
-	ieif                  *plugins.IEIF
-	assetBase             hProtocol.Asset
-	assetQuote            hProtocol.Asset
-	valueBaseFeed         api.PriceFeed
-	valueQuoteFeed        api.PriceFeed
-	tradingAccount        string
-	sdex                  *plugins.SDEX
-	exchangeShim          api.ExchangeShim
-	strategy              api.Strategy // the instance of this bot is bound to this strategy
-	timeController        api.TimeController
-	deleteCyclesThreshold int64
-	submitMode            api.SubmitMode
-	submitFilters         []plugins.SubmitFilter
-	threadTracker         *multithreading.ThreadTracker
-	fixedIterations       *uint64
-	dataKey               *model.BotKey
-	alert                 api.Alert
+	api                            *horizonclient.Client
+	ieif                           *plugins.IEIF
+	assetBase                      hProtocol.Asset
+	assetQuote                     hProtocol.Asset
+	valueBaseFeed                  api.PriceFeed
+	valueQuoteFeed                 api.PriceFeed
+	tradingAccount                 string
+	sdex                           *plugins.SDEX
+	exchangeShim                   api.ExchangeShim
+	strategy                       api.Strategy // the instance of this bot is bound to this strategy
+	timeController                 api.TimeController
+	synchronizeStateLoadEnable     bool
+	synchronizeStateLoadMaxRetries int
+	fillTracker                    api.FillTracker
+	deleteCyclesThreshold          int64
+	submitMode                     api.SubmitMode
+	submitFilters                  []plugins.SubmitFilter
+	threadTracker                  *multithreading.ThreadTracker
+	fixedIterations                *uint64
+	dataKey                        *model.BotKey
+	alert                          api.Alert
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -67,6 +70,9 @@ func MakeTrader(
 	exchangeShim api.ExchangeShim,
 	strategy api.Strategy,
 	timeController api.TimeController,
+	synchronizeStateLoadEnable bool,
+	synchronizeStateLoadMaxRetries int,
+	fillTracker api.FillTracker,
 	deleteCyclesThreshold int64,
 	submitMode api.SubmitMode,
 	submitFilters []plugins.SubmitFilter,
@@ -76,24 +82,27 @@ func MakeTrader(
 	alert api.Alert,
 ) *Trader {
 	return &Trader{
-		api:                   api,
-		ieif:                  ieif,
-		assetBase:             assetBase,
-		assetQuote:            assetQuote,
-		valueBaseFeed:         valueBaseFeed,
-		valueQuoteFeed:        valueQuoteFeed,
-		tradingAccount:        tradingAccount,
-		sdex:                  sdex,
-		exchangeShim:          exchangeShim,
-		strategy:              strategy,
-		timeController:        timeController,
-		deleteCyclesThreshold: deleteCyclesThreshold,
-		submitMode:            submitMode,
-		submitFilters:         submitFilters,
-		threadTracker:         threadTracker,
-		fixedIterations:       fixedIterations,
-		dataKey:               dataKey,
-		alert:                 alert,
+		api:                            api,
+		ieif:                           ieif,
+		assetBase:                      assetBase,
+		assetQuote:                     assetQuote,
+		valueBaseFeed:                  valueBaseFeed,
+		valueQuoteFeed:                 valueQuoteFeed,
+		tradingAccount:                 tradingAccount,
+		sdex:                           sdex,
+		exchangeShim:                   exchangeShim,
+		strategy:                       strategy,
+		timeController:                 timeController,
+		synchronizeStateLoadEnable:     synchronizeStateLoadEnable,
+		synchronizeStateLoadMaxRetries: synchronizeStateLoadMaxRetries,
+		fillTracker:                    fillTracker,
+		deleteCyclesThreshold:          deleteCyclesThreshold,
+		submitMode:                     submitMode,
+		submitFilters:                  submitFilters,
+		threadTracker:                  threadTracker,
+		fixedIterations:                fixedIterations,
+		dataKey:                        dataKey,
+		alert:                          alert,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
@@ -161,12 +170,124 @@ func (t *Trader) deleteAllOffers() {
 	}
 }
 
+// synchronizeFetchBalancesOffersTrades pivots checking the balances and offers around trades, ensuring that:
+// 1) we fetch and process the latest trades and
+// 2) the balances and offers are consistent with the fetched trades
+//
+// Note1: we cannot pivot around balances and/or offers by checking if if there are 0 trades because it's possible that the
+//        background thread has fetched the trades during this time. This is why we check if the balances/offers have changed.
+// Note2: if the trade API is not working (like sometimes on Kraken) then this will fail once but will not crash the bot (we
+//        want the bot to crash in this scenario). We will end up retring here and subsequent runs will likely succeed to because
+//        the bot allows occassional failures. The likelihood that a trade happens exactly during our critical section many times,
+//        which would cause multiple failures, is unlikely. Even if that happens, it does not necessarily indicate a failed API as
+//        that could just be a coincidence, which is exactly what this synchronization function is preventing against.
+func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
+	if t.synchronizeStateLoadEnable && !t.fillTracker.IsRunningInBackground() {
+		// this is purely an optimization block.
+		// run the trades query here so the synchronization logic is cheaper.
+		// we will catch any trades that occur here with 1 network call instead of having to retry the synchronization block below.
+		// Moreover, we will not consume 1 attempt whenever a legitimate trade does occur (which otherwise is handled by the background
+		// fill tracker thread)
+		_, e := t.fillTracker.FillTrackSingleIteration()
+		if e != nil {
+			return fmt.Errorf("unable to get trades: %s", e)
+		}
+	}
+
+	// run initial query for balanecs and offers
+	baseBalance1, quoteBalance1, e := t.getBalances()
+	if e != nil {
+		return fmt.Errorf("unable to get balances1: %s", e)
+	}
+	sellingAOffers1, buyingAOffers1, e := t.getExistingOffers()
+	if e != nil {
+		return fmt.Errorf("unable to get offers1: %s", e)
+	}
+
+	if !t.synchronizeStateLoadEnable {
+		log.Printf("synchronized state loading is disabled\n")
+		t.setBalances(baseBalance1, quoteBalance1)
+		t.setExistingOffers(sellingAOffers1, buyingAOffers1)
+		return nil
+	}
+
+	// on the first iteration, and every subsequent iteration, we want to fetch trades, balances, and offers.
+	// this ensures that we reuse the last fetch of balances and offers when retrying.
+	for i := 0; i < t.synchronizeStateLoadMaxRetries+1; i++ {
+		trades, e := t.fillTracker.FillTrackSingleIteration()
+		if e != nil {
+			return fmt.Errorf("unable to get trades, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
+		}
+
+		// reset cache of balances to get actual balances from network
+		t.sdex.IEIF().ResetCachedBalances()
+
+		// run it again once we have fetched trades so we can compare that nothing changed and the data is in sync
+		baseBalance2, quoteBalance2, e := t.getBalances()
+		if e != nil {
+			return fmt.Errorf("unable to get balances2, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
+		}
+		sellingAOffers2, buyingAOffers2, e := t.getExistingOffers()
+		if e != nil {
+			return fmt.Errorf("unable to get offers2, iteration %d of %d attempts (1-indexed): %s", i+1, t.synchronizeStateLoadMaxRetries+1, e)
+		}
+
+		if isStateSynchronized(
+			trades,
+			baseBalance1,
+			quoteBalance1,
+			sellingAOffers1,
+			buyingAOffers1,
+			baseBalance2,
+			quoteBalance2,
+			sellingAOffers2,
+			buyingAOffers2,
+		) {
+			// this is the only success case
+			t.setBalances(baseBalance1, quoteBalance1)
+			t.setExistingOffers(sellingAOffers1, buyingAOffers1)
+			return nil
+		}
+		log.Printf("could not synchronize data in attempt %d of %d (1-indexed), trying again...\n", i+1, t.synchronizeStateLoadMaxRetries+1)
+
+		// set recently fetched values of balances and offers as our first set of values for the next run
+		baseBalance1, quoteBalance1 = baseBalance2, quoteBalance2
+		sellingAOffers1, buyingAOffers1 = sellingAOffers2, buyingAOffers2
+	}
+	return fmt.Errorf("exhausted all %d attempts at synchronizing data when fetching trades, balances, and offers but all attempts failed", t.synchronizeStateLoadMaxRetries+1)
+}
+
+func isStateSynchronized(
+	trades []model.Trade,
+	baseBalance1 *api.Balance,
+	quoteBalance1 *api.Balance,
+	sellingAOffers1 []hProtocol.Offer,
+	buyingAOffers1 []hProtocol.Offer,
+	baseBalance2 *api.Balance,
+	quoteBalance2 *api.Balance,
+	sellingAOffers2 []hProtocol.Offer,
+	buyingAOffers2 []hProtocol.Offer,
+) bool {
+	hasNewTrades := trades != nil && len(trades) > 0
+	baseBalanceSame := baseBalance1.Balance == baseBalance2.Balance
+	quoteBalanceSame := quoteBalance1.Balance == quoteBalance2.Balance
+	sellOffersSame := len(sellingAOffers1) == len(sellingAOffers2)
+	buyOffersSame := len(buyingAOffers1) == len(buyingAOffers2)
+
+	isStateSynchronized := !hasNewTrades && baseBalanceSame && quoteBalanceSame && sellOffersSame && buyOffersSame
+	if isStateSynchronized {
+		log.Printf("isStateSynchronized is %v\n", isStateSynchronized)
+	} else {
+		log.Printf("isStateSynchronized is %v, values (all should be true for success): !hasNewTrades=%v, baseBalanceSame=%v, quoteBalanceSame=%v, sellOffersSame=%v, buyOffersSame=%v\n",
+			isStateSynchronized, !hasNewTrades, baseBalanceSame, quoteBalanceSame, sellOffersSame, buyOffersSame)
+	}
+	return isStateSynchronized
+}
+
 // time to update the order book and possibly readjust the offers
 // returns true if the update was successful, otherwise false
 func (t *Trader) update() bool {
-	var e error
-	t.load()
-	e = t.loadExistingOffers()
+	e := t.synchronizeFetchBalancesOffersTrades()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers()
@@ -270,19 +391,21 @@ func (t *Trader) update() bool {
 	return true
 }
 
-func (t *Trader) load() {
-	// load the maximum amounts we can offer for each asset
+func (t *Trader) getBalances() (*api.Balance /*baseBalance*/, *api.Balance /*quoteBalance*/, error) {
 	baseBalance, e := t.exchangeShim.GetBalanceHack(t.assetBase)
 	if e != nil {
-		log.Println(e)
-		return
-	}
-	quoteBalance, e := t.exchangeShim.GetBalanceHack(t.assetQuote)
-	if e != nil {
-		log.Println(e)
-		return
+		return nil, nil, fmt.Errorf("error fetching base balance: %s", e)
 	}
 
+	quoteBalance, e := t.exchangeShim.GetBalanceHack(t.assetQuote)
+	if e != nil {
+		return nil, nil, fmt.Errorf("error fetching quote balance: %s", e)
+	}
+
+	return baseBalance, quoteBalance, nil
+}
+
+func (t *Trader) setBalances(baseBalance *api.Balance, quoteBalance *api.Balance) {
 	t.maxAssetA = baseBalance.Balance
 	t.maxAssetB = quoteBalance.Balance
 	t.trustAssetA = baseBalance.Trust
@@ -324,14 +447,18 @@ func (t *Trader) load() {
 	}
 }
 
-func (t *Trader) loadExistingOffers() error {
+func (t *Trader) getExistingOffers() ([]hProtocol.Offer /*sellingAOffers*/, []hProtocol.Offer /*buyingAOffers*/, error) {
 	offers, e := t.exchangeShim.LoadOffersHack()
 	if e != nil {
-		return fmt.Errorf("unable to load existing offers: %s", e)
+		return nil, nil, fmt.Errorf("unable to load existing offers: %s", e)
 	}
-	t.sellingAOffers, t.buyingAOffers = utils.FilterOffers(offers, t.assetBase, t.assetQuote)
+	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, t.assetBase, t.assetQuote)
 
-	sort.Sort(utils.ByPrice(t.buyingAOffers))
-	sort.Sort(utils.ByPrice(t.sellingAOffers)) // don't reverse since prices are inverse
-	return nil
+	sort.Sort(utils.ByPrice(buyingAOffers))
+	sort.Sort(utils.ByPrice(sellingAOffers)) // don't reverse since prices are inverse
+	return sellingAOffers, buyingAOffers, nil
+}
+
+func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffers []hProtocol.Offer) {
+	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
 }
