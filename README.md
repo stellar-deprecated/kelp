@@ -141,7 +141,7 @@ These are the following commands available from the `kelp` binary:
 The `trade` command has three required parameters which are:
 
 - **botConf**: full path to the _.cfg_ file with the account details, [sample file here](examples/configs/trader/sample_trader.cfg).
-- **strategy**: the strategy you want to run (_sell_, _buysell_, _balanced_, _pendulum_, _mirror_, _delete_).
+- **strategy**: the strategy you want to run (_sell_, _sell_twap_, _buysell_, _balanced_, _pendulum_, _mirror_, _delete_).
 - **stratConf**: full path to the _.cfg_ file specific to your chosen strategy, [sample files here](examples/configs/trader/).
 
 Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.
