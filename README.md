@@ -22,7 +22,7 @@ Kelp is built to:
 - Price and trade custom [stablecoins][stablecoin]
 - Mimic orderbooks from other exchanges
 
-To learn more about the Stellar protocol check out [Stellar Videos on Coinbase Earn][stellar coinbase earn] or read more about it on the [Stellar Website][intro to stellar].
+To learn more about the Stellar protocol check out [Stellar Videos on Coinbase Earn][stellar coinbase earn], or [this video about the Stellar DEX created by Lumenauts][sdex explainer video], or read more about it on the [Stellar Website][intro to stellar].
 
 ![Kelp GUI screenshot](resources/screenshots/gui_screenshot.png)
 
@@ -404,6 +404,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [scooter video]: https://youtu.be/LStXAG5dwzA
 [sdex]: https://www.stellar.org/developers/guides/concepts/exchange.html
 [stellar coinbase earn]: https://www.coinbase.com/earn/stellar
+[sdex explainer video]: https://www.lumenauts.com/lessons/stellar-decentralized-exchange
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [golang-download]: https://golang.org/dl/
 [golang-setup]: https://golang.org/doc/install#install
