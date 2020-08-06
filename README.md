@@ -150,7 +150,7 @@ Here's an example of how to start the trading bot with the _buysell_ strategy:
 
 `kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg`
 
-If you are ever stuck, just run the `kelp` binary directly to bring up the help section or type `kelp help [command]` for help with a specific command.
+If you are ever stuck, just run `kelp help` to bring up the help section or type `kelp help [command]` for help with a specific command.
 
 ## Using CCXT
 
