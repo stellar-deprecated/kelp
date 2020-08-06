@@ -261,10 +261,13 @@ The following strategies are available **out of the box** with Kelp:
 
 Price Feeds fetch the price of an asset from an external source. The following price feeds are available **out of the box** with Kelp:
 
-- coinmarketcap: fetches the price of tokens from [CoinMarketCap][cmc]
-- fiat: fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
-- exchange: fetches the price from an exchange you specify, such as Kraken or Poloniex. You can also use the [CCXT][ccxt] integration to fetch prices from a wider range of exchanges (see the [Using CCXT](#using-ccxt) section for details)
-- fixed: sets the price to a constant
+- `crypto`: fetches the price of tokens from [CoinMarketCap][cmc]
+- `fiat`: fetches the price of a [fiat][fiat] currency from the [CurrencyLayer API][currencylayer]
+- `exchange`: fetches the price from an exchange you specify, such as Kraken or Poloniex. You can also use the [CCXT][ccxt] integration to fetch prices from a wider range of exchanges (see the [Using CCXT](#using-ccxt) section for details)
+- `fixed`: sets the price to a constant
+- `function`: uses a pre-defined function to combine the above price feed types into a single feed. We currently support only two types
+    - `max` - `max(exchange/ccxt-binance/XLM/USDT/mid,exchange/ccxt-coinbasepro/XLM/USD/mid)`
+    - `invert` - `invert(exchange/ccxt-binance/XLM/USDT/mid)`
 
 </details>
 
