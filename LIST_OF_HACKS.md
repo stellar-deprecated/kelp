@@ -6,6 +6,7 @@ Incomplete list of hacks in the codebase that should be fixed before upgrading t
 
 - LOH-1 - support backward-compatible case of not having any pre-specified function
 - LOH-2 - support backward-compatible case of defaulting to "mid" price when left unspecified
+- LOH-3 - we want to guarantee that the bot crashes if the errors exceed deleteCyclesThreshold, so we start a new thread with a sleep timer to crash the bot as a safety
 
 ## Workarounds
 

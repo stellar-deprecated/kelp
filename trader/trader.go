@@ -159,14 +159,25 @@ func (t *Trader) deleteAllOffers() {
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.buyingAOffers)...)
 	t.buyingAOffers = []hProtocol.Offer{}
 
+	// LOH-3 - we want to guarantee that the bot crashes if the errors exceed deleteCyclesThreshold, so we start a new thread with a sleep timer to crash the bot as a safety
+	defer func() {
+		log.Printf("started thread to crash bot in 1 minute as a fallback (to respect deleteCyclesThreshold)\n")
+		time.Sleep(time.Minute)
+		log.Fatalf("bot should have crashed by now (programmer error?), crashing\n")
+	}()
+
 	log.Printf("created %d operations to delete offers\n", len(dOps))
 	if len(dOps) > 0 {
 		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
-		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, nil)
+		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
+			log.Fatalf("...deleted %d offers, exiting (asyncCallback: hash=%s, e=%v)", len(dOps), hash, e)
+		})
 		if e != nil {
-			log.Println(e)
+			log.Fatalf("continuing to exit after showing error during submission of delete offer ops: %s", e)
 			return
 		}
+	} else {
+		log.Fatalf("...nothing to delete, exiting")
 	}
 }
 
