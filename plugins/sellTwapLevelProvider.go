@@ -410,16 +410,7 @@ func (p *sellTwapLevelProvider) makeActiveBucket(now time.Time, volFilter volume
 	if e != nil {
 		return nil, nil, fmt.Errorf("unable to make first bucket frame when cutting over with new bucketID (ID=%d): %s", bID, e)
 	}
-	// on a new day
-	if newBucket.ID == 0 {
-		// return oldBucket along with the newBucket
-		return oldBucket, newBucket, nil
-	}
-	// on the same day
-	if newBucket.ID != oldBucket.ID+1 {
-		return nil, nil, fmt.Errorf("new bucketID (%d) needs to be one more than the previous bucketID (%d)", newBucket.ID, oldBucket.ID)
-	}
-	// return oldBucket along with the newBucket
+	// always return oldBucket along with the newBucket (do not check bucketID validity)
 	return oldBucket, newBucket, nil
 }
 
