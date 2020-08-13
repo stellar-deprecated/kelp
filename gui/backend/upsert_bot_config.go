@@ -206,7 +206,12 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 			log.Printf("error parsing trading secret seed for bot '%s': %s\n", bot.Name, e)
 			return
 		}
-		traderAccount, e := s.checkFundAccount(tradingKP.Address(), bot.Name)
+		client := s.apiPubNet
+		if strings.Contains(req.TraderConfig.HorizonURL, "test") {
+			client = s.apiTestNet
+		}
+
+		traderAccount, e := s.checkFundAccount(client, tradingKP.Address(), bot.Name)
 		if e != nil {
 			log.Printf("error checking and funding trader account during upsert config: %s\n", e)
 			return
@@ -230,7 +235,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 				log.Printf("error parsing source secret seed for bot '%s': %s\n", bot.Name, e)
 				return
 			}
-			_, e = s.checkFundAccount(sourceKP.Address(), bot.Name)
+			_, e = s.checkFundAccount(client, sourceKP.Address(), bot.Name)
 			if e != nil {
 				fmt.Printf("error checking and funding source account during upsert config: %s\n", e)
 				return
