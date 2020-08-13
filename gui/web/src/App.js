@@ -74,6 +74,8 @@ class App extends Component {
   }
 
   render() {
+    const enablePubnetBots = false;
+
     let banner = (<div className={styles.banner}>
       <Button
         className={styles.quit}
@@ -94,13 +96,13 @@ class App extends Component {
             render={(props) => <Bots {...props} baseUrl={baseUrl}/>}
             />
           <Route exact path="/new"
-            render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
+            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
             />
           <Route exact path="/edit"
-            render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
+            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
             />
           <Route exact path="/details"
-            render={(props) => <NewBot {...props} baseUrl={baseUrl}/>}
+            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
             />
         </Router>
         {/* <Modal 

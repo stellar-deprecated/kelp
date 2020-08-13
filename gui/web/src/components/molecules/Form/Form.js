@@ -500,10 +500,7 @@ class Form extends Component {
             <FieldItem>
               <Label padding>Network</Label>
               <SegmentedControl
-                segments={[
-                  "TestNet",
-                  "PubNet",
-                ]}
+                segments={this.props.segmentNetworkOptions}
                 selected={network}
                 onSelect={(selected) => {
                   // TODO use URI passed in from command line, or indicate to backend it's test/public
