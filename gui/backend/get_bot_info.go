@@ -83,7 +83,13 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		Base:  model.Asset(utils.Asset2CodeString(assetBase)),
 		Quote: model.Asset(utils.Asset2CodeString(assetQuote)),
 	}
-	account, e := s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()})
+
+	client := s.apiPubNet
+	if strings.Contains(botConfig.HorizonURL, "test") {
+		client = s.apiTestNet
+	}
+
+	account, e := client.AccountDetail(horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()})
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("cannot get account data for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
 		return
@@ -117,7 +123,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		}
 	}
 
-	offers, e := utils.LoadAllOffers(account.AccountID, s.apiTestNet)
+	offers, e := utils.LoadAllOffers(account.AccountID, client)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error getting offers for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
 		return
@@ -126,7 +132,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	numBids := len(buyingAOffers)
 	numAsks := len(sellingAOffers)
 
-	obs, e := s.apiTestNet.OrderBook(horizonclient.OrderBookRequest{
+	obs, e := client.OrderBook(horizonclient.OrderBookRequest{
 		SellingAssetType:   horizonclient.AssetType(assetBase.Type),
 		SellingAssetCode:   assetBase.Code,
 		SellingAssetIssuer: assetBase.Issuer,

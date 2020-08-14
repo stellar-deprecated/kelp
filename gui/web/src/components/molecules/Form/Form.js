@@ -6,7 +6,7 @@ import Input from '../../atoms/Input/Input';
 import Label from '../../atoms/Label/Label';
 import SectionTitle from '../../atoms/SectionTitle/SectionTitle';
 import Switch from '../../atoms/Switch/Switch';
-// import SegmentedControl from '../../atoms/SegmentedControl/SegmentedControl';
+import SegmentedControl from '../../atoms/SegmentedControl/SegmentedControl';
 import SectionDescription from '../../atoms/SectionDescription/SectionDescription';
 import Button from '../../atoms/Button/Button';
 // import Select from '../../atoms/Select/Select';
@@ -414,10 +414,10 @@ class Form extends Component {
     // }
 
     let isTestNet = this.props.configData.trader_config.horizon_url.includes("test");
-    // let network = "PubNet";
-    // if (isTestNet) {
-      // network = "TestNet";
-    // }
+    let network = "PubNet";
+    if (isTestNet) {
+      network = "TestNet";
+    }
 
     const error = this.fetchErrorMessage();
 
@@ -497,26 +497,22 @@ class Form extends Component {
             </FormSection> */}
               
             <FormSection>
-              <FieldItem>
-                <Label padding>Network</Label>
-                <Label padding>TestNet</Label>
-                {/* <SegmentedControl
-                  segments={[
-                    "TestNet",
-                    "PubNet",
-                  ]}
-                  selected={network}
-                  onSelect={(selected) => {
-                    // TODO use URI passed in from command line, or indicate to backend it's test/public
-                    let newValue = "https://horizon-testnet.stellar.org";
-                    if (selected === "PubNet") {
-                      newValue = "https://horizon.stellar.org";
-                    }
-                    this.props.onChange("trader_config.horizon_url", {target: {value: newValue}});
-                  }}
-                  /> */}
-              </FieldItem>
-            </FormSection>
+            <FieldItem>
+              <Label padding>Network</Label>
+              <SegmentedControl
+                segments={this.props.segmentNetworkOptions}
+                selected={network}
+                onSelect={(selected) => {
+                  // TODO use URI passed in from command line, or indicate to backend it's test/public
+                  let newValue = "https://horizon-testnet.stellar.org";
+                  if (selected === "PubNet") {
+                    newValue = "https://horizon.stellar.org";
+                  }
+                  this.props.onChange("trader_config.horizon_url", { target: { value: newValue } });
+                }}
+              />
+            </FieldItem>
+          </FormSection>
             
             <FormSection>
               <FieldItem>

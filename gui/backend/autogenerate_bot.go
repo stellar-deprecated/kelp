@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
@@ -68,7 +69,7 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 
 	// we only want to start initializing bot once it has been created, so we only advance state if everything is completed
 	go func() {
-		e := s.setupAccount(kp.Address(), kp.Seed(), bot.Name)
+		e := s.setupTestnetAccount(kp.Address(), kp.Seed(), bot.Name)
 		if e != nil {
 			log.Printf("error setting up account for bot '%s': %s\n", bot.Name, e)
 			return
@@ -91,8 +92,10 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 	w.Write(botJson)
 }
 
-func (s *APIServer) setupAccount(address string, signer string, botName string) error {
-	fundedAccount, e := s.checkFundAccount(address, botName)
+func (s *APIServer) setupTestnetAccount(address string, signer string, botName string) error {
+	// this function runs in testnet mode only
+	client := s.apiTestNet
+	fundedAccount, e := s.checkFundAccount(client, address, botName)
 	if e != nil {
 		return fmt.Errorf("error checking and funding account: %s", e)
 	}
@@ -153,7 +156,6 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 		return fmt.Errorf("cannot convert trustline transaction to base64 for account %s for bot '%s': %s", address, botName, e)
 	}
 
-	client := s.apiTestNet
 	resp, e := client.SubmitTransactionXDR(txn64)
 	if e != nil {
 		return fmt.Errorf("error submitting change trust transaction for address %s for bot '%s': %s", address, botName, e)
@@ -163,8 +165,8 @@ func (s *APIServer) setupAccount(address string, signer string, botName string) 
 	return nil
 }
 
-func (s *APIServer) checkFundAccount(address string, botName string) (*hProtocol.Account, error) {
-	account, e := s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: address})
+func (s *APIServer) checkFundAccount(client *horizonclient.Client, address string, botName string) (*hProtocol.Account, error) {
+	account, e := client.AccountDetail(horizonclient.AccountRequest{AccountID: address})
 	if e == nil {
 		log.Printf("account already exists %s for bot '%s', no need to fund via friendbot\n", address, botName)
 		return &account, nil
@@ -184,16 +186,20 @@ func (s *APIServer) checkFundAccount(address string, botName string) (*hProtocol
 		}
 	}
 
+	if !strings.Contains(client.HorizonURL, "test") {
+		log.Printf("not attempting to create mainnet account %s for bot '%s' since mainnet account does not exist\n", address, botName)
+	}
+
 	// since it's a 404 we want to continue funding below
 	var fundResponse interface{}
 	e = networking.JSONRequest(http.DefaultClient, "GET", "https://friendbot.stellar.org/?addr="+address, "", nil, &fundResponse, "")
 	if e != nil {
-		return nil, fmt.Errorf("error funding address %s for bot '%s': %s\n", address, botName, e)
+		return nil, fmt.Errorf("error funding address %s for bot '%s': %s", address, botName, e)
 	}
 	log.Printf("successfully funded account %s for bot '%s': %s\n", address, botName, fundResponse)
 
 	// refetch account to confirm
-	account, e = s.apiTestNet.AccountDetail(horizonclient.AccountRequest{AccountID: address})
+	account, e = client.AccountDetail(horizonclient.AccountRequest{AccountID: address})
 	if e != nil {
 		var herr *horizonclient.Error
 		switch t := e.(type) {

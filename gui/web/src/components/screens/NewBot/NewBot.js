@@ -173,6 +173,11 @@ class NewBot extends Component {
       return (<LoadingAnimation/>);
     }
 
+    let segmentNetworkOptions = ["TestNet"];
+    if (this.props.enablePubnetBots) {
+      segmentNetworkOptions.push("PubNet");
+    }
+
     if (this.props.location.pathname === "/new") {
       if (!this.state.configData) {
         this.loadNewConfigData();
@@ -183,6 +188,7 @@ class NewBot extends Component {
         isNew={true}
         baseUrl={this.props.baseUrl}
         title="New Bot"
+        segmentNetworkOptions={segmentNetworkOptions}
         optionsMetadata={this.state.optionsMetadata}
         onChange={this.onChangeForm}
         configData={this.state.configData}
@@ -225,6 +231,7 @@ class NewBot extends Component {
       isNew={false}
       baseUrl={this.props.baseUrl}
       title={formTitle}
+      segmentNetworkOptions={segmentNetworkOptions}
       optionsMetadata={this.state.optionsMetadata}
       onChange={this.onChangeForm}
       configData={this.state.configData}

@@ -18,7 +18,7 @@ class EmptyList extends Component {
       <div className={styles.empty}>
         <img src={emptyIcon} className={styles.icon} alt="Empty icon"/>
         <h2 className={styles.title}>Your Kelp forest is empty</h2>
-        <Button onClick={this.props.autogenerateFn}>Autogenerate your first test bot</Button>
+        <Button onClick={this.props.autogenerateFn}>Autogenerate your first test bot on TestNet</Button>
         <span className={styles.separator}>or</span>
         <Button onClick={this.props.createBotFn} variant="link">Create your first bot</Button>
       </div> 
