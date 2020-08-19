@@ -207,7 +207,7 @@ func (b *bucketInfo) String() string {
 // this should be constant for all bucket instances that overlap with this time interval and configuration
 func (b *bucketInfo) UUID() string {
 	timePartition := fmt.Sprintf("startTime=%s_endTime=%s", b.startTime.Format(time.RFC3339Nano), b.endTime.Format(time.RFC3339Nano))
-	configPartition := fmt.Sprintf("totalBuckets=%d_totalBucketsToSell=%d_minOrderSizeBase=%.8f", b.totalBuckets, b.totalBucketsToSell, b.minOrderSizeBase)
+	configPartition := fmt.Sprintf("totalBuckets=%d_totalBucketsToSell=%d", b.totalBuckets, b.totalBucketsToSell)
 	s := fmt.Sprintf("timePartition=%s__configPartition=%s", timePartition, configPartition)
 
 	hash := sha1.Sum([]byte(s))

@@ -575,7 +575,7 @@ func TestBucketInfoString(t *testing.T) {
 		},
 	)
 
-	wantString := "BucketInfo[UUID=2ee675ac04d8e817bab462f5ca18c74eea315c6f, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
+	wantString := "BucketInfo[UUID=63129753083917721e25e22fb6f25b9ccd8f8aaa, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
 		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
 		" DynamicBucketValues[isNew=true, isLast=false, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
 	assert.Equal(t, wantString, bucket.String())
@@ -601,7 +601,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "2ee675ac04d8e817bab462f5ca18c74eea315c6f",
+			want:                             "63129753083917721e25e22fb6f25b9ccd8f8aaa",
 		}, {
 			startTime:                        now.Add(time.Minute * -6),
 			endTime:                          now.Add(time.Minute * 5),
@@ -610,7 +610,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "7ff6568ada4c40a600666eb54c2a16ce795288eb",
+			want:                             "ef23fdd4c61c66befc7dec21f68fdb0ce48f9ee2",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 6),
@@ -619,7 +619,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "90fc50d697e1bd0628d636a0843efefc293250b9",
+			want:                             "4eaf99082e5a81d600d38384045addda16ed653b",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -628,7 +628,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "c3950c8d14b3a04abb23755348d1e5bfc44c6a94",
+			want:                             "582488a2f7adf089ae2a655032d436dbc4fc4507",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -637,7 +637,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "bf6ecbd020519dc3eade87ad04b3ed88362ec1cd",
+			want:                             "15b49c42214e1ce40d02a762c84c246058242d45",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -646,7 +646,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.3,
 			bucketID:                         1,
 			roundID:                          1,
-			want:                             "f92fc2499fad8ddd3211e5aa3a9b2b3228b57469",
+			want:                             "63129753083917721e25e22fb6f25b9ccd8f8aaa",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -655,7 +655,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         2,
 			roundID:                          1,
-			want:                             "2ee675ac04d8e817bab462f5ca18c74eea315c6f",
+			want:                             "63129753083917721e25e22fb6f25b9ccd8f8aaa",
 		}, {
 			startTime:                        now.Add(time.Minute * -5),
 			endTime:                          now.Add(time.Minute * 5),
@@ -664,7 +664,7 @@ func TestBucketInfoUUID(t *testing.T) {
 			minChildOrderSizePercentOfParent: 0.2,
 			bucketID:                         1,
 			roundID:                          2,
-			want:                             "2ee675ac04d8e817bab462f5ca18c74eea315c6f",
+			want:                             "63129753083917721e25e22fb6f25b9ccd8f8aaa",
 		},
 	}
 
@@ -733,7 +733,7 @@ func TestFinalizeBucket(t *testing.T) {
 	}
 
 	// ensure nothing else changed
-	wantString := "BucketInfo[UUID=2ee675ac04d8e817bab462f5ca18c74eea315c6f, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
+	wantString := "BucketInfo[UUID=63129753083917721e25e22fb6f25b9ccd8f8aaa, date=2020-05-21, dayID=4 (Thursday), bucketID=12, startTime=2020-05-21T14:55:00Z, endTime=2020-05-21T15:05:00Z, sizeSeconds=60, totalBuckets=1440, totalBucketsToSell=120," +
 		" dayBaseSoldStart=5.00000000, dayBaseCapacity=1000.00000000, totalBaseSurplusStart=0.00000000, baseSurplusIncluded=0.00000000, baseCapacity=8.33333333, minOrderSizeBase=1.66666667," +
 		" DynamicBucketValues[isNew=true, isLast=true, roundID=16, dayBaseSold=5.00000000, dayBaseRemaining=995.00000000, baseSold=0.00000000, baseRemaining=8.33333333, bucketProgress=0.00%, bucketTimeElapsed=50.00%]]"
 	assert.Equal(t, wantString, bucket.String())
