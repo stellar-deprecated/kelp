@@ -77,14 +77,6 @@
     font-weight: 200;
 }
 
-.version {
-    color: $color-contrast-4;
-    font-family: $typeface-secondary;
-    letter-spacing: -0.5/16+rem;
-    font-size: 11/16+rem;
-    padding-left: 4px;
-}
-
 .text {
     font-size: 13/16+rem;
     line-height: 23/16+rem;
@@ -93,5 +85,10 @@
 }
 
 .footer {
-    margin-top: 4rem;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    // flex-wrap: nowrap;
+    justify-content: space-between;
 }
