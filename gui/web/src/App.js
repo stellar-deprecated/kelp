@@ -7,7 +7,7 @@ import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
-// import Welcome from './components/molecules/Welcome/Welcome';
+import Welcome from './components/molecules/Welcome/Welcome';
 // import Modal from './components/molecules/Modal/Modal';
 
 let baseUrl = function () {
@@ -110,8 +110,8 @@ class App extends Component {
           title="Harry the Green Plankton has two warnings:"
           actionLabel="Go to bot settings"
           bullets={['Funds are low', 'Another warning example']}
-        />
-        <Welcome/> */}
+        /> */}
+        <Welcome quitFn={this.quit}/>
       </div>
     );
   }

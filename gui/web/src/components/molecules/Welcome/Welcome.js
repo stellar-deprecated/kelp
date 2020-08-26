@@ -9,8 +9,11 @@ class Welcome extends Component {
     super(props);
     this.state = {
       isOpened: true,
+      page: 1,
     };
-    this.close = this.close.bind(this);
+    this.accept = this.accept.bind(this);
+    this.setPage = this.setPage.bind(this);
+    this.quit = this.quit.bind(this);
   }
 
   open() {
@@ -19,10 +22,20 @@ class Welcome extends Component {
     })
   }
 
-  close() {
+  accept() {
     this.setState({
       isOpened: false,
     })
+  }
+
+  setPage(pageNo) {
+    this.setState({
+      page: pageNo,
+    })
+  }
+
+  quit() {
+    this.props.quitFn()
   }
 
   render() {
@@ -33,40 +46,81 @@ class Welcome extends Component {
       isOpenedClass,
     );
 
+    const kelpLogo = (
+      <div className={styles.image}>
+        <img className={styles.symbol} src={symbol} alt="Kelp Symbol"/>
+      </div>
+    );
+
+    const page1 = (
+      <div className={styles.window}>
+        {kelpLogo}
+        <div className={styles.content}>
+          <h3 className={styles.title}>
+            Welcome to Kelp
+          </h3>
+
+          <p className={styles.text}>
+          Kelp is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges.
+          </p>
+
+          <p className={styles.text}>
+          Kelp comes with multiple trading strategies out-of-the-box. This GUI of Kelp is limited to the Stellar Decentralized Exchange with the buysell strategy only.
+          </p>
+
+          <p className={styles.text}>
+          You can use this GUI to define your own parameters to quickly get up and running with a trading bot in a matter of minutes.
+          </p>
+
+          <div className={styles.footer}>
+            <Button variant="faded" onClick={this.setPage.bind(this, 2)}>Next</Button>
+          </div>
+        </div>
+      </div>
+    );
+    const page2 = (
+      <div className={styles.window}>
+        {kelpLogo}
+        <div className={styles.content}>
+          <h3 className={styles.title}>
+            Legal Disclaimer
+          </h3>
+
+          <p className={styles.text}>
+          Prior to using this software, please note the following:
+          </p>
+
+          <ol className={styles.text}>
+            <li>
+              We do not recommend using this software on mainnet. This is experimental software, has many known bugs, and is not yet ready for use on mainnet. You could lose significant value by using this software on mainnet. 
+            </li>
+            <li>
+              If you do alter the code and use it on mainnet, you acknowledge and agree that you fully assume full risk of doing so, and SDF shall not be held liable under any legal theory for loss of funds for any reason. 
+            </li>
+            <li>
+              The experience you have with this software may be very different from what you will have on the final software that is made public for use on the mainnet.
+            </li>
+            <li>
+              This software is provided under Apache 2.0. Please review the license carefully. 
+            </li>
+          </ol>
+
+          <div className={styles.footer}>
+            <Button variant="faded" onClick={this.accept}>Accept</Button>
+            <Button variant="faded" onClick={this.quit}>Quit</Button>
+          </div>
+        </div>
+      </div>
+    );
+
+    let pageDisplay = page1;
+    if (this.state.page === 2) {
+      pageDisplay = page2;
+    }
+
     return (
       <div className={wrapperClasses}>
-        <div className={styles.window}>
-          <Button 
-            icon="close"
-            size="small"
-            variant="transparent"
-            hsize="round"
-            className={styles.closeButton} 
-            onClick={this.close}
-          />
-
-          <div className={styles.image}>
-            <img className={styles.symbol} src={symbol} alt="Kelp Symbol"/>
-          </div>
-          <div className={styles.content}>
-            <h3 className={styles.title}>
-              Welcome to Kelp 
-              <span className={styles.version}>v1.04</span>
-            </h3>
-
-            <p className={styles.text}>
-            Kelp is a free and open-source trading bot for the Stellar universal marketplace and centralized trading exchanges.</p>
-            
-            <p className={styles.text}>
-            Kelp includes several configurable trading strategies and exchange integrations. You can use this GUI to define your own parameters to quickly get up and running with a trading bot in a matter of minutes.
-            </p>
-
-            <div className={styles.footer}>
-              <Button variant="faded" onClick={this.close}>Start</Button>
-            </div>
-          </div>
-
-        </div>
+        {pageDisplay}
         <span className={styles.backdrop}/>
       </div>
     );
