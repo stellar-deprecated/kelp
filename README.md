@@ -111,6 +111,7 @@ To compile Kelp from source:
 
 1. [Download][golang-download] and [setup][golang-setup] Golang _v1.13 or later_.
     * Confirm that `$GOPATH` is set, and that `GOBIN=$GOPATH/bin`
+    * Confirm that `$PATH` includes the full filepath of `$GOBIN`
 2. [Install Glide][glide-install] for dependency management
     * `curl https://glide.sh/get | sh`
 3. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] to build the Kelp GUI
@@ -120,15 +121,13 @@ To compile Kelp from source:
 5. Install the dependencies:
     * `glide install`
 6. Install the [astilectron-bundler][astilectron-bundler] binary in a folder that is in your `PATH`
-    * `go install` will install this by default to `$GOBIN`, so check that that folder's full filepath is in `$PATH`
+    * `go install` will install this by default to `$GOBIN`, which should be in `$PATH`
 6. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
     * `./scripts/build.sh`
-7. Confirm one new binary file exists, and optionally run it. 
-    * `./bin/kelp`
-    * If you run the binary, check `localhost:8000` after initial setup to confirm that you see the Kelp UI.
+7. Confirm one new binary file exists with version information. 
+    * `./bin/kelp version`
 8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
-    * Note that you need to stop running the `./bin/kelp` binary due to common port bindings
 
 </details>
 
