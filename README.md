@@ -120,13 +120,12 @@ To compile Kelp from source:
     * Change to `kelp` directory for all following commands: `cd $GOPATH/src/github.com/stellar/kelp`
 5. Install the dependencies:
     * `glide install`
-6. Install the [astilectron-bundler][astilectron-bundler] binary in a folder that is in your `PATH`
-    * `go install` will install this by default to `$GOBIN`, which should be in `$PATH`
-6. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
+6. Install the [astilectron-bundler][astilectron-bundler] binary into `$GOBIN`
+7. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
     * `./scripts/build.sh`
-7. Confirm one new binary file exists with version information. 
+8. Confirm one new binary file exists with version information. 
     * `./bin/kelp version`
-8. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
+9. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
 
 </details>
