@@ -22,6 +22,7 @@ type balancedConfig struct {
 	CarryoverInclusionProbability float64 `valid:"-" toml:"CARRYOVER_INCLUSION_PROBABILITY"` // probability of including the carryover at a level that will be added
 	VirtualBalanceBase            float64 `valid:"-" toml:"VIRTUAL_BALANCE_BASE"`            // virtual balance to use so we can smoothen out the curve
 	VirtualBalanceQuote           float64 `valid:"-" toml:"VIRTUAL_BALANCE_QUOTE"`           // virtual balance to use so we can smoothen out the curve
+	SpreadPad                     float64 `valid:"-" toml:"SPREAD_PAD"`
 }
 
 // String impl.
@@ -58,6 +59,7 @@ func makeBalancedStrategy(
 			config.CarryoverInclusionProbability,
 			config.VirtualBalanceBase,
 			config.VirtualBalanceQuote,
+			config.SpreadPad,
 			orderConstraints),
 		config.PriceTolerance,
 		config.AmountTolerance,
@@ -83,6 +85,7 @@ func makeBalancedStrategy(
 			config.CarryoverInclusionProbability,
 			config.VirtualBalanceQuote,
 			config.VirtualBalanceBase,
+			config.SpreadPad,
 			orderConstraints),
 		config.PriceTolerance,
 		config.AmountTolerance,
