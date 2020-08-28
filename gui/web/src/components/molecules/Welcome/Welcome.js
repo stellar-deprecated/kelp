@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import styles from './Welcome.module.scss';
 import classNames from 'classnames';
 import Button from '../../atoms/Button/Button';
@@ -61,11 +61,11 @@ class Welcome extends Component {
           </h3>
 
           <p className={styles.text}>
-            "Kelp is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges. Kelp is programmed to support multiple trading schemes. This GUI of Kelp is limited to the Stellar Decentralized Exchange with only the buysell scheme.
+            Kelp is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges. Kelp is programmed to support multiple trading schemes. This GUI of Kelp is limited to the Stellar Decentralized Exchange with only the buysell scheme.
           </p>
 
           <p className={styles.text}>
-            You can use this GUI to define your own parameters to quickly get up and running with a trading bot in a matter of minutes.
+            You can use this GUI to define your own parameters for each trading scheme to quickly get up and running with a trading bot in a matter of minutes.
           </p>
 
           <p className={styles.text}>

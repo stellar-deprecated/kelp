@@ -28,7 +28,7 @@ To learn more about the Stellar protocol check out [Stellar Videos on Coinbase E
 
 **Important Disclaimer: Be Smart and Go Slow.** Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Kelp is an experimental software that contains bugs. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you lose money very fast. So be smart and go slow.
 
-Your use of Kelp is governed by the Apache 2.0 open-source license. Please note that SDF’s interactions with you are governed by the SDF [Terms of Service](https://www.stellar.org/terms-of-service) and [Privacy Policy](https://www.stellar.org/privacy-policy).
+Your use of Kelp is governed by the Apache 2.0 open-source license. Please note that SDF’s interactions with you are governed by the SDF [Terms of Service][tos] and [Privacy Policy][privacy-policy].
 
 ![Kelp GUI screenshot](resources/screenshots/gui_screenshot.png)
 
@@ -432,6 +432,8 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://forms.gle/9FBgjDnNYv1abnKD7
+[tos]: https://www.stellar.org/terms-of-service
+[privacy-policy]: https://www.stellar.org/privacy-policy
 [announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
 [discussions-group]: https://groups.google.com/forum/#!forum/kelp-talk
 [github-bug-report]: https://github.com/stellar/kelp/issues/new?template=bug_report.md
