@@ -24,6 +24,12 @@ Kelp is built to:
 
 To learn more about the Stellar protocol check out [Stellar Videos on Coinbase Earn][stellar coinbase earn], or [this video about the Stellar DEX created by Lumenauts][sdex explainer video], or read more about it on the [Stellar Website][intro to stellar].
 
+## Be Smart and Go Slow
+
+**Important Disclaimer: Be Smart and Go Slow.** Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Kelp is an experimental software that contains bugs. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you lose money very fast. So be smart and go slow.
+
+Your use of Kelp is governed by the Apache 2.0 open-source license. Please note that SDF’s interactions with you are governed by the SDF [Terms of Service][tos] and [Privacy Policy][privacy-policy].
+
 ![Kelp GUI screenshot](resources/screenshots/gui_screenshot.png)
 
 # Sign up for the new [announcements distribution list][announcements-group] and [user mailing list][discussions-group]
@@ -42,7 +48,6 @@ To learn more about the Stellar protocol check out [Stellar Videos on Coinbase E
          * [Download CCXT Binary](#download-ccxt-binary)
          * [Run CCXT using Docker](#run-ccxt-using-docker)
       * [Using Postgres](#using-postgres)
-      * [Be Smart and Go Slow](#be-smart-and-go-slow)
    * [Components](#components)
       * [Strategies](#strategies)
       * [Price Feeds](#price-feeds)
@@ -188,10 +193,6 @@ You can find more details on the [CCXT_REST github page][ccxt-rest].
 [Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
 
 </details>
-
-## Be Smart and Go Slow
-
-_Whenever you trade on Stellar, you are trading with volatile assets, in volatile markets, and you risk losing money. Use Kelp at your own risk. There is no guarantee you'll make a profit from using our bots or strategies. In fact, if you set bad parameters or market conditions change, Kelp might help you **lose** money very fast. So be smart and go slow._
 
 # Components
 
@@ -431,6 +432,8 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
 [cla]: https://forms.gle/9FBgjDnNYv1abnKD7
+[tos]: https://www.stellar.org/terms-of-service
+[privacy-policy]: https://www.stellar.org/privacy-policy
 [announcements-group]: https://groups.google.com/forum/#!forum/kelp-announce
 [discussions-group]: https://groups.google.com/forum/#!forum/kelp-talk
 [github-bug-report]: https://github.com/stellar/kelp/issues/new?template=bug_report.md
