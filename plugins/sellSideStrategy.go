@@ -351,7 +351,7 @@ func (s *sellSideStrategy) computeRemainderAmount(incrementalSellAmount float64,
 	}
 
 	if availableSellingCapacity.Selling >= incrementalSellAmount && availableBuyingCapacity.Buying >= incrementalBuyAmount {
-		return 0, 0, fmt.Errorf("error: (programmer?) unable to create offer but available capacities were more than the attempted offer amounts, sellingCapacity=%.8f, incrementalSellAmount=%.8f, buyingCapacity=%.8f, incrementalBuyAmount=%.8f",
+		return 0, 0, fmt.Errorf("error: could not create offer, but available capacity exceeds the offer amounts; to fix, increase the offer target amount; sellingCapacity=%.8f, incrementalSellAmount=%.8f, buyingCapacity=%.8f, incrementalBuyAmount=%.8f",
 			availableSellingCapacity.Selling, incrementalSellAmount, availableBuyingCapacity.Buying, incrementalBuyAmount)
 	}
 
