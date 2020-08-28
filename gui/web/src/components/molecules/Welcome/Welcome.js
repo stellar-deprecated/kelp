@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import styles from './Welcome.module.scss';
 import classNames from 'classnames';
 import Button from '../../atoms/Button/Button';
@@ -48,7 +48,7 @@ class Welcome extends Component {
 
     const kelpLogo = (
       <div className={styles.image}>
-        <img className={styles.symbol} src={symbol} alt="Kelp Symbol"/>
+        <img className={styles.symbol} src={symbol} alt="Kelp Symbol" />
       </div>
     );
 
@@ -61,15 +61,15 @@ class Welcome extends Component {
           </h3>
 
           <p className={styles.text}>
-          Kelp is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges.
+            Kelp is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges. Kelp is programmed to support multiple trading schemes. This GUI of Kelp is limited to the Stellar Decentralized Exchange with only the buysell scheme.
           </p>
 
           <p className={styles.text}>
-          Kelp comes with multiple trading strategies out-of-the-box. This GUI of Kelp is limited to the Stellar Decentralized Exchange with the buysell strategy only.
+            You can use this GUI to define your own parameters for each trading scheme to quickly get up and running with a trading bot in a matter of minutes.
           </p>
 
           <p className={styles.text}>
-          You can use this GUI to define your own parameters to quickly get up and running with a trading bot in a matter of minutes.
+            Please note that SDF does not and cannot provide any recommendations or advice, express or implicit, concerning trading schemes, parameters, assets, or any other trading factor.
           </p>
 
           <div className={styles.footer}>
@@ -87,21 +87,24 @@ class Welcome extends Component {
           </h3>
 
           <p className={styles.text}>
-          Prior to using this software, please note the following:
+            Prior to using this software, please note the following:
           </p>
 
           <ol className={styles.text}>
             <li>
-              We do not recommend using this software on mainnet. This is experimental software, has many known bugs, and is not yet ready for use on mainnet. You could lose significant value by using this software on mainnet. 
+              We do not recommend using this software on mainnet. This is experimental software, has many known bugs, and is not yet ready for use on mainnet. You could lose significant value by using this software on mainnet.
             </li>
             <li>
-              If you do alter the code and use it on mainnet, you acknowledge and agree that you fully assume full risk of doing so, and SDF shall not be held liable under any legal theory for loss of funds for any reason. 
+              If you do alter the code and use it on mainnet, you acknowledge and agree that you fully assume full risk of doing so, and SDF shall not be held liable under any legal theory for loss of funds for any reason.
             </li>
             <li>
               The experience you have with this software may be very different from what you will have on the final software that is made public for use on the mainnet.
             </li>
             <li>
-              This software is provided under Apache 2.0. Please review the license carefully. 
+              This software is provided under Apache 2.0. Please review the license carefully.
+            </li>
+            <li>
+              You are responsible for determining the legal and regulatory requirements and restrictions concerning your use of this software. Do not use the software if your usage violates any laws or regulations applicable to you.
             </li>
           </ol>
 
@@ -121,7 +124,7 @@ class Welcome extends Component {
     return (
       <div className={wrapperClasses}>
         {pageDisplay}
-        <span className={styles.backdrop}/>
+        <span className={styles.backdrop} />
       </div>
     );
   }
