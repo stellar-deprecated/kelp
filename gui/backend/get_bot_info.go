@@ -68,12 +68,12 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath, e))
+		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath.AsString(), e))
 		return
 	}
 	e = botConfig.Init()
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot init bot config at path '%s': %s\n", traderFilePath, e))
+		s.writeErrorJson(w, fmt.Sprintf("cannot init bot config at path '%s': %s\n", traderFilePath.AsString(), e))
 		return
 	}
 
