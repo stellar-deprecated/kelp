@@ -256,6 +256,8 @@ The following strategies are available **out of the box** with Kelp:
     - **Who:** Anyone managing the operations of the bot who wants to stop all activity by the bot.
     - **Complexity:** Beginner
 
+Refer to this [Pull Request][pr-template-new-strategy] to see an example template of a new trading strategy.
+
 </details>
 
 ## Price Feeds
@@ -421,6 +423,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [astilectron-bundler]: https://github.com/asticode/go-astilectron-bundler
 [spread]: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
 [hedge]: https://en.wikipedia.org/wiki/Hedge_(finance)
+[pr-template-new-strategy]: https://github.com/stellar/kelp/pull/494
 [cmc]: https://coinmarketcap.com/
 [fiat]: https://en.wikipedia.org/wiki/Fiat_money
 [currencylayer]: https://currencylayer.com/
