@@ -163,6 +163,35 @@ var strategies = map[string]StrategyContainer{
 			return s, nil
 		},
 	},
+	/*
+		add an entry for your new strategy here.
+		When you start your bot and specify the --strategy param, it searches for an entry in this map.
+		This makeFn will construct an instance of your trading strategy by using the config file passed with the --stratConf param
+	*/
+	"template": { // use any name you want here for your strategy, here "template" is what should be used with the --strategy param
+		SortOrder:   7, // documentation puposes, this should be the last number, used when running the "./kelp strategies" command
+		Description: "This is a template for a trading strategy. It creates two sell levels using the max price fetched from the three configured price feeds",
+		NeedsConfig: true,       // documentation puposes, used when running the "./kelp strategies" command to indicate to the user that we need to pass in a config file
+		Complexity:  "Beginner", // documentation puposes, used when running the "./kelp strategies" command
+		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			var cfg templateNewConfig
+			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
+			utils.LogConfig(cfg)
+			s, e := makeTemplateNewStrategy( // call your make*Strategy function here. All the data you need to invoke this factory method should be on the strategyFactoryData object
+				strategyFactoryData.sdex,
+				strategyFactoryData.tradingPair,
+				strategyFactoryData.ieif,
+				strategyFactoryData.assetBase,
+				strategyFactoryData.assetQuote,
+				&cfg,
+			)
+			if e != nil {
+				return nil, fmt.Errorf("makeFn failed: %s", e)
+			}
+			return s, nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy
