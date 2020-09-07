@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strconv"
@@ -77,6 +78,7 @@ type mirrorStrategy struct {
 	offsetTrades       bool
 	mutex              *sync.Mutex
 	baseSurplus        map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
+	db                 *sql.DB
 
 	// uninitialized
 	maxBackingBase  *model.Number
@@ -101,11 +103,24 @@ func convertDeprecatedMirrorConfigValues(config *mirrorConfig) {
 }
 
 // makeMirrorStrategy is a factory method
-func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAsset *hProtocol.Asset, quoteAsset *hProtocol.Asset, config *mirrorConfig, simMode bool) (api.Strategy, error) {
+func makeMirrorStrategy(
+	sdex *SDEX,
+	ieif *IEIF,
+	pair *model.TradingPair,
+	baseAsset *hProtocol.Asset,
+	quoteAsset *hProtocol.Asset,
+	config *mirrorConfig,
+	db *sql.DB,
+	simMode bool,
+) (api.Strategy, error) {
 	convertDeprecatedMirrorConfigValues(config)
 	var exchange api.Exchange
 	var e error
 	if config.OffsetTrades {
+		if db == nil {
+			return nil, fmt.Errorf("db should not be nil when OffsetTrades is enabled")
+		}
+
 		exchangeAPIKeys := config.ExchangeAPIKeys.ToExchangeAPIKeys()
 		exchangeParams := config.ExchangeParams.ToExchangeParams()
 		exchangeHeaders := config.ExchangeHeaders.ToExchangeHeaders()
@@ -187,6 +202,7 @@ func makeMirrorStrategy(sdex *SDEX, ieif *IEIF, pair *model.TradingPair, baseAss
 			model.OrderActionBuy:  makeAssetSurplus(),
 			model.OrderActionSell: makeAssetSurplus(),
 		},
+		db: db,
 	}, nil
 }
 

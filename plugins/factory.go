@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -25,6 +26,7 @@ type strategyFactoryData struct {
 	simMode         bool
 	isTradingSdex   bool
 	filterFactory   *FilterFactory
+	db              *sql.DB
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -69,7 +71,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.ieif, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.simMode)
+			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.ieif, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.db, strategyFactoryData.simMode)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -179,6 +181,7 @@ func MakeStrategy(
 	simMode bool,
 	isTradingSdex bool,
 	filterFactory *FilterFactory,
+	db *sql.DB,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
 	if s, ok := strategies[strategy]; ok {
@@ -198,6 +201,7 @@ func MakeStrategy(
 			simMode:         simMode,
 			isTradingSdex:   isTradingSdex,
 			filterFactory:   filterFactory,
+			db:              db,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)

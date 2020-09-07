@@ -328,6 +328,7 @@ func makeStrategy(
 	filterFactory *plugins.FilterFactory,
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
+	db *sql.DB,
 ) api.Strategy {
 	// setting the temp hack variables for the sdex price feeds
 	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
@@ -351,6 +352,7 @@ func makeStrategy(
 		*options.simMode,
 		botConfig.IsTradingSdex(),
 		filterFactory,
+		db,
 	)
 	if e != nil {
 		l.Info("")
@@ -600,6 +602,7 @@ func runTradeCmd(options inputs) {
 		filterFactory,
 		options,
 		threadTracker,
+		db,
 	)
 	fillTracker := makeFillTracker(
 		l,
