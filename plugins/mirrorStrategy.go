@@ -69,8 +69,10 @@ type mirrorStrategy struct {
 	baseAsset          *hProtocol.Asset
 	quoteAsset         *hProtocol.Asset
 	primaryConstraints *model.OrderConstraints
+	marketID           string
 	backingPair        *model.TradingPair
 	backingConstraints *model.OrderConstraints
+	backingMarketID    string
 	orderbookDepth     int32
 	perLevelSpread     float64
 	volumeDivideBy     float64
@@ -109,6 +111,7 @@ func makeMirrorStrategy(
 	pair *model.TradingPair,
 	baseAsset *hProtocol.Asset,
 	quoteAsset *hProtocol.Asset,
+	marketID string,
 	config *mirrorConfig,
 	db *sql.DB,
 	simMode bool,
@@ -184,14 +187,17 @@ func makeMirrorStrategy(
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
+	backingMarketID := MakeMarketID(config.Exchange, config.ExchangeBase, config.ExchangeQuote)
 	return &mirrorStrategy{
 		sdex:               sdex,
 		ieif:               ieif,
 		baseAsset:          baseAsset,
 		quoteAsset:         quoteAsset,
 		primaryConstraints: primaryConstraints,
+		marketID:           marketID,
 		backingPair:        backingPair,
 		backingConstraints: backingConstraints,
+		backingMarketID:    backingMarketID,
 		orderbookDepth:     config.OrderbookDepth,
 		perLevelSpread:     config.PerLevelSpread,
 		volumeDivideBy:     config.VolumeDivideBy,
@@ -616,6 +622,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
 	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
 
+	s.insertTradeTrigger(trade.TransactionID.String(), transactionID.String())
 	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
@@ -630,6 +637,9 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrder.Price.AsFloat(),
 		transactionID)
 	return nil
+}
+
+func (s *mirrorStrategy) insertTradeTrigger(primaryTxID string, backingTxID string) {
 }
 
 // balanceCoordinator coordinates the balances from the backing exchange with orders placed on the primary exchange

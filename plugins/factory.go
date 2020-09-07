@@ -22,6 +22,7 @@ type strategyFactoryData struct {
 	tradingPair     *model.TradingPair
 	assetBase       *hProtocol.Asset
 	assetQuote      *hProtocol.Asset
+	marketID        string
 	stratConfigPath string
 	simMode         bool
 	isTradingSdex   bool
@@ -71,7 +72,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.ieif, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.db, strategyFactoryData.simMode)
+			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.ieif, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, strategyFactoryData.marketID, &cfg, strategyFactoryData.db, strategyFactoryData.simMode)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -176,6 +177,7 @@ func MakeStrategy(
 	tradingPair *model.TradingPair,
 	assetBase *hProtocol.Asset,
 	assetQuote *hProtocol.Asset,
+	marketID string,
 	strategy string,
 	stratConfigPath string,
 	simMode bool,
@@ -197,6 +199,7 @@ func MakeStrategy(
 			tradingPair:     tradingPair,
 			assetBase:       assetBase,
 			assetQuote:      assetQuote,
+			marketID:        marketID,
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
 			isTradingSdex:   isTradingSdex,

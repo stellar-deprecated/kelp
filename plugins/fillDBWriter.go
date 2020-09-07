@@ -48,7 +48,8 @@ type FillDBWriter struct {
 	market *tradingMarket
 }
 
-func makeMarketID(exchangeName string, baseAsset string, quoteAsset string) string {
+// MakeMarketID generates a universal marketID
+func MakeMarketID(exchangeName string, baseAsset string, quoteAsset string) string {
 	idString := fmt.Sprintf("%s_%s_%s", exchangeName, baseAsset, quoteAsset)
 	h := sha256.New()
 	h.Write([]byte(idString))
@@ -58,7 +59,7 @@ func makeMarketID(exchangeName string, baseAsset string, quoteAsset string) stri
 
 // makeTradingMarket makes a market along with the ID field
 func makeTradingMarket(exchangeName string, baseAsset string, quoteAsset string) *tradingMarket {
-	sha256HashPrefix := makeMarketID(exchangeName, baseAsset, quoteAsset)
+	sha256HashPrefix := MakeMarketID(exchangeName, baseAsset, quoteAsset)
 	return &tradingMarket{
 		ID:           sha256HashPrefix,
 		ExchangeName: exchangeName,

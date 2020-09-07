@@ -323,6 +323,7 @@ func makeStrategy(
 	exchangeShim api.ExchangeShim,
 	assetBase hProtocol.Asset,
 	assetQuote hProtocol.Asset,
+	marketID string,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
 	filterFactory *plugins.FilterFactory,
@@ -347,6 +348,7 @@ func makeStrategy(
 		tradingPair,
 		&assetBase,
 		&assetQuote,
+		marketID,
 		*options.strategy,
 		*options.stratConfigPath,
 		*options.simMode,
@@ -588,6 +590,15 @@ func runTradeCmd(options inputs) {
 		QuoteAsset:     assetQuote,
 		DB:             db,
 	}
+	baseString, e := assetDisplayFn(tradingPair.Base)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not convert base trading pair to string: %s", e))
+	}
+	quoteString, e := assetDisplayFn(tradingPair.Quote)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not convert quote trading pair to string: %s", e))
+	}
+	marketID := plugins.MakeMarketID(botConfig.TradingExchangeName(), baseString, quoteString)
 	strategy := makeStrategy(
 		l,
 		network,
@@ -597,6 +608,7 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		assetBase,
 		assetQuote,
+		marketID,
 		ieif,
 		tradingPair,
 		filterFactory,

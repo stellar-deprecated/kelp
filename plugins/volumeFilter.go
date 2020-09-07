@@ -73,7 +73,7 @@ func makeFilterVolume(
 	if e != nil {
 		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
 	}
-	marketID := makeMarketID(exchangeName, baseAssetString, quoteAssetString)
+	marketID := MakeMarketID(exchangeName, baseAssetString, quoteAssetString)
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
 	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", config.optionalAccountIDs)
 	if e != nil {
