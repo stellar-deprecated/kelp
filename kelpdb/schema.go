@@ -6,6 +6,7 @@ package kelpdb
 const SqlMarketsTableCreate = "CREATE TABLE IF NOT EXISTS markets (market_id TEXT PRIMARY KEY, exchange_name TEXT NOT NULL, base TEXT NOT NULL, quote TEXT NOT NULL)"
 const SqlTradesTableCreate = "CREATE TABLE IF NOT EXISTS trades (market_id TEXT NOT NULL, txid TEXT NOT NULL, date_utc TIMESTAMP WITHOUT TIME ZONE NOT NULL, action TEXT NOT NULL, type TEXT NOT NULL, counter_price DOUBLE PRECISION NOT NULL, base_volume DOUBLE PRECISION NOT NULL, counter_cost DOUBLE PRECISION NOT NULL, fee DOUBLE PRECISION NOT NULL, PRIMARY KEY (market_id, txid))"
 const SqlTradesTableAlter1 = "ALTER TABLE trades ADD COLUMN account_id TEXT"
+const SqlStrategyMirrorTradeTriggersTableCreate = "CREATE TABLE IF NOT EXISTS strategy_mirror_trade_triggers (market_id TEXT NOT NULL, txid TEXT NOT NULL, backing_market_id TEXT NOT NULL, backing_txid TEXT NOT NULL, PRIMARY KEY (market_id, txid, backing_market_id, backing_txid))"
 
 /*
 	indexes
