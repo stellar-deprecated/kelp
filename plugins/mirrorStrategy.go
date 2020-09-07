@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
@@ -622,7 +624,11 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
 	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
 
-	s.insertTradeTrigger(trade.TransactionID.String(), transactionID.String())
+	e = s.insertTradeTrigger(trade.TransactionID.String(), transactionID.String())
+	if e != nil {
+		return fmt.Errorf("error when inserting trade trigger with ID=%s (newOrder=%s): %s", transactionID.String(), newOrder, e)
+	}
+
 	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
 		trade.TransactionID.String(),
 		trade.Volume.AsFloat(),
@@ -639,7 +645,26 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	return nil
 }
 
-func (s *mirrorStrategy) insertTradeTrigger(primaryTxID string, backingTxID string) {
+func (s *mirrorStrategy) insertTradeTrigger(primaryTxID string, backingTxID string) error {
+	sqlInsert := fmt.Sprintf(kelpdb.SqlStrategyMirrorTradeTriggersInsertTemplate,
+		s.marketID,
+		primaryTxID,
+		s.backingMarketID,
+		backingTxID,
+	)
+	_, e := s.db.Exec(sqlInsert)
+	if e != nil {
+		if strings.Contains(e.Error(), "duplicate key value violates unique constraint \"strategy_mirror_trade_triggers_pkey\"") {
+			log.Printf("trying to reinsert trade trigger (market_id=%s, txid=%s, backing_market_id=%s, backing_txid=%s) to db, ignore and continue\n", s.marketID, primaryTxID, s.backingMarketID, backingTxID)
+			return nil
+		}
+
+		// return an error on any other errors
+		return fmt.Errorf("could not execute sql insert values statement (%s): %s", sqlInsert, e)
+	}
+
+	log.Printf("wrote trade trigger (market_id=%s, txid=%s, backing_market_id=%s, backing_txid=%s) to db\n", s.marketID, primaryTxID, s.backingMarketID, backingTxID)
+	return nil
 }
 
 // balanceCoordinator coordinates the balances from the backing exchange with orders placed on the primary exchange

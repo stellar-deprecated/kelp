@@ -29,6 +29,9 @@ const SqlMarketsInsertTemplate = "INSERT INTO markets (market_id, exchange_name,
 // SqlTradesInsertTemplate inserts into the trades table
 const SqlTradesInsertTemplate = "INSERT INTO trades (market_id, txid, date_utc, action, type, counter_price, base_volume, counter_cost, fee, account_id) VALUES ('%s', '%s', '%s', '%s', '%s', %.15f, %.15f, %.15f, %.15f, '%s')"
 
+// SqlStrategyMirrorTradeTriggersInsertTemplate inserts into the strategy_mirror_trade_triggers table
+const SqlStrategyMirrorTradeTriggersInsertTemplate = "INSERT INTO strategy_mirror_trade_triggers (market_id, txid, backing_market_id, backing_txid) VALUES ('%s', '%s', '%s', '%s')"
+
 /*
 	queries
 */
