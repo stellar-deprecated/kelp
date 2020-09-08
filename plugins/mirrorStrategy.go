@@ -16,6 +16,7 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/queries"
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -70,24 +71,25 @@ func makeAssetSurplus() *assetSurplus {
 
 // mirrorStrategy is a strategy to mirror the orderbook of a given exchange
 type mirrorStrategy struct {
-	sdex               *SDEX
-	ieif               *IEIF
-	baseAsset          *hProtocol.Asset
-	quoteAsset         *hProtocol.Asset
-	primaryConstraints *model.OrderConstraints
-	marketID           string
-	backingPair        *model.TradingPair
-	backingConstraints *model.OrderConstraints
-	backingMarketID    string
-	backingFillTracker api.FillTracker
-	orderbookDepth     int32
-	perLevelSpread     float64
-	volumeDivideBy     float64
-	exchange           api.Exchange
-	offsetTrades       bool
-	mutex              *sync.Mutex
-	baseSurplus        map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
-	db                 *sql.DB
+	sdex                                  *SDEX
+	ieif                                  *IEIF
+	baseAsset                             *hProtocol.Asset
+	quoteAsset                            *hProtocol.Asset
+	primaryConstraints                    *model.OrderConstraints
+	marketID                              string
+	backingPair                           *model.TradingPair
+	backingConstraints                    *model.OrderConstraints
+	backingMarketID                       string
+	backingFillTracker                    api.FillTracker
+	strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
+	orderbookDepth                        int32
+	perLevelSpread                        float64
+	volumeDivideBy                        float64
+	exchange                              api.Exchange
+	offsetTrades                          bool
+	mutex                                 *sync.Mutex
+	baseSurplus                           map[model.OrderAction]*assetSurplus // baseSurplus keeps track of any surplus we have of the base asset that needs to be offset on the backing exchange
+	db                                    *sql.DB
 
 	// uninitialized
 	maxBackingBase  *model.Number
@@ -126,6 +128,7 @@ func makeMirrorStrategy(
 	convertDeprecatedMirrorConfigValues(config)
 	var exchange api.Exchange
 	var e error
+	var strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
 	if config.OffsetTrades {
 		if db == nil {
 			return nil, fmt.Errorf("db should not be nil when OffsetTrades is enabled")
@@ -154,6 +157,11 @@ func makeMirrorStrategy(
 		if config.BackingDbOverrideAccountID == "" {
 			utils.PrintErrorHintf("BACKING_DB_OVERRIDE__ACCOUNT_ID needs to be set in the mirror strategy config file when OFFSET_TRADES is enabled so we can assign an account_id to trades that are fetched from the backing exchange before writing them in the db")
 			return nil, fmt.Errorf("invalid mirror strategy config file, need to set BACKING_DB_OVERRIDE__ACCOUNT_ID")
+		}
+
+		strategyMirrorTradeTriggerExistsQuery, e = queries.MakeStrategyMirrorTradeTriggerExists(db, marketID)
+		if e != nil {
+			return nil, fmt.Errorf("unable to create strategyMirrorTradeTriggerExistsQuery: %s", e)
 		}
 	} else {
 		exchange, e = MakeExchange(config.Exchange, simMode)
@@ -245,22 +253,23 @@ func makeMirrorStrategy(
 	}
 
 	return &mirrorStrategy{
-		sdex:               sdex,
-		ieif:               ieif,
-		baseAsset:          baseAsset,
-		quoteAsset:         quoteAsset,
-		primaryConstraints: primaryConstraints,
-		marketID:           marketID,
-		backingPair:        backingPair,
-		backingConstraints: backingConstraints,
-		backingMarketID:    backingMarketID,
-		backingFillTracker: backingFillTracker,
-		orderbookDepth:     config.OrderbookDepth,
-		perLevelSpread:     config.PerLevelSpread,
-		volumeDivideBy:     config.VolumeDivideBy,
-		exchange:           exchange,
-		offsetTrades:       config.OffsetTrades,
-		mutex:              &sync.Mutex{},
+		sdex:                                  sdex,
+		ieif:                                  ieif,
+		baseAsset:                             baseAsset,
+		quoteAsset:                            quoteAsset,
+		primaryConstraints:                    primaryConstraints,
+		marketID:                              marketID,
+		backingPair:                           backingPair,
+		backingConstraints:                    backingConstraints,
+		backingMarketID:                       backingMarketID,
+		backingFillTracker:                    backingFillTracker,
+		strategyMirrorTradeTriggerExistsQuery: strategyMirrorTradeTriggerExistsQuery,
+		orderbookDepth:                        config.OrderbookDepth,
+		perLevelSpread:                        config.PerLevelSpread,
+		volumeDivideBy:                        config.VolumeDivideBy,
+		exchange:                              exchange,
+		offsetTrades:                          config.OffsetTrades,
+		mutex:                                 &sync.Mutex{},
 		baseSurplus: map[model.OrderAction]*assetSurplus{
 			model.OrderActionBuy:  makeAssetSurplus(),
 			model.OrderActionSell: makeAssetSurplus(),
@@ -635,6 +644,20 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// first check if this trade has already been handled
+	queryResult, e := s.strategyMirrorTradeTriggerExistsQuery.QueryRow(trade.TransactionID.String())
+	if e != nil {
+		return fmt.Errorf("unable to fetch trade trigger for transactionID '%s': %s", trade.TransactionID.String(), e)
+	}
+	rowExists, ok := queryResult.(bool)
+	if !ok {
+		return fmt.Errorf("unable to convert result of strategyMirrorTradeTriggerExistsQuery to bool: %v (type=%T)", queryResult, queryResult)
+	}
+	if rowExists {
+		log.Printf("trade with txid '%s' was previously handled because we have a row in the strategy_mirror_trade_triggers table with this txid, not handling again and returning\n", trade.TransactionID.String())
+		return nil
+	}
+
 	newOrderAction := trade.OrderAction.Reverse()
 	// increase the baseSurplus for the additional amount that needs to be offset because of the incoming trade
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Add(*trade.Volume)
@@ -666,6 +689,7 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrder.Volume.AsFloat(),
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat())
+
 	// when offsetting trades we always submit as a taker order so use api.SubmitModeBoth
 	transactionID, e := s.exchange.AddOrder(&newOrder, api.SubmitModeBoth)
 	if e != nil {
@@ -674,15 +698,15 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 	if transactionID == nil {
 		return fmt.Errorf("error when offsetting trade (newOrder=%s): transactionID was <nil>", newOrder)
 	}
+	// insert into the db immediately after placing order on backing exchange
+	e = s.insertTradeTrigger(trade.TransactionID.String(), transactionID.String())
+	if e != nil {
+		return fmt.Errorf("error when inserting trade trigger with txID=%s (newOrder=%s) (PK dupes not allowed): %s", transactionID.String(), newOrder, e)
+	}
 
 	// update the baseSurplus on success
 	s.baseSurplus[newOrderAction].total = s.baseSurplus[newOrderAction].total.Subtract(*newVolume)
 	s.baseSurplus[newOrderAction].committed = s.baseSurplus[newOrderAction].committed.Subtract(*newVolume)
-
-	e = s.insertTradeTrigger(trade.TransactionID.String(), transactionID.String())
-	if e != nil {
-		return fmt.Errorf("error when inserting trade trigger with ID=%s (newOrder=%s): %s", transactionID.String(), newOrder, e)
-	}
 
 	log.Printf("offset-success | tradeID=%s | tradeBaseAmt=%f | tradeQuoteAmt=%f | tradePriceQuote=%f | newOrderAction=%s | baseSurplusTotal=%f | baseSurplusCommitted=%f | minBaseVolume=%f | newOrderBaseAmt=%f | newOrderQuoteAmt=%f | newOrderPriceQuote=%f | transactionID=%s\n",
 		trade.TransactionID.String(),
