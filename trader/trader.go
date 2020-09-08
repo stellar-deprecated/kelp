@@ -140,19 +140,23 @@ func (t *Trader) Start() {
 }
 
 // deletes all offers for the bot (not all offers on the account)
-func (t *Trader) deleteAllOffers() {
+func (t *Trader) deleteAllOffers(isAsync bool) {
+	logPrefix := ""
+	if isAsync {
+		logPrefix = "(async) "
+	}
 	if t.deleteCyclesThreshold < 0 {
-		log.Printf("not deleting any offers because deleteCyclesThreshold is negative\n")
+		log.Printf("%snot deleting any offers because deleteCyclesThreshold is negative\n", logPrefix)
 		return
 	}
 
 	t.deleteCycles++
 	if t.deleteCycles <= t.deleteCyclesThreshold {
-		log.Printf("not deleting any offers, deleteCycles (=%d) needs to exceed deleteCyclesThreshold (=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
+		log.Printf("%snot deleting any offers, deleteCycles (=%d) needs to exceed deleteCyclesThreshold (=%d)\n", logPrefix, t.deleteCycles, t.deleteCyclesThreshold)
 		return
 	}
 
-	log.Printf("deleting all offers, num. continuous update cycles with errors (including this one): %d; (deleteCyclesThreshold to be exceeded=%d)\n", t.deleteCycles, t.deleteCyclesThreshold)
+	log.Printf("%sdeleting all offers, num. continuous update cycles with errors (including this one): %d; (deleteCyclesThreshold to be exceeded=%d)\n", logPrefix, t.deleteCycles, t.deleteCyclesThreshold)
 	dOps := []txnbuild.Operation{}
 	dOps = append(dOps, t.sdex.DeleteAllOffers(t.sellingAOffers)...)
 	t.sellingAOffers = []hProtocol.Offer{}
@@ -161,23 +165,23 @@ func (t *Trader) deleteAllOffers() {
 
 	// LOH-3 - we want to guarantee that the bot crashes if the errors exceed deleteCyclesThreshold, so we start a new thread with a sleep timer to crash the bot as a safety
 	defer func() {
-		log.Printf("started thread to crash bot in 1 minute as a fallback (to respect deleteCyclesThreshold)\n")
+		log.Printf("%sstarted thread to crash bot in 1 minute as a fallback (to respect deleteCyclesThreshold)\n", logPrefix)
 		time.Sleep(time.Minute)
-		log.Fatalf("bot should have crashed by now (programmer error?), crashing\n")
+		log.Fatalf("%sbot should have crashed by now (programmer error?), crashing\n", logPrefix)
 	}()
 
-	log.Printf("created %d operations to delete offers\n", len(dOps))
+	log.Printf("%screated %d operations to delete offers\n", logPrefix, len(dOps))
 	if len(dOps) > 0 {
 		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
 		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
-			log.Fatalf("...deleted %d offers, exiting (asyncCallback: hash=%s, e=%v)", len(dOps), hash, e)
+			log.Fatalf("(async) ...deleted %d offers, exiting (asyncCallback: hash=%s, e=%v)", len(dOps), hash, e)
 		})
 		if e != nil {
-			log.Fatalf("continuing to exit after showing error during submission of delete offer ops: %s", e)
+			log.Fatalf("%scontinuing to exit after showing error during submission of delete offer ops: %s", logPrefix, e)
 			return
 		}
 	} else {
-		log.Fatalf("...nothing to delete, exiting")
+		log.Fatalf("%s...nothing to delete, exiting", logPrefix)
 	}
 }
 
@@ -301,7 +305,7 @@ func (t *Trader) update() bool {
 	e := t.synchronizeFetchBalancesOffersTrades()
 	if e != nil {
 		log.Println(e)
-		t.deleteAllOffers()
+		t.deleteAllOffers(false)
 		return false
 	}
 
@@ -320,7 +324,7 @@ func (t *Trader) update() bool {
 	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
-		t.deleteAllOffers()
+		t.deleteAllOffers(false)
 		return false
 	}
 
@@ -328,7 +332,7 @@ func (t *Trader) update() bool {
 	e = t.strategy.PreUpdate(t.maxAssetA, t.maxAssetB, t.trustAssetA, t.trustAssetB)
 	if e != nil {
 		log.Println(e)
-		t.deleteAllOffers()
+		t.deleteAllOffers(false)
 		return false
 	}
 
@@ -341,7 +345,7 @@ func (t *Trader) update() bool {
 		e = t.exchangeShim.SubmitOps(pruneOps, api.SubmitModeBoth, nil)
 		if e != nil {
 			log.Println(e)
-			t.deleteAllOffers()
+			t.deleteAllOffers(false)
 			return false
 		}
 	}
@@ -355,7 +359,7 @@ func (t *Trader) update() bool {
 	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
 	if e != nil {
 		log.Println(e)
-		t.deleteAllOffers()
+		t.deleteAllOffers(false)
 		return false
 	}
 
@@ -366,7 +370,7 @@ func (t *Trader) update() bool {
 		log.Println(e)
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
 		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
-		t.deleteAllOffers()
+		t.deleteAllOffers(false)
 		return false
 	}
 
@@ -375,17 +379,23 @@ func (t *Trader) update() bool {
 		ops, e = filter.Apply(ops, t.sellingAOffers, t.buyingAOffers)
 		if e != nil {
 			log.Printf("error in filter index %d: %s\n", i, e)
-			t.deleteAllOffers()
+			t.deleteAllOffers(false)
 			return false
 		}
 	}
 
 	log.Printf("created %d operations to update existing offers\n", len(ops))
 	if len(ops) > 0 {
-		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), t.submitMode, nil)
+		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), t.submitMode, func(hash string, e error) {
+			// if there is an error we want it to count towards the delete cycles threshold, so run the check
+			if e != nil {
+				t.deleteAllOffers(true)
+			}
+		})
+
 		if e != nil {
 			log.Println(e)
-			t.deleteAllOffers()
+			t.deleteAllOffers(false)
 			return false
 		}
 	}
@@ -393,7 +403,7 @@ func (t *Trader) update() bool {
 	e = t.strategy.PostUpdate()
 	if e != nil {
 		log.Println(e)
-		t.deleteAllOffers()
+		t.deleteAllOffers(false)
 		return false
 	}
 
