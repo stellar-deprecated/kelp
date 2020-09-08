@@ -47,7 +47,8 @@ func (q *StrategyMirrorTradeTriggerExists) QueryRow(args ...interface{}) (interf
 	}
 
 	row := q.db.QueryRow(q.sqlQuery, q.marketID, args[0])
-	e := row.Scan()
+	var marketID, txID, backingMarketID, backingOrderID string
+	e := row.Scan(&marketID, &txID, &backingMarketID, &backingOrderID)
 	if e != nil {
 		if strings.Contains(e.Error(), "no rows in result set") {
 			return false, nil
