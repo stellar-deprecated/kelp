@@ -446,14 +446,14 @@ func (sdex *SDEX) sign(tx *txnbuild.Transaction) (string, error) {
 }
 
 func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error), asyncMode bool) {
-	resp, err := sdex.API.SubmitTransactionXDR(txeB64)
-	if err != nil {
-		if herr, ok := errors.Cause(err).(*horizonclient.Error); ok {
+	resp, e := sdex.API.SubmitTransactionXDR(txeB64)
+	if e != nil {
+		if herr, ok := errors.Cause(e).(*horizonclient.Error); ok {
 			var rcs *hProtocol.TransactionResultCodes
-			rcs, err = herr.ResultCodes()
-			if err != nil {
-				log.Printf("(async) error: no result codes from horizon: %s\n", err)
-				sdex.invokeAsyncCallback(asyncCallback, "", err, asyncMode)
+			rcs, e2 := herr.ResultCodes()
+			if e2 != nil {
+				log.Printf("(async) error: no result codes from horizon: %s\n", e2)
+				sdex.invokeAsyncCallback(asyncCallback, "", e2, asyncMode)
 				return
 			}
 			if rcs.TransactionCode == "tx_bad_seq" {
@@ -462,9 +462,9 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 			}
 			log.Println("(async) error: result code details: tx code =", rcs.TransactionCode, ", opcodes =", rcs.OperationCodes)
 		} else {
-			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", err)
+			log.Printf("(async) error: tx failed for unknown reason, error message: %s\n", e)
 		}
-		sdex.invokeAsyncCallback(asyncCallback, "", err, asyncMode)
+		sdex.invokeAsyncCallback(asyncCallback, "", e, asyncMode)
 		return
 	}
 
@@ -476,7 +476,7 @@ func (sdex *SDEX) submit(txeB64 string, asyncCallback func(hash string, e error)
 	sdex.invokeAsyncCallback(asyncCallback, resp.Hash, nil, asyncMode)
 }
 
-func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, err error), hash string, err error, asyncMode bool) {
+func (sdex *SDEX) invokeAsyncCallback(asyncCallback func(hash string, e error), hash string, err error, asyncMode bool) {
 	if asyncCallback == nil {
 		return
 	}
