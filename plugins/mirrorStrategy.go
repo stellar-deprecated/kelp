@@ -186,7 +186,7 @@ func makeMirrorStrategy(
 			backingLastCursor = config.BackingFillTrackerLastTradeCursorOverride
 			log.Printf("set backingLastCursor from where to start tracking fills for backing exchange in mirror strategy (used override value): %v\n", backingLastCursor)
 		}
-		backingFillTracker := MakeFillTracker(backingPair, multithreading.MakeThreadTracker(), exchange, 0, 0, backingLastCursor)
+		backingFillTracker = MakeFillTracker(backingPair, multithreading.MakeThreadTracker(), exchange, 0, 0, backingLastCursor)
 		backingFillTracker.RegisterHandler(MakeFillLogger())
 		backingAssetDisplayFn := model.MakePassthroughAssetDisplayFn()
 		if config.Exchange == "sdex" {
