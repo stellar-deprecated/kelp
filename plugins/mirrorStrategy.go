@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nikhilsaraf/go-tools/multithreading"
+
 	"github.com/stellar/go/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
@@ -31,13 +33,15 @@ type mirrorConfig struct {
 	PricePrecisionOverride  *int8   `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	VolumePrecisionOverride *int8   `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	// Deprecated: use MIN_BASE_VOLUME_OVERRIDE instead
-	MinBaseVolumeDeprecated *float64                 `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
-	MinBaseVolumeOverride   *float64                 `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
-	MinQuoteVolumeOverride  *float64                 `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
-	OffsetTrades            bool                     `valid:"-" toml:"OFFSET_TRADES"`
-	ExchangeAPIKeys         toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
-	ExchangeParams          toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
-	ExchangeHeaders         toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
+	MinBaseVolumeDeprecated                   *float64                 `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
+	MinBaseVolumeOverride                     *float64                 `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
+	MinQuoteVolumeOverride                    *float64                 `valid:"-" toml:"MIN_QUOTE_VOLUME_OVERRIDE"`
+	OffsetTrades                              bool                     `valid:"-" toml:"OFFSET_TRADES"`
+	BackingDbOverrideAccountID                string                   `valid:"-" toml:"BACKING_DB_OVERRIDE__ACCOUNT_ID"`
+	BackingFillTrackerLastTradeCursorOverride string                   `valid:"-" toml:"BACKING_FILL_TRACKER_LAST_TRADE_CURSOR_OVERRIDE"`
+	ExchangeAPIKeys                           toml.ExchangeAPIKeysToml `valid:"-" toml:"EXCHANGE_API_KEYS"`
+	ExchangeParams                            toml.ExchangeParamsToml  `valid:"-" toml:"EXCHANGE_PARAMS"`
+	ExchangeHeaders                           toml.ExchangeHeadersToml `valid:"-" toml:"EXCHANGE_HEADERS"`
 }
 
 // String impl.
@@ -75,6 +79,7 @@ type mirrorStrategy struct {
 	backingPair        *model.TradingPair
 	backingConstraints *model.OrderConstraints
 	backingMarketID    string
+	backingFillTracker api.FillTracker
 	orderbookDepth     int32
 	perLevelSpread     float64
 	volumeDivideBy     float64
@@ -146,6 +151,10 @@ func makeMirrorStrategy(
 		if config.PricePrecisionOverride != nil && *config.PricePrecisionOverride < 0 {
 			return nil, fmt.Errorf("need to specify non-negative PRICE_PRECISION_OVERRIDE config param in mirror strategy config file")
 		}
+		if config.BackingDbOverrideAccountID == "" {
+			utils.PrintErrorHintf("BACKING_DB_OVERRIDE__ACCOUNT_ID needs to be set in the mirror strategy config file when OFFSET_TRADES is enabled so we can assign an account_id to trades that are fetched from the backing exchange before writing them in the db")
+			return nil, fmt.Errorf("invalid mirror strategy config file, need to set BACKING_DB_OVERRIDE__ACCOUNT_ID")
+		}
 	} else {
 		exchange, e = MakeExchange(config.Exchange, simMode)
 		if e != nil {
@@ -160,6 +169,33 @@ func makeMirrorStrategy(
 		Base:  exchange.GetAssetConverter().MustFromString(config.ExchangeBase),
 		Quote: exchange.GetAssetConverter().MustFromString(config.ExchangeQuote),
 	}
+
+	// make fill tracker for backing exchange
+	var backingFillTracker api.FillTracker
+	if config.OffsetTrades {
+		var backingLastCursor interface{}
+		if config.BackingFillTrackerLastTradeCursorOverride == "" {
+			// loads cursor by fetching from exchange
+			backingLastCursor, e = exchange.GetLatestTradeCursor()
+			if e != nil {
+				return nil, fmt.Errorf("could not get last trade cursor from backing exchange in mirrorStrategy: %s", e)
+			}
+			log.Printf("set backingLastCursor from where to start tracking fills for backing exchange in mirror strategy (no override specified): %v\n", backingLastCursor)
+		} else {
+			// loads cursor from config file
+			backingLastCursor = config.BackingFillTrackerLastTradeCursorOverride
+			log.Printf("set backingLastCursor from where to start tracking fills for backing exchange in mirror strategy (used override value): %v\n", backingLastCursor)
+		}
+		backingFillTracker := MakeFillTracker(backingPair, multithreading.MakeThreadTracker(), exchange, 0, 0, backingLastCursor)
+		backingFillTracker.RegisterHandler(MakeFillLogger())
+		backingAssetDisplayFn := model.MakePassthroughAssetDisplayFn()
+		if config.Exchange == "sdex" {
+			return nil, fmt.Errorf("we cannot mirror trades from SDEX for now (programmer: need to create sdexAssetMap to inject into the backingAssetDisplayFn)")
+		}
+		fillDBWriter := MakeFillDBWriter(db, backingAssetDisplayFn, config.Exchange, config.BackingDbOverrideAccountID)
+		backingFillTracker.RegisterHandler(fillDBWriter)
+	}
+
 	// update precision overrides
 	exchange.OverrideOrderConstraints(backingPair, model.MakeOrderConstraintsOverride(
 		config.PricePrecisionOverride,
@@ -206,6 +242,7 @@ func makeMirrorStrategy(
 		backingPair:        backingPair,
 		backingConstraints: backingConstraints,
 		backingMarketID:    backingMarketID,
+		backingFillTracker: backingFillTracker,
 		orderbookDepth:     config.OrderbookDepth,
 		perLevelSpread:     config.PerLevelSpread,
 		volumeDivideBy:     config.VolumeDivideBy,
@@ -648,6 +685,13 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		newOrder.Volume.Multiply(*newOrder.Price).AsFloat(),
 		newOrder.Price.AsFloat(),
 		transactionID)
+
+	// trigger fill tracking on backing exchange
+	_, e = s.backingFillTracker.FillTrackSingleIteration()
+	if e != nil {
+		return fmt.Errorf("unable to track a single iteration of fills from the backing exchange: %s", e)
+	}
+
 	return nil
 }
 
