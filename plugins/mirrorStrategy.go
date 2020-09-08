@@ -232,6 +232,18 @@ func makeMirrorStrategy(
 		return nil, fmt.Errorf("error calling FetchOrRegisterMarketID: %s", e)
 	}
 
+	// trigger fill tracking on backing exchange at creation time
+	if backingFillTracker != nil {
+		trades, e := backingFillTracker.FillTrackSingleIteration()
+		if e != nil {
+			return nil, fmt.Errorf("unable to track a single iteration of fills from the backing exchange in factory method: %s", e)
+		}
+
+		log.Printf("found %d trades on first load from backing exchange\n", len(trades))
+	} else {
+		log.Printf("backingFillTracker was nil so not loading trades at creation time\n")
+	}
+
 	return &mirrorStrategy{
 		sdex:               sdex,
 		ieif:               ieif,
