@@ -359,14 +359,15 @@ func (c *Ccxt) FetchOrderBook(tradingPair string, limit *int) (map[string][]Ccxt
 
 // CcxtTrade represents a trade
 type CcxtTrade struct {
-	Amount    float64 `json:"amount"`
-	Cost      float64 `json:"cost"`
-	Datetime  string  `json:"datetime"`
-	ID        string  `json:"id"`
-	Price     float64 `json:"price"`
-	Side      string  `json:"side"`
-	Symbol    string  `json:"symbol"`
-	Timestamp int64   `json:"timestamp"`
+	Amount    float64     `json:"amount"`
+	Cost      float64     `json:"cost"`
+	Datetime  string      `json:"datetime"`
+	ID        string      `json:"id"`   // tradeID
+	Info      interface{} `json:"info"` // raw trade response gotten from the exchange site's API
+	Price     float64     `json:"price"`
+	Side      string      `json:"side"`
+	Symbol    string      `json:"symbol"`
+	Timestamp int64       `json:"timestamp"`
 	Fee       struct {
 		Cost     float64 `json:"cost"`
 		Currency string  `json:"currency"`

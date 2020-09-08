@@ -120,7 +120,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 
 	// check schema of trades table
 	columns = database.GetTableSchema(db, "trades")
-	assert.Equal(t, 10, len(columns), fmt.Sprintf("%v", columns))
+	assert.Equal(t, 11, len(columns), fmt.Sprintf("%v", columns))
 	database.AssertTableColumnsEqual(t, &database.TableColumn{
 		ColumnName:             "market_id",
 		OrdinalPosition:        1,
@@ -201,6 +201,14 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "text",
 		CharacterMaximumLength: nil,
 	}, &columns[9])
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "order_id",
+		OrdinalPosition:        11,
+		ColumnDefault:          nil,
+		IsNullable:             "YES",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[10])
 	// check indexes of trades table
 	indexes = database.GetTableIndexes(db, "trades")
 	assert.Equal(t, 3, len(indexes))
@@ -243,10 +251,10 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "text",
 		CharacterMaximumLength: nil,
 	}, &columns[3])
-	// check indexes of trades table
+	// check indexes of strategy_mirror_trade_triggers table
 	indexes = database.GetTableIndexes(db, "strategy_mirror_trade_triggers")
 	assert.Equal(t, 1, len(indexes))
-	database.AssertIndex(t, "trades", "strategy_mirror_trade_triggers_pkey", "CREATE UNIQUE INDEX strategy_mirror_trade_triggers_pkey ON public.strategy_mirror_trade_triggers USING btree (market_id, txid)", indexes)
+	database.AssertIndex(t, "strategy_mirror_trade_triggers", "strategy_mirror_trade_triggers_pkey", "CREATE UNIQUE INDEX strategy_mirror_trade_triggers_pkey ON public.strategy_mirror_trade_triggers USING btree (market_id, txid)", indexes)
 
 	// check entries of db_version table
 	var allRows [][]interface{}
@@ -259,7 +267,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 100, nil)
 	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 50, &codeVersionString)
 	database.ValidateDBVersionRow(t, allRows[4], 5, time.Now(), 2, 100, &codeVersionString)
-	database.ValidateDBVersionRow(t, allRows[5], 6, time.Now(), 1, 100, &codeVersionString)
+	database.ValidateDBVersionRow(t, allRows[5], 6, time.Now(), 2, 100, &codeVersionString)
 
 	// check entries of markets table
 	allRows = database.QueryAllRows(db, "markets")

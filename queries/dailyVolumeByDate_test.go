@@ -99,7 +99,9 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			setupStatements := []string{
 				kelpdb.SqlTradesTableCreate,
 				"ALTER TABLE trades DROP COLUMN IF EXISTS account_id",
+				"ALTER TABLE trades DROP COLUMN IF EXISTS order_id",
 				kelpdb.SqlTradesTableAlter1,
+				kelpdb.SqlTradesTableAlter2,
 				"DELETE FROM trades", // clear table
 				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
 					"market1",
@@ -112,6 +114,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 					10.0,  // cost
 					0.0,   // fee
 					"accountID1",
+					"",
 				),
 				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
 					"market1",
@@ -124,6 +127,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 					11.11, // cost
 					0.0,   // fee
 					"accountID1",
+					"oid1",
 				),
 				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
 					"market1",
@@ -136,6 +140,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 					0.72, // cost
 					0.10, // fee
 					"accountID1",
+					"",
 				),
 				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
 					"market1",
@@ -148,6 +153,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 					12.24, // cost
 					0.0,   // fee
 					"accountID1",
+					"",
 				),
 				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
 					"market1",
@@ -160,6 +166,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 					12.24, // cost
 					0.0,   // fee
 					"accountID1",
+					"",
 				),
 				// add an extra one for accountID2
 				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
@@ -173,6 +180,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 					10.0,  // cost
 					0.0,   // fee
 					"accountID2",
+					"",
 				),
 			}
 			db := connectTestDb()

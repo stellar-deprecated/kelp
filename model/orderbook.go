@@ -234,6 +234,7 @@ func (r CancelOrderResult) String() string {
 type Trade struct {
 	Order
 	TransactionID *TransactionID
+	OrderID       string
 	Cost          *Number
 	Fee           *Number
 }
@@ -264,8 +265,9 @@ func (t TradesByTsID) Less(i int, j int) bool {
 }
 
 func (t Trade) String() string {
-	return fmt.Sprintf("Trade[txid: %s, ts: %s, pair: %s, action: %s, type: %s, counterPrice: %s, baseVolume: %s, counterCost: %s, fee: %s]",
+	return fmt.Sprintf("Trade[txid: %s, orderId: %s, ts: %s, pair: %s, action: %s, type: %s, counterPrice: %s, baseVolume: %s, counterCost: %s, fee: %s]",
 		utils.CheckedString(t.TransactionID),
+		t.OrderID,
 		utils.CheckedString(t.Timestamp),
 		*t.Pair,
 		t.OrderAction,

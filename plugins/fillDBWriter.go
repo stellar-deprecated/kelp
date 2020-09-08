@@ -200,6 +200,7 @@ func (f *FillDBWriter) HandleFill(trade model.Trade) error {
 		f.checkedFloat(trade.Cost),
 		f.checkedFloat(trade.Fee),
 		f.accountID,
+		trade.OrderID,
 	)
 	_, e = f.db.Exec(sqlInsert)
 	if e != nil {

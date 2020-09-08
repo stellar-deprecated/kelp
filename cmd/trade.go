@@ -53,6 +53,7 @@ var upgradeScripts = []*database.UpgradeScript{
 	),
 	database.MakeUpgradeScript(6,
 		kelpdb.SqlStrategyMirrorTradeTriggersTableCreate,
+		kelpdb.SqlTradesTableAlter2,
 	),
 }
 
