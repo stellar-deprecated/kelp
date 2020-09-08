@@ -236,7 +236,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		CharacterMaximumLength: nil,
 	}, &columns[2])
 	database.AssertTableColumnsEqual(t, &database.TableColumn{
-		ColumnName:             "backing_txid",
+		ColumnName:             "backing_order_id",
 		OrdinalPosition:        4,
 		ColumnDefault:          nil,
 		IsNullable:             "NO",
@@ -246,7 +246,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	// check indexes of trades table
 	indexes = database.GetTableIndexes(db, "strategy_mirror_trade_triggers")
 	assert.Equal(t, 1, len(indexes))
-	database.AssertIndex(t, "trades", "strategy_mirror_trade_triggers_pkey", "CREATE UNIQUE INDEX strategy_mirror_trade_triggers_pkey ON public.strategy_mirror_trade_triggers USING btree (market_id, txid, backing_market_id, backing_txid)", indexes)
+	database.AssertIndex(t, "trades", "strategy_mirror_trade_triggers_pkey", "CREATE UNIQUE INDEX strategy_mirror_trade_triggers_pkey ON public.strategy_mirror_trade_triggers USING btree (market_id, txid)", indexes)
 
 	// check entries of db_version table
 	var allRows [][]interface{}
