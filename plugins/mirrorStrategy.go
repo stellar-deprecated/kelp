@@ -189,7 +189,13 @@ func makeMirrorStrategy(
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
-	backingMarketID := MakeMarketID(config.Exchange, config.ExchangeBase, config.ExchangeQuote)
+
+	// insert into database if needed
+	backingMarketID, e := FetchOrRegisterMarketID(db, config.Exchange, config.ExchangeBase, config.ExchangeQuote)
+	if e != nil {
+		return nil, fmt.Errorf("error calling FetchOrRegisterMarketID: %s", e)
+	}
+
 	return &mirrorStrategy{
 		sdex:               sdex,
 		ieif:               ieif,

@@ -100,28 +100,47 @@ func (f *FillDBWriter) fetchOrRegisterMarket(trade model.Trade) (*tradingMarket,
 		return nil, fmt.Errorf("bot is not configured to recognize the quote asset from this trade (txid=%s), quote asset = %s, error: %s", txid, string(trade.Pair.Quote), e)
 	}
 
-	market := makeTradingMarket(f.exchangeName, baseAssetString, quoteAssetString)
-	fetchedMarket, e := f.fetchMarketFromDb(market.ID)
+	market, e := fetchOrRegisterMarketByDetails(f.db, f.exchangeName, baseAssetString, quoteAssetString)
 	if e != nil {
-		return nil, fmt.Errorf("error while fetching market (ID=%s) from db: %s", market.ID, e)
-	}
-
-	if fetchedMarket == nil {
-		e = f.registerMarket(market)
-		if e != nil {
-			return nil, fmt.Errorf("unable to register market: %s", market.String())
-		}
-		log.Printf("registered market in db: %s", market.String())
-	} else if !market.equals(*fetchedMarket) {
-		return nil, fmt.Errorf("fetched market (%s) was different from computed market (%s)", *fetchedMarket, *market)
+		return nil, fmt.Errorf("error while calling fetchOrRegisterMarketByDetails (exchangeName=%s, baseAsset=%s, quoteAsset=%s): %s", f.exchangeName, baseAssetString, quoteAssetString, e)
 	}
 
 	f.market = market
 	return market, nil
 }
 
-func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error) {
-	rows, e := f.db.Query(kelpdb.SqlQueryMarketsById, marketId)
+// fetchOrRegisterMarketByDetails uses the market details
+func fetchOrRegisterMarketByDetails(db *sql.DB, exchangeName string, baseAsset string, quoteAsset string) (*tradingMarket, error) {
+	market := makeTradingMarket(exchangeName, baseAsset, quoteAsset)
+	fetchedMarket, e := fetchMarketFromDb(db, market.ID)
+	if e != nil {
+		return nil, fmt.Errorf("error while fetching market (ID=%s) from db: %s", market.ID, e)
+	}
+
+	if fetchedMarket == nil {
+		e = registerMarket(db, market)
+		if e != nil {
+			return nil, fmt.Errorf("unable to register market: %s", market.String())
+		}
+		log.Printf("registered market in db: %s", market.String())
+		return market, nil
+	} else if !market.equals(*fetchedMarket) {
+		return nil, fmt.Errorf("fetched market (%s) was different from computed market (%s)", *fetchedMarket, *market)
+	}
+	return market, nil
+}
+
+// FetchOrRegisterMarketID is the public method, so we don't need to export tradingMarket unncessarily
+func FetchOrRegisterMarketID(db *sql.DB, exchangeName string, baseAsset string, quoteAsset string) (string, error) {
+	market, e := fetchOrRegisterMarketByDetails(db, exchangeName, baseAsset, quoteAsset)
+	if e != nil {
+		return "", fmt.Errorf("error while calling fetchOrRegisterMarketByDetails (exchangeName=%s, baseAsset=%s, quoteAsset=%s): %s", exchangeName, baseAsset, quoteAsset, e)
+	}
+	return market.ID, nil
+}
+
+func fetchMarketFromDb(db *sql.DB, marketId string) (*tradingMarket, error) {
+	rows, e := db.Query(kelpdb.SqlQueryMarketsById, marketId)
 	if e != nil {
 		return nil, fmt.Errorf("could not execute sql select query (%s) for marketId (%s): %s", kelpdb.SqlQueryMarketsById, marketId, e)
 	}
@@ -141,7 +160,7 @@ func (f *FillDBWriter) fetchMarketFromDb(marketId string) (*tradingMarket, error
 	return nil, nil
 }
 
-func (f *FillDBWriter) registerMarket(market *tradingMarket) error {
+func registerMarket(db *sql.DB, market *tradingMarket) error {
 	sqlInsert := fmt.Sprintf(kelpdb.SqlMarketsInsertTemplate,
 		market.ID,
 		market.ExchangeName,
@@ -149,7 +168,7 @@ func (f *FillDBWriter) registerMarket(market *tradingMarket) error {
 		market.QuoteAsset,
 	)
 
-	_, e := f.db.Exec(sqlInsert)
+	_, e := db.Exec(sqlInsert)
 	if e != nil {
 		// duplicate insert should return an error
 		return fmt.Errorf("could not execute sql insert values statement (%s): %s", sqlInsert, e)
