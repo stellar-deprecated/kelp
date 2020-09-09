@@ -23,10 +23,11 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	}
 
 	// assert current state of the database
-	assert.Equal(t, 3, database.GetNumTablesInDb(db))
+	assert.Equal(t, 4, database.GetNumTablesInDb(db))
 	assert.True(t, database.CheckTableExists(db, "db_version"))
 	assert.True(t, database.CheckTableExists(db, "markets"))
 	assert.True(t, database.CheckTableExists(db, "trades"))
+	assert.True(t, database.CheckTableExists(db, "strategy_mirror_trade_triggers"))
 
 	// check schema of db_version table
 	var columns []database.TableColumn
@@ -119,7 +120,7 @@ func TestTradeUpgradeScripts(t *testing.T) {
 
 	// check schema of trades table
 	columns = database.GetTableSchema(db, "trades")
-	assert.Equal(t, 10, len(columns), fmt.Sprintf("%v", columns))
+	assert.Equal(t, 11, len(columns), fmt.Sprintf("%v", columns))
 	database.AssertTableColumnsEqual(t, &database.TableColumn{
 		ColumnName:             "market_id",
 		OrdinalPosition:        1,
@@ -200,6 +201,14 @@ func TestTradeUpgradeScripts(t *testing.T) {
 		DataType:               "text",
 		CharacterMaximumLength: nil,
 	}, &columns[9])
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "order_id",
+		OrdinalPosition:        11,
+		ColumnDefault:          nil,
+		IsNullable:             "YES",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[10])
 	// check indexes of trades table
 	indexes = database.GetTableIndexes(db, "trades")
 	assert.Equal(t, 3, len(indexes))
@@ -207,10 +216,50 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	database.AssertIndex(t, "trades", "trades_mdd", "CREATE INDEX trades_mdd ON public.trades USING btree (market_id, date(date_utc), date_utc)", indexes)
 	database.AssertIndex(t, "trades", "trades_amt", "CREATE UNIQUE INDEX trades_amt ON public.trades USING btree (account_id, market_id, txid)", indexes)
 
+	// check schema of strategy_mirror_trade_triggers table
+	columns = database.GetTableSchema(db, "strategy_mirror_trade_triggers")
+	assert.Equal(t, 4, len(columns), fmt.Sprintf("%v", columns))
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "market_id",
+		OrdinalPosition:        1,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[0])
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "txid",
+		OrdinalPosition:        2,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[1])
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "backing_market_id",
+		OrdinalPosition:        3,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[2])
+	database.AssertTableColumnsEqual(t, &database.TableColumn{
+		ColumnName:             "backing_order_id",
+		OrdinalPosition:        4,
+		ColumnDefault:          nil,
+		IsNullable:             "NO",
+		DataType:               "text",
+		CharacterMaximumLength: nil,
+	}, &columns[3])
+	// check indexes of strategy_mirror_trade_triggers table
+	indexes = database.GetTableIndexes(db, "strategy_mirror_trade_triggers")
+	assert.Equal(t, 1, len(indexes))
+	database.AssertIndex(t, "strategy_mirror_trade_triggers", "strategy_mirror_trade_triggers_pkey", "CREATE UNIQUE INDEX strategy_mirror_trade_triggers_pkey ON public.strategy_mirror_trade_triggers USING btree (market_id, txid)", indexes)
+
 	// check entries of db_version table
 	var allRows [][]interface{}
 	allRows = database.QueryAllRows(db, "db_version")
-	assert.Equal(t, 5, len(allRows))
+	assert.Equal(t, 6, len(allRows))
 	// first three code_version_string is nil becuase the field was not supported at the time when the upgrade script was run, and only in version 4 of
 	// the database do we add the field. See upgradeScripts and RunUpgradeScripts() for more details
 	database.ValidateDBVersionRow(t, allRows[0], 1, time.Now(), 1, 50, nil)
@@ -218,12 +267,17 @@ func TestTradeUpgradeScripts(t *testing.T) {
 	database.ValidateDBVersionRow(t, allRows[2], 3, time.Now(), 2, 100, nil)
 	database.ValidateDBVersionRow(t, allRows[3], 4, time.Now(), 1, 50, &codeVersionString)
 	database.ValidateDBVersionRow(t, allRows[4], 5, time.Now(), 2, 100, &codeVersionString)
+	database.ValidateDBVersionRow(t, allRows[5], 6, time.Now(), 2, 100, &codeVersionString)
 
 	// check entries of markets table
 	allRows = database.QueryAllRows(db, "markets")
 	assert.Equal(t, 0, len(allRows))
 
-	// check entries of markets table
+	// check entries of trades table
 	allRows = database.QueryAllRows(db, "trades")
+	assert.Equal(t, 0, len(allRows))
+
+	// check entries of strategy_mirror_trade_triggers table
+	allRows = database.QueryAllRows(db, "strategy_mirror_trade_triggers")
 	assert.Equal(t, 0, len(allRows))
 }

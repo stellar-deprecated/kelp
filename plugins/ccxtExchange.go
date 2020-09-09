@@ -21,6 +21,7 @@ var _ api.Exchange = ccxtExchange{}
 // ccxtExchangeSpecificParamFactory knows how to create the exchange-specific params for each exchange
 type ccxtExchangeSpecificParamFactory interface {
 	getParamsForAddOrder(submitMode api.SubmitMode) interface{}
+	getParamsForGetTradeHistory() interface{}
 }
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
@@ -228,6 +229,11 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 		return nil, fmt.Errorf("error while fetching trade history for trading pair '%s': %s", pairString, e)
 	}
 
+	var maybeExchangeSpecificParams interface{}
+	if c.esParamFactory != nil {
+		maybeExchangeSpecificParams = c.esParamFactory.getParamsForGetTradeHistory()
+	}
+
 	trades := []model.Trade{}
 	for _, raw := range tradesRaw {
 		var t *model.Trade
@@ -235,6 +241,20 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 		if e != nil {
 			return nil, fmt.Errorf("error while reading trade: %s", e)
 		}
+
+		orderID := ""
+		if maybeExchangeSpecificParams != nil {
+			paramsMap := maybeExchangeSpecificParams.(map[string]interface{})
+			if oidRes, ok := paramsMap["order_id"]; ok {
+				oidFn := oidRes.(func(info interface{}) (string, error))
+				orderID, e = oidFn(raw.Info)
+				if e != nil {
+					return nil, fmt.Errorf("error while reading 'order_id' from raw.Info for exchange with specific params: %s", e)
+				}
+			}
+		}
+		t.OrderID = orderID
+
 		trades = append(trades, *t)
 	}
 
@@ -320,6 +340,7 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 		TransactionID: model.MakeTransactionID(rawTrade.ID),
 		Cost:          model.NumberFromFloat(rawTrade.Cost, feecCostPrecision),
 		Fee:           model.NumberFromFloat(rawTrade.Fee.Cost, feecCostPrecision),
+		// OrderID read by calling function depending on override set for exchange params in "orderId" field of Info object
 	}
 
 	if rawTrade.Side == "sell" {

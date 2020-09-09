@@ -786,6 +786,7 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 			TransactionID: model.MakeTransactionID(t.ID),
 			Cost:          price.Multiply(*vol),
 			Fee:           model.NumberFromFloat(baseFee, sdexOrderConstraints.PricePrecision),
+			// OrderID unavailable?
 		})
 
 		if cursor == cursorEnd {

@@ -499,6 +499,7 @@ func (k *krakenExchange) getTradeHistoryFromEndAscLimit50(tradingPair model.Trad
 				TransactionID: model.MakeTransactionID(_txid),
 				Cost:          model.MustNumberFromString(_cost, feeCostPrecision),
 				Fee:           model.MustNumberFromString(_fee, feeCostPrecision),
+				// OrderID unavailable?
 			})
 		}
 	}
@@ -577,6 +578,7 @@ func (k *krakenExchange) getTrades(pair *model.TradingPair, maybeCursor *int64) 
 				Timestamp:   model.MakeTimestamp(tInfo.Time),
 			},
 			// TransactionID unavailable
+			// don't know if OrderID is available
 			// Cost unavailable
 			// Fee unavailable
 		})

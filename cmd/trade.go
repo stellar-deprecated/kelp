@@ -51,6 +51,10 @@ var upgradeScripts = []*database.UpgradeScript{
 		kelpdb.SqlTradesTableAlter1,
 		kelpdb.SqlTradesIndexCreate3,
 	),
+	database.MakeUpgradeScript(6,
+		kelpdb.SqlStrategyMirrorTradeTriggersTableCreate,
+		kelpdb.SqlTradesTableAlter2,
+	),
 }
 
 const tradeExamples = `  kelp trade --botConf ./path/trader.cfg --strategy buysell --stratConf ./path/buysell.cfg
@@ -320,11 +324,13 @@ func makeStrategy(
 	exchangeShim api.ExchangeShim,
 	assetBase hProtocol.Asset,
 	assetQuote hProtocol.Asset,
+	marketID string,
 	ieif *plugins.IEIF,
 	tradingPair *model.TradingPair,
 	filterFactory *plugins.FilterFactory,
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
+	db *sql.DB,
 ) api.Strategy {
 	// setting the temp hack variables for the sdex price feeds
 	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
@@ -343,11 +349,13 @@ func makeStrategy(
 		tradingPair,
 		&assetBase,
 		&assetQuote,
+		marketID,
 		*options.strategy,
 		*options.stratConfigPath,
 		*options.simMode,
 		botConfig.IsTradingSdex(),
 		filterFactory,
+		db,
 	)
 	if e != nil {
 		l.Info("")
@@ -583,6 +591,15 @@ func runTradeCmd(options inputs) {
 		QuoteAsset:     assetQuote,
 		DB:             db,
 	}
+	baseString, e := assetDisplayFn(tradingPair.Base)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not convert base trading pair to string: %s", e))
+	}
+	quoteString, e := assetDisplayFn(tradingPair.Quote)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not convert quote trading pair to string: %s", e))
+	}
+	marketID := plugins.MakeMarketID(botConfig.TradingExchangeName(), baseString, quoteString)
 	strategy := makeStrategy(
 		l,
 		network,
@@ -592,11 +609,13 @@ func runTradeCmd(options inputs) {
 		exchangeShim,
 		assetBase,
 		assetQuote,
+		marketID,
 		ieif,
 		tradingPair,
 		filterFactory,
 		options,
 		threadTracker,
+		db,
 	)
 	fillTracker := makeFillTracker(
 		l,

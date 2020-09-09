@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -21,10 +22,12 @@ type strategyFactoryData struct {
 	tradingPair     *model.TradingPair
 	assetBase       *hProtocol.Asset
 	assetQuote      *hProtocol.Asset
+	marketID        string
 	stratConfigPath string
 	simMode         bool
 	isTradingSdex   bool
 	filterFactory   *FilterFactory
+	db              *sql.DB
 }
 
 // StrategyContainer contains the strategy factory method along with some metadata
@@ -38,6 +41,7 @@ type StrategyContainer struct {
 
 var ccxtExchangeSpecificParamFactoryMap = map[string]ccxtExchangeSpecificParamFactory{
 	"ccxt-coinbasepro": &ccxtExchangeSpecificParamFactoryCoinbasepro{},
+	"ccxt-binance":     &ccxtExchangeSpecificParamFactoryBinance{},
 }
 
 // strategies is a map of all the strategies available
@@ -69,7 +73,7 @@ var strategies = map[string]StrategyContainer{
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
 			utils.LogConfig(cfg)
-			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.ieif, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, &cfg, strategyFactoryData.simMode)
+			s, e := makeMirrorStrategy(strategyFactoryData.sdex, strategyFactoryData.ieif, strategyFactoryData.tradingPair, strategyFactoryData.assetBase, strategyFactoryData.assetQuote, strategyFactoryData.marketID, &cfg, strategyFactoryData.db, strategyFactoryData.simMode)
 			if e != nil {
 				return nil, fmt.Errorf("makeFn failed: %s", e)
 			}
@@ -174,11 +178,13 @@ func MakeStrategy(
 	tradingPair *model.TradingPair,
 	assetBase *hProtocol.Asset,
 	assetQuote *hProtocol.Asset,
+	marketID string,
 	strategy string,
 	stratConfigPath string,
 	simMode bool,
 	isTradingSdex bool,
 	filterFactory *FilterFactory,
+	db *sql.DB,
 ) (api.Strategy, error) {
 	log.Printf("Making strategy: %s\n", strategy)
 	if s, ok := strategies[strategy]; ok {
@@ -194,10 +200,12 @@ func MakeStrategy(
 			tradingPair:     tradingPair,
 			assetBase:       assetBase,
 			assetQuote:      assetQuote,
+			marketID:        marketID,
 			stratConfigPath: stratConfigPath,
 			simMode:         simMode,
 			isTradingSdex:   isTradingSdex,
 			filterFactory:   filterFactory,
+			db:              db,
 		})
 		if e != nil {
 			return nil, fmt.Errorf("cannot make '%s' strategy: %s", strategy, e)
@@ -223,12 +231,13 @@ type exchangeFactoryData struct {
 
 // ExchangeContainer contains the exchange factory method along with some metadata
 type ExchangeContainer struct {
-	SortOrder      uint16
-	Description    string
-	TradeEnabled   bool
-	Tested         bool
-	AtomicPostOnly bool
-	makeFn         func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error)
+	SortOrder       uint16
+	Description     string
+	TradeEnabled    bool
+	Tested          bool
+	AtomicPostOnly  bool
+	TradeHasOrderId bool
+	makeFn          func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error)
 }
 
 // exchanges is a map of all the exchange integrations available
@@ -256,6 +265,11 @@ func loadExchanges() {
 		"coinbasepro": true,
 	}
 
+	// marked as tradeHasOrderId if key exists in this map (regardless of bool value)
+	tradeHasOrderIdCcxtExchanges := map[string]bool{
+		"binance": true,
+	}
+
 	exchanges = &map[string]ExchangeContainer{
 		"kraken": {
 			SortOrder:    0,
@@ -280,14 +294,16 @@ func loadExchanges() {
 			boundExchangeName := exchangeName
 
 			_, atomicPostOnly := atomicPostOnlyCcxtExchanges[exchangeName]
+			_, tradeHasOrderId := tradeHasOrderIdCcxtExchanges[exchangeName]
 			// maybeEsParamFactory can be nil
 			maybeEsParamFactory := ccxtExchangeSpecificParamFactoryMap[key]
 			(*exchanges)[key] = ExchangeContainer{
-				SortOrder:      uint16(sortOrderIndex),
-				Description:    exchangeName + " is automatically added via ccxt-rest",
-				TradeEnabled:   true,
-				Tested:         tested,
-				AtomicPostOnly: atomicPostOnly,
+				SortOrder:       uint16(sortOrderIndex),
+				Description:     exchangeName + " is automatically added via ccxt-rest",
+				TradeEnabled:    true,
+				Tested:          tested,
+				AtomicPostOnly:  atomicPostOnly,
+				TradeHasOrderId: tradeHasOrderId,
 				makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 					return makeCcxtExchange(
 						boundExchangeName,
