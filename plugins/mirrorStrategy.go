@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 
 	"github.com/stellar/go/build"
@@ -13,6 +14,8 @@ import (
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
 )
+
+const debugLogOffersOrders = true
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
@@ -282,11 +285,44 @@ func (s *mirrorStrategy) UpdateWithOps(
 	}
 	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
 
+	placeSellOpsFirst := len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price)
+	if debugLogOffersOrders {
+		if placeSellOpsFirst {
+			log.Printf("---> passed placeSellOpsFirst condition where top bid (bids[0]) > first open ask offer (sellingAOffers[0]), placing sellOps first\n")
+		} else {
+			log.Printf("---> failed placeSellOpsFirst condition where top bid (bids[0]) > first open ask offer (sellingAOffers[0]), placing bidOps first\n")
+		}
+		log.Printf("---> buyingOffers:\n")
+		for _, o := range buyingAOffers {
+			price := float64(o.PriceR.N) / float64(o.PriceR.D)
+			invertedPrice := 1 / price
+			amountFloat, _ := strconv.ParseFloat(o.Amount, 64)
+			log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", o.ID, invertedPrice, amountFloat*price)
+		}
+		log.Printf("---> sellingOffers:\n")
+		for _, o := range sellingAOffers {
+			log.Printf("--->     offerID=%d, price=%s, amount=%s\n", o.ID, o.Price, o.Amount)
+		}
+		log.Printf("---> additional bid ops:\n")
+		for _, o := range buyOps {
+			mso := o.(*txnbuild.ManageSellOffer)
+			price, _ := strconv.ParseFloat(mso.Price, 64)
+			invertedPrice := 1 / price
+			amountFloat, _ := strconv.ParseFloat(mso.Amount, 64)
+			log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", mso.OfferID, invertedPrice, amountFloat*price)
+		}
+		log.Printf("---> additional ask ops:\n")
+		for _, o := range sellOps {
+			mso := o.(*txnbuild.ManageSellOffer)
+			log.Printf("--->     offerID=%d, price=%s, amount=%s\n", mso.OfferID, mso.Price, mso.Amount)
+		}
+	}
+
 	ops := []txnbuild.Operation{}
 	// add both deleteOps lists first because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
 	ops = append(ops, deleteBuyOps...)
 	ops = append(ops, deleteSellOps...)
-	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
+	if placeSellOpsFirst {
 		ops = append(ops, sellOps...)
 		ops = append(ops, buyOps...)
 	} else {
