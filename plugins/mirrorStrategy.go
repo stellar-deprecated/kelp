@@ -292,30 +292,14 @@ func (s *mirrorStrategy) UpdateWithOps(
 		} else {
 			log.Printf("---> failed placeSellOpsFirst condition where top bid (bids[0]) > first open ask offer (sellingAOffers[0]), placing bidOps first\n")
 		}
-		log.Printf("---> buyingOffers:\n")
-		for _, o := range buyingAOffers {
-			price := float64(o.PriceR.N) / float64(o.PriceR.D)
-			invertedPrice := 1 / price
-			amountFloat, _ := strconv.ParseFloat(o.Amount, 64)
-			log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", o.ID, invertedPrice, amountFloat*price)
-		}
-		log.Printf("---> sellingOffers:\n")
-		for _, o := range sellingAOffers {
-			log.Printf("--->     offerID=%d, price=%s, amount=%s\n", o.ID, o.Price, o.Amount)
-		}
-		log.Printf("---> additional bid ops:\n")
-		for _, o := range buyOps {
-			mso := o.(*txnbuild.ManageSellOffer)
-			price, _ := strconv.ParseFloat(mso.Price, 64)
-			invertedPrice := 1 / price
-			amountFloat, _ := strconv.ParseFloat(mso.Amount, 64)
-			log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", mso.OfferID, invertedPrice, amountFloat*price)
-		}
-		log.Printf("---> additional ask ops:\n")
-		for _, o := range sellOps {
-			mso := o.(*txnbuild.ManageSellOffer)
-			log.Printf("--->     offerID=%d, price=%s, amount=%s\n", mso.OfferID, mso.Price, mso.Amount)
-		}
+		printDebugOffersAndOps(
+			buyingAOffers,
+			sellingAOffers,
+			deleteBuyOps,
+			deleteSellOps,
+			buyOps,
+			sellOps,
+		)
 	}
 
 	ops := []txnbuild.Operation{}
@@ -331,6 +315,53 @@ func (s *mirrorStrategy) UpdateWithOps(
 	}
 
 	return api.ConvertOperation2TM(ops), nil
+}
+
+func printDebugOffersAndOps(
+	buyingAOffers []hProtocol.Offer,
+	sellingAOffers []hProtocol.Offer,
+	deleteBuyOps []txnbuild.Operation,
+	deleteSellOps []txnbuild.Operation,
+	buyOps []txnbuild.Operation,
+	sellOps []txnbuild.Operation,
+) {
+	log.Printf("---> buyingOffers:\n")
+	for _, o := range buyingAOffers {
+		price := float64(o.PriceR.N) / float64(o.PriceR.D)
+		invertedPrice := 1 / price
+		amountFloat, _ := strconv.ParseFloat(o.Amount, 64)
+		log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", o.ID, invertedPrice, amountFloat*price)
+	}
+	log.Printf("---> sellingOffers:\n")
+	for _, o := range sellingAOffers {
+		log.Printf("--->     offerID=%d, price=%s, amount=%s\n", o.ID, o.Price, o.Amount)
+	}
+	log.Printf("---> deleteBuyOps:\n")
+	for _, o := range deleteBuyOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		price, _ := strconv.ParseFloat(mso.Price, 64)
+		invertedPrice := 1 / price
+		amountFloat, _ := strconv.ParseFloat(mso.Amount, 64)
+		log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", mso.OfferID, invertedPrice, amountFloat*price)
+	}
+	log.Printf("---> deleteSellOps:\n")
+	for _, o := range deleteSellOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		log.Printf("--->     offerID=%d, price=%s, amount=%s\n", mso.OfferID, mso.Price, mso.Amount)
+	}
+	log.Printf("---> additional bid ops:\n")
+	for _, o := range buyOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		price, _ := strconv.ParseFloat(mso.Price, 64)
+		invertedPrice := 1 / price
+		amountFloat, _ := strconv.ParseFloat(mso.Amount, 64)
+		log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", mso.OfferID, invertedPrice, amountFloat*price)
+	}
+	log.Printf("---> additional ask ops:\n")
+	for _, o := range sellOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		log.Printf("--->     offerID=%d, price=%s, amount=%s\n", mso.OfferID, mso.Price, mso.Amount)
+	}
 }
 
 func (s *mirrorStrategy) updateLevels(
