@@ -83,13 +83,13 @@ func (f *orderConstraintsFilter) Apply(
 
 func (f *orderConstraintsFilter) shouldKeepOffer(op *txnbuild.ManageSellOffer) (bool, error) {
 	// delete operations should never be dropped
-	if op.Amount == "0" {
-		return true, nil
-	}
-
 	amountFloat, e := strconv.ParseFloat(op.Amount, 64)
 	if e != nil {
 		return false, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
+	}
+	if op.Amount == "0" || amountFloat == 0.0 {
+		log.Printf("orderConstraintsFilter: keeping delete operation with amount = %s\n", op.Amount)
+		return true, nil
 	}
 
 	isSell, e := utils.IsSelling(f.baseAsset, f.quoteAsset, op.Selling, op.Buying)
