@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 
 	"github.com/stellar/go/build"
@@ -13,6 +14,8 @@ import (
 	"github.com/stellar/kelp/support/toml"
 	"github.com/stellar/kelp/support/utils"
 )
+
+const debugLogOffersOrders = true
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
@@ -248,7 +251,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 		backingAssetType: "base",
 		isBackingBuy:     false,
 	}
-	buyOps, e := s.updateLevels(
+	deleteBuyOps, buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
 		s.sdex.ModifyBuyOffer,
@@ -268,7 +271,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 		backingAssetType: "quote",
 		isBackingBuy:     true,
 	}
-	sellOps, e := s.updateLevels(
+	deleteSellOps, sellOps, e := s.updateLevels(
 		sellingAOffers,
 		asks,
 		s.sdex.ModifySellOffer,
@@ -282,8 +285,28 @@ func (s *mirrorStrategy) UpdateWithOps(
 	}
 	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
 
+	placeSellOpsFirst := len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price)
+	if debugLogOffersOrders {
+		if placeSellOpsFirst {
+			log.Printf("---> passed placeSellOpsFirst condition where top bid (bids[0]) > first open ask offer (sellingAOffers[0]), placing sellOps first\n")
+		} else {
+			log.Printf("---> failed placeSellOpsFirst condition where top bid (bids[0]) > first open ask offer (sellingAOffers[0]), placing bidOps first\n")
+		}
+		printDebugOffersAndOps(
+			buyingAOffers,
+			sellingAOffers,
+			deleteBuyOps,
+			deleteSellOps,
+			buyOps,
+			sellOps,
+		)
+	}
+
 	ops := []txnbuild.Operation{}
-	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
+	// add both deleteOps lists first because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
+	ops = append(ops, deleteBuyOps...)
+	ops = append(ops, deleteSellOps...)
+	if placeSellOpsFirst {
 		ops = append(ops, sellOps...)
 		ops = append(ops, buyOps...)
 	} else {
@@ -294,6 +317,53 @@ func (s *mirrorStrategy) UpdateWithOps(
 	return api.ConvertOperation2TM(ops), nil
 }
 
+func printDebugOffersAndOps(
+	buyingAOffers []hProtocol.Offer,
+	sellingAOffers []hProtocol.Offer,
+	deleteBuyOps []txnbuild.Operation,
+	deleteSellOps []txnbuild.Operation,
+	buyOps []txnbuild.Operation,
+	sellOps []txnbuild.Operation,
+) {
+	log.Printf("---> buyingOffers:\n")
+	for _, o := range buyingAOffers {
+		price := float64(o.PriceR.N) / float64(o.PriceR.D)
+		invertedPrice := 1 / price
+		amountFloat, _ := strconv.ParseFloat(o.Amount, 64)
+		log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", o.ID, invertedPrice, amountFloat*price)
+	}
+	log.Printf("---> sellingOffers:\n")
+	for _, o := range sellingAOffers {
+		log.Printf("--->     offerID=%d, price=%s, amount=%s\n", o.ID, o.Price, o.Amount)
+	}
+	log.Printf("---> deleteBuyOps:\n")
+	for _, o := range deleteBuyOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		price, _ := strconv.ParseFloat(mso.Price, 64)
+		invertedPrice := 1 / price
+		amountFloat, _ := strconv.ParseFloat(mso.Amount, 64)
+		log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", mso.OfferID, invertedPrice, amountFloat*price)
+	}
+	log.Printf("---> deleteSellOps:\n")
+	for _, o := range deleteSellOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		log.Printf("--->     offerID=%d, price=%s, amount=%s\n", mso.OfferID, mso.Price, mso.Amount)
+	}
+	log.Printf("---> additional bid ops:\n")
+	for _, o := range buyOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		price, _ := strconv.ParseFloat(mso.Price, 64)
+		invertedPrice := 1 / price
+		amountFloat, _ := strconv.ParseFloat(mso.Amount, 64)
+		log.Printf("--->     offerID=%d, price=%.7f, amount=%.7f\n", mso.OfferID, invertedPrice, amountFloat*price)
+	}
+	log.Printf("---> additional ask ops:\n")
+	for _, o := range sellOps {
+		mso := o.(*txnbuild.ManageSellOffer)
+		log.Printf("--->     offerID=%d, price=%s, amount=%s\n", mso.OfferID, mso.Price, mso.Amount)
+	}
+}
+
 func (s *mirrorStrategy) updateLevels(
 	oldOffers []hProtocol.Offer,
 	newOrders []model.Order,
@@ -302,14 +372,14 @@ func (s *mirrorStrategy) updateLevels(
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 	bc balanceCoordinator,
-) ([]txnbuild.Operation, error) {
+) ([]txnbuild.Operation /*deleteOps*/, []txnbuild.Operation /*ops*/, error) {
 	ops := []txnbuild.Operation{}
 	deleteOps := []txnbuild.Operation{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
-				return nil, e
+				return nil, nil, e
 			}
 			if modifyOp != nil {
 				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
@@ -339,7 +409,7 @@ func (s *mirrorStrategy) updateLevels(
 
 			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price.AsFloat(), vol.AsFloat(), incrementalNativeAmountRaw)
 			if e != nil {
-				return nil, e
+				return nil, nil, e
 			}
 			if mo != nil {
 				ops = append(ops, mo)
@@ -355,7 +425,7 @@ func (s *mirrorStrategy) updateLevels(
 		for i := 0; i < len(newOrders); i++ {
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
-				return nil, e
+				return nil, nil, e
 			}
 			if modifyOp != nil {
 				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
@@ -375,11 +445,8 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	}
 
-	// prepend deleteOps because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
-	allOps := append(deleteOps, ops...)
-	log.Printf("prepended %d deleteOps\n", len(deleteOps))
-
-	return allOps, nil
+	log.Printf("returning %d deleteOps and %d ops\n", len(deleteOps), len(ops))
+	return deleteOps, ops, nil
 }
 
 // doModifyOffer returns a new modifyOp, deleteOp, error
