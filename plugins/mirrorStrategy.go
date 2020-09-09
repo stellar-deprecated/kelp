@@ -248,7 +248,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 		backingAssetType: "base",
 		isBackingBuy:     false,
 	}
-	buyOps, e := s.updateLevels(
+	deleteBuyOps, buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
 		s.sdex.ModifyBuyOffer,
@@ -268,7 +268,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 		backingAssetType: "quote",
 		isBackingBuy:     true,
 	}
-	sellOps, e := s.updateLevels(
+	deleteSellOps, sellOps, e := s.updateLevels(
 		sellingAOffers,
 		asks,
 		s.sdex.ModifySellOffer,
@@ -283,6 +283,9 @@ func (s *mirrorStrategy) UpdateWithOps(
 	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
 
 	ops := []txnbuild.Operation{}
+	// add both deleteOps lists first because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
+	ops = append(ops, deleteBuyOps...)
+	ops = append(ops, deleteSellOps...)
 	if len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price) {
 		ops = append(ops, sellOps...)
 		ops = append(ops, buyOps...)
@@ -302,14 +305,14 @@ func (s *mirrorStrategy) updateLevels(
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 	bc balanceCoordinator,
-) ([]txnbuild.Operation, error) {
+) ([]txnbuild.Operation /*deleteOps*/, []txnbuild.Operation /*ops*/, error) {
 	ops := []txnbuild.Operation{}
 	deleteOps := []txnbuild.Operation{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
-				return nil, e
+				return nil, nil, e
 			}
 			if modifyOp != nil {
 				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
@@ -339,7 +342,7 @@ func (s *mirrorStrategy) updateLevels(
 
 			mo, e := createOffer(*s.baseAsset, *s.quoteAsset, price.AsFloat(), vol.AsFloat(), incrementalNativeAmountRaw)
 			if e != nil {
-				return nil, e
+				return nil, nil, e
 			}
 			if mo != nil {
 				ops = append(ops, mo)
@@ -355,7 +358,7 @@ func (s *mirrorStrategy) updateLevels(
 		for i := 0; i < len(newOrders); i++ {
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
-				return nil, e
+				return nil, nil, e
 			}
 			if modifyOp != nil {
 				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
@@ -375,11 +378,8 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	}
 
-	// prepend deleteOps because we want to delete offers first so we "free" up our liabilities capacity to place the new/modified offers
-	allOps := append(deleteOps, ops...)
-	log.Printf("prepended %d deleteOps\n", len(deleteOps))
-
-	return allOps, nil
+	log.Printf("returning %d deleteOps and %d ops\n", len(deleteOps), len(ops))
+	return deleteOps, ops, nil
 }
 
 // doModifyOffer returns a new modifyOp, deleteOp, error
