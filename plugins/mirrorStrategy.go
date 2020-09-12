@@ -723,10 +723,11 @@ func (s *mirrorStrategy) HandleFill(trade model.Trade) error {
 		transactionID)
 
 	// trigger fill tracking on backing exchange
-	_, e = s.backingFillTracker.FillTrackSingleIteration()
+	trades, e := s.backingFillTracker.FillTrackSingleIteration()
 	if e != nil {
 		return fmt.Errorf("unable to track a single iteration of fills from the backing exchange: %s", e)
 	}
+	log.Printf("found %d trades on load from backing exchange in HandleFill\n", len(trades))
 
 	return nil
 }
