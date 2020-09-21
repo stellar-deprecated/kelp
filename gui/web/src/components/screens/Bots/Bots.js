@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import BotCard from '../../molecules/BotCard/BotCard';
 import Button from '../../atoms/Button/Button';
 import EmptyList from '../../molecules/EmptyList/EmptyList';
@@ -6,6 +7,7 @@ import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import grid from '../../_styles/grid.module.scss';
 import autogenerate from '../../../kelp-ops-api/autogenerate';
 import listBots from '../../../kelp-ops-api/listBots';
+import Constants from '../../../Constants';
 
 class Bots extends Component {
   constructor(props) {
@@ -21,6 +23,12 @@ class Bots extends Component {
     
     this._asyncRequests = {};
   }
+
+  static propTypes = {
+    baseUrl: PropTypes.string.isRequired,
+    addError: PropTypes.func.isRequired,  // (backendError)
+    getErrors: PropTypes.func.isRequired, // (object_name, level)
+  };
 
   componentWillUnmount() {
     if (this._asyncRequests["listBots"]) {
@@ -99,20 +107,32 @@ class Bots extends Component {
         </ScreenHeader>
       );
 
-      let cards = this.state.bots.map((bot, index) => (
-        <BotCard
+      let cards = this.state.bots.map((bot, index) => {
+        const warnings = this.props.getErrors(bot.name, Constants.ErrorLevel.warning);
+        let numWarnings = 0;
+        if (warnings != null) {
+          numWarnings = warnings.length;
+        }
+
+        const errors = this.props.getErrors(bot.name, Constants.ErrorLevel.error);
+        let numErrors = 0;
+        if (errors != null) {
+          numErrors = errors.length;
+        }
+
+        return <BotCard
           key={index} 
           name={bot.name}
           history={this.props.history}
           running={bot.running}
           test={bot.test}
-          warnings={bot.warnings}
-          errors={bot.errors}
+          warnings={numWarnings}
+          errors={numErrors}
           // showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
           reload={this.fetchBots}
         />
-      ));
+      });
 
       inner = (
         <div>

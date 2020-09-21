@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from "react-router-dom";
+import Constants from './Constants';
 import styles from './App.module.scss';
 import Header from './components/molecules/Header/Header';
 import Button from './components/atoms/Button/Button';
@@ -23,11 +24,14 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      version: ""
+      version: "",
+      kelp_errors: {},
     };
 
     this.setVersion = this.setVersion.bind(this);
     this.quit = this.quit.bind(this);
+    this.addError = this.addError.bind(this);
+    this.getErrors = this.getErrors.bind(this);
     this._asyncRequests = {};
   }
 
@@ -73,6 +77,63 @@ class App extends Component {
     }
   }
 
+  addError(backendError) {
+    // TODO convert to hashID
+    const ID = backendError.message
+
+    // fetch object type from errors
+    let kelp_errors = this.state.kelp_errors;
+
+    if (!kelp_errors.hasOwnProperty(backendError.object_type)) {
+      kelp_errors[backendError.object_type] = {};
+    }
+    let botErrors = kelp_errors[backendError.object_type];
+    
+    if (!botErrors.hasOwnProperty(backendError.object_name)) {
+      botErrors[backendError.object_name] = {};
+    }
+    let namedError = botErrors[backendError.object_name];
+
+    if (!namedError.hasOwnProperty(backendError.level)) {
+      namedError[backendError.level] = {};
+    }
+    let levelErrors = namedError[backendError.level];
+
+    if (!levelErrors.hasOwnProperty(ID)) {
+      levelErrors[ID] = {
+        occurrences: [],
+        message: backendError.message,
+      };
+    }
+    let idError = levelErrors[ID];
+
+    // create new entry in list
+    idError.occurrences.push(backendError.date);
+
+    // trigger state change
+    this.setState({ "kelp_errors": kelp_errors });
+  }
+
+  getErrors(object_type, object_name, level) {
+    const kelp_errors = this.state.kelp_errors;
+
+    if (!kelp_errors.hasOwnProperty(object_type)) {
+      return null;
+    }
+    const botErrors = kelp_errors[object_type];
+    
+    if (!botErrors.hasOwnProperty(object_name)) {
+      return null;
+    }
+    const namedError = botErrors[object_name];
+
+    if (!namedError.hasOwnProperty(level)) {
+      return null;
+    }
+    const levelErrors = namedError[level];
+    return levelErrors;
+  }
+
   render() {
     const enablePubnetBots = false;
 
@@ -87,13 +148,15 @@ class App extends Component {
       Kelp UI is only available on the Stellar Test Network
     </div>);
 
+    const getBotErrors = this.getErrors.bind(this, Constants.ErrorType.bot);
+
     return (
       <div>
         <div>{banner}</div>
         <Router>
           <Header version={this.state.version}/>
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl}/>}
+            render={(props) => <Bots {...props} baseUrl={baseUrl} addError={this.addError} getErrors={getBotErrors}/>}
             />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
