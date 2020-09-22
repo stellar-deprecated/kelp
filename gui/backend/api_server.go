@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
@@ -80,9 +81,51 @@ func (s *APIServer) writeError(w http.ResponseWriter, message string) {
 	w.Write([]byte(message))
 }
 
-// ErrorResponse represents an error
+// ErrorResponse represents an error (deprecated)
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+// KelpError represents an error
+type KelpError struct {
+	ObjectType errorType  `json:"object_type"`
+	ObjectName string     `json:"object_name"`
+	Date       time.Time  `json:"date"`
+	Level      errorLevel `json:"level"`
+	Message    string     `json:"message"`
+}
+
+// String is the Stringer method
+func (ke *KelpError) String() string {
+	return fmt.Sprintf("KelpError[objectType=%s, objectName=%s, date=%s, level=%s, message=%s]", ke.ObjectType, ke.ObjectName, ke.Date.Format("20060102T150405MST"), ke.Level, ke.Message)
+}
+
+// KelpErrorResponseWrapper is the outer object that contains the Kelp Error
+type KelpErrorResponseWrapper struct {
+	KelpError KelpError `json:"kelp_error"`
+}
+
+func makeKelpErrorResponseWrapper(
+	objectType errorType,
+	objectName string,
+	date time.Time,
+	level errorLevel,
+	message string,
+) KelpErrorResponseWrapper {
+	return KelpErrorResponseWrapper{
+		KelpError: KelpError{
+			ObjectType: objectType,
+			ObjectName: objectName,
+			Date:       date,
+			Level:      level,
+			Message:    message,
+		},
+	}
+}
+
+// String is the Stringer method
+func (kerw *KelpErrorResponseWrapper) String() string {
+	return fmt.Sprintf("KelpErrorResponseWrapper[kelp_error=%s]", kerw.KelpError)
 }
 
 func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
@@ -96,6 +139,19 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 		return
 	}
 	w.Write(marshalledJson)
+}
+
+func (s *APIServer) writeKelpError(w http.ResponseWriter, kerw KelpErrorResponseWrapper) {
+	w.WriteHeader(http.StatusInternalServerError)
+	log.Printf("writing error: %s\n", kerw)
+
+	marshalledJSON, e := json.MarshalIndent(kerw, "", "    ")
+	if e != nil {
+		log.Printf("unable to marshal json with indentation: %s\n", e)
+		w.Write([]byte(fmt.Sprintf("unable to marshal json with indentation: %s\n", e)))
+		return
+	}
+	w.Write(marshalledJSON)
 }
 
 func (s *APIServer) writeJson(w http.ResponseWriter, v interface{}) {
