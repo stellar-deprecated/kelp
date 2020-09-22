@@ -83,19 +83,13 @@ class BotCard extends Component {
     this._asyncRequests = {};
   }
 
-  static defaultProps = {
-    name: '',
-    test: true,
-    warnings: 0,
-    errors: 0, 
-  }
-
   static propTypes = {
-    name: PropTypes.string,
-    test: PropTypes.bool,
-    warnings: PropTypes.number,
-    errors: PropTypes.number,
-    baseUrl: PropTypes.string, 
+    name: PropTypes.string.isRequired,
+    baseUrl: PropTypes.string.isRequired,
+    addError: PropTypes.func.isRequired,
+    getErrorLevelInfoForBot: PropTypes.func.isRequired,
+    getErrorLevelWarningForBot: PropTypes.func.isRequired,
+    getErrorLevelErrorForBot: PropTypes.func.isRequired,
   };
 
   checkState() {

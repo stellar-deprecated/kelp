@@ -108,26 +108,15 @@ class Bots extends Component {
       );
 
       let cards = this.state.bots.map((bot, index) => {
-        const warnings = this.props.getErrors(bot.name, Constants.ErrorLevel.warning);
-        let numWarnings = 0;
-        if (warnings != null) {
-          numWarnings = warnings.length;
-        }
-
-        const errors = this.props.getErrors(bot.name, Constants.ErrorLevel.error);
-        let numErrors = 0;
-        if (errors != null) {
-          numErrors = errors.length;
-        }
-
         return <BotCard
           key={index} 
           name={bot.name}
           history={this.props.history}
           running={bot.running}
-          test={bot.test}
-          warnings={numWarnings}
-          errors={numErrors}
+          addError={(kelpError) => this.props.addError(kelpError)}
+          getErrorLevelInfoForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.info)}
+          getErrorLevelWarningForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.warning)}
+          getErrorLevelErrorForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.error)}
           // showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
           reload={this.fetchBots}

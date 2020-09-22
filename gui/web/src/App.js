@@ -118,20 +118,22 @@ class App extends Component {
     const kelp_errors = this.state.kelp_errors;
 
     if (!kelp_errors.hasOwnProperty(object_type)) {
-      return null;
+      return [];
     }
     const botErrors = kelp_errors[object_type];
     
     if (!botErrors.hasOwnProperty(object_name)) {
-      return null;
+      return [];
     }
     const namedError = botErrors[object_name];
 
     if (!namedError.hasOwnProperty(level)) {
-      return null;
+      return [];
     }
     const levelErrors = namedError[level];
-    return levelErrors;
+
+    // return as an array
+    return Object.values(levelErrors);
   }
 
   render() {
