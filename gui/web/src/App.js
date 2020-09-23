@@ -9,7 +9,6 @@ import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
 import Welcome from './components/molecules/Welcome/Welcome';
-// import Modal from './components/molecules/Modal/Modal';
 
 let baseUrl = function () {
   let origin = window.location.origin
@@ -170,12 +169,6 @@ class App extends Component {
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
             />
         </Router>
-        {/* <Modal 
-          type="error"
-          title="Harry the Green Plankton has two warnings:"
-          actionLabel="Go to bot settings"
-          bullets={['Funds are low', 'Another warning example']}
-        /> */}
         <Welcome quitFn={this.quit}/>
       </div>
     );

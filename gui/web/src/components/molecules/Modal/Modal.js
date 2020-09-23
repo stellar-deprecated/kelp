@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import styles from './Modal.module.scss';
 import classNames from 'classnames';
 import Icon from '../../atoms/Icon/Icon';
@@ -20,6 +21,15 @@ class Modal extends Component {
     actionLabel: 'Close',
   }
 
+  static propTypes = {
+    type: PropTypes.string,
+    title: PropTypes.string,
+    text: PropTypes.string,
+    bullets: PropTypes.array,
+    actionLabel: PropTypes.string,
+    onClose: PropTypes.func.isRequired,
+  };
+
   open() {
     this.setState({
       isOpened: true,
@@ -30,6 +40,7 @@ class Modal extends Component {
     this.setState({
       isOpened: false,
     })
+    this.props.onClose();
   }
 
   render() {

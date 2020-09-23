@@ -8,12 +8,14 @@ import grid from '../../_styles/grid.module.scss';
 import autogenerate from '../../../kelp-ops-api/autogenerate';
 import listBots from '../../../kelp-ops-api/listBots';
 import Constants from '../../../Constants';
+import Modal from '../../molecules/Modal/Modal';
 
 class Bots extends Component {
   constructor(props) {
     super(props);
     this.state = {
       bots: [],
+      activeErrors: null,
     };
  
     this.fetchBots = this.fetchBots.bind(this);
@@ -117,6 +119,11 @@ class Bots extends Component {
           getErrorLevelInfoForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.info)}
           getErrorLevelWarningForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.warning)}
           getErrorLevelErrorForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.error)}
+          setModal={(level, errorList) => {
+            this.setState({
+              activeErrors: { level: level, message: errorList[0].message }
+            });
+          } }
           // showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
           reload={this.fetchBots}
@@ -133,9 +140,23 @@ class Bots extends Component {
       setTimeout(this.fetchBots, 1000);
     }
 
+    let modalWindow = null;
+    if (this.state.activeErrors) {
+      modalWindow = (<Modal 
+        type={this.state.activeErrors.level}
+        title={this.state.activeErrors.message}
+        actionLabel={"Dismiss"}
+        bullets={["Bullet 1", "Bullet 2"]}
+        onClose={() => {
+          this.setState({ activeErrors: null });
+        }}
+      />);
+    }
+
     return (
       <div>
-        <div className={grid.container}> 
+        <div className={grid.container}>
+          {modalWindow}
           {inner}
         </div>
       </div>

@@ -6,12 +6,25 @@ import Icon from '../Icon/Icon';
 class Pill extends Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
-    uniques: PropTypes.number,
-    total: PropTypes.number,
+    errors: PropTypes.array.isRequired,
+    onClick: PropTypes.func.isRequired,
   };
 
+  calculateErrorNumbers(errorObj) {
+    const uniques = errorObj.length;
+    const total = errorObj
+        .map((errorElem) => errorElem.occurrences.length)
+        .reduce((total, num) => (total + num), 0);
+        
+    return {
+      uniques: uniques,
+      total: total,
+    };
+  }
+
   render() {
-    if (!this.props.uniques) {
+    const errorNumbers = this.calculateErrorNumbers(this.props.errors);
+    if (!errorNumbers.uniques) {
       return null;
     }
 
@@ -23,12 +36,12 @@ class Pill extends Component {
     }
 
     return (
-      <div className={styles[this.props.type]}>
+      <div className={styles[this.props.type]} onClick={this.props.onClick}>
         <Icon className={styles.icon} symbol={symbolName} width={'11px'} height={'11px'}></Icon>
-        <span>{this.props.uniques}</span>
+        <span>{errorNumbers.uniques}</span>
         <span className={styles.spacer}/>
         <span>(</span>
-        <span>{this.props.total}</span>
+        <span>{errorNumbers.total}</span>
         <span>)</span>
       </div>
     );
