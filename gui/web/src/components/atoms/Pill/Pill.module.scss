@@ -11,6 +11,11 @@
     align-items: center;
 }
 
+.info {
+    composes: _pill;
+    background-color: $color-contrast-4;
+}
+
 .warning {
     composes: _pill;
     background-color: $color-warning;

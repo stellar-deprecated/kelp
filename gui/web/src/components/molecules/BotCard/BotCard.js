@@ -123,8 +123,8 @@ class BotCard extends Component {
         }
 
         delete _this._asyncRequests["botInfo"];
-        if (resp.error) {
-          // do nothing
+        if (resp.kelp_error) {
+          this.props.addError(resp.kelp_error);
         } else if (JSON.stringify(resp) !== "{}") {
           _this.setState({
             botInfo: resp,
@@ -403,8 +403,9 @@ class BotCard extends Component {
         <div className={styles.secondColumn}>
           <div className={styles.notificationsLine}>
             <PillGroup>
-              <Pill number={this.props.warnings} type={'warning'}/>
-              <Pill number={this.props.errors} type={'error'}/>
+              <Pill number={this.props.getErrorLevelInfoForBot().length} type="info"/>
+              <Pill number={this.props.getErrorLevelWarningForBot().length} type="warning"/>
+              <Pill number={this.props.getErrorLevelErrorForBot().length} type="error"/>
             </PillGroup>
           </div>
           <BotBidAskInfo
