@@ -79,6 +79,7 @@ class BotCard extends Component {
     this.showOffers = this.showOffers.bind(this);
     this.showMarket = this.showMarket.bind(this);
     this.callDeleteBot = this.callDeleteBot.bind(this);
+    this.calculateErrorNumbers = this.calculateErrorNumbers.bind(this);
 
     this._asyncRequests = {};
   }
@@ -326,6 +327,18 @@ class BotCard extends Component {
     window.open(link);
   }
 
+  calculateErrorNumbers(errorObj) {
+    const uniques = errorObj.length;
+    const total = errorObj
+        .map((errorElem) => errorElem.occurrences.length)
+        .reduce((total, num) => (total + num), 0);
+        
+    return {
+      uniques: uniques,
+      total: total,
+    };
+  }
+
   render() {
     let popover = "";
     if (this.state.popoverVisible) {
@@ -349,6 +362,10 @@ class BotCard extends Component {
         </div>
       );
     }
+
+    const errorInfo = this.calculateErrorNumbers(this.props.getErrorLevelInfoForBot());
+    const errorWarning = this.calculateErrorNumbers(this.props.getErrorLevelWarningForBot());
+    const errorError = this.calculateErrorNumbers(this.props.getErrorLevelErrorForBot());
 
     return (
       <div className={styles.card}>
@@ -403,9 +420,9 @@ class BotCard extends Component {
         <div className={styles.secondColumn}>
           <div className={styles.notificationsLine}>
             <PillGroup>
-              <Pill number={this.props.getErrorLevelInfoForBot().length} type="info"/>
-              <Pill number={this.props.getErrorLevelWarningForBot().length} type="warning"/>
-              <Pill number={this.props.getErrorLevelErrorForBot().length} type="error"/>
+              <Pill uniques={errorInfo.uniques} total={errorInfo.total} type="info"/>
+              <Pill uniques={errorWarning.uniques} total={errorWarning.total} type="warning"/>
+              <Pill uniques={errorError.uniques} total={errorError.total} type="error"/>
             </PillGroup>
           </div>
           <BotBidAskInfo

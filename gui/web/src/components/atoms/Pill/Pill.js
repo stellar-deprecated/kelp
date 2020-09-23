@@ -6,11 +6,12 @@ import Icon from '../Icon/Icon';
 class Pill extends Component {
   static propTypes = {
     type: PropTypes.string.isRequired,
-    number: PropTypes.number,
+    uniques: PropTypes.number,
+    total: PropTypes.number,
   };
 
   render() {
-    if (!this.props.number) {
+    if (!this.props.uniques) {
       return null;
     }
 
@@ -24,7 +25,11 @@ class Pill extends Component {
     return (
       <div className={styles[this.props.type]}>
         <Icon className={styles.icon} symbol={symbolName} width={'11px'} height={'11px'}></Icon>
-        <span>{this.props.number}</span>
+        <span>{this.props.uniques}</span>
+        <span className={styles.spacer}/>
+        <span>(</span>
+        <span>{this.props.total}</span>
+        <span>)</span>
       </div>
     );
   }
