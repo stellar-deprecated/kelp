@@ -16,6 +16,8 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -44,6 +46,7 @@ type Trader struct {
 	fixedIterations                *uint64
 	dataKey                        *model.BotKey
 	alert                          api.Alert
+	tracker                        *metrics.Tracker
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -80,6 +83,7 @@ func MakeTrader(
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
+	tracker *metrics.Tracker,
 ) *Trader {
 	return &Trader{
 		api:                            api,
@@ -103,6 +107,7 @@ func MakeTrader(
 		fixedIterations:                fixedIterations,
 		dataKey:                        dataKey,
 		alert:                          alert,
+		tracker:                        tracker,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
@@ -117,6 +122,11 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
+			if success {
+				l := logger.MakeBasicLogger()
+				go t.tracker.SendUpdateEvent(l)
+			}
+
 			if t.fixedIterations != nil && success {
 				*t.fixedIterations = *t.fixedIterations - 1
 				if *t.fixedIterations <= 0 {

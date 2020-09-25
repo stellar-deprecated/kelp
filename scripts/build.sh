@@ -235,6 +235,12 @@ then
     fi
 fi
 
+# TODO: Add check for -d (but not df).
+if [ -z "$AMPLITUDE_API_KEY" ]
+then
+    echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
+fi
+
 echo ""
 echo ""
 install_web_dependencies
