@@ -16,7 +16,6 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
-	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -46,7 +45,7 @@ type Trader struct {
 	fixedIterations                *uint64
 	dataKey                        *model.BotKey
 	alert                          api.Alert
-	tracker                        *metrics.Tracker
+	metricsTracker                 *metrics.MetricsTracker
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -83,7 +82,7 @@ func MakeTrader(
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
-	tracker *metrics.Tracker,
+	metricsTracker *metrics.MetricsTracker,
 ) *Trader {
 	return &Trader{
 		api:                            api,
@@ -107,7 +106,7 @@ func MakeTrader(
 		fixedIterations:                fixedIterations,
 		dataKey:                        dataKey,
 		alert:                          alert,
-		tracker:                        tracker,
+		metricsTracker:                 metricsTracker,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
@@ -123,8 +122,9 @@ func (t *Trader) Start() {
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
 			if success {
-				l := logger.MakeBasicLogger()
-				go t.tracker.SendUpdateEvent(l)
+				t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+					t.metricsTracker.SendUpdateEvent(currentUpdateTime)
+				}, nil)
 			}
 
 			if t.fixedIterations != nil && success {
@@ -190,6 +190,10 @@ func (t *Trader) deleteAllOffers(isAsync bool) {
 			log.Fatalf("%scontinuing to exit after showing error during submission of delete offer ops: %s", logPrefix, e)
 			return
 		}
+
+		t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			t.metricsTracker.SendDeleteEvent(false)
+		}, nil)
 	} else {
 		log.Fatalf("%s...nothing to delete, exiting", logPrefix)
 	}

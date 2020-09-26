@@ -18,6 +18,7 @@ var gitBranch string
 var gitHash string
 var buildDate string
 var env string
+var amplitudeAPIKey string
 
 const envRelease = "release"
 const envDev = "dev"

@@ -333,7 +333,7 @@ func makeStrategy(
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
 	db *sql.DB,
-	tracker *metrics.Tracker,
+	tracker *metrics.MetricsTracker,
 ) api.Strategy {
 	// setting the temp hack variables for the sdex price feeds
 	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
@@ -382,7 +382,7 @@ func makeBot(
 	fillTracker api.FillTracker,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
-	metricsTracker *metrics.Tracker,
+	metricsTracker *metrics.MetricsTracker,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
 		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
@@ -505,19 +505,30 @@ func runTradeCmd(options inputs) {
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	tracker := metrics.MakeMetricsTracker(
+	userID := "12345" // TODO: Properly generate and save user ID.
+	httpClient := &http.Client{}
+	tracker, e := metrics.MakeMetricsTracker(
+		userID,
+		amplitudeAPIKey,
+		httpClient,
+		start,
 		version,
 		runtime.GOOS,
-		*options.ui,
+		runtime.GOARCH,
+		"", // TODO: Determine how to get GOARM.
+		guiVersion,
 		*options.strategy,
-		float64(botConfig.TickIntervalSeconds),
+		botConfig.TickIntervalSeconds,
 		botConfig.TradingExchange,
-		fmt.Sprintf("%s:%s/%s:%s", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB),
+		botConfig.TradingPair(),
 	)
-
-	e := tracker.SendStartupEvent(l)
 	if e != nil {
-		l.Info("could not send amplitude event")
+		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker with error: %s", e))
+	}
+
+	e = tracker.SendStartupEvent()
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not send startup event metric with error: %s", e))
 	}
 
 	// --- start initialization of objects ----
@@ -754,7 +765,7 @@ func makeFillTracker(
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 	accountID string,
-	metricsTracker *metrics.Tracker,
+	metricsTracker *metrics.MetricsTracker,
 ) api.FillTracker {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
@@ -849,7 +860,7 @@ func deleteAllOffersAndExit(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	threadTracker *multithreading.ThreadTracker,
-	tracker *metrics.Tracker,
+	tracker *metrics.MetricsTracker,
 ) {
 	l.Info("")
 	l.Infof("waiting for all outstanding threads (%d) to finish before loading offers to be deleted...", threadTracker.NumActiveThreads())
@@ -885,9 +896,9 @@ func deleteAllOffersAndExit(
 			return
 		}
 
-		e = tracker.SendDeleteEvent(l, true)
+		e = tracker.SendDeleteEvent(true)
 		if e != nil {
-			l.Info(fmt.Sprintf("Sending deletion data event failed with error: %v\n", e))
+			logger.Fatal(l, fmt.Errorf("could not send delete event metric with error: %s", e))
 			return
 		}
 
@@ -915,12 +926,15 @@ func setLogFile(l logger.Logger, filename string) {
 	defer logPanic(l, false)
 }
 
+var start time.Time
+
 func makeLogFilename(logPrefix string, botConfig trader.BotConfig) string {
-	t := time.Now().Format("20060102T150405MST")
+	start = time.Now()
+	startStr := start.Format("20060102T150405MST")
 	if botConfig.IsTradingSdex() {
-		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
+		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, startStr)
 	}
-	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
+	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, startStr)
 }
 
 func parseValueFeed(valueFeed string) (api.PriceFeed, error) {

@@ -158,6 +158,14 @@ func (b *BotConfig) AssetQuote() hProtocol.Asset {
 	return b.assetQuote
 }
 
+// TradingPair returns the config's trading pair name.
+func (b *BotConfig) TradingPair() string {
+	if b.IsTradingSdex() {
+		return fmt.Sprintf("%s:%s/%s:%s", b.AssetCodeA, b.IssuerA, b.AssetCodeB, b.IssuerB)
+	}
+	return fmt.Sprintf("%s/%s", b.AssetCodeA, b.AssetCodeB)
+}
+
 // IsTradingSdex returns whether the config is set to trade on SDEX
 func (b *BotConfig) IsTradingSdex() bool {
 	return b.isTradingSdex

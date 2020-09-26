@@ -204,6 +204,7 @@ echo "git hash: $GIT_HASH"
 echo "build date: $DATE"
 echo "env: $ENV"
 echo "LDFLAGS: $LDFLAGS"
+echo "amplitude api key: $AMPLITUDE_API_KEY"
 
 if [[ $ENV == "release" ]]
 then
@@ -211,6 +212,11 @@ then
 
     if [[ IS_TEST_MODE -eq 0 ]]
     then
+    # TODO: Add check for -d (but not df).
+        if [ -z "$AMPLITUDE_API_KEY" ]
+        then
+            echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
+        fi
         if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
         then
             if [[ FORCE_RELEASE -eq 0 ]]
@@ -233,12 +239,6 @@ then
             fi
         fi
     fi
-fi
-
-# TODO: Add check for -d (but not df).
-if [ -z "$AMPLITUDE_API_KEY" ]
-then
-    echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
 fi
 
 echo ""
