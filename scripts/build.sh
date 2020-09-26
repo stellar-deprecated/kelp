@@ -188,7 +188,7 @@ GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.guiVersion=$GUI_VERSION" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV")
+LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.guiVersion=$GUI_VERSION" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV" "github.com/stellar/kelp/cmd.amplitudeAPIKey=$AMPLITUDE_API_KEY")
 
 LDFLAGS=""
 LDFLAGS_UI=""

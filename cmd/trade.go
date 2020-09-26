@@ -505,6 +505,8 @@ func runTradeCmd(options inputs) {
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
+	// Fail if in release mode with undefined API key.
+
 	userID := "12345" // TODO: Properly generate and save user ID.
 	httpClient := &http.Client{}
 	tracker, e := metrics.MakeMetricsTracker(
