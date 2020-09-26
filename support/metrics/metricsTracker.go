@@ -15,8 +15,6 @@ import (
 
 var (
 	amplitudeAPIURL string = "https://api2.amplitude.com/2/httpapi"
-	// amplitudeAPIKey string = os.Getenv("AMPLITUDE_API_KEY")
-	amplitudeAPIKey string
 )
 
 const (
@@ -30,6 +28,7 @@ const (
 // Amplitude HTTP API.
 type MetricsTracker struct {
 	client *http.Client
+	apiKey string
 	userID string
 	props  commonProps
 	start  time.Time
@@ -43,7 +42,7 @@ type event struct {
 }
 
 // props holds the properties that we need for all Amplitude events.
-// This lives on the `MetricsTracker` struct, although
+// This lives on the `MetricsTracker` struct.
 // TODO: Add geodata.
 // TODO: Add cloud server information.
 type commonProps struct {
@@ -59,12 +58,6 @@ type commonProps struct {
 	SessionID          uuid.UUID `json:"session_id"`
 	SecondsSinceStart  float64   `json:"seconds_since_start"`
 }
-
-// // updateProps holds the properties for the update Amplitude event.
-// type updateProps struct {
-// 	commonProps
-// 	SecondsSinceStart float64 `json:"seconds_since_start"`
-// }
 
 // deleteProps holds the properties for the delete Amplitude event.
 // TODO: StackTrace may need to be a message instead of or in addition to a
@@ -91,7 +84,6 @@ func MakeMetricsTracker(
 	exchange string,
 	tradingPair string,
 ) (*MetricsTracker, error) {
-	amplitudeAPIKey = apiKey
 	sessionID, err := uuid.NewUUID()
 	if err != nil {
 		return nil, fmt.Errorf("could not generate uuid with error %s", err)
@@ -111,6 +103,7 @@ func MakeMetricsTracker(
 
 	return &MetricsTracker{
 		client: client,
+		apiKey: apiKey,
 		props:  props,
 		start:  start,
 	}, nil
@@ -144,7 +137,7 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 // TODO: Re-implement using `networking/JSONRequestDynamicHeaders`.
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
 	requestBody, e := json.Marshal(map[string]interface{}{
-		"api_key": amplitudeAPIKey,
+		"api_key": mt.apiKey,
 		"events": []event{event{
 			UserID:    "12345", // TODO: Determine actual user id.
 			EventType: eventType,

@@ -505,11 +505,11 @@ func runTradeCmd(options inputs) {
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	// Fail if in release mode with undefined API key.
+	// TODO: Fail if in release mode with undefined API key.
 
 	userID := "12345" // TODO: Properly generate and save user ID.
 	httpClient := &http.Client{}
-	tracker, e := metrics.MakeMetricsTracker(
+	metricsTracker, e := metrics.MakeMetricsTracker(
 		userID,
 		amplitudeAPIKey,
 		httpClient,
@@ -528,7 +528,7 @@ func runTradeCmd(options inputs) {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker with error: %s", e))
 	}
 
-	e = tracker.SendStartupEvent()
+	e = metricsTracker.SendStartupEvent()
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not send startup event metric with error: %s", e))
 	}
@@ -649,7 +649,7 @@ func runTradeCmd(options inputs) {
 		options,
 		threadTracker,
 		db,
-		tracker,
+		metricsTracker,
 	)
 	fillTracker := makeFillTracker(
 		l,
@@ -663,7 +663,7 @@ func runTradeCmd(options inputs) {
 		db,
 		threadTracker,
 		botConfig.DbOverrideAccountID,
-		tracker,
+		metricsTracker,
 	)
 	bot := makeBot(
 		l,
@@ -678,7 +678,7 @@ func runTradeCmd(options inputs) {
 		fillTracker,
 		threadTracker,
 		options,
-		tracker,
+		metricsTracker,
 	)
 	// --- end initialization of objects ---
 	// --- start initialization of services ---
@@ -693,7 +693,7 @@ func runTradeCmd(options inputs) {
 				// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 				// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 				// aren't outstanding offers.
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, tracker)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 			}
 		}()
 	}
@@ -705,7 +705,7 @@ func runTradeCmd(options inputs) {
 				l.Info("")
 				l.Errorf("problem encountered while running the fill tracker: %s", e)
 				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, tracker)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 			}
 		}()
 	}
@@ -862,7 +862,7 @@ func deleteAllOffersAndExit(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	threadTracker *multithreading.ThreadTracker,
-	tracker *metrics.MetricsTracker,
+	metricsTracker *metrics.MetricsTracker,
 ) {
 	l.Info("")
 	l.Infof("waiting for all outstanding threads (%d) to finish before loading offers to be deleted...", threadTracker.NumActiveThreads())
@@ -898,11 +898,12 @@ func deleteAllOffersAndExit(
 			return
 		}
 
-		e = tracker.SendDeleteEvent(true)
-		if e != nil {
-			logger.Fatal(l, fmt.Errorf("could not send delete event metric with error: %s", e))
-			return
-		}
+		threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			e := metricsTracker.SendDeleteEvent(true)
+			if e != nil {
+				logger.Fatal(l, fmt.Errorf("could not send delete event metric with error: %s", e))
+			}
+		}, nil)
 
 		for {
 			sleepSeconds := 10
