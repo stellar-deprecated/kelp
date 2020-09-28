@@ -204,7 +204,6 @@ echo "git hash: $GIT_HASH"
 echo "build date: $DATE"
 echo "env: $ENV"
 echo "LDFLAGS: $LDFLAGS"
-echo "amplitude api key: $AMPLITUDE_API_KEY"
 
 if [[ $ENV == "release" ]]
 then
