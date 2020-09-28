@@ -121,11 +121,12 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
-			if success {
-				t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-					t.metricsTracker.SendUpdateEvent(currentUpdateTime)
-				}, nil)
-			}
+			t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+				e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success)
+				if e != nil {
+					log.Printf("failed to send update event metric: %s", e)
+				}
+			}, nil)
 
 			if t.fixedIterations != nil && success {
 				*t.fixedIterations = *t.fixedIterations - 1

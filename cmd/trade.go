@@ -199,7 +199,7 @@ func makeFeeFn(l logger.Logger, botConfig trader.BotConfig, newClient *horizoncl
 	return feeFn
 }
 
-func readBotConfig(l logger.Logger, options inputs) trader.BotConfig {
+func readBotConfig(l logger.Logger, options inputs, botStart time.Time) trader.BotConfig {
 	var botConfig trader.BotConfig
 	e := config.Read(*options.botConfigPath, &botConfig)
 	utils.CheckConfigError(botConfig, e, *options.botConfigPath)
@@ -209,7 +209,7 @@ func readBotConfig(l logger.Logger, options inputs) trader.BotConfig {
 	}
 
 	if *options.logPrefix != "" {
-		logFilename := makeLogFilename(*options.logPrefix, botConfig)
+		logFilename := makeLogFilename(*options.logPrefix, botConfig, botStart)
 		setLogFile(l, logFilename)
 	}
 
@@ -501,36 +501,42 @@ func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfi
 
 func runTradeCmd(options inputs) {
 	l := logger.MakeBasicLogger()
-	botConfig := readBotConfig(l, options)
+	botStart := time.Now()
+	botConfig := readBotConfig(l, options, botStart)
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	// TODO: Fail if in release mode with undefined API key.
+	// TODO DS Fail if in release mode with undefined API key.
 
-	userID := "12345" // TODO: Properly generate and save user ID.
+	userID := "-1" // TODO DS Properly generate and save user ID.
 	httpClient := &http.Client{}
+	var guiVersionFlag string
+	if *options.ui {
+		guiVersionFlag = guiVersion
+	}
+
 	metricsTracker, e := metrics.MakeMetricsTracker(
 		userID,
 		amplitudeAPIKey,
 		httpClient,
-		start,
+		botStart,
 		version,
 		runtime.GOOS,
 		runtime.GOARCH,
-		"", // TODO: Determine how to get GOARM.
-		guiVersion,
+		"", // TODO DS Determine how to get GOARM.
+		guiVersionFlag,
 		*options.strategy,
 		botConfig.TickIntervalSeconds,
 		botConfig.TradingExchange,
 		botConfig.TradingPair(),
 	)
 	if e != nil {
-		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker with error: %s", e))
+		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
 	}
 
 	e = metricsTracker.SendStartupEvent()
 	if e != nil {
-		logger.Fatal(l, fmt.Errorf("could not send startup event metric with error: %s", e))
+		logger.Fatal(l, fmt.Errorf("could not send startup event metric: %s", e))
 	}
 
 	// --- start initialization of objects ----
@@ -864,6 +870,14 @@ func deleteAllOffersAndExit(
 	threadTracker *multithreading.ThreadTracker,
 	metricsTracker *metrics.MetricsTracker,
 ) {
+	// synchronous event to guarantee execution. we want to know whenever we enter the delete all offers logic. this function
+	// waits for all threads to be synchronous, which is equivalent to sending synchronously. we use
+	e := metricsTracker.SendDeleteEvent(true)
+	if e != nil {
+		// We don't want to crash upon failure, so offers will be deleted regardless of metric send.
+		l.Infof("could not send delete event metric: %s", e)
+	}
+
 	l.Info("")
 	l.Infof("waiting for all outstanding threads (%d) to finish before loading offers to be deleted...", threadTracker.NumActiveThreads())
 	threadTracker.Stop(multithreading.StopModeError)
@@ -898,13 +912,6 @@ func deleteAllOffersAndExit(
 			return
 		}
 
-		threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			e := metricsTracker.SendDeleteEvent(true)
-			if e != nil {
-				logger.Fatal(l, fmt.Errorf("could not send delete event metric with error: %s", e))
-			}
-		}, nil)
-
 		for {
 			sleepSeconds := 10
 			l.Infof("sleeping for %d seconds until our deletion is confirmed and we exit...(should never reach this line since we submit delete ops synchronously)\n", sleepSeconds)
@@ -929,15 +936,12 @@ func setLogFile(l logger.Logger, filename string) {
 	defer logPanic(l, false)
 }
 
-var start time.Time
-
-func makeLogFilename(logPrefix string, botConfig trader.BotConfig) string {
-	start = time.Now()
-	startStr := start.Format("20060102T150405MST")
+func makeLogFilename(logPrefix string, botConfig trader.BotConfig, botStart time.Time) string {
+	botStartStr := botStart.Format("20060102T150405MST")
 	if botConfig.IsTradingSdex() {
-		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, startStr)
+		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, botStartStr)
 	}
-	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, startStr)
+	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, botStartStr)
 }
 
 func parseValueFeed(valueFeed string) (api.PriceFeed, error) {

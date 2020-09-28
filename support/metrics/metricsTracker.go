@@ -1,14 +1,14 @@
 package metrics
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/stellar/kelp/support/networking"
 
 	"github.com/google/uuid"
 )
@@ -17,6 +17,8 @@ var (
 	amplitudeAPIURL string = "https://api2.amplitude.com/2/httpapi"
 )
 
+// Custom events in Amplitude should be named with "ce:event_name",
+// so the web console displays it as "[Custom] event_name".
 const (
 	startupEventName string = "ce:test_startup"
 	updateEventName  string = "ce:test_update"
@@ -43,24 +45,30 @@ type event struct {
 
 // props holds the properties that we need for all Amplitude events.
 // This lives on the `MetricsTracker` struct.
-// TODO: Add geodata.
-// TODO: Add cloud server information.
+// TODO DS Add geodata.
+// TODO DS Add cloud server information.
 type commonProps struct {
-	CLIVersion         string    `json:"cli_version"`
-	Goos               string    `json:"goos"`
-	Goarch             string    `json:"goarch"`
-	Goarm              string    `json:"goarm"`
-	GuiVersion         string    `json:"gui_version"`
-	Strategy           string    `json:"strategy"`
-	UpdateTimeInterval int32     `json:"update_time_interval"`
-	Exchange           string    `json:"exchange"`
-	TradingPair        string    `json:"trading_pair"`
-	SessionID          uuid.UUID `json:"session_id"`
-	SecondsSinceStart  float64   `json:"seconds_since_start"`
+	CliVersion                string    `json:"cli_version"`
+	Goos                      string    `json:"goos"`
+	Goarch                    string    `json:"goarch"`
+	Goarm                     string    `json:"goarm"`
+	GuiVersion                string    `json:"gui_version"`
+	Strategy                  string    `json:"strategy"`
+	UpdateTimeIntervalSeconds int32     `json:"update_time_interval_seconds"`
+	Exchange                  string    `json:"exchange"`
+	TradingPair               string    `json:"trading_pair"`
+	SessionID                 uuid.UUID `json:"session_id"`
+	SecondsSinceStart         float64   `json:"seconds_since_start"`
+}
+
+// updateProps holds the properties for the update Amplitude event.
+type updateProps struct {
+	commonProps
+	Success bool `json:"success"`
 }
 
 // deleteProps holds the properties for the delete Amplitude event.
-// TODO: StackTrace may need to be a message instead of or in addition to a
+// TODO DS StackTrace may need to be a message instead of or in addition to a
 // stack trace. The goal is to get crash logs, Amplitude may not enable this.
 type deleteProps struct {
 	commonProps
@@ -80,28 +88,29 @@ func MakeMetricsTracker(
 	goarm string,
 	guiVersion string,
 	strategy string,
-	updateTimeInterval int32,
+	updateTimeIntervalSeconds int32,
 	exchange string,
 	tradingPair string,
 ) (*MetricsTracker, error) {
-	sessionID, err := uuid.NewUUID()
-	if err != nil {
-		return nil, fmt.Errorf("could not generate uuid with error %s", err)
+	sessionID, e := uuid.NewUUID()
+	if e != nil {
+		return nil, fmt.Errorf("could not generate uuid with error %s", e)
 	}
 	props := commonProps{
-		CLIVersion:         version,
-		Goos:               goos,
-		Goarch:             goarch,
-		Goarm:              goarm,
-		GuiVersion:         guiVersion,
-		Strategy:           strategy,
-		UpdateTimeInterval: updateTimeInterval,
-		Exchange:           exchange,
-		TradingPair:        tradingPair,
-		SessionID:          sessionID,
+		CliVersion:                version,
+		Goos:                      goos,
+		Goarch:                    goarch,
+		Goarm:                     goarm,
+		GuiVersion:                guiVersion,
+		Strategy:                  strategy,
+		UpdateTimeIntervalSeconds: updateTimeIntervalSeconds,
+		Exchange:                  exchange,
+		TradingPair:               tradingPair,
+		SessionID:                 sessionID,
 	}
 
 	return &MetricsTracker{
+		userID: userID,
 		client: client,
 		apiKey: apiKey,
 		props:  props,
@@ -115,9 +124,13 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 }
 
 // SendUpdateEvent sends the update Amplitude event.
-func (mt *MetricsTracker) SendUpdateEvent(t time.Time) error {
-	updateProps := mt.props
-	updateProps.SecondsSinceStart = t.Sub(mt.start).Seconds()
+func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool) error {
+	commonProps := mt.props
+	commonProps.SecondsSinceStart = now.Sub(mt.start).Seconds()
+	updateProps := updateProps{
+		commonProps: commonProps,
+		Success:     success,
+	}
 	return mt.sendEvent(updateEventName, updateProps)
 }
 
@@ -134,12 +147,13 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 	return mt.sendEvent(deleteEventName, deleteProps)
 }
 
-// TODO: Re-implement using `networking/JSONRequestDynamicHeaders`.
+// TODO DS Re-implement using `networking/JSONRequestDynamicHeaders`.
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
 	requestBody, e := json.Marshal(map[string]interface{}{
 		"api_key": mt.apiKey,
 		"events": []event{event{
-			UserID:    "12345", // TODO: Determine actual user id.
+			UserID:    mt.userID,
+			DeviceID:  mt.userID,
 			EventType: eventType,
 			Props:     eventProps,
 		}},
@@ -150,19 +164,15 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		return fmt.Errorf("could not marshal json request: %s", e)
 	}
 
-	resp, e := http.Post(amplitudeAPIURL, "application/json", bytes.NewBuffer(requestBody))
+	log.Printf("Sending request: %v\n", string(requestBody))
+
+	var responseData interface{}
+	e = networking.JSONRequest(mt.client, "POST", amplitudeAPIURL, string(requestBody), map[string]string{}, &responseData, "")
 	if e != nil {
-		log.Print("could not post amplitude request")
 		return fmt.Errorf("could not post amplitude request: %s", e)
 	}
 
-	defer resp.Body.Close()
-
-	_, e = ioutil.ReadAll(resp.Body)
-	if e != nil {
-		log.Print("could not read response body")
-		return fmt.Errorf("could not read response body: %s", e)
-	}
+	log.Printf("Got response: %v\n", responseData)
 
 	log.Printf("Successfully sent event metric of type %s", eventType)
 	return nil
