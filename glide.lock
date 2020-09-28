@@ -1,5 +1,5 @@
-hash: 81ecd9a85e0426d4a6332659b95c7cc3f835614b02d5b9c007e90971359167f9
-updated: 2020-07-14T01:36:52.028479+05:30
+hash: 83108c02eb2ad0d13a6e02d194fafbe52f72a8e579de2ab4c4e91849c1ad3b4f
+updated: 2020-09-28T10:50:48.311552-07:00
 imports:
 - name: cloud.google.com/go
   version: 310d83b78255a1605c3bd3a9ffe1606cf09ebcac
@@ -65,6 +65,8 @@ imports:
   version: c8c88dbee036db4e4808d1f2ec8c2e15e11c3f80
   subpackages:
   - query
+- name: github.com/google/uuid
+  version: 0e4e31197428a347842d152773b4cace4645ca25
 - name: github.com/gorilla/schema
   version: 61751c9687439bf8cd824ad7eec0d21db1a1b804
 - name: github.com/hashicorp/hcl
