@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/stellar/kelp/support/networking"
@@ -13,13 +14,10 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	amplitudeAPIURL string = "https://api2.amplitude.com/2/httpapi"
-)
-
 // Custom events in Amplitude should be named with "ce:event_name",
 // so the web console displays it as "[Custom] event_name".
 const (
+	amplitudeAPIURL  string = "https://api2.amplitude.com/2/httpapi"
 	startupEventName string = "ce:test_startup"
 	updateEventName  string = "ce:test_update"
 	deleteEventName  string = "ce:test_delete"
@@ -36,6 +34,7 @@ type MetricsTracker struct {
 	start  time.Time
 }
 
+// TODO DS Investigate other fields to add to this top-level event.
 type event struct {
 	UserID    string      `json:"user_id"`
 	DeviceID  string      `json:"device_id"`
@@ -147,7 +146,6 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 	return mt.sendEvent(deleteEventName, deleteProps)
 }
 
-// TODO DS Re-implement using `networking/JSONRequestDynamicHeaders`.
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
 	requestBody, e := json.Marshal(map[string]interface{}{
 		"api_key": mt.apiKey,
@@ -160,11 +158,8 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 	})
 
 	if e != nil {
-		log.Print("could not marshal json request")
 		return fmt.Errorf("could not marshal json request: %s", e)
 	}
-
-	log.Printf("Sending request: %v\n", string(requestBody))
 
 	var responseData interface{}
 	e = networking.JSONRequest(mt.client, "POST", amplitudeAPIURL, string(requestBody), map[string]string{}, &responseData, "")
@@ -172,8 +167,11 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		return fmt.Errorf("could not post amplitude request: %s", e)
 	}
 
-	log.Printf("Got response: %v\n", responseData)
-
-	log.Printf("Successfully sent event metric of type %s", eventType)
+	responseDataStr := fmt.Sprintf("%v", responseData)
+	if strings.Contains(responseDataStr, "success") {
+		log.Printf("Successfully sent event metric of type '%s'", eventType)
+	} else {
+		log.Printf("Failed to send event metric of type '%s' (request=%s; response: %s)", eventType, string(requestBody), responseDataStr)
+	}
 	return nil
 }

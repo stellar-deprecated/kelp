@@ -193,7 +193,10 @@ func (t *Trader) deleteAllOffers(isAsync bool) {
 		}
 
 		t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			t.metricsTracker.SendDeleteEvent(false)
+			e := t.metricsTracker.SendDeleteEvent(false)
+			if e != nil {
+				log.Printf("failed to send update event metric: %s", e)
+			}
 		}, nil)
 	} else {
 		log.Fatalf("%s...nothing to delete, exiting", logPrefix)

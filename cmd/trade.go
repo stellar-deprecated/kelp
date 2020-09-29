@@ -333,7 +333,7 @@ func makeStrategy(
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
 	db *sql.DB,
-	tracker *metrics.MetricsTracker,
+	metricsTracker *metrics.MetricsTracker,
 ) api.Strategy {
 	// setting the temp hack variables for the sdex price feeds
 	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
@@ -341,7 +341,7 @@ func makeStrategy(
 		l.Info("")
 		l.Errorf("%s", e)
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, tracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 
 	strategy, e := plugins.MakeStrategy(
@@ -364,7 +364,7 @@ func makeStrategy(
 		l.Info("")
 		l.Errorf("%s", e)
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, tracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 	return strategy
 }
@@ -506,9 +506,7 @@ func runTradeCmd(options inputs) {
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	// TODO DS Fail if in release mode with undefined API key.
-
-	userID := "-1" // TODO DS Properly generate and save user ID.
+	userID := "1234567890" // TODO DS Properly generate and save user ID.
 	httpClient := &http.Client{}
 	var guiVersionFlag string
 	if *options.ui {
@@ -523,7 +521,7 @@ func runTradeCmd(options inputs) {
 		version,
 		runtime.GOOS,
 		runtime.GOARCH,
-		"", // TODO DS Determine how to get GOARM.
+		"unknown_todo", // TODO DS Determine how to get GOARM.
 		guiVersionFlag,
 		*options.strategy,
 		botConfig.TickIntervalSeconds,
