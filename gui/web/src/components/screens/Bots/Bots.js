@@ -150,7 +150,15 @@ class Bots extends Component {
     let modalWindow = null;
     if (activeError) {
       const indexedError = activeError.errorList[activeError.index];
-      modalWindow = (<Modal 
+      let onPrevious = null;
+      if (activeError.index > 0) {
+        onPrevious = () => {this.props.setActiveError(activeError.botName, activeError.level, activeError.errorList, activeError.index - 1)};
+      }
+      let onNext = null;
+      if (activeError.index < activeError.errorList.length - 1) {
+        onNext = () => {this.props.setActiveError(activeError.botName, activeError.level, activeError.errorList, activeError.index + 1)};
+      }
+      modalWindow = (<Modal
         type={activeError.level}
         title={indexedError.message}
         onClose={this.props.hideActiveError}
@@ -161,6 +169,8 @@ class Bots extends Component {
           const errorID = indexedError.message;
           this.props.removeError(activeError.botName, activeError.level, errorID);
         }}
+        onPrevious={onPrevious}
+        onNext={onNext}
       />);
     }
 

@@ -20,6 +20,8 @@ class Modal extends Component {
     bullets: PropTypes.array,
     actionLabel: PropTypes.string,
     onAction: PropTypes.func,
+    onPrevious: PropTypes.func, // displays button if the function is defined
+    onNext: PropTypes.func, // displays button if the function is defined
   };
 
   render() {
@@ -65,11 +67,19 @@ class Modal extends Component {
       );
     }
 
+    let prevButton = null;
+    if (this.props.onPrevious) {
+      prevButton = (<Button onClick={this.props.onPrevious}>Previous</Button>);
+    }
     const actionButton = (
       <Button onClick={this.props.onAction}>
         {this.props.actionLabel}
       </Button>
     );
+    let nextButton = null;
+    if (this.props.onNext) {
+      nextButton = (<Button onClick={this.props.onNext}>Next</Button>);
+    }
 
     return (
       <div className={wrapperClasses}>
@@ -87,7 +97,9 @@ class Modal extends Component {
           {textTag}
           {bulletsTag}
           <div className={styles.footer}>
+            {prevButton}
             {actionButton}
+            {nextButton}
           </div>
         </div>
         <span className={styles.backdrop}/>
