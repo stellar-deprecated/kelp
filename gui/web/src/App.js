@@ -179,12 +179,17 @@ class App extends Component {
       "kelp_errors": kelp_errors,
       "active_error": this.state.active_error,
     };
-    const isLastError = this.state.active_error.index >= this.state.active_error.errorList.length - 1;
-    if (isLastError) {
+    // update the error that is now active accordingly
+    newState.active_error.errorList = Object.values(levelErrors);
+    const wasOnlyError = newState.active_error.errorList.length === 0;
+    if (wasOnlyError) {
       newState.active_error = null;
     } else {
-      newState.active_error.errorList = Object.values(levelErrors);
-      // leave index as-is since we just deleted the index and the new item will now be at the old index (delete in place)
+      const isLastError = newState.active_error.index > newState.active_error.errorList.length - 1;
+      if (isLastError) {
+        newState.active_error.index = newState.active_error.errorList.length - 1;
+      } 
+      // else leave index as-is since we just deleted the index and the new item will now be at the old index (delete in place)
     }
     // trigger state change
     this.setState(newState);
