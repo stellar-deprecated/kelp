@@ -29,6 +29,7 @@ class Bots extends Component {
   static propTypes = {
     baseUrl: PropTypes.string.isRequired,
     addError: PropTypes.func.isRequired,  // (backendError)
+    removeError: PropTypes.func.isRequired,  // (object_name, level, errorID)
     getErrors: PropTypes.func.isRequired, // (object_name, level)
   };
 
@@ -110,18 +111,29 @@ class Bots extends Component {
       );
 
       let cards = this.state.bots.map((bot, index) => {
+        const errorLevelInfoForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.info);
+        const errorLevelWarningForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.warning);
+        const errorLevelErrorForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.error);
+
         return <BotCard
           key={index} 
           name={bot.name}
           history={this.props.history}
           running={bot.running}
           addError={(kelpError) => this.props.addError(kelpError)}
-          getErrorLevelInfoForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.info)}
-          getErrorLevelWarningForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.warning)}
-          getErrorLevelErrorForBot={() => this.props.getErrors(bot.name, Constants.ErrorLevel.error)}
+          errorLevelInfoForBot={errorLevelInfoForBot}
+          errorLevelWarningForBot={errorLevelWarningForBot}
+          errorLevelErrorForBot={errorLevelErrorForBot}
           setModal={(level, errorList) => {
+            // index is always 0 if there's nothing set yet
+            let index = 0;
+            if (this.state.activeErrors) {
+              index = this.state.activeErrors.index;
+            }
+            // TODO check if we were on the last index
+            // TODO difference in behavior if we clicked "Next" vs. "Dismiss" to move forward, should we remove the activeError in any of these cases or hide the "Next" button?
             this.setState({
-              activeErrors: { level: level, message: errorList[0].message }
+              activeErrors: { botName: bot.name, level: level, errorList: errorList, index: index }
             });
           } }
           // showDetailsFn={this.gotoDetails}
@@ -142,12 +154,19 @@ class Bots extends Component {
 
     let modalWindow = null;
     if (this.state.activeErrors) {
+      const indexedError = this.state.activeErrors.errorList[this.state.activeErrors.index];
       modalWindow = (<Modal 
         type={this.state.activeErrors.level}
-        title={this.state.activeErrors.message}
-        actionLabel={"Dismiss"}
-        bullets={["Bullet 1", "Bullet 2"]}
+        title={indexedError.message}
         onClose={() => {
+          this.setState({ activeErrors: null });
+        }}
+        bullets={[indexedError.occurrences.length + " x occurrences"]}
+        actionLabel={"Dismiss"}
+        onAction={() => {
+          // TODO convert to hashID
+          const errorID = indexedError.message;
+          this.props.removeError(this.state.activeErrors.botName, this.state.activeErrors.level, errorID);
           this.setState({ activeErrors: null });
         }}
       />);

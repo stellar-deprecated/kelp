@@ -30,6 +30,7 @@ class App extends Component {
     this.setVersion = this.setVersion.bind(this);
     this.quit = this.quit.bind(this);
     this.addError = this.addError.bind(this);
+    this.removeError = this.removeError.bind(this);
     this.getErrors = this.getErrors.bind(this);
     this._asyncRequests = {};
   }
@@ -135,6 +136,29 @@ class App extends Component {
     return Object.values(levelErrors);
   }
 
+  removeError(object_type, object_name, level, errorID) {
+    let kelp_errors = this.state.kelp_errors;
+    let botErrors = kelp_errors[object_type];
+    let namedError = botErrors[object_name];
+    let levelErrors = namedError[level];
+    
+    // delete entry for error
+    delete levelErrors[errorID];
+    // bubble up
+    if (Object.keys(levelErrors).length == 0) {
+      delete namedError[level];
+    }
+    if (Object.keys(namedError).length == 0) {
+      delete botErrors[object_name];
+    }
+    if (Object.keys(botErrors).length == 0) {
+      delete kelp_errors[object_type];
+    }
+
+    // trigger state change
+    this.setState({ "kelp_errors": kelp_errors });
+  }
+
   render() {
     const enablePubnetBots = false;
 
@@ -149,6 +173,7 @@ class App extends Component {
       Kelp UI is only available on the Stellar Test Network
     </div>);
 
+    const removeBotError = this.removeError.bind(this, Constants.ErrorType.bot);
     const getBotErrors = this.getErrors.bind(this, Constants.ErrorType.bot);
 
     return (
@@ -157,7 +182,7 @@ class App extends Component {
         <Router>
           <Header version={this.state.version}/>
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl} addError={this.addError} getErrors={getBotErrors}/>}
+            render={(props) => <Bots {...props} baseUrl={baseUrl} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
             />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}

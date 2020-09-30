@@ -12,6 +12,7 @@ class Modal extends Component {
       isOpened: true,
     };
     this.close = this.close.bind(this);
+    this.action = this.action.bind(this);
   }
   
   static defaultProps = {
@@ -27,6 +28,7 @@ class Modal extends Component {
     text: PropTypes.string,
     bullets: PropTypes.array,
     actionLabel: PropTypes.string,
+    onAction: PropTypes.func,
   };
 
   open() {
@@ -40,6 +42,13 @@ class Modal extends Component {
       isOpened: false,
     })
     this.props.onClose();
+  }
+
+  action() {
+    this.setState({
+      isOpened: false,
+    })
+    this.props.onAction();
   }
 
   render() {
@@ -88,7 +97,7 @@ class Modal extends Component {
     }
 
     const actionButton = (
-      <Button onClick={this.close}>
+      <Button onClick={this.action}>
         {this.props.actionLabel}
       </Button>
     );

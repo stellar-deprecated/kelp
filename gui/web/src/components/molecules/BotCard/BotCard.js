@@ -87,9 +87,9 @@ class BotCard extends Component {
     name: PropTypes.string.isRequired,
     baseUrl: PropTypes.string.isRequired,
     addError: PropTypes.func.isRequired,
-    getErrorLevelInfoForBot: PropTypes.func.isRequired,
-    getErrorLevelWarningForBot: PropTypes.func.isRequired,
-    getErrorLevelErrorForBot: PropTypes.func.isRequired,
+    errorLevelInfoForBot: PropTypes.array.isRequired,
+    errorLevelWarningForBot: PropTypes.array.isRequired,
+    errorLevelErrorForBot: PropTypes.array.isRequired,
     setModal: PropTypes.func.isRequired,
   };
 
@@ -404,9 +404,9 @@ class BotCard extends Component {
         <div className={styles.secondColumn}>
           <div className={styles.notificationsLine}>
             <PillGroup>
-              <Pill errors={this.props.getErrorLevelInfoForBot()} type="info" onClick={() => { this.props.setModal("info", this.props.getErrorLevelInfoForBot()) }} />
-              <Pill errors={this.props.getErrorLevelWarningForBot()} type="warning" onClick={() => { this.props.setModal("warning", this.props.getErrorLevelWarningForBot()) }} />
-              <Pill errors={this.props.getErrorLevelErrorForBot()} type="error" onClick={() => { this.props.setModal("error", this.props.getErrorLevelErrorForBot()) }} />
+              <Pill errors={this.props.errorLevelInfoForBot} type="info" onClick={() => { this.props.setModal("info", this.props.errorLevelInfoForBot) }} />
+              <Pill errors={this.props.errorLevelWarningForBot} type="warning" onClick={() => { this.props.setModal("warning", this.props.errorLevelWarningForBot) }} />
+              <Pill errors={this.props.errorLevelErrorForBot} type="error" onClick={() => { this.props.setModal("error", this.props.errorLevelErrorForBot) }} />
             </PillGroup>
           </div>
           <BotBidAskInfo
