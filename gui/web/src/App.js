@@ -123,9 +123,9 @@ class App extends Component {
       };
       // TODO add support to handle active errors that are not bot type errors
       if (
-        backendError.object_type == Constants.ErrorType.bot &&
-        backendError.object_name == this.state.active_error.botName &&
-        backendError.level == this.state.active_error.level
+        backendError.object_type === Constants.ErrorType.bot &&
+        backendError.object_name === this.state.active_error.botName &&
+        backendError.level === this.state.active_error.level
       ) {
         // update activeErrors when it is affected (either errors or occurrences)
         newState.active_error.errorList = Object.values(levelErrors);
@@ -165,13 +165,13 @@ class App extends Component {
     // delete entry for error
     delete levelErrors[errorID];
     // bubble up
-    if (Object.keys(levelErrors).length == 0) {
+    if (Object.keys(levelErrors).length === 0) {
       delete namedError[level];
     }
-    if (Object.keys(namedError).length == 0) {
+    if (Object.keys(namedError).length === 0) {
       delete botErrors[object_name];
     }
-    if (Object.keys(botErrors).length == 0) {
+    if (Object.keys(botErrors).length === 0) {
       delete kelp_errors[object_type];
     }
 

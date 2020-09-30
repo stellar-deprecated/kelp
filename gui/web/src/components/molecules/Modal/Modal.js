@@ -6,10 +6,6 @@ import Icon from '../../atoms/Icon/Icon';
 import Button from '../../atoms/Button/Button';
 
 class Modal extends Component {
-  constructor(props) {
-    super(props);
-  }
-  
   static defaultProps = {
     text: null,
     bullets: [],
