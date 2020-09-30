@@ -15,19 +15,18 @@ class Modal extends Component {
   }
   
   static defaultProps = {
-    type: null,
     text: null,
     bullets: [],
     actionLabel: 'Close',
   }
 
   static propTypes = {
-    type: PropTypes.string,
-    title: PropTypes.string,
+    type: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    onClose: PropTypes.func.isRequired,
     text: PropTypes.string,
     bullets: PropTypes.array,
     actionLabel: PropTypes.string,
-    onClose: PropTypes.func.isRequired,
   };
 
   open() {
@@ -56,6 +55,44 @@ class Modal extends Component {
       styles[this.props.type],
     );
 
+    let iconTag = null;
+    if (this.props.type) {
+      iconTag = (
+        <Icon 
+        symbol={this.props.type} 
+        width="50px" 
+        height="50px"
+      />);
+    }
+
+    let titleTag = null;
+    if (this.props.title) {
+      titleTag = (<h3 className={styles.title}>{this.props.title}</h3>);
+    }
+
+    let textTag = null;
+    if (this.props.text) {
+      textTag = (<p className={styles.text}>{this.props.text}</p>);
+    }
+
+    let bulletsTag = null;
+    if (this.props.bullets.length > 0) {
+      const liList = this.props.bullets.map((item, index) => (
+        <li key={index}>{item}</li>
+       ));
+      bulletsTag = (
+        <ul className={bulletsClasses}>
+         {liList}
+        </ul>
+      );
+    }
+
+    const actionButton = (
+      <Button onClick={this.close}>
+        {this.props.actionLabel}
+      </Button>
+    );
+
     return (
       <div className={wrapperClasses}>
         <div className={styles.window}>
@@ -67,33 +104,12 @@ class Modal extends Component {
             className={styles.closeButton} 
             onClick={this.close}
           />
-
-          {this.props.type && (
-            <Icon 
-            symbol={this.props.type} 
-            width="50px" 
-            height="50px"
-          />
-          )}
-          
-          {this.props.title && (
-            <h3 className={styles.title}>{this.props.title}</h3>
-          )}
-
-          {this.props.text && (
-          <p className={styles.text}>{this.props.text}</p>
-          )}
-
-          {this.props.bullets.length > 0 && (
-            <ul className={bulletsClasses}>
-             {this.props.bullets.map((item, index) => (
-              <li key={index}>{item}</li>
-             ))}
-            </ul>
-          )}
-
+          {iconTag}
+          {titleTag}
+          {textTag}
+          {bulletsTag}
           <div className={styles.footer}>
-            <Button onClick={this.close}>{this.props.actionLabel}</Button>
+            {actionButton}
           </div>
         </div>
         <span className={styles.backdrop}/>
