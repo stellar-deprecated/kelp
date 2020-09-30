@@ -15,7 +15,6 @@ class Bots extends Component {
     super(props);
     this.state = {
       bots: [],
-      activeErrors: null,
     };
  
     this.fetchBots = this.fetchBots.bind(this);
@@ -28,8 +27,11 @@ class Bots extends Component {
 
   static propTypes = {
     baseUrl: PropTypes.string.isRequired,
+    activeError: PropTypes.object,  // can be null
+    setActiveError: PropTypes.func.isRequired,  // (botName, level, errorList, index)
     addError: PropTypes.func.isRequired,  // (backendError)
     removeError: PropTypes.func.isRequired,  // (object_name, level, errorID)
+    hideActiveError: PropTypes.func.isRequired, // ()
     getErrors: PropTypes.func.isRequired, // (object_name, level)
   };
 
@@ -125,16 +127,8 @@ class Bots extends Component {
           errorLevelWarningForBot={errorLevelWarningForBot}
           errorLevelErrorForBot={errorLevelErrorForBot}
           setModal={(level, errorList) => {
-            // index is always 0 if there's nothing set yet
-            let index = 0;
-            if (this.state.activeErrors) {
-              index = this.state.activeErrors.index;
-            }
-            // TODO check if we were on the last index
-            // TODO difference in behavior if we clicked "Next" vs. "Dismiss" to move forward, should we remove the activeError in any of these cases or hide the "Next" button?
-            this.setState({
-              activeErrors: { botName: bot.name, level: level, errorList: errorList, index: index }
-            });
+            // index is always 0 here because incrementing the index happens in App.js when we traverse the errorList, never when we open the modal for the first time
+            this.props.setActiveError(bot.name, level, errorList, 0);
           } }
           // showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
@@ -152,22 +146,20 @@ class Bots extends Component {
       setTimeout(this.fetchBots, 1000);
     }
 
+    const activeError = this.props.activeError;
     let modalWindow = null;
-    if (this.state.activeErrors) {
-      const indexedError = this.state.activeErrors.errorList[this.state.activeErrors.index];
+    if (activeError) {
+      const indexedError = activeError.errorList[activeError.index];
       modalWindow = (<Modal 
-        type={this.state.activeErrors.level}
+        type={activeError.level}
         title={indexedError.message}
-        onClose={() => {
-          this.setState({ activeErrors: null });
-        }}
+        onClose={this.props.hideActiveError}
         bullets={[indexedError.occurrences.length + " x occurrences"]}
         actionLabel={"Dismiss"}
         onAction={() => {
           // TODO convert to hashID
           const errorID = indexedError.message;
-          this.props.removeError(this.state.activeErrors.botName, this.state.activeErrors.level, errorID);
-          this.setState({ activeErrors: null });
+          this.props.removeError(activeError.botName, activeError.level, errorID);
         }}
       />);
     }

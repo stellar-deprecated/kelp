@@ -25,6 +25,7 @@ class App extends Component {
     this.state = {
       version: "",
       kelp_errors: {},
+      active_error: null, // { botName, level, errorList, index }
     };
 
     this.setVersion = this.setVersion.bind(this);
@@ -32,6 +33,8 @@ class App extends Component {
     this.addError = this.addError.bind(this);
     this.removeError = this.removeError.bind(this);
     this.getErrors = this.getErrors.bind(this);
+    this.setActiveBotError = this.setActiveBotError.bind(this);
+    this.hideActiveError = this.hideActiveError.bind(this);
     this._asyncRequests = {};
   }
 
@@ -111,7 +114,24 @@ class App extends Component {
     idError.occurrences.push(backendError.date);
 
     // trigger state change
-    this.setState({ "kelp_errors": kelp_errors });
+    if (this.state.active_error === null) {
+      this.setState({ "kelp_errors": kelp_errors });
+    } else {
+      let newState = {
+        "kelp_errors": kelp_errors,
+        "active_error": this.state.active_error,
+      };
+      // TODO add support to handle active errors that are not bot type errors
+      if (
+        backendError.object_type == Constants.ErrorType.bot &&
+        backendError.object_name == this.state.active_error.botName &&
+        backendError.level == this.state.active_error.level
+      ) {
+        // update activeErrors when it is affected (either errors or occurrences)
+        newState.active_error.errorList = Object.values(levelErrors);
+      }
+      this.setState(newState);
+    }
   }
 
   getErrors(object_type, object_name, level) {
@@ -155,8 +175,35 @@ class App extends Component {
       delete kelp_errors[object_type];
     }
 
+    let newState = {
+      "kelp_errors": kelp_errors,
+      "active_error": this.state.active_error,
+    };
+    const isLastError = this.state.active_error.index >= this.state.active_error.errorList.length - 1;
+    if (isLastError) {
+      newState.active_error = null;
+    } else {
+      newState.active_error.errorList = Object.values(levelErrors);
+      // leave index as-is since we just deleted the index and the new item will now be at the old index (delete in place)
+    }
     // trigger state change
-    this.setState({ "kelp_errors": kelp_errors });
+    this.setState(newState);
+  }
+
+  // TODO extend for non-bot type errors later
+  setActiveBotError(botName, level, errorList, index) {
+    this.setState({
+      "active_error": {
+        botName: botName,
+        level: level,
+        errorList: errorList,
+        index: index,
+      }
+    });
+  }
+
+  hideActiveError() {
+    this.setState({ "active_error": null });
   }
 
   render() {
@@ -182,7 +229,7 @@ class App extends Component {
         <Router>
           <Header version={this.state.version}/>
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
+            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
             />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}

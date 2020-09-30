@@ -8,11 +8,6 @@ import Button from '../../atoms/Button/Button';
 class Modal extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      isOpened: true,
-    };
-    this.close = this.close.bind(this);
-    this.action = this.action.bind(this);
   }
   
   static defaultProps = {
@@ -31,32 +26,10 @@ class Modal extends Component {
     onAction: PropTypes.func,
   };
 
-  open() {
-    this.setState({
-      isOpened: true,
-    })
-  }
-
-  close() {
-    this.setState({
-      isOpened: false,
-    })
-    this.props.onClose();
-  }
-
-  action() {
-    this.setState({
-      isOpened: false,
-    })
-    this.props.onAction();
-  }
-
   render() {
-    let isOpenedClass = this.state.isOpened ? styles.isOpened : null;
-
     let wrapperClasses = classNames(
       styles.wrapper,
-      isOpenedClass,
+      styles.isOpened,
     );
 
     const bulletsClasses = classNames(
@@ -97,7 +70,7 @@ class Modal extends Component {
     }
 
     const actionButton = (
-      <Button onClick={this.action}>
+      <Button onClick={this.props.onAction}>
         {this.props.actionLabel}
       </Button>
     );
@@ -111,7 +84,7 @@ class Modal extends Component {
             variant="transparent"
             hsize="round"
             className={styles.closeButton} 
-            onClick={this.close}
+            onClick={this.props.onClose}
           />
           {iconTag}
           {titleTag}
