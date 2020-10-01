@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import BotCard from '../../molecules/BotCard/BotCard';
 import Button from '../../atoms/Button/Button';
 import EmptyList from '../../molecules/EmptyList/EmptyList';
@@ -6,6 +7,8 @@ import ScreenHeader from '../../molecules/ScreenHeader/ScreenHeader';
 import grid from '../../_styles/grid.module.scss';
 import autogenerate from '../../../kelp-ops-api/autogenerate';
 import listBots from '../../../kelp-ops-api/listBots';
+import Constants from '../../../Constants';
+import Modal from '../../molecules/Modal/Modal';
 
 class Bots extends Component {
   constructor(props) {
@@ -21,6 +24,16 @@ class Bots extends Component {
     
     this._asyncRequests = {};
   }
+
+  static propTypes = {
+    baseUrl: PropTypes.string.isRequired,
+    activeError: PropTypes.object,  // can be null
+    setActiveError: PropTypes.func.isRequired,  // (botName, level, errorList, index)
+    addError: PropTypes.func.isRequired,  // (backendError)
+    removeError: PropTypes.func.isRequired,  // (object_name, level, errorID)
+    hideActiveError: PropTypes.func.isRequired, // ()
+    getErrors: PropTypes.func.isRequired, // (object_name, level)
+  };
 
   componentWillUnmount() {
     if (this._asyncRequests["listBots"]) {
@@ -99,20 +112,29 @@ class Bots extends Component {
         </ScreenHeader>
       );
 
-      let cards = this.state.bots.map((bot, index) => (
-        <BotCard
+      let cards = this.state.bots.map((bot, index) => {
+        const errorLevelInfoForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.info);
+        const errorLevelWarningForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.warning);
+        const errorLevelErrorForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.error);
+
+        return <BotCard
           key={index} 
           name={bot.name}
           history={this.props.history}
           running={bot.running}
-          test={bot.test}
-          warnings={bot.warnings}
-          errors={bot.errors}
+          addError={(kelpError) => this.props.addError(kelpError)}
+          errorLevelInfoForBot={errorLevelInfoForBot}
+          errorLevelWarningForBot={errorLevelWarningForBot}
+          errorLevelErrorForBot={errorLevelErrorForBot}
+          setModal={(level, errorList) => {
+            // index is always 0 here because incrementing the index happens in App.js when we traverse the errorList, never when we open the modal for the first time
+            this.props.setActiveError(bot.name, level, errorList, 0);
+          } }
           // showDetailsFn={this.gotoDetails}
           baseUrl={this.props.baseUrl}
           reload={this.fetchBots}
         />
-      ));
+      });
 
       inner = (
         <div>
@@ -124,9 +146,38 @@ class Bots extends Component {
       setTimeout(this.fetchBots, 1000);
     }
 
+    const activeError = this.props.activeError;
+    let modalWindow = null;
+    if (activeError) {
+      const indexedError = activeError.errorList[activeError.index];
+      let onPrevious = null;
+      if (activeError.index > 0) {
+        onPrevious = () => {this.props.setActiveError(activeError.botName, activeError.level, activeError.errorList, activeError.index - 1)};
+      }
+      let onNext = null;
+      if (activeError.index < activeError.errorList.length - 1) {
+        onNext = () => {this.props.setActiveError(activeError.botName, activeError.level, activeError.errorList, activeError.index + 1)};
+      }
+      modalWindow = (<Modal
+        type={activeError.level}
+        title={indexedError.message}
+        onClose={this.props.hideActiveError}
+        bullets={[indexedError.occurrences.length + " x occurrences"]}
+        actionLabel={"Dismiss"}
+        onAction={() => {
+          // TODO convert to hashID
+          const errorID = indexedError.message;
+          this.props.removeError(activeError.botName, activeError.level, errorID);
+        }}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />);
+    }
+
     return (
       <div>
-        <div className={grid.container}> 
+        <div className={grid.container}>
+          {modalWindow}
           {inner}
         </div>
       </div>
