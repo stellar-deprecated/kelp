@@ -69,7 +69,7 @@ class Modal extends Component {
 
     let prevButton = null;
     if (this.props.onPrevious) {
-      prevButton = (<Button onClick={this.props.onPrevious}>Previous</Button>);
+      prevButton = (<Button onClick={this.props.onPrevious} icon="caretLeft" size="medium" className={styles.arrowButton}/>);
     }
     const actionButton = (
       <Button onClick={this.props.onAction}>
@@ -78,7 +78,7 @@ class Modal extends Component {
     );
     let nextButton = null;
     if (this.props.onNext) {
-      nextButton = (<Button onClick={this.props.onNext}>Next</Button>);
+      nextButton = (<Button onClick={this.props.onNext} icon="caretRight" size="medium" className={styles.arrowButton}/>);
     }
 
     return (
@@ -95,11 +95,13 @@ class Modal extends Component {
           {iconTag}
           {titleTag}
           {textTag}
-          {bulletsTag}
+          <div className={styles.middleContainer}>
+            <div className={styles.prevButtonContainer}>{prevButton}</div>
+            <div className={styles.bulletsContainer}>{bulletsTag}</div>
+            <div className={styles.nextButtonContainer}>{nextButton}</div>
+          </div>
           <div className={styles.footer}>
-            {prevButton}
             {actionButton}
-            {nextButton}
           </div>
         </div>
         <span className={styles.backdrop}/>
