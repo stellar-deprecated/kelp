@@ -144,6 +144,11 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		}
 	}
 
+	invalidChars := "<>"
+	if strings.Contains(req.Name, invalidChars) {
+		errResp.Name = fmt.Sprintf("invalid bot name: cannot contain the following characters: %s", invalidChars)
+		hasError = true
+	}
 	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
 		errResp.TraderConfig.AssetCodeA = "1 - 12 characters"
 		hasError = true
