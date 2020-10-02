@@ -11,6 +11,8 @@ import start from '../../../assets/images/ico-start.svg';
 import stop from '../../../assets/images/ico-stop.svg';
 import wave from '../../../assets/images/ico-wave.svg';
 import caretDown from '../../../assets/images/ico-caret-down.svg';
+import caretLeft from '../../../assets/images/ico-caret-left.svg';
+import caretRight from '../../../assets/images/ico-caret-right.svg';
 import close from '../../../assets/images/ico-close.svg';
 import warning from '../../../assets/images/ico-alert.svg';
 import error from '../../../assets/images/ico-error.svg';
@@ -20,6 +22,8 @@ import options from '../../../assets/images/ico-options.svg';
 import back from '../../../assets/images/ico-arrow-back.svg';
 import chevronUp from '../../../assets/images/ico-chevron-up.svg';
 import chevronDown from '../../../assets/images/ico-chevron-down.svg';
+import chevronLeft from '../../../assets/images/ico-chevron-left.svg';
+import chevronRight from '../../../assets/images/ico-chevron-right.svg';
 
 
 const viewBox = {
@@ -34,6 +38,8 @@ const viewBox = {
   stop: '0 0 8 8',
   wave: '0 0 20 4',
   caretDown: '0 0 12 12',
+  caretLeft: '0 0 12 12',
+  caretRight: '0 0 12 12',
   close: '0 0 12 12',
   error: '0 0 50 50',
   warning: '0 0 50 50',
@@ -43,6 +49,8 @@ const viewBox = {
   back: '0 0 14 14',
   chevronUp: '0 0 14 14',
   chevronDown: '0 0 14 14',
+  chevronLeft: '0 0 14 14',
+  chevronRight: '0 0 14 14',
 }
 
 const icons = {
@@ -57,6 +65,8 @@ const icons = {
   stop,
   wave,
   caretDown,
+  caretLeft,
+  caretRight,
   close,
   error,
   warning,
@@ -66,6 +76,8 @@ const icons = {
   back,
   chevronUp,
   chevronDown,
+  chevronLeft,
+  chevronRight,
 }
 
 class Icon extends Component {
