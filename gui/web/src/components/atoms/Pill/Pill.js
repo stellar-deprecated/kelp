@@ -1,38 +1,50 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import styles from './Pill.module.scss';
 import Icon from '../Icon/Icon';
 
-
-
-
 class Pill extends Component {
-  static defaultProps = {
-    type: null,
-    number: 0,
+  static propTypes = {
+    type: PropTypes.string.isRequired,
+    errors: PropTypes.array.isRequired,
+    onClick: PropTypes.func.isRequired,
+  };
+
+  calculateErrorNumbers(errorObj) {
+    const uniques = errorObj.length;
+    const total = errorObj
+        .map((errorElem) => errorElem.occurrences.length)
+        .reduce((total, num) => (total + num), 0);
+        
+    return {
+      uniques: uniques,
+      total: total,
+    };
   }
 
   render() {
-    if(this.props.number){
-      let symbolName = null
-      if(this.props.type === 'warning'){
-        symbolName = 'warningSmall'
-      }
-      else {
-        symbolName = 'errorSmall'
-      }
-
-      return (
-          <div className={styles[this.props.type]}>
-            <Icon className={styles.icon} symbol={symbolName} width={'11px'} height={'11px'}></Icon>
-            <span>
-              {this.props.number}
-            </span>
-          </div>
-      );
-    }
-    else {
+    const errorNumbers = this.calculateErrorNumbers(this.props.errors);
+    if (!errorNumbers.uniques) {
       return null;
     }
+
+    let symbolName = "info";
+    if (this.props.type === "warning") {
+      symbolName = "warningSmall";
+    } else if (this.props.type === "error") {
+      symbolName = "errorSmall";
+    }
+
+    return (
+      <div className={styles[this.props.type]} onClick={this.props.onClick}>
+        <Icon className={styles.icon} symbol={symbolName} width={'11px'} height={'11px'}></Icon>
+        <span>{errorNumbers.uniques}</span>
+        <span className={styles.spacer}/>
+        <span>(</span>
+        <span>{errorNumbers.total}</span>
+        <span>)</span>
+      </div>
+    );
   }
 }
 

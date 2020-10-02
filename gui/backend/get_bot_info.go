@@ -53,7 +53,13 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 
 	botState, e := s.doGetBotState(botName)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot read bot state for bot '%s': %s\n", botName, e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot read bot state for bot '%s': %s\n", botName, e),
+		))
 		return
 	}
 	if botState == kelpos.BotStateInitializing {
@@ -68,12 +74,24 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath.AsString(), e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath.AsString(), e),
+		))
 		return
 	}
 	e = botConfig.Init()
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot init bot config at path '%s': %s\n", traderFilePath.AsString(), e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot init bot config at path '%s': %s\n", traderFilePath.AsString(), e),
+		))
 		return
 	}
 
@@ -91,20 +109,38 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 
 	account, e := client.AccountDetail(horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()})
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot get account data for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot get account data for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e),
+		))
 		return
 	}
 	var balanceBase float64
 	if assetBase == utils.NativeAsset {
 		balanceBase, e = getNativeBalance(account)
 		if e != nil {
-			s.writeErrorJson(w, fmt.Sprintf("error getting native balanceBase for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("error getting native balanceBase for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e),
+			))
 			return
 		}
 	} else {
 		balanceBase, e = getCreditBalance(account, assetBase)
 		if e != nil {
-			s.writeErrorJson(w, fmt.Sprintf("error getting credit balanceBase for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("error getting credit balanceBase for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e),
+			))
 			return
 		}
 	}
@@ -112,20 +148,38 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	if assetQuote == utils.NativeAsset {
 		balanceQuote, e = getNativeBalance(account)
 		if e != nil {
-			s.writeErrorJson(w, fmt.Sprintf("error getting native balanceQuote for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("error getting native balanceQuote for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e),
+			))
 			return
 		}
 	} else {
 		balanceQuote, e = getCreditBalance(account, assetQuote)
 		if e != nil {
-			s.writeErrorJson(w, fmt.Sprintf("error getting credit balanceQuote for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("error getting credit balanceQuote for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e),
+			))
 			return
 		}
 	}
 
 	offers, e := utils.LoadAllOffers(account.AccountID, client)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error getting offers for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("error getting offers for account '%s' for botName '%s': %s\n", botConfig.TradingAccount(), botName, e),
+		))
 		return
 	}
 	sellingAOffers, buyingAOffers := utils.FilterOffers(offers, assetBase, assetQuote)
@@ -142,7 +196,13 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		Limit:              1,
 	})
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error getting orderbook for assets (base=%v, quote=%v) for botName '%s': %s\n", assetBase, assetQuote, botName, e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("error getting orderbook for assets (base=%v, quote=%v) for botName '%s': %s\n", assetBase, assetQuote, botName, e),
+		))
 		return
 	}
 	spread := -1.0
