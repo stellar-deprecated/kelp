@@ -11,13 +11,11 @@ import (
 )
 
 func TestIsBotNameValid(t *testing.T) {
-	// TODO: Define tables.
 	testCases := []struct {
 		name      string
 		botName   string
 		strategy  string
 		wantValid bool
-		// TODO: Define test struct.
 	}{
 		{
 			name:      "success default",
@@ -44,7 +42,6 @@ func TestIsBotNameValid(t *testing.T) {
 			botName:   "George\\/the Friendly Octopus",
 			wantValid: false,
 		},
-		// TODO: Define each test case.
 	}
 
 	for _, k := range testCases {
