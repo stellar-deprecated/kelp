@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/stellar/go/clients/horizonclient"
@@ -144,9 +145,13 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		}
 	}
 
-	invalidChars := "<>"
-	if strings.Contains(req.Name, invalidChars) {
-		errResp.Name = fmt.Sprintf("invalid bot name: cannot contain the following characters: %s", invalidChars)
+	isValid, e := isBotNameValid(req.Name)
+	if !isValid {
+		if e != nil {
+			errResp.Name = "unable to parse bot name: internal server error"
+		} else {
+			errResp.Name = "invalid bot name: can only contain letters, numbers, spaces, or -"
+		}
 		hasError = true
 	}
 	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
@@ -181,6 +186,15 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		return makeUpsertError(errResp)
 	}
 	return nil
+}
+
+func isBotNameValid(botName string) (bool, error) {
+	re, err := regexp.Compile(`^[a-zA-Z0-9\- ]+$`)
+	if err != nil {
+		return false, fmt.Errorf("could not compile botname regex")
+	}
+
+	return re.MatchString(botName), nil
 }
 
 func hasNewLevel(levels []plugins.StaticLevel) bool {
