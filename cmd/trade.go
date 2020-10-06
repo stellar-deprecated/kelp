@@ -514,9 +514,9 @@ func runTradeCmd(options inputs) {
 		HTTP:       http.DefaultClient,
 	}
 	if !*options.noHeaders {
-		client.AppName = "kelp"
+		client.AppName = "kelp--cli--bot"
 		if *options.ui {
-			client.AppName = "kelp-ui"
+			client.AppName = "kelp--gui-desktop--bot"
 		}
 		client.AppVersion = version
 
