@@ -12,6 +12,7 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+    z-index: 1;
 }
 
 .isOpened {
@@ -43,7 +44,7 @@
     z-index: 1;
     border-radius: 4px;
     max-width: 400/16+rem;
-    min-width: 320/16+rem;
+    min-width: 336/16+rem;
     padding: 2rem 3rem 2rem 3rem; 
     box-shadow: 0 20px 30px 0 rgba($color-base-1, 0.3%), 0 10px 50px 0  rgba($color-base-1, 0.2%);
 }
@@ -52,6 +53,10 @@
     position: absolute;
     right: 5px;
     top: 5px;
+}
+
+.arrowButton {
+    background: none;
 }
 
 .title {
@@ -78,6 +83,22 @@
     }
 }
 
+.middleContainer {
+    flex-direction: row;
+    display: flex;
+    width: 100%;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.prevButtonContainer, .nextButtonContainer {
+    min-width: 64px;
+}
+
+.bulletsContainer {
+    width: 60%;
+    padding-left: 20%;
+}
 
 .footer {
     margin-top: 2rem;

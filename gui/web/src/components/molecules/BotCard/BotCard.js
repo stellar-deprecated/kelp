@@ -83,19 +83,14 @@ class BotCard extends Component {
     this._asyncRequests = {};
   }
 
-  static defaultProps = {
-    name: '',
-    test: true,
-    warnings: 0,
-    errors: 0, 
-  }
-
   static propTypes = {
-    name: PropTypes.string,
-    test: PropTypes.bool,
-    warnings: PropTypes.number,
-    errors: PropTypes.number,
-    baseUrl: PropTypes.string, 
+    name: PropTypes.string.isRequired,
+    baseUrl: PropTypes.string.isRequired,
+    addError: PropTypes.func.isRequired,
+    errorLevelInfoForBot: PropTypes.array.isRequired,
+    errorLevelWarningForBot: PropTypes.array.isRequired,
+    errorLevelErrorForBot: PropTypes.array.isRequired,
+    setModal: PropTypes.func.isRequired,
   };
 
   checkState() {
@@ -129,8 +124,8 @@ class BotCard extends Component {
         }
 
         delete _this._asyncRequests["botInfo"];
-        if (resp.error) {
-          // do nothing
+        if (resp.kelp_error) {
+          this.props.addError(resp.kelp_error);
         } else if (JSON.stringify(resp) !== "{}") {
           _this.setState({
             botInfo: resp,
@@ -409,8 +404,9 @@ class BotCard extends Component {
         <div className={styles.secondColumn}>
           <div className={styles.notificationsLine}>
             <PillGroup>
-              <Pill number={this.props.warnings} type={'warning'}/>
-              <Pill number={this.props.errors} type={'error'}/>
+              <Pill errors={this.props.errorLevelInfoForBot} type="info" onClick={() => { this.props.setModal("info", this.props.errorLevelInfoForBot) }} />
+              <Pill errors={this.props.errorLevelWarningForBot} type="warning" onClick={() => { this.props.setModal("warning", this.props.errorLevelWarningForBot) }} />
+              <Pill errors={this.props.errorLevelErrorForBot} type="error" onClick={() => { this.props.setModal("error", this.props.errorLevelErrorForBot) }} />
             </PillGroup>
           </div>
           <BotBidAskInfo

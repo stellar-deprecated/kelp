@@ -9,6 +9,12 @@
     color: $color-contrast-1;
     display: inline-flex;
     align-items: center;
+    cursor: pointer;
+}
+
+.info {
+    composes: _pill;
+    background-color: $color-contrast-4;
 }
 
 .warning {
@@ -23,4 +29,8 @@
 
 .icon {
  margin-right: 5/16+rem;
+}
+
+.spacer {
+    min-width: 4px;
 }
