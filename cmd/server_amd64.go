@@ -209,9 +209,15 @@ func init() {
 			HTTP:       http.DefaultClient,
 		}
 		if !*options.noHeaders {
-			apiTestNet.AppName = "kelp-ui"
+			if *options.noElectron {
+				apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
+				apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+			} else {
+				apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
+				apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+			}
+
 			apiTestNet.AppVersion = version
-			apiPubNet.AppName = "kelp-ui"
 			apiPubNet.AppVersion = version
 
 			p := prefs.Make(prefsFilename)
