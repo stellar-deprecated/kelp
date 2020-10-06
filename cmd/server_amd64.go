@@ -114,6 +114,11 @@ func init() {
 			logFilepath = uiLogsDirPath.Join(logFilename)
 			setLogFile(l, logFilepath.Native())
 
+			e = backend.InitBotNameRegex()
+			if e != nil {
+				panic(errors.Wrap(e, "could not init BotNameRegex: "))
+			}
+
 			if *options.verbose {
 				astilog.SetDefaultLogger()
 			}

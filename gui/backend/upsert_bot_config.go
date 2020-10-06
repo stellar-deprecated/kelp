@@ -39,6 +39,9 @@ type upsertBotConfigResponseErrors struct {
 	Fields upsertBotConfigRequest `json:"fields"`
 }
 
+// botNameRegex is defined on initialization through the `cmd` package.
+var botNameRegex *regexp.Regexp
+
 func makeUpsertError(fields upsertBotConfigRequest) *upsertBotConfigResponseErrors {
 	return &upsertBotConfigResponseErrors{
 		Error:  "There are some errors marked in red inline",
@@ -145,13 +148,8 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		}
 	}
 
-	isValid, e := isBotNameValid(req.Name)
-	if !isValid {
-		if e != nil {
-			errResp.Name = "unable to parse bot name: internal server error"
-		} else {
-			errResp.Name = "invalid bot name: can only contain letters, numbers, spaces, or -"
-		}
+	if !isBotNameValid(req.Name) {
+		errResp.Name = "invalid bot name: can only contain letters, numbers, spaces, or -"
 		hasError = true
 	}
 	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
@@ -188,13 +186,21 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 	return nil
 }
 
-func isBotNameValid(botName string) (bool, error) {
-	re, err := regexp.Compile(`^[a-zA-Z0-9\- ]+$`)
-	if err != nil {
-		return false, fmt.Errorf("could not compile botname regex")
+func isBotNameValid(botName string) bool {
+	if botNameRegex == nil {
+		panic(fmt.Errorf("botname regex undefined at runtime"))
 	}
 
-	return re.MatchString(botName), nil
+	return botNameRegex.MatchString(botName)
+}
+
+// InitBotNameRegex initializes the regex for bot names.
+func InitBotNameRegex() (e error) {
+	botNameRegex, e = regexp.Compile(`^[a-zA-Z0-9\- ]+$`)
+	if e != nil {
+		return fmt.Errorf("could not compile botname regex: %s", e)
+	}
+	return nil
 }
 
 func hasNewLevel(levels []plugins.StaticLevel) bool {

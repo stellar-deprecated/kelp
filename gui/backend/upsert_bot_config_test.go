@@ -1,12 +1,12 @@
 package backend
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stellar/kelp/gui/model2"
-	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,14 +42,52 @@ func TestIsBotNameValid(t *testing.T) {
 			botName:   "George\\/the Friendly Octopus",
 			wantValid: false,
 		},
+		{
+			name:      "failure .",
+			botName:   "George . the Friendly Octopus",
+			wantValid: false,
+		},
+		{
+			name:      "failure &",
+			botName:   "George & the Friendly Octopus",
+			wantValid: false,
+		},
+		{
+			name:      "failure _",
+			botName:   "George _ the Friendly Octopus",
+			wantValid: false,
+		},
+		{
+			name:      "failure ()",
+			botName:   "George () the Friendly Octopus",
+			wantValid: false,
+		},
+		{
+			name:      "failure +",
+			botName:   "George + the Friendly Octopus",
+			wantValid: false,
+		},
+		{
+			name:      "failure @",
+			botName:   "George @ the Friendly Octopus",
+			wantValid: false,
+		},
+	}
+
+	// initialize botname regex
+	e := InitBotNameRegex()
+	if !assert.NoError(t, e) {
+		t.Log("Could not generate botname regex")
+		return
 	}
 
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
-			// errors would be thrown by the `regex` package, not due to kelp logic
-			gotValid, gotErr := isBotNameValid(k.botName)
-			assert.NoError(t, gotErr)
-			assert.Equal(t, k.wantValid, gotValid)
+			gotValid := isBotNameValid(k.botName)
+			if !assert.Equal(t, k.wantValid, gotValid) {
+				return
+			}
+
 			// early return on unsupported bot names, so we do not write an invalid filename
 			if !k.wantValid {
 				return
@@ -57,13 +95,14 @@ func TestIsBotNameValid(t *testing.T) {
 
 			// confirm that we can write and delete an empty file to the bot's filepath
 			filenamePair := model2.GetBotFilenames(k.botName, "buysell")
-			fileBase, e := kelpos.MakeOsPathBase()
-			filePath := fileBase.Join(filenamePair.Trader)
-			assert.NoError(t, e)
-			e = ioutil.WriteFile(filePath.Native(), []byte{}, 0644)
-			assert.NoError(t, e)
+			fileBase := os.TempDir()
+			filePath := fmt.Sprintf("%s%s", fileBase, filenamePair.Trader)
+			e = ioutil.WriteFile(filePath, []byte{}, 0644)
+			if !assert.NoError(t, e) {
+				return
+			}
 
-			e = os.Remove(filePath.Native())
+			e = os.Remove(filePath)
 			assert.NoError(t, e)
 		})
 	}
