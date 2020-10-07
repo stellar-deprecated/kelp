@@ -46,6 +46,7 @@ type event struct {
 // This lives on the `MetricsTracker` struct.
 // TODO DS Add geodata.
 // TODO DS Add cloud server information.
+// TODO DS Add time to run update function as `millisForUpdate`.
 type commonProps struct {
 	CliVersion                string    `json:"cli_version"`
 	Goos                      string    `json:"goos"`
@@ -147,6 +148,10 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 }
 
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
+	if mt.apiKey == "" {
+		return fmt.Errorf("could not send amplitude event of type %s due to undefined API key", eventType)
+	}
+
 	requestBody, e := json.Marshal(map[string]interface{}{
 		"api_key": mt.apiKey,
 		"events": []event{event{

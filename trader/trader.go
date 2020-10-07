@@ -121,12 +121,15 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
-			t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 				e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success)
 				if e != nil {
 					log.Printf("failed to send update event metric: %s", e)
 				}
 			}, nil)
+			if e != nil {
+				log.Fatalf("failed to trigger goroutine for send update event: %s", e)
+			}
 
 			if t.fixedIterations != nil && success {
 				*t.fixedIterations = *t.fixedIterations - 1
@@ -192,12 +195,16 @@ func (t *Trader) deleteAllOffers(isAsync bool) {
 			return
 		}
 
-		t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+		e = t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 			e := t.metricsTracker.SendDeleteEvent(false)
 			if e != nil {
 				log.Printf("failed to send update event metric: %s", e)
 			}
 		}, nil)
+		if e != nil {
+			log.Fatalf("failed to trigger goroutine for send delete event: %s", e)
+			return
+		}
 	} else {
 		log.Fatalf("%s...nothing to delete, exiting", logPrefix)
 	}
