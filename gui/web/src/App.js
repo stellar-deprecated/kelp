@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import React, {Component} from 'react';
+import {BrowserRouter as Router, Route} from "react-router-dom";
 import Constants from './Constants';
 import styles from './App.module.scss';
 import Header from './components/molecules/Header/Header';
@@ -9,6 +9,7 @@ import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
 import Welcome from './components/molecules/Welcome/Welcome';
+import {makeMetricsTracker} from './utils/metricsTracker';
 
 let baseUrl = function () {
   let origin = window.location.origin
@@ -27,6 +28,11 @@ class App extends Component {
       kelp_errors: {},
       active_error: null, // { botName, level, errorList, index }
     };
+
+    // metricsTracker sends UI events to Amplitude
+    this.objects = {
+      metricsTracker: makeMetricsTracker(),
+    }
 
     this.setVersion = this.setVersion.bind(this);
     this.quit = this.quit.bind(this);
@@ -52,7 +58,7 @@ class App extends Component {
 
       delete _this._asyncRequests["version"];
       if (!resp.includes("error")) {
-        _this.setState({ version: resp });
+        _this.setState({version: resp});
       } else {
         setTimeout(_this.setVersion, 30000);
       }
@@ -91,7 +97,7 @@ class App extends Component {
       kelp_errors[backendError.object_type] = {};
     }
     let botErrors = kelp_errors[backendError.object_type];
-    
+
     if (!botErrors.hasOwnProperty(backendError.object_name)) {
       botErrors[backendError.object_name] = {};
     }
@@ -115,7 +121,7 @@ class App extends Component {
 
     // trigger state change
     if (this.state.active_error === null) {
-      this.setState({ "kelp_errors": kelp_errors });
+      this.setState({"kelp_errors": kelp_errors});
     } else {
       let newState = {
         "kelp_errors": kelp_errors,
@@ -141,7 +147,7 @@ class App extends Component {
       return [];
     }
     const botErrors = kelp_errors[object_type];
-    
+
     if (!botErrors.hasOwnProperty(object_name)) {
       return [];
     }
@@ -161,7 +167,7 @@ class App extends Component {
     let botErrors = kelp_errors[object_type];
     let namedError = botErrors[object_name];
     let levelErrors = namedError[level];
-    
+
     // delete entry for error
     delete levelErrors[errorID];
     // bubble up
@@ -188,7 +194,7 @@ class App extends Component {
       const isLastError = newState.active_error.index > newState.active_error.errorList.length - 1;
       if (isLastError) {
         newState.active_error.index = newState.active_error.errorList.length - 1;
-      } 
+      }
       // else leave index as-is since we just deleted the index and the new item will now be at the old index (delete in place)
     }
     // trigger state change
@@ -208,7 +214,7 @@ class App extends Component {
   }
 
   hideActiveError() {
-    this.setState({ "active_error": null });
+    this.setState({"active_error": null});
   }
 
   render() {
@@ -232,21 +238,21 @@ class App extends Component {
       <div>
         <div>{banner}</div>
         <Router>
-          <Header version={this.state.version}/>
+          <Header version={this.state.version} />
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
-            />
+            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors} />}
+          />
           <Route exact path="/new"
-            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-            />
+            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} />}
+          />
           <Route exact path="/edit"
-            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-            />
+            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} />}
+          />
           <Route exact path="/details"
-            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-            />
+            render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} />}
+          />
         </Router>
-        <Welcome quitFn={this.quit}/>
+        <Welcome quitFn={this.quit} />
       </div>
     );
   }
