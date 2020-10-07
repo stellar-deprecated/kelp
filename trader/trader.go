@@ -128,7 +128,7 @@ func (t *Trader) Start() {
 				}
 			}, nil)
 			if e != nil {
-				log.Fatalf("failed to trigger goroutine for send update event: %s", e)
+				log.Printf("failed to trigger goroutine for send update event: %s", e)
 			}
 
 			if t.fixedIterations != nil && success {
@@ -186,23 +186,23 @@ func (t *Trader) deleteAllOffers(isAsync bool) {
 
 	log.Printf("%screated %d operations to delete offers\n", logPrefix, len(dOps))
 	if len(dOps) > 0 {
-		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
-		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
-			log.Fatalf("(async) ...deleted %d offers, exiting (asyncCallback: hash=%s, e=%v)", len(dOps), hash, e)
-		})
-		if e != nil {
-			log.Fatalf("%scontinuing to exit after showing error during submission of delete offer ops: %s", logPrefix, e)
-			return
-		}
-
-		e = t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+		e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 			e := t.metricsTracker.SendDeleteEvent(false)
 			if e != nil {
 				log.Printf("failed to send update event metric: %s", e)
 			}
 		}, nil)
 		if e != nil {
-			log.Fatalf("failed to trigger goroutine for send delete event: %s", e)
+			log.Printf("failed to trigger goroutine for send delete event: %s", e)
+			return
+		}
+
+		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
+		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
+			log.Fatalf("(async) ...deleted %d offers, exiting (asyncCallback: hash=%s, e=%v)", len(dOps), hash, e)
+		})
+		if e != nil {
+			log.Fatalf("%scontinuing to exit after showing error during submission of delete offer ops: %s", logPrefix, e)
 			return
 		}
 	} else {

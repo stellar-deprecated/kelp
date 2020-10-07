@@ -149,7 +149,7 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
 	if mt.apiKey == "" {
-		return fmt.Errorf("could not send amplitude event of type %s due to undefined API key", eventType)
+		return nil
 	}
 
 	requestBody, e := json.Marshal(map[string]interface{}{
