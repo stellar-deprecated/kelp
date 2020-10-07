@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/stellar/go/clients/horizonclient"
@@ -37,6 +38,9 @@ type upsertBotConfigResponseErrors struct {
 	Error  string                 `json:"error"`
 	Fields upsertBotConfigRequest `json:"fields"`
 }
+
+// botNameRegex is defined on initialization through the `cmd` package.
+var botNameRegex *regexp.Regexp
 
 func makeUpsertError(fields upsertBotConfigRequest) *upsertBotConfigResponseErrors {
 	return &upsertBotConfigResponseErrors{
@@ -144,6 +148,10 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		}
 	}
 
+	if !isBotNameValid(req.Name) {
+		errResp.Name = "invalid bot name: can only contain letters, numbers, spaces, or -"
+		hasError = true
+	}
 	if req.TraderConfig.AssetCodeA == "" || len(req.TraderConfig.AssetCodeA) > 12 {
 		errResp.TraderConfig.AssetCodeA = "1 - 12 characters"
 		hasError = true
@@ -174,6 +182,27 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 
 	if hasError {
 		return makeUpsertError(errResp)
+	}
+	return nil
+}
+
+func isBotNameValid(botName string) bool {
+	if botNameRegex == nil {
+		panic(fmt.Errorf("botname regex undefined at runtime"))
+	}
+
+	return botNameRegex.MatchString(botName)
+}
+
+// InitBotNameRegex initializes the regex for bot names.
+func InitBotNameRegex() (e error) {
+	if botNameRegex != nil {
+		return fmt.Errorf("botname regex already defined at init")
+	}
+
+	botNameRegex, e = regexp.Compile(`^[a-zA-Z0-9\- ]+$`)
+	if e != nil {
+		return fmt.Errorf("could not compile botname regex: %s", e)
 	}
 	return nil
 }
