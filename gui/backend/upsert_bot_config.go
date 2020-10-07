@@ -196,6 +196,10 @@ func isBotNameValid(botName string) bool {
 
 // InitBotNameRegex initializes the regex for bot names.
 func InitBotNameRegex() (e error) {
+	if botNameRegex != nil {
+		return fmt.Errorf("botname regex already defined at init")
+	}
+
 	botNameRegex, e = regexp.Compile(`^[a-zA-Z0-9\- ]+$`)
 	if e != nil {
 		return fmt.Errorf("could not compile botname regex: %s", e)
