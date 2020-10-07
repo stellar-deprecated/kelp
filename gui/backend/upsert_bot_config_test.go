@@ -96,7 +96,7 @@ func TestIsBotNameValid(t *testing.T) {
 			// confirm that we can write and delete an empty file to the bot's filepath
 			filenamePair := model2.GetBotFilenames(k.botName, "buysell")
 			fileBase := os.TempDir()
-			filePath := fmt.Sprintf("%s%s", fileBase, filenamePair.Trader)
+			filePath := fmt.Sprintf("%s/%s", fileBase, filenamePair.Trader)
 			e = ioutil.WriteFile(filePath, []byte{}, 0644)
 			if !assert.NoError(t, e) {
 				return
