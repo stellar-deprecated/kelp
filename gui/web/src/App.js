@@ -9,7 +9,7 @@ import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
 import Welcome from './components/molecules/Welcome/Welcome';
-import {makeMetricsTracker} from './utils/metricsTracker';
+import MetricsTracker from './utils/metricsTracker';
 
 let baseUrl = function () {
   let origin = window.location.origin
@@ -31,7 +31,7 @@ class App extends Component {
 
     // metricsTracker sends UI events to Amplitude
     this.objects = {
-      metricsTracker: makeMetricsTracker(),
+      metricsTracker: MetricsTracker(""), // TODO DS Read API key from environment, as in Go backend.
     }
 
     this.setVersion = this.setVersion.bind(this);
@@ -46,6 +46,7 @@ class App extends Component {
 
   componentDidMount() {
     this.setVersion()
+    console.log(this.objects.metricsTracker.sendEvent("ce:test_startup"));
   }
 
   setVersion() {
