@@ -93,12 +93,12 @@ class App extends Component {
 
     // fetch object type from errors
     let kelp_errors = this.state.kelp_errors;
-    
+
     if (!kelp_errors.hasOwnProperty(backendError.object_type)) {
       kelp_errors[backendError.object_type] = {};
     }
     let botErrors = kelp_errors[backendError.object_type];
-
+    
     if (!botErrors.hasOwnProperty(backendError.object_name)) {
       botErrors[backendError.object_name] = {};
     }
@@ -161,14 +161,14 @@ class App extends Component {
     
     // return as an array
     return Object.values(levelErrors);
-  } 
+  }
 
   removeError(object_type, object_name, level, errorID) {
     let kelp_errors = this.state.kelp_errors;
     let botErrors = kelp_errors[object_type];
     let namedError = botErrors[object_name];
     let levelErrors = namedError[level];
-
+    
     // delete entry for error
     delete levelErrors[errorID];
     // bubble up
@@ -195,7 +195,7 @@ class App extends Component {
       const isLastError = newState.active_error.index > newState.active_error.errorList.length - 1;
       if (isLastError) {
         newState.active_error.index = newState.active_error.errorList.length - 1;
-      }
+      } 
       // else leave index as-is since we just deleted the index and the new item will now be at the old index (delete in place)
     }
     // trigger state change
@@ -242,16 +242,16 @@ class App extends Component {
           <Header version={this.state.version}/>
           <Route exact path="/"
             render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
-          />
+           />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-          />
+           />
           <Route exact path="/edit"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-          />
+           />
           <Route exact path="/details"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-          />
+           />
         </Router>
         <Welcome quitFn={this.quit}/>
       </div>
