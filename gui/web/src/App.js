@@ -158,7 +158,7 @@ class App extends Component {
       return [];
     }
     const levelErrors = namedError[level];
-    
+
     // return as an array
     return Object.values(levelErrors);
   }
@@ -242,16 +242,16 @@ class App extends Component {
           <Header version={this.state.version}/>
           <Route exact path="/"
             render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
-           />
+            />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-           />
+            />
           <Route exact path="/edit"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-           />
+            />
           <Route exact path="/details"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
-           />
+            />
         </Router>
         <Welcome quitFn={this.quit}/>
       </div>
