@@ -217,8 +217,8 @@ then
             then
                 echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
                 exit 1
-            else 
-                echo "not tracking metrics"
+            else
+                echo "force release option set so ignoring missing AMPLITUDE_API_KEY"
             fi
         fi
         if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
