@@ -8,8 +8,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/stellar/kelp/support/networking"
 )
 
@@ -34,8 +32,10 @@ type MetricsTracker struct {
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
+// fields for the event object: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#http-api-v2-events
 type event struct {
 	UserID    string      `json:"user_id"`
+	SessionID int64       `json:"session_id"`
 	DeviceID  string      `json:"device_id"`
 	EventType string      `json:"event_type"`
 	Props     interface{} `json:"event_properties"`
@@ -47,17 +47,16 @@ type event struct {
 // TODO DS Add cloud server information.
 // TODO DS Add time to run update function as `millisForUpdate`.
 type commonProps struct {
-	CliVersion                string    `json:"cli_version"`
-	Goos                      string    `json:"goos"`
-	Goarch                    string    `json:"goarch"`
-	Goarm                     string    `json:"goarm"`
-	GuiVersion                string    `json:"gui_version"`
-	Strategy                  string    `json:"strategy"`
-	UpdateTimeIntervalSeconds int32     `json:"update_time_interval_seconds"`
-	Exchange                  string    `json:"exchange"`
-	TradingPair               string    `json:"trading_pair"`
-	SessionID                 uuid.UUID `json:"session_id"`
-	SecondsSinceStart         float64   `json:"seconds_since_start"`
+	CliVersion                string  `json:"cli_version"`
+	Goos                      string  `json:"goos"`
+	Goarch                    string  `json:"goarch"`
+	Goarm                     string  `json:"goarm"`
+	GuiVersion                string  `json:"gui_version"`
+	Strategy                  string  `json:"strategy"`
+	UpdateTimeIntervalSeconds int32   `json:"update_time_interval_seconds"`
+	Exchange                  string  `json:"exchange"`
+	TradingPair               string  `json:"trading_pair"`
+	SecondsSinceStart         float64 `json:"seconds_since_start"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -115,10 +114,6 @@ func MakeMetricsTracker(
 	exchange string,
 	tradingPair string,
 ) (*MetricsTracker, error) {
-	sessionID, e := uuid.NewUUID()
-	if e != nil {
-		return nil, fmt.Errorf("could not generate uuid with error %s", e)
-	}
 	props := commonProps{
 		CliVersion:                version,
 		Goos:                      goos,
@@ -129,13 +124,12 @@ func MakeMetricsTracker(
 		UpdateTimeIntervalSeconds: updateTimeIntervalSeconds,
 		Exchange:                  exchange,
 		TradingPair:               tradingPair,
-		SessionID:                 sessionID,
 	}
 
 	return &MetricsTracker{
-		userID: userID,
 		client: client,
 		apiKey: apiKey,
+		userID: userID,
 		props:  props,
 		start:  start,
 	}, nil
@@ -175,10 +169,13 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		return nil
 	}
 
+	// session_id is the start time of the session in milliseconds since epoch (Unix Timestamp),
+	// necessary to associate events with a particular system (taken from amplitude docs)
 	eventW := eventWrapper{
 		ApiKey: mt.apiKey,
 		Events: []event{{
 			UserID:    mt.userID,
+			SessionID: mt.start.Unix() * 1000, // convert to millis based on docs
 			DeviceID:  mt.userID,
 			EventType: eventType,
 			Props:     eventProps,
