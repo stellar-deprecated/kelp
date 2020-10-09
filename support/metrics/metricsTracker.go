@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stellar/kelp/support/networking"
-
 	"github.com/google/uuid"
+
+	"github.com/stellar/kelp/support/networking"
 )
 
 // Custom events in Amplitude should be named with "ce:event_name",
@@ -74,6 +74,11 @@ type deleteProps struct {
 	commonProps
 	Exit       bool   `json:"exit"`
 	StackTrace string `json:"stack_trace"`
+}
+
+type eventWrapper struct {
+	ApiKey string  `json:"api_key"`
+	Events []event `json:"events"`
 }
 
 // MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
@@ -152,16 +157,16 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		return nil
 	}
 
-	requestBody, e := json.Marshal(map[string]interface{}{
-		"api_key": mt.apiKey,
-		"events": []event{event{
+	eventW := eventWrapper{
+		ApiKey: mt.apiKey,
+		Events: []event{{
 			UserID:    mt.userID,
 			DeviceID:  mt.userID,
 			EventType: eventType,
 			Props:     eventProps,
 		}},
-	})
-
+	}
+	requestBody, e := json.Marshal(eventW)
 	if e != nil {
 		return fmt.Errorf("could not marshal json request: %s", e)
 	}
@@ -176,7 +181,16 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 	if strings.Contains(responseDataStr, "success") {
 		log.Printf("Successfully sent event metric of type '%s'", eventType)
 	} else {
-		log.Printf("Failed to send event metric of type '%s' (request=%s; response: %s)", eventType, string(requestBody), responseDataStr)
+		// work on copy so we don't modify original (good hygiene)
+		eventWCensored := *(&eventW)
+		// we don't want to display the apiKey in the logs so censor it
+		eventWCensored.ApiKey = ""
+		requestWCensored, e := json.Marshal(eventWCensored)
+		if e != nil {
+			log.Printf("Failed to send event metric of type '%s' (response: %s), error while trying to marshall requestWCensored: %s", eventType, responseDataStr, e)
+		} else {
+			log.Printf("Failed to send event metric of type '%s' (requestWCensored=%s; response: %s)", eventType, string(requestWCensored), responseDataStr)
+		}
 	}
 	return nil
 }
