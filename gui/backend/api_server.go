@@ -12,6 +12,7 @@ import (
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/metrics"
 )
 
 // APIServer is an instance of the API service
@@ -27,6 +28,7 @@ type APIServer struct {
 	apiPubNet         *horizonclient.Client
 	noHeaders         bool
 	quitFn            func()
+	metricsTracker    *metrics.MetricsTracker
 
 	cachedOptionsMetadata metadata
 }
@@ -43,6 +45,7 @@ func MakeAPIServer(
 	ccxtRestUrl string,
 	noHeaders bool,
 	quitFn func(),
+	metricsTracker *metrics.MetricsTracker,
 ) (*APIServer, error) {
 	kelpBinPath := kos.GetBinDir().Join(filepath.Base(os.Args[0]))
 
@@ -64,6 +67,7 @@ func MakeAPIServer(
 		noHeaders:             noHeaders,
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,
+		metricsTracker:        metricsTracker,
 	}, nil
 }
 
