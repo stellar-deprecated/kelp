@@ -308,26 +308,26 @@ func init() {
 			if e != nil {
 				panic(e)
 			}
+		}
 
-			dataPath := kos.GetDotKelpWorkingDir().Join("bot_data")
-			botConfigsPath := dataPath.Join("configs")
-			botLogsPath := dataPath.Join("logs")
-			s, e := backend.MakeAPIServer(
-				kos,
-				botConfigsPath,
-				botLogsPath,
-				*options.horizonTestnetURI,
-				apiTestNet,
-				*options.horizonPubnetURI,
-				apiPubNet,
-				*rootCcxtRestURL,
-				*options.noHeaders,
-				quit,
-				metricsTracker,
-			)
-			if e != nil {
-				panic(e)
-			}
+		dataPath := kos.GetDotKelpWorkingDir().Join("bot_data")
+		botConfigsPath := dataPath.Join("configs")
+		botLogsPath := dataPath.Join("logs")
+		s, e := backend.MakeAPIServer(
+			kos,
+			botConfigsPath,
+			botLogsPath,
+			*options.horizonTestnetURI,
+			apiTestNet,
+			*options.horizonPubnetURI,
+			apiPubNet,
+			*rootCcxtRestURL,
+			*options.noHeaders,
+			quit,
+			metricsTracker,
+		)
+		if e != nil {
+			panic(e)
 		}
 
 		guiWebPath := kos.GetBinDir().Join("../gui/web")
