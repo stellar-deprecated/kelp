@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -79,6 +78,25 @@ type deleteProps struct {
 type eventWrapper struct {
 	ApiKey string  `json:"api_key"`
 	Events []event `json:"events"`
+}
+
+// response structure taken from here: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#tocSsuccesssummary
+type amplitudeResponse struct {
+	Code             int   `json:"code"`
+	EventsIngested   int   `json:"events_ingested"`
+	PayloadSizeBytes int   `json:"payload_size_bytes"`
+	ServerUploadTime int64 `json:"server_upload_time"`
+}
+
+// String is the Stringer method
+func (ar amplitudeResponse) String() string {
+	return fmt.Sprintf("amplitudeResponse[Code=%d, EventsIngested=%d, PayloadSizeBytes=%d, ServerUploadTime=%d (%s)]",
+		ar.Code,
+		ar.EventsIngested,
+		ar.PayloadSizeBytes,
+		ar.ServerUploadTime,
+		time.Unix(ar.ServerUploadTime, 0).Format("20060102T150405MST"),
+	)
 }
 
 // MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
@@ -171,14 +189,13 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		return fmt.Errorf("could not marshal json request: %s", e)
 	}
 
-	var responseData interface{}
+	var responseData amplitudeResponse
 	e = networking.JSONRequest(mt.client, "POST", amplitudeAPIURL, string(requestBody), map[string]string{}, &responseData, "")
 	if e != nil {
 		return fmt.Errorf("could not post amplitude request: %s", e)
 	}
 
-	responseDataStr := fmt.Sprintf("%v", responseData)
-	if strings.Contains(responseDataStr, "success") {
+	if responseData.Code == 200 {
 		log.Printf("Successfully sent event metric of type '%s'", eventType)
 	} else {
 		// work on copy so we don't modify original (good hygiene)
@@ -187,9 +204,9 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		eventWCensored.ApiKey = ""
 		requestWCensored, e := json.Marshal(eventWCensored)
 		if e != nil {
-			log.Printf("Failed to send event metric of type '%s' (response: %s), error while trying to marshall requestWCensored: %s", eventType, responseDataStr, e)
+			log.Printf("Failed to send event metric of type '%s' (response: %s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
 		} else {
-			log.Printf("Failed to send event metric of type '%s' (requestWCensored=%s; response: %s)", eventType, string(requestWCensored), responseDataStr)
+			log.Printf("Failed to send event metric of type '%s' (requestWCensored=%s; response: %s)", eventType, string(requestWCensored), responseData.String())
 		}
 	}
 	return nil
