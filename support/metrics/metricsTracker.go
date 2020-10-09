@@ -52,10 +52,10 @@ type commonProps struct {
 	Goarch                    string  `json:"goarch"`
 	Goarm                     string  `json:"goarm"`
 	GuiVersion                string  `json:"gui_version"`
-	Strategy                  string  `json:"strategy"`
-	UpdateTimeIntervalSeconds int32   `json:"update_time_interval_seconds"`
-	Exchange                  string  `json:"exchange"`
-	TradingPair               string  `json:"trading_pair"`
+	Strategy                  string  `json:"strategy,omitempty"`
+	UpdateTimeIntervalSeconds int32   `json:"update_time_interval_seconds,omitempty"`
+	Exchange                  string  `json:"exchange,omitempty"`
+	TradingPair               string  `json:"trading_pair,omitempty"`
 	SecondsSinceStart         float64 `json:"seconds_since_start"`
 }
 
@@ -75,7 +75,7 @@ type deleteProps struct {
 }
 
 type eventWrapper struct {
-	ApiKey string  `json:"api_key"`
+	APIKey string  `json:"api_key"`
 	Events []event `json:"events"`
 }
 
@@ -98,8 +98,8 @@ func (ar amplitudeResponse) String() string {
 	)
 }
 
-// MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
-func MakeMetricsTracker(
+// MakeMetricsTrackerCli is a factory method to create a `metrics.Tracker` from the CLI.
+func MakeMetricsTrackerCli(
 	userID string,
 	apiKey string,
 	client *http.Client,
@@ -124,6 +124,35 @@ func MakeMetricsTracker(
 		UpdateTimeIntervalSeconds: updateTimeIntervalSeconds,
 		Exchange:                  exchange,
 		TradingPair:               tradingPair,
+	}
+
+	return &MetricsTracker{
+		client: client,
+		apiKey: apiKey,
+		userID: userID,
+		props:  props,
+		start:  start,
+	}, nil
+}
+
+// MakeMetricsTrackerGui is a factory method to create a `metrics.Tracker` from the GUI.
+func MakeMetricsTrackerGui(
+	userID string,
+	apiKey string,
+	client *http.Client,
+	start time.Time,
+	version string,
+	goos string,
+	goarch string,
+	goarm string,
+	guiVersion string,
+) (*MetricsTracker, error) {
+	props := commonProps{
+		CliVersion: version,
+		Goos:       goos,
+		Goarch:     goarch,
+		Goarm:      goarm,
+		GuiVersion: guiVersion,
 	}
 
 	return &MetricsTracker{
@@ -173,7 +202,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 	// session_id is the start time of the session in milliseconds since epoch (Unix Timestamp),
 	// necessary to associate events with a particular system (taken from amplitude docs)
 	eventW := eventWrapper{
-		ApiKey: mt.apiKey,
+		APIKey: mt.apiKey,
 		Events: []event{{
 			UserID:    mt.userID,
 			SessionID: mt.start.Unix() * 1000, // convert to millis based on docs
@@ -200,7 +229,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		// work on copy so we don't modify original (good hygiene)
 		eventWCensored := *(&eventW)
 		// we don't want to display the apiKey in the logs so censor it
-		eventWCensored.ApiKey = ""
+		eventWCensored.APIKey = ""
 		requestWCensored, e := json.Marshal(eventWCensored)
 		if e != nil {
 			log.Printf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)

@@ -513,7 +513,7 @@ func runTradeCmd(options inputs) {
 		guiVersionFlag = guiVersion
 	}
 
-	metricsTracker, e := metrics.MakeMetricsTracker(
+	metricsTracker, e := metrics.MakeMetricsTrackerCli(
 		userID,
 		amplitudeAPIKey,
 		httpClient,

@@ -33,6 +33,7 @@ import (
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
@@ -288,6 +289,28 @@ func init() {
 			}
 		}
 
+		var metricsTracker *metrics.MetricsTracker
+		if isLocalDevMode {
+			log.Printf("not sending data metrics in dev mode")
+		} else {
+			userID := "-1" // TODO DS Properly generate and save user ID.
+			httpClient := &http.Client{}
+			metricsTracker, e = metrics.MakeMetricsTrackerGui(
+				userID,
+				amplitudeAPIKey,
+				httpClient,
+				time.Now(), // TODO: Find proper time.
+				version,
+				runtime.GOOS,
+				runtime.GOARCH,
+				"unknown_todo",   // TODO DS Determine how to get GOARM.
+				"guiVersionFlag", // TODO DS Determine how to get GUI version flag.
+			)
+			if e != nil {
+				panic(e)
+			}
+		}
+
 		dataPath := kos.GetDotKelpWorkingDir().Join("bot_data")
 		botConfigsPath := dataPath.Join("configs")
 		botLogsPath := dataPath.Join("logs")
@@ -302,6 +325,7 @@ func init() {
 			*rootCcxtRestURL,
 			*options.noHeaders,
 			quit,
+			metricsTracker,
 		)
 		if e != nil {
 			panic(e)
