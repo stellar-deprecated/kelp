@@ -165,7 +165,8 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 }
 
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
-	if mt.apiKey == "" {
+	if mt.apiKey == "" || mt.userID == "-1" {
+		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
 		return nil
 	}
 
@@ -186,6 +187,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		return fmt.Errorf("could not marshal json request: %s", e)
 	}
 
+	// TODO DS - wrap these API functions into support/sdk/amplitude.go
 	var responseData amplitudeResponse
 	e = networking.JSONRequest(mt.client, "POST", amplitudeAPIURL, string(requestBody), map[string]string{}, &responseData, "")
 	if e != nil {
@@ -193,7 +195,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 	}
 
 	if responseData.Code == 200 {
-		log.Printf("Successfully sent event metric of type '%s'", eventType)
+		log.Printf("metric - successfully sent event metric of type '%s'", eventType)
 	} else {
 		// work on copy so we don't modify original (good hygiene)
 		eventWCensored := *(&eventW)
@@ -201,9 +203,9 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		eventWCensored.ApiKey = ""
 		requestWCensored, e := json.Marshal(eventWCensored)
 		if e != nil {
-			log.Printf("Failed to send event metric of type '%s' (response: %s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
+			log.Printf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
 		} else {
-			log.Printf("Failed to send event metric of type '%s' (requestWCensored=%s; response: %s)", eventType, string(requestWCensored), responseData.String())
+			log.Printf("metric - failed to send event metric of type '%s' (requestWCensored=%s; response=%s)", eventType, string(requestWCensored), responseData.String())
 		}
 	}
 	return nil
