@@ -6,12 +6,9 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
-	"strings"
 	"time"
 
 	"github.com/stellar/kelp/support/networking"
-
-	"github.com/google/uuid"
 )
 
 // Custom events in Amplitude should be named with "ce:event_name",
@@ -35,8 +32,10 @@ type MetricsTracker struct {
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
+// fields for the event object: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#http-api-v2-events
 type event struct {
 	UserID    string      `json:"user_id"`
+	SessionID int64       `json:"session_id"`
 	DeviceID  string      `json:"device_id"`
 	EventType string      `json:"event_type"`
 	Props     interface{} `json:"event_properties"`
@@ -48,17 +47,16 @@ type event struct {
 // TODO DS Add cloud server information.
 // TODO DS Add time to run update function as `millisForUpdate`.
 type commonProps struct {
-	CliVersion                string    `json:"cli_version"`
-	Goos                      string    `json:"goos"`
-	Goarch                    string    `json:"goarch"`
-	Goarm                     string    `json:"goarm"`
-	GuiVersion                string    `json:"gui_version"`
-	Strategy                  string    `json:"strategy"`
-	UpdateTimeIntervalSeconds int32     `json:"update_time_interval_seconds"`
-	Exchange                  string    `json:"exchange"`
-	TradingPair               string    `json:"trading_pair"`
-	SessionID                 uuid.UUID `json:"session_id"`
-	SecondsSinceStart         float64   `json:"seconds_since_start"`
+	CliVersion                string  `json:"cli_version"`
+	Goos                      string  `json:"goos"`
+	Goarch                    string  `json:"goarch"`
+	Goarm                     string  `json:"goarm"`
+	GuiVersion                string  `json:"gui_version"`
+	Strategy                  string  `json:"strategy,omitempty"`
+	UpdateTimeIntervalSeconds int32   `json:"update_time_interval_seconds,omitempty"`
+	Exchange                  string  `json:"exchange,omitempty"`
+	TradingPair               string  `json:"trading_pair,omitempty"`
+	SecondsSinceStart         float64 `json:"seconds_since_start"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -76,8 +74,32 @@ type deleteProps struct {
 	StackTrace string `json:"stack_trace"`
 }
 
-// MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
-func MakeMetricsTracker(
+type eventWrapper struct {
+	APIKey string  `json:"api_key"`
+	Events []event `json:"events"`
+}
+
+// response structure taken from here: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#tocSsuccesssummary
+type amplitudeResponse struct {
+	Code             int   `json:"code"`
+	EventsIngested   int   `json:"events_ingested"`
+	PayloadSizeBytes int   `json:"payload_size_bytes"`
+	ServerUploadTime int64 `json:"server_upload_time"`
+}
+
+// String is the Stringer method
+func (ar amplitudeResponse) String() string {
+	return fmt.Sprintf("amplitudeResponse[Code=%d, EventsIngested=%d, PayloadSizeBytes=%d, ServerUploadTime=%d (%s)]",
+		ar.Code,
+		ar.EventsIngested,
+		ar.PayloadSizeBytes,
+		ar.ServerUploadTime,
+		time.Unix(ar.ServerUploadTime, 0).Format("20060102T150405MST"),
+	)
+}
+
+// MakeMetricsTrackerCli is a factory method to create a `metrics.Tracker` from the CLI.
+func MakeMetricsTrackerCli(
 	userID string,
 	apiKey string,
 	client *http.Client,
@@ -92,10 +114,6 @@ func MakeMetricsTracker(
 	exchange string,
 	tradingPair string,
 ) (*MetricsTracker, error) {
-	sessionID, e := uuid.NewUUID()
-	if e != nil {
-		return nil, fmt.Errorf("could not generate uuid with error %s", e)
-	}
 	props := commonProps{
 		CliVersion:                version,
 		Goos:                      goos,
@@ -106,13 +124,41 @@ func MakeMetricsTracker(
 		UpdateTimeIntervalSeconds: updateTimeIntervalSeconds,
 		Exchange:                  exchange,
 		TradingPair:               tradingPair,
-		SessionID:                 sessionID,
 	}
 
 	return &MetricsTracker{
-		userID: userID,
 		client: client,
 		apiKey: apiKey,
+		userID: userID,
+		props:  props,
+		start:  start,
+	}, nil
+}
+
+// MakeMetricsTrackerGui is a factory method to create a `metrics.Tracker` from the GUI.
+func MakeMetricsTrackerGui(
+	userID string,
+	apiKey string,
+	client *http.Client,
+	start time.Time,
+	version string,
+	goos string,
+	goarch string,
+	goarm string,
+	guiVersion string,
+) (*MetricsTracker, error) {
+	props := commonProps{
+		CliVersion: version,
+		Goos:       goos,
+		Goarch:     goarch,
+		Goarm:      goarm,
+		GuiVersion: guiVersion,
+	}
+
+	return &MetricsTracker{
+		client: client,
+		apiKey: apiKey,
+		userID: userID,
 		props:  props,
 		start:  start,
 	}, nil
@@ -148,35 +194,48 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 }
 
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
-	if mt.apiKey == "" {
+	if mt.apiKey == "" || mt.userID == "-1" {
+		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
 		return nil
 	}
 
-	requestBody, e := json.Marshal(map[string]interface{}{
-		"api_key": mt.apiKey,
-		"events": []event{event{
+	// session_id is the start time of the session in milliseconds since epoch (Unix Timestamp),
+	// necessary to associate events with a particular system (taken from amplitude docs)
+	eventW := eventWrapper{
+		APIKey: mt.apiKey,
+		Events: []event{{
 			UserID:    mt.userID,
+			SessionID: mt.start.Unix() * 1000, // convert to millis based on docs
 			DeviceID:  mt.userID,
 			EventType: eventType,
 			Props:     eventProps,
 		}},
-	})
-
+	}
+	requestBody, e := json.Marshal(eventW)
 	if e != nil {
 		return fmt.Errorf("could not marshal json request: %s", e)
 	}
 
-	var responseData interface{}
+	// TODO DS - wrap these API functions into support/sdk/amplitude.go
+	var responseData amplitudeResponse
 	e = networking.JSONRequest(mt.client, "POST", amplitudeAPIURL, string(requestBody), map[string]string{}, &responseData, "")
 	if e != nil {
 		return fmt.Errorf("could not post amplitude request: %s", e)
 	}
 
-	responseDataStr := fmt.Sprintf("%v", responseData)
-	if strings.Contains(responseDataStr, "success") {
-		log.Printf("Successfully sent event metric of type '%s'", eventType)
+	if responseData.Code == 200 {
+		log.Printf("metric - successfully sent event metric of type '%s'", eventType)
 	} else {
-		log.Printf("Failed to send event metric of type '%s' (request=%s; response: %s)", eventType, string(requestBody), responseDataStr)
+		// work on copy so we don't modify original (good hygiene)
+		eventWCensored := *(&eventW)
+		// we don't want to display the apiKey in the logs so censor it
+		eventWCensored.APIKey = ""
+		requestWCensored, e := json.Marshal(eventWCensored)
+		if e != nil {
+			log.Printf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
+		} else {
+			log.Printf("metric - failed to send event metric of type '%s' (requestWCensored=%s; response=%s)", eventType, string(requestWCensored), responseData.String())
+		}
 	}
 	return nil
 }
