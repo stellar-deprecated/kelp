@@ -16,6 +16,7 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -44,6 +45,7 @@ type Trader struct {
 	fixedIterations                *uint64
 	dataKey                        *model.BotKey
 	alert                          api.Alert
+	metricsTracker                 *metrics.MetricsTracker
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -80,6 +82,7 @@ func MakeTrader(
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
+	metricsTracker *metrics.MetricsTracker,
 ) *Trader {
 	return &Trader{
 		api:                            api,
@@ -103,6 +106,7 @@ func MakeTrader(
 		fixedIterations:                fixedIterations,
 		dataKey:                        dataKey,
 		alert:                          alert,
+		metricsTracker:                 metricsTracker,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
@@ -117,6 +121,16 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
+			e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+				e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success)
+				if e != nil {
+					log.Printf("failed to send update event metric: %s", e)
+				}
+			}, nil)
+			if e != nil {
+				log.Printf("failed to trigger goroutine for send update event: %s", e)
+			}
+
 			if t.fixedIterations != nil && success {
 				*t.fixedIterations = *t.fixedIterations - 1
 				if *t.fixedIterations <= 0 {
@@ -172,8 +186,19 @@ func (t *Trader) deleteAllOffers(isAsync bool) {
 
 	log.Printf("%screated %d operations to delete offers\n", logPrefix, len(dOps))
 	if len(dOps) > 0 {
+		e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			e := t.metricsTracker.SendDeleteEvent(false)
+			if e != nil {
+				log.Printf("failed to send update event metric: %s", e)
+			}
+		}, nil)
+		if e != nil {
+			log.Printf("failed to trigger goroutine for send delete event: %s", e)
+			return
+		}
+
 		// to delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
-		e := t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
+		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(dOps), api.SubmitModeBoth, func(hash string, e error) {
 			log.Fatalf("(async) ...deleted %d offers, exiting (asyncCallback: hash=%s, e=%v)", len(dOps), hash, e)
 		})
 		if e != nil {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/database"
 	"github.com/stellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
@@ -197,7 +199,7 @@ func makeFeeFn(l logger.Logger, botConfig trader.BotConfig, newClient *horizoncl
 	return feeFn
 }
 
-func readBotConfig(l logger.Logger, options inputs) trader.BotConfig {
+func readBotConfig(l logger.Logger, options inputs, botStart time.Time) trader.BotConfig {
 	var botConfig trader.BotConfig
 	e := config.Read(*options.botConfigPath, &botConfig)
 	utils.CheckConfigError(botConfig, e, *options.botConfigPath)
@@ -207,7 +209,7 @@ func readBotConfig(l logger.Logger, options inputs) trader.BotConfig {
 	}
 
 	if *options.logPrefix != "" {
-		logFilename := makeLogFilename(*options.logPrefix, botConfig)
+		logFilename := makeLogFilename(*options.logPrefix, botConfig, botStart)
 		setLogFile(l, logFilename)
 	}
 
@@ -331,6 +333,7 @@ func makeStrategy(
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
 	db *sql.DB,
+	metricsTracker *metrics.MetricsTracker,
 ) api.Strategy {
 	// setting the temp hack variables for the sdex price feeds
 	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
@@ -338,7 +341,7 @@ func makeStrategy(
 		l.Info("")
 		l.Errorf("%s", e)
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 
 	strategy, e := plugins.MakeStrategy(
@@ -361,7 +364,7 @@ func makeStrategy(
 		l.Info("")
 		l.Errorf("%s", e)
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 	return strategy
 }
@@ -379,6 +382,7 @@ func makeBot(
 	fillTracker api.FillTracker,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
+	metricsTracker *metrics.MetricsTracker,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
 		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
@@ -389,14 +393,14 @@ func makeBot(
 		log.Println()
 		log.Println(e)
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 
 	if botConfig.SynchronizeStateLoadEnable && botConfig.SynchronizeStateLoadMaxRetries < 0 {
 		log.Println()
 		utils.PrintErrorHintf("SYNCHRONIZE_STATE_LOAD_MAX_RETRIES needs to be greater than or equal to 0 when SYNCHRONIZE_STATE_LOAD_ENABLE is set to true")
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 
 	assetBase := botConfig.AssetBase()
@@ -415,7 +419,7 @@ func makeBot(
 			log.Println()
 			log.Println(e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 		}
 
 		valueQuoteFeed, e = parseValueFeed(botConfig.DollarValueFeedQuoteAsset)
@@ -423,7 +427,7 @@ func makeBot(
 			log.Println()
 			log.Println(e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 		}
 	}
 
@@ -438,7 +442,7 @@ func makeBot(
 		log.Println()
 		utils.PrintErrorHintf("FILTERS currently only supported on 'sell' and 'delete' strategies, remove FILTERS from the trader config file")
 		// we want to delete all the offers and exit here since there is something wrong with our setup
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 	for _, filterString := range botConfig.Filters {
 		filter, e := filterFactory.MakeFilter(filterString)
@@ -446,7 +450,7 @@ func makeBot(
 			log.Println()
 			log.Println(e)
 			// we want to delete all the offers and exit here since there is something wrong with our setup
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 		}
 		submitFilters = append(submitFilters, filter)
 	}
@@ -479,6 +483,7 @@ func makeBot(
 		options.fixedIterations,
 		dataKey,
 		alert,
+		metricsTracker,
 	)
 }
 
@@ -496,9 +501,41 @@ func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfi
 
 func runTradeCmd(options inputs) {
 	l := logger.MakeBasicLogger()
-	botConfig := readBotConfig(l, options)
+	botStart := time.Now()
+	botConfig := readBotConfig(l, options, botStart)
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
+
+	userID := "-1" // TODO DS Properly generate and save user ID.
+	httpClient := &http.Client{}
+	var guiVersionFlag string
+	if *options.ui {
+		guiVersionFlag = guiVersion
+	}
+
+	metricsTracker, e := metrics.MakeMetricsTracker(
+		userID,
+		amplitudeAPIKey,
+		httpClient,
+		botStart,
+		version,
+		runtime.GOOS,
+		runtime.GOARCH,
+		"unknown_todo", // TODO DS Determine how to get GOARM.
+		guiVersionFlag,
+		*options.strategy,
+		botConfig.TickIntervalSeconds,
+		botConfig.TradingExchange,
+		botConfig.TradingPair(),
+	)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
+	}
+
+	e = metricsTracker.SendStartupEvent()
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not send startup event metric: %s", e))
+	}
 
 	// --- start initialization of objects ----
 	threadTracker := multithreading.MakeThreadTracker()
@@ -616,6 +653,7 @@ func runTradeCmd(options inputs) {
 		options,
 		threadTracker,
 		db,
+		metricsTracker,
 	)
 	fillTracker := makeFillTracker(
 		l,
@@ -629,6 +667,7 @@ func runTradeCmd(options inputs) {
 		db,
 		threadTracker,
 		botConfig.DbOverrideAccountID,
+		metricsTracker,
 	)
 	bot := makeBot(
 		l,
@@ -643,6 +682,7 @@ func runTradeCmd(options inputs) {
 		fillTracker,
 		threadTracker,
 		options,
+		metricsTracker,
 	)
 	// --- end initialization of objects ---
 	// --- start initialization of services ---
@@ -657,7 +697,7 @@ func runTradeCmd(options inputs) {
 				// we want to delete all the offers and exit here because we don't want the bot to run if monitoring isn't working
 				// if monitoring is desired but not working properly, we want the bot to be shut down and guarantee that there
 				// aren't outstanding offers.
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 			}
 		}()
 	}
@@ -669,7 +709,7 @@ func runTradeCmd(options inputs) {
 				l.Info("")
 				l.Errorf("problem encountered while running the fill tracker: %s", e)
 				// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+				deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 			}
 		}()
 	}
@@ -731,13 +771,14 @@ func makeFillTracker(
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 	accountID string,
+	metricsTracker *metrics.MetricsTracker,
 ) api.FillTracker {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
 		l.Info("")
 		l.Info("problem encountered while instantiating the fill tracker:")
 		l.Errorf("%s", e)
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}
 
 	fillTrackerEnabled := botConfig.SynchronizeStateLoadEnable || botConfig.FillTrackerSleepMillis != 0
@@ -745,7 +786,7 @@ func makeFillTracker(
 		l.Info("")
 		l.Error("error: strategy has FillHandlers but fill tracking was disabled (set FILL_TRACKER_SLEEP_MILLIS to a non-zero value)")
 		// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working
-		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	} else if !fillTrackerEnabled {
 		return nil
 	}
@@ -759,7 +800,7 @@ func makeFillTracker(
 			l.Info("")
 			l.Error(fmt.Sprintf("could not get last trade cursor from exchangeShim: %s", e))
 			// we want to delete all the offers and exit here because we don't want the bot to run if fill tracking isn't working correctly
-			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker)
+			deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 		}
 		log.Printf("set latest trade cursor from where to start tracking fills (no override specified): %v\n", lastCursor)
 	} else {
@@ -825,7 +866,16 @@ func deleteAllOffersAndExit(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	threadTracker *multithreading.ThreadTracker,
+	metricsTracker *metrics.MetricsTracker,
 ) {
+	// synchronous event to guarantee execution. we want to know whenever we enter the delete all offers logic. this function
+	// waits for all threads to be synchronous, which is equivalent to sending synchronously. we use
+	e := metricsTracker.SendDeleteEvent(true)
+	if e != nil {
+		// We don't want to crash upon failure, so offers will be deleted regardless of metric send.
+		l.Infof("could not send delete event metric: %s", e)
+	}
+
 	l.Info("")
 	l.Infof("waiting for all outstanding threads (%d) to finish before loading offers to be deleted...", threadTracker.NumActiveThreads())
 	threadTracker.Stop(multithreading.StopModeError)
@@ -884,12 +934,12 @@ func setLogFile(l logger.Logger, filename string) {
 	defer logPanic(l, false)
 }
 
-func makeLogFilename(logPrefix string, botConfig trader.BotConfig) string {
-	t := time.Now().Format("20060102T150405MST")
+func makeLogFilename(logPrefix string, botConfig trader.BotConfig, botStart time.Time) string {
+	botStartStr := botStart.Format("20060102T150405MST")
 	if botConfig.IsTradingSdex() {
-		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, t)
+		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, botStartStr)
 	}
-	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, t)
+	return fmt.Sprintf("%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.AssetCodeB, botStartStr)
 }
 
 func parseValueFeed(valueFeed string) (api.PriceFeed, error) {

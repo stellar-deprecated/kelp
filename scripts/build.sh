@@ -188,7 +188,7 @@ GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"
 GIT_HASH=$(git describe --always --abbrev=50 --dirty --long)
 DATE=$(date -u +%"Y%m%dT%H%M%SZ")
-LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.guiVersion=$GUI_VERSION" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV")
+LDFLAGS_ARRAY=("github.com/stellar/kelp/cmd.version=$VERSION_STRING" "github.com/stellar/kelp/cmd.guiVersion=$GUI_VERSION" "github.com/stellar/kelp/cmd.gitBranch=$GIT_BRANCH" "github.com/stellar/kelp/cmd.gitHash=$GIT_HASH" "github.com/stellar/kelp/cmd.buildDate=$DATE" "github.com/stellar/kelp/cmd.env=$ENV" "github.com/stellar/kelp/cmd.amplitudeAPIKey=$AMPLITUDE_API_KEY")
 
 LDFLAGS=""
 LDFLAGS_UI=""
@@ -211,6 +211,16 @@ then
 
     if [[ IS_TEST_MODE -eq 0 ]]
     then
+        if [ -z "$AMPLITUDE_API_KEY" ]
+        then
+            if [[ FORCE_RELEASE -eq 0 ]]
+            then
+                echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
+                exit 1
+            else
+                echo "force release option set so ignoring missing AMPLITUDE_API_KEY"
+            fi
+        fi
         if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
         then
             if [[ FORCE_RELEASE -eq 0 ]]

@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/sdk"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // build flags
@@ -18,6 +19,7 @@ var gitBranch string
 var gitHash string
 var buildDate string
 var env string
+var amplitudeAPIKey string
 
 const envRelease = "release"
 const envDev = "dev"
@@ -95,6 +97,11 @@ func checkInitRootFlags() {
 func validateBuild() {
 	if version == "" || guiVersion == "" || buildDate == "" || gitBranch == "" || gitHash == "" {
 		fmt.Println("version information not included, please build using the build script (scripts/build.sh)")
+		os.Exit(1)
+	}
+
+	if amplitudeAPIKey == "" && env == envRelease {
+		utils.PrintErrorHintf("amplitude API key not included, please export AMPLITUDE_API_KEY before running build script (scripts/build.sh)")
 		os.Exit(1)
 	}
 }
