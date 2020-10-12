@@ -486,12 +486,12 @@ func (s *mirrorStrategy) updateLevels(
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
 			if s.offsetTrades {
-				hasBackingBalance, newPrimaryVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
+				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
 					continue
 				}
 				// TODO NS - don't modify existing variables
-				newOrders[i].Volume = newPrimaryVolume
+				newOrders[i].Volume = newBaseVolume
 			}
 
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
@@ -512,12 +512,12 @@ func (s *mirrorStrategy) updateLevels(
 			price := newOrders[i].Price.Scale(priceMultiplier)
 			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
 			if s.offsetTrades {
-				hasBackingBalance, checkedVol, _ := bc.checkBalance(vol, price)
+				hasBackingBalance, newBaseVol, _ := bc.checkBalance(vol, price)
 				if !hasBackingBalance {
 					continue
 				}
 				// TODO NS - don't reuse variables
-				vol = checkedVol
+				vol = newBaseVol
 			}
 
 			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
@@ -543,12 +543,12 @@ func (s *mirrorStrategy) updateLevels(
 	} else {
 		for i := 0; i < len(newOrders); i++ {
 			if s.offsetTrades {
-				hasBackingBalance, newPrimaryVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
+				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
 					continue
 				}
 				// TODO NS - don't modify existing variables
-				newOrders[i].Volume = newPrimaryVolume
+				newOrders[i].Volume = newBaseVolume
 			}
 
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
@@ -811,7 +811,7 @@ func (b *balanceCoordinator) getPlacedBackingUnits() *model.Number {
 	return b.placedBackingUnits
 }
 
-func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) (bool /*hasBackingBalance*/, *model.Number /*newPrimaryVolume*/, *model.Number /*newBackingVolume*/) {
+func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) (bool /*hasBackingBalance*/, *model.Number /*newBaseVolume*/, *model.Number /*newQuoteVolume*/) {
 	// we want to constrain units on primary exchange to ensure we can mirror correctly
 	additionalPrimaryUnits := vol
 	if b.isPrimaryBuy { // buying base on primary, selling base on backing
@@ -852,25 +852,25 @@ func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number
 	} else {
 		normalizedBackingUnits = normalizedBackingUnits.Divide(*price)
 	}
-	var minUnitsFloat float64
+	var minBaseUnitsFloat float64
 	if normalizedBackingUnits.AsFloat() < normalizedPrimaryUnits.AsFloat() {
-		minUnitsFloat = normalizedBackingUnits.AsFloat()
+		minBaseUnitsFloat = normalizedBackingUnits.AsFloat()
 		log.Printf("balanceCoordinator: using normalizedBackingUnits (%.10f) since it is smaller than normalizedPrimaryUnits (%.10f)\n", normalizedBackingUnits.AsFloat(), normalizedPrimaryUnits.AsFloat())
 	} else if normalizedPrimaryUnits.AsFloat() < normalizedBackingUnits.AsFloat() {
-		minUnitsFloat = normalizedPrimaryUnits.AsFloat()
+		minBaseUnitsFloat = normalizedPrimaryUnits.AsFloat()
 		log.Printf("balanceCoordinator: using normalizedPrimaryUnits (%.10f) since it is smaller than normalizedBackingUnits (%.10f)\n", normalizedPrimaryUnits.AsFloat(), normalizedBackingUnits.AsFloat())
 	} else {
-		minUnitsFloat = normalizedPrimaryUnits.AsFloat()
+		minBaseUnitsFloat = normalizedPrimaryUnits.AsFloat()
 		log.Printf("balanceCoordinator: nothing to constrain since normalizedPrimaryUnits and normalizedBackingUnits were equal (%.10f)\n", normalizedPrimaryUnits.AsFloat())
 	}
 	minPrecision := normalizedPrimaryUnits.Precision()
 	if normalizedBackingUnits.Precision() < normalizedPrimaryUnits.Precision() {
 		minPrecision = normalizedBackingUnits.Precision()
 	}
-	minUnits := model.NumberFromFloat(minUnitsFloat, minPrecision)
+	minBaseUnits := model.NumberFromFloat(minBaseUnitsFloat, minPrecision)
 	// finally convert back to quote units where necessary
-	minPrimaryUnits := minUnits
-	minBackingUnits := minUnits
+	minPrimaryUnits := minBaseUnits
+	minBackingUnits := minBaseUnits
 	if b.isPrimaryBuy {
 		minPrimaryUnits = minPrimaryUnits.Multiply(*price)
 	} else {
@@ -879,5 +879,5 @@ func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number
 
 	b.placedPrimaryUnits = b.placedPrimaryUnits.Add(*minPrimaryUnits)
 	b.placedBackingUnits = b.placedBackingUnits.Add(*minBackingUnits)
-	return true, minPrimaryUnits, minBackingUnits
+	return true, minBaseUnits, minBaseUnits.Multiply(*price)
 }

@@ -16,8 +16,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 		inputVol               *model.Number
 		inputPrice             *model.Number
 		wantHasBackingBalance  bool
-		wantNewPrimaryVolume   *model.Number
-		wantNewBackingVolume   *model.Number
+		wantNewBaseVolume      *model.Number
+		wantNewQuoteVolume     *model.Number
 		wantPlacedPrimaryUnits *model.Number
 		wantPlacedBackingUnits *model.Number
 	}{
@@ -37,8 +37,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(1.0, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(0.112, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(1.0, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.112, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(1.0, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(0.112, 5),
 		}, {
@@ -55,8 +55,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(3.14, 5),
 			inputPrice:             model.NumberFromFloat(0.131, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(3.14, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(0.41134, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(3.14, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.41134, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(103.7, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(8.86834, 5),
 		}, {
@@ -73,8 +73,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(0.89286, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(0.1, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(0.89286, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.1, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(0.89286, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(0.1, 5),
 		}, {
@@ -91,8 +91,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(0.71429, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(0.08, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(0.71429, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.08, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(5.83429, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(0.1, 5),
 		}, {
@@ -109,8 +109,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberConstants.Zero,
 			wantPlacedBackingUnits: model.NumberConstants.Zero,
 		}, {
@@ -127,8 +127,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberFromFloat(4.82, 6),
 			wantPlacedBackingUnits: model.NumberFromFloat(5042.487, 5),
 		}, {
@@ -145,8 +145,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(506.0, 5),
 			inputPrice:             model.NumberFromFloat(0.212, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(505.12, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(107.08544, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(505.12, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(107.08544, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(505.12, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(107.08544, 5),
 		}, {
@@ -163,8 +163,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(506.0, 5),
 			inputPrice:             model.NumberFromFloat(0.212, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(400.0, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(84.8, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(400.0, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(84.8, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(505.12, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(94.9, 5),
 		}, {
@@ -181,8 +181,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(2000.57, 5),
 			inputPrice:             model.NumberFromFloat(0.21, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(480.95238, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(101.0, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(480.95238, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(101.0, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(480.95238, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(101.0, 5),
 		}, {
@@ -199,8 +199,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(2000.57, 5),
 			inputPrice:             model.NumberFromFloat(0.21, 5),
 			wantHasBackingBalance:  true,
-			wantNewPrimaryVolume:   model.NumberFromFloat(236.55, 5),
-			wantNewBackingVolume:   model.NumberFromFloat(49.6755, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(236.55, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(49.6755, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(437.11, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(101.0, 5),
 		}, {
@@ -217,8 +217,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(2000.57, 5),
 			inputPrice:             model.NumberFromFloat(0.21, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberConstants.Zero,
 			wantPlacedBackingUnits: model.NumberConstants.Zero,
 		}, {
@@ -235,8 +235,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(2000.57, 5),
 			inputPrice:             model.NumberFromFloat(0.21, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberFromFloat(1.56, 6),
 			wantPlacedBackingUnits: model.NumberFromFloat(200.56, 6),
 		}, {
@@ -253,8 +253,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(45.157, 5),
 			inputPrice:             model.NumberFromFloat(0.45, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberConstants.Zero,
 			wantPlacedBackingUnits: model.NumberConstants.Zero,
 		}, {
@@ -271,8 +271,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(45.157, 5),
 			inputPrice:             model.NumberFromFloat(0.45, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberFromFloat(1.23, 6),
 			wantPlacedBackingUnits: model.NumberConstants.Zero,
 		}, {
@@ -289,8 +289,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(45.157, 5),
 			inputPrice:             model.NumberFromFloat(0.45, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberConstants.Zero,
 			wantPlacedBackingUnits: model.NumberConstants.Zero,
 		}, {
@@ -307,8 +307,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(4.157, 5),
 			inputPrice:             model.NumberFromFloat(0.125, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberFromFloat(1.23, 6),
 			wantPlacedBackingUnits: model.NumberFromFloat(14.03, 5),
 		}, {
@@ -325,8 +325,8 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(4.157, 5),
 			inputPrice:             model.NumberFromFloat(0.125, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberConstants.Zero,
 			wantPlacedBackingUnits: model.NumberConstants.Zero,
 		}, {
@@ -343,19 +343,55 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(4.157, 5),
 			inputPrice:             model.NumberFromFloat(0.125, 5),
 			wantHasBackingBalance:  false,
-			wantNewPrimaryVolume:   nil,
-			wantNewBackingVolume:   nil,
+			wantNewBaseVolume:      nil,
+			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberFromFloat(1.23, 6),
 			wantPlacedBackingUnits: model.NumberFromFloat(200.56, 5),
+		}, {
+			name: "19. buy primary-available backing-available zero",
+			bc: &balanceCoordinator{
+				primaryBalance:     model.NumberFromFloat(105.12, 6),
+				placedPrimaryUnits: model.NumberConstants.Zero,
+				primaryAssetType:   "quote",
+				isPrimaryBuy:       true,
+				backingBalance:     model.NumberFromFloat(1001.0, 5),
+				placedBackingUnits: model.NumberConstants.Zero,
+				backingAssetType:   "base",
+			},
+			inputVol:               model.NumberFromFloat(1.0, 5),
+			inputPrice:             model.NumberFromFloat(0.112, 5),
+			wantHasBackingBalance:  true,
+			wantNewBaseVolume:      model.NumberFromFloat(1.0, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.112, 5),
+			wantPlacedPrimaryUnits: model.NumberFromFloat(0.112, 5),
+			wantPlacedBackingUnits: model.NumberFromFloat(1.0, 5),
+		}, {
+			name: "20. buy primary-available backing-available non-zero",
+			bc: &balanceCoordinator{
+				primaryBalance:     model.NumberFromFloat(105.12, 6),
+				placedPrimaryUnits: model.NumberFromFloat(5.4, 6),
+				primaryAssetType:   "quote",
+				isPrimaryBuy:       true,
+				backingBalance:     model.NumberFromFloat(1001.0, 5),
+				placedBackingUnits: model.NumberFromFloat(3.12, 6),
+				backingAssetType:   "base",
+			},
+			inputVol:               model.NumberFromFloat(1.0, 5),
+			inputPrice:             model.NumberFromFloat(0.112, 5),
+			wantHasBackingBalance:  true,
+			wantNewBaseVolume:      model.NumberFromFloat(1.0, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.112, 5),
+			wantPlacedPrimaryUnits: model.NumberFromFloat(5.512, 5),
+			wantPlacedBackingUnits: model.NumberFromFloat(4.12, 5),
 		},
 	}
 
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
-			hasBackingBalance, newPrimaryVolume, newBackingVolume := k.bc.checkBalance(k.inputVol, k.inputPrice)
+			hasBackingBalance, newBaseVolume, newQuoteVolume := k.bc.checkBalance(k.inputVol, k.inputPrice)
 			assert.Equal(t, k.wantHasBackingBalance, hasBackingBalance)
-			assert.Equal(t, k.wantNewPrimaryVolume, newPrimaryVolume)
-			assert.Equal(t, k.wantNewBackingVolume, newBackingVolume)
+			assert.Equal(t, k.wantNewBaseVolume, newBaseVolume)
+			assert.Equal(t, k.wantNewQuoteVolume, newQuoteVolume)
 			assert.Equal(t, k.wantPlacedPrimaryUnits.AsString(), k.bc.getPlacedPrimaryUnits().AsString())
 			assert.Equal(t, k.wantPlacedBackingUnits.AsString(), k.bc.getPlacedBackingUnits().AsString())
 		})
