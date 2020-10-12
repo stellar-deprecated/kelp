@@ -365,6 +365,15 @@ func (s *mirrorStrategy) UpdateWithOps(
 		asks = asks[:50]
 	}
 
+	log.Printf("bids on backing exchange:\n")
+	for _, o := range bids {
+		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
+	log.Printf("asks on backing exchange:\n")
+	for _, o := range asks {
+		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
+
 	deleteBuyOps, buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
