@@ -468,6 +468,10 @@ func (s *mirrorStrategy) updateLevels(
 	deleteOps := []txnbuild.Operation{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
+			// TODO NS - don't modify existing variables
+			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
+			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
+
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
@@ -514,6 +518,10 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
+			// TODO NS - don't modify existing variables
+			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
+			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
+
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
