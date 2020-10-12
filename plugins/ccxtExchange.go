@@ -20,6 +20,7 @@ var _ api.Exchange = ccxtExchange{}
 
 // ccxtExchangeSpecificParamFactory knows how to create the exchange-specific params for each exchange
 type ccxtExchangeSpecificParamFactory interface {
+	getParamsForGetOrderBook() map[string]interface{}
 	getParamsForAddOrder(submitMode api.SubmitMode) interface{}
 	getParamsForGetTradeHistory() interface{}
 }
@@ -174,17 +175,33 @@ func (c ccxtExchange) GetAccountBalances(assetList []interface{}) (map[interface
 
 // GetOrderBook impl
 func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
+	maxCountInt := int(maxCount)
+
+	// if the exchange has limitations on how many orders we can fetch, these params will handle it and adjust the fetchLimit accordingly
+	fetchLimit := maxCountInt
+	if c.esParamFactory != nil {
+		orderbookParamsMap := c.esParamFactory.getParamsForGetOrderBook()
+		if orderbookParamsMap != nil {
+			if transformLimitFnResult, ok := orderbookParamsMap["transform_limit"]; ok {
+				transformLimitFn := transformLimitFnResult.(func(limit int) (int, error))
+				newLimit, e := transformLimitFn(int(maxCount))
+				if e != nil {
+					return nil, fmt.Errorf("error while transforming maxCount limit: %s", e)
+				}
+				fetchLimit = newLimit
+			}
+		}
+	}
+
 	pairString, e := pair.ToString(c.assetConverter, c.delimiter)
 	if e != nil {
 		return nil, fmt.Errorf("error converting pair to string: %s", e)
 	}
 
-	limit := int(maxCount)
-	ob, e := c.api.FetchOrderBook(pairString, &limit)
+	ob, e := c.api.FetchOrderBook(pairString, &fetchLimit)
 	if e != nil {
 		return nil, fmt.Errorf("error while fetching orderbook for trading pair '%s': %s", pairString, e)
 	}
-
 	if _, ok := ob["asks"]; !ok {
 		return nil, fmt.Errorf("orderbook did not contain the 'asks' field: %v", ob)
 	}
@@ -192,8 +209,20 @@ func (c ccxtExchange) GetOrderBook(pair *model.TradingPair, maxCount int32) (*mo
 		return nil, fmt.Errorf("orderbook did not contain the 'bids' field: %v", ob)
 	}
 
-	asks := c.readOrders(ob["asks"], pair, model.OrderActionSell)
-	bids := c.readOrders(ob["bids"], pair, model.OrderActionBuy)
+	askCcxtOrders := ob["asks"]
+	bidCcxtOrders := ob["bids"]
+	if fetchLimit != maxCountInt {
+		// we may not have fetched all the requested levels because the exchange may not have had that many levels in depth
+		if len(askCcxtOrders) > maxCountInt {
+			askCcxtOrders = askCcxtOrders[:maxCountInt]
+		}
+		if len(bidCcxtOrders) > maxCountInt {
+			bidCcxtOrders = bidCcxtOrders[:maxCountInt]
+		}
+	}
+
+	asks := c.readOrders(askCcxtOrders, pair, model.OrderActionSell)
+	bids := c.readOrders(bidCcxtOrders, pair, model.OrderActionBuy)
 	return model.MakeOrderBook(pair, asks, bids), nil
 }
 
