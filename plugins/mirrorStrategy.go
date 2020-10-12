@@ -92,8 +92,8 @@ type mirrorStrategy struct {
 	db                                    *sql.DB
 
 	// uninitialized
-	maxBackingBase  *model.Number
-	maxBackingQuote *model.Number
+	sellOnPrimaryBalanceCoordinator *balanceCoordinator
+	buyOnPrimaryBalanceCoordinator  *balanceCoordinator
 }
 
 // ensure this implements api.Strategy
@@ -288,32 +288,61 @@ func (s *mirrorStrategy) PruneExistingOffers(buyingAOffers []hProtocol.Offer, se
 
 // PreUpdate changes the strategy's state in prepration for the update
 func (s *mirrorStrategy) PreUpdate(maxAssetA float64, maxAssetB float64, trustA float64, trustB float64) error {
-	if s.offsetTrades {
-		return s.recordBalances()
+	// we don't care about or use balance coordinators if we are not offsetting trades
+	if !s.offsetTrades {
+		return nil
 	}
+
+	baseBackingBalance, quoteBackingBalance, e := s.getBackingBalances()
+	if e != nil {
+		return fmt.Errorf("error while fetching backing balances: %s", e)
+	}
+
+	// buyOnPrimaryBalanceCoordinator is buying on the primary exchange and selling on the backing exchange
+	// primary asset being sold here is quote and backing asset being sold is base, so constrain on those
+	s.buyOnPrimaryBalanceCoordinator = &balanceCoordinator{
+		primaryBalance:     model.NumberFromFloat(maxAssetB, s.primaryConstraints.VolumePrecision),
+		placedPrimaryUnits: model.NumberConstants.Zero,
+		primaryAssetType:   "quote",
+		isPrimaryBuy:       true,
+		backingBalance:     baseBackingBalance,
+		placedBackingUnits: model.NumberConstants.Zero,
+		backingAssetType:   "base",
+	}
+
+	// sellOnPrimaryBalanceCoordinator is selling on the primary exchange and buying on the backing exchange
+	// primary asset being sold here is base and backing asset being sold is quote, so constrain on those
+	s.sellOnPrimaryBalanceCoordinator = &balanceCoordinator{
+		primaryBalance:     model.NumberFromFloat(maxAssetA, s.primaryConstraints.VolumePrecision),
+		placedPrimaryUnits: model.NumberConstants.Zero,
+		primaryAssetType:   "base",
+		isPrimaryBuy:       false,
+		backingBalance:     quoteBackingBalance,
+		placedBackingUnits: model.NumberConstants.Zero,
+		backingAssetType:   "quote",
+	}
+
 	return nil
 }
 
-func (s *mirrorStrategy) recordBalances() error {
+func (s *mirrorStrategy) getBackingBalances() (*model.Number /*baseBackingBalance*/, *model.Number /*quoteBackingBalance*/, error) {
 	balanceMap, e := s.exchange.GetAccountBalances([]interface{}{s.backingPair.Base, s.backingPair.Quote})
 	if e != nil {
-		return fmt.Errorf("unable to fetch balances for assets: %s", e)
+		return nil, nil, fmt.Errorf("unable to fetch balances for assets: %s", e)
 	}
 
 	// save asset balances from backing exchange to be used when placing offers in offset mode
-	if baseBalance, ok := balanceMap[s.backingPair.Base]; ok {
-		s.maxBackingBase = &baseBalance
-	} else {
-		return fmt.Errorf("unable to fetch balance for base asset: %s", string(s.backingPair.Base))
+	baseBalance, ok := balanceMap[s.backingPair.Base]
+	if !ok {
+		return nil, nil, fmt.Errorf("unable to fetch balance for base asset: %s", string(s.backingPair.Base))
 	}
 
-	if quoteBalance, ok := balanceMap[s.backingPair.Quote]; ok {
-		s.maxBackingQuote = &quoteBalance
-	} else {
-		return fmt.Errorf("unable to fetch balance for quote asset: %s", string(s.backingPair.Quote))
+	quoteBalance, ok := balanceMap[s.backingPair.Quote]
+	if !ok {
+		return nil, nil, fmt.Errorf("unable to fetch balance for quote asset: %s", string(s.backingPair.Quote))
 	}
 
-	return nil
+	return &baseBalance, &quoteBalance, nil
 }
 
 // UpdateWithOps builds the operations we want performed on the account
@@ -336,12 +365,15 @@ func (s *mirrorStrategy) UpdateWithOps(
 		asks = asks[:50]
 	}
 
-	sellBalanceCoordinator := balanceCoordinator{
-		placedUnits:      model.NumberConstants.Zero,
-		backingBalance:   s.maxBackingBase,
-		backingAssetType: "base",
-		isBackingBuy:     false,
+	log.Printf("bids on backing exchange:\n")
+	for _, o := range bids {
+		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
 	}
+	log.Printf("asks on backing exchange:\n")
+	for _, o := range asks {
+		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
+
 	deleteBuyOps, buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
@@ -349,19 +381,13 @@ func (s *mirrorStrategy) UpdateWithOps(
 		s.sdex.CreateBuyOffer,
 		(1 - s.perLevelSpread),
 		true,
-		sellBalanceCoordinator, // we sell on the backing exchange to offset trades that are bought on the primary exchange
+		s.buyOnPrimaryBalanceCoordinator, // we sell on the backing exchange to offset trades that are bought on the primary exchange
 	)
 	if e != nil {
 		return nil, e
 	}
 	log.Printf("num. buyOps in this update: %d\n", len(buyOps))
 
-	buyBalanceCoordinator := balanceCoordinator{
-		placedUnits:      model.NumberConstants.Zero,
-		backingBalance:   s.maxBackingQuote,
-		backingAssetType: "quote",
-		isBackingBuy:     true,
-	}
 	deleteSellOps, sellOps, e := s.updateLevels(
 		sellingAOffers,
 		asks,
@@ -369,7 +395,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 		s.sdex.CreateSellOffer,
 		(1 + s.perLevelSpread),
 		false,
-		buyBalanceCoordinator, // we buy on the backing exchange to offset trades that are sold on the primary exchange
+		s.sellOnPrimaryBalanceCoordinator, // we buy on the backing exchange to offset trades that are sold on the primary exchange
 	)
 	if e != nil {
 		return nil, e
@@ -462,7 +488,7 @@ func (s *mirrorStrategy) updateLevels(
 	createOffer func(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
-	bc balanceCoordinator,
+	bc *balanceCoordinator,
 ) ([]txnbuild.Operation /*deleteOps*/, []txnbuild.Operation /*ops*/, error) {
 	ops := []txnbuild.Operation{}
 	deleteOps := []txnbuild.Operation{}
@@ -472,14 +498,21 @@ func (s *mirrorStrategy) updateLevels(
 			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
 			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
 
+			if s.offsetTrades {
+				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
+				if !hasBackingBalance {
+					continue
+				}
+				// TODO NS - don't modify existing variables
+				newOrders[i].Volume = newBaseVolume
+			}
+
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
 			}
+
 			if modifyOp != nil {
-				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
-					continue
-				}
 				ops = append(ops, modifyOp)
 			}
 			if deleteOp != nil {
@@ -491,14 +524,18 @@ func (s *mirrorStrategy) updateLevels(
 		for i := len(oldOffers); i < len(newOrders); i++ {
 			price := newOrders[i].Price.Scale(priceMultiplier)
 			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
-			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
-
-			if vol.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
-				log.Printf("skip level creation, baseVolume (%s) < minBaseVolume (%s) of backing exchange\n", vol.AsString(), s.backingConstraints.MinBaseVolume.AsString())
-				continue
+			if s.offsetTrades {
+				hasBackingBalance, newBaseVol, _ := bc.checkBalance(vol, price)
+				if !hasBackingBalance {
+					continue
+				}
+				// TODO NS - don't reuse variables
+				vol = newBaseVol
 			}
 
-			if s.offsetTrades && !bc.checkBalance(vol, price) {
+			incrementalNativeAmountRaw := s.sdex.ComputeIncrementalNativeAmountRaw(true)
+			if vol.AsFloat() < s.backingConstraints.MinBaseVolume.AsFloat() {
+				log.Printf("skip level creation, baseVolume (%s) < minBaseVolume (%s) of backing exchange\n", vol.AsString(), s.backingConstraints.MinBaseVolume.AsString())
 				continue
 			}
 
@@ -522,14 +559,20 @@ func (s *mirrorStrategy) updateLevels(
 			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
 			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
 
+			if s.offsetTrades {
+				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
+				if !hasBackingBalance {
+					continue
+				}
+				// TODO NS - don't modify existing variables
+				newOrders[i].Volume = newBaseVolume
+			}
+
 			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
 			}
 			if modifyOp != nil {
-				if s.offsetTrades && !bc.checkBalance(newOrders[i].Volume, newOrders[i].Price) {
-					continue
-				}
 				ops = append(ops, modifyOp)
 			}
 			if deleteOp != nil {
@@ -766,25 +809,92 @@ func (s *mirrorStrategy) insertTradeTrigger(primaryTxID string, backingTxID stri
 }
 
 // balanceCoordinator coordinates the balances from the backing exchange with orders placed on the primary exchange
+// it serves an almost identical function to the ieif module but includes logic to coordinate balances with the backing exchange
 type balanceCoordinator struct {
-	placedUnits      *model.Number
-	backingBalance   *model.Number
-	backingAssetType string
-	isBackingBuy     bool
+	primaryBalance     *model.Number
+	placedPrimaryUnits *model.Number
+	primaryAssetType   string
+	isPrimaryBuy       bool
+	placedBackingUnits *model.Number
+	backingBalance     *model.Number
+	backingAssetType   string
 }
 
-func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) bool {
-	additionalUnits := vol
-	if b.isBackingBuy {
-		additionalUnits = vol.Multiply(*price)
+func (b *balanceCoordinator) getPlacedPrimaryUnits() *model.Number {
+	return b.placedPrimaryUnits
+}
+
+func (b *balanceCoordinator) getPlacedBackingUnits() *model.Number {
+	return b.placedBackingUnits
+}
+
+func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) (bool /*hasBackingBalance*/, *model.Number /*newBaseVolume*/, *model.Number /*newQuoteVolume*/) {
+	// we want to constrain units on primary exchange to ensure we can mirror correctly
+	additionalPrimaryUnits := vol
+	if b.isPrimaryBuy { // buying base on primary, selling base on backing
+		// convert to quote units since we are selling quote on primary
+		additionalPrimaryUnits = vol.Multiply(*price)
+	}
+	remainingPrimaryUnits := b.primaryBalance.Subtract(*b.placedPrimaryUnits)
+	if remainingPrimaryUnits.AsFloat() < 0.0000002 {
+		log.Printf("balanceCoordinator: skip level creation, not enough balance of %s asset on primary exchange: %s (needs an additional %s units)\n", b.primaryAssetType, b.primaryBalance.AsString(), additionalPrimaryUnits.AsString())
+		return false, nil, nil
+	}
+	if additionalPrimaryUnits.AsFloat() > remainingPrimaryUnits.AsFloat() {
+		log.Printf("balanceCoordinator: constraining level to %s units of %s asset because we were limited by assets on primary exchange", remainingPrimaryUnits.AsString(), b.primaryAssetType)
+		additionalPrimaryUnits = remainingPrimaryUnits
 	}
 
-	newPlacedUnits := b.placedUnits.Add(*additionalUnits)
-	if newPlacedUnits.AsFloat() > b.backingBalance.AsFloat() {
-		log.Printf("skip level creation, not enough balance of %s asset on backing exchange: %s (needs at least %s)\n", b.backingAssetType, b.backingBalance.AsString(), newPlacedUnits.AsString())
-		return false
+	// now do for backing exchange to ensure we can offset trades correctly
+	additionalBackingUnits := vol
+	if !b.isPrimaryBuy { // selling base on primary, buying base on backing
+		// convert to quote units since we are selling quote on backing
+		additionalBackingUnits = vol.Multiply(*price)
+	}
+	remainingBackingUnits := b.backingBalance.Subtract(*b.placedBackingUnits)
+	if remainingBackingUnits.AsFloat() < 0.0000002 {
+		log.Printf("balanceCoordinator: skip level creation, not enough balance of %s asset on backing exchange: %s (needs an additional %s units)\n", b.backingAssetType, b.backingBalance.AsString(), additionalBackingUnits.AsString())
+		return false, nil, nil
+	}
+	if additionalBackingUnits.AsFloat() > remainingBackingUnits.AsFloat() {
+		log.Printf("balanceCoordinator: constraining level to %s units of %s asset because we were limited by assets on backing exchange", remainingBackingUnits.AsString(), b.backingAssetType)
+		additionalBackingUnits = remainingBackingUnits
 	}
 
-	b.placedUnits = newPlacedUnits
-	return true
+	// take the min value of new possible units to ensure there is overlap between primary and backing
+	normalizedPrimaryUnits := additionalPrimaryUnits
+	normalizedBackingUnits := additionalBackingUnits
+	if b.isPrimaryBuy {
+		normalizedPrimaryUnits = normalizedPrimaryUnits.Divide(*price)
+	} else {
+		normalizedBackingUnits = normalizedBackingUnits.Divide(*price)
+	}
+	var minBaseUnitsFloat float64
+	if normalizedBackingUnits.AsFloat() < normalizedPrimaryUnits.AsFloat() {
+		minBaseUnitsFloat = normalizedBackingUnits.AsFloat()
+		log.Printf("balanceCoordinator: using normalizedBackingUnits (%.10f) since it is smaller than normalizedPrimaryUnits (%.10f)\n", normalizedBackingUnits.AsFloat(), normalizedPrimaryUnits.AsFloat())
+	} else if normalizedPrimaryUnits.AsFloat() < normalizedBackingUnits.AsFloat() {
+		minBaseUnitsFloat = normalizedPrimaryUnits.AsFloat()
+		log.Printf("balanceCoordinator: using normalizedPrimaryUnits (%.10f) since it is smaller than normalizedBackingUnits (%.10f)\n", normalizedPrimaryUnits.AsFloat(), normalizedBackingUnits.AsFloat())
+	} else {
+		minBaseUnitsFloat = normalizedPrimaryUnits.AsFloat()
+		log.Printf("balanceCoordinator: nothing to constrain since normalizedPrimaryUnits and normalizedBackingUnits were equal (%.10f)\n", normalizedPrimaryUnits.AsFloat())
+	}
+	minPrecision := normalizedPrimaryUnits.Precision()
+	if normalizedBackingUnits.Precision() < normalizedPrimaryUnits.Precision() {
+		minPrecision = normalizedBackingUnits.Precision()
+	}
+	minBaseUnits := model.NumberFromFloat(minBaseUnitsFloat, minPrecision)
+	// finally convert back to quote units where necessary
+	minPrimaryUnits := minBaseUnits
+	minBackingUnits := minBaseUnits
+	if b.isPrimaryBuy {
+		minPrimaryUnits = minPrimaryUnits.Multiply(*price)
+	} else {
+		minBackingUnits = minBackingUnits.Multiply(*price)
+	}
+
+	b.placedPrimaryUnits = b.placedPrimaryUnits.Add(*minPrimaryUnits)
+	b.placedBackingUnits = b.placedBackingUnits.Add(*minBackingUnits)
+	return true, minBaseUnits, minBaseUnits.Multiply(*price)
 }
