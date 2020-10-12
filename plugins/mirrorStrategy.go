@@ -485,6 +485,10 @@ func (s *mirrorStrategy) updateLevels(
 	deleteOps := []txnbuild.Operation{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
+			// TODO NS - don't modify existing variables
+			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
+			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
+
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
@@ -542,6 +546,10 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
+			// TODO NS - don't modify existing variables
+			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
+			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
+
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
