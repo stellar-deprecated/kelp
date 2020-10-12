@@ -556,8 +556,8 @@ func (s *mirrorStrategy) doModifyOffer(
 	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) (txnbuild.Operation, txnbuild.Operation, error) {
-	price := newOrder.Price.Scale(priceMultiplier)
-	vol := newOrder.Volume.Scale(1.0 / s.volumeDivideBy)
+	price := newOrder.Price
+	vol := newOrder.Volume
 	oldPrice := model.MustNumberFromString(oldOffer.Price, s.primaryConstraints.PricePrecision)
 	oldVol := model.MustNumberFromString(oldOffer.Amount, s.primaryConstraints.VolumePrecision)
 	if hackPriceInvertForBuyOrderChangeCheck {
