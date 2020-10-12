@@ -803,6 +803,14 @@ type balanceCoordinator struct {
 	backingAssetType   string
 }
 
+func (b *balanceCoordinator) getPlacedPrimaryUnits() *model.Number {
+	return b.placedPrimaryUnits
+}
+
+func (b *balanceCoordinator) getPlacedBackingUnits() *model.Number {
+	return b.placedBackingUnits
+}
+
 func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) (bool /*hasBackingBalance*/, *model.Number /*newPrimaryVolume*/, *model.Number /*newBackingVolume*/) {
 	// we want to constrain units on primary exchange to ensure we can mirror correctly
 	additionalPrimaryUnits := vol
