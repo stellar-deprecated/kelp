@@ -235,9 +235,12 @@ func makeMirrorStrategy(
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
 
 	// insert into database if needed
-	backingMarketID, e := FetchOrRegisterMarketID(db, config.Exchange, config.ExchangeBase, config.ExchangeQuote)
-	if e != nil {
-		return nil, fmt.Errorf("error calling FetchOrRegisterMarketID: %s", e)
+	var backingMarketID string
+	if db != nil {
+		backingMarketID, e = FetchOrRegisterMarketID(db, config.Exchange, config.ExchangeBase, config.ExchangeQuote)
+		if e != nil {
+			return nil, fmt.Errorf("error calling FetchOrRegisterMarketID: %s", e)
+		}
 	}
 
 	// trigger fill tracking on backing exchange at creation time
