@@ -14,7 +14,7 @@ import (
 	"github.com/stellar/kelp/model"
 )
 
-var supportedExchanges = []string{"binance", "kraken"}
+var supportedExchanges = []string{"binance", "coinbasepro"}
 var emptyAPIKey = api.ExchangeAPIKey{}
 var emptyParams = api.ExchangeParam{}
 var supportedTradingExchanges = map[string]api.ExchangeAPIKey{
@@ -76,38 +76,45 @@ func TestGetOrderBook_Ccxt(t *testing.T) {
 	}
 
 	for _, exchangeName := range supportedExchanges {
-		t.Run(exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(
-				exchangeName,
-				testOrderConstraints[exchangeName],
-				[]api.ExchangeAPIKey{emptyAPIKey},
-				[]api.ExchangeParam{emptyParams},
-				[]api.ExchangeHeader{},
-				false,
-				nil,
-			)
-			if !assert.NoError(t, e) {
-				return
-			}
+		var esParamFactory ccxtExchangeSpecificParamFactory
+		if v, ok := ccxtExchangeSpecificParamFactoryMap["ccxt-"+exchangeName]; ok {
+			esParamFactory = v
+		}
 
-			pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
-			ob, e := testCcxtExchange.GetOrderBook(&pair, 10)
-			if !assert.NoError(t, e) {
-				return
-			}
-			assert.Equal(t, ob.Pair(), &pair)
+		for _, obDepth := range []int32{1, 5, 8, 10, 15, 16, 20} {
+			t.Run(fmt.Sprintf("%s_%d", exchangeName, obDepth), func(t *testing.T) {
+				testCcxtExchange, e := makeCcxtExchange(
+					exchangeName,
+					testOrderConstraints[exchangeName],
+					[]api.ExchangeAPIKey{emptyAPIKey},
+					[]api.ExchangeParam{emptyParams},
+					[]api.ExchangeHeader{},
+					false,
+					esParamFactory,
+				)
+				if !assert.NoError(t, e) {
+					return
+				}
 
-			assert.True(t, len(ob.Asks()) > 0, fmt.Sprintf("%d", len(ob.Asks())))
-			assert.True(t, len(ob.Bids()) > 0, fmt.Sprintf("%d", len(ob.Bids())))
-			assert.True(t, ob.Asks()[0].OrderAction.IsSell())
-			assert.True(t, ob.Asks()[0].OrderType.IsLimit())
-			assert.True(t, ob.Bids()[0].OrderAction.IsBuy())
-			assert.True(t, ob.Bids()[0].OrderType.IsLimit())
-			assert.True(t, ob.Asks()[0].Price.AsFloat() > 0)
-			assert.True(t, ob.Asks()[0].Volume.AsFloat() > 0)
-			assert.True(t, ob.Bids()[0].Price.AsFloat() > 0)
-			assert.True(t, ob.Bids()[0].Volume.AsFloat() > 0)
-		})
+				pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
+				ob, e := testCcxtExchange.GetOrderBook(&pair, obDepth)
+				if !assert.NoError(t, e) {
+					return
+				}
+				assert.Equal(t, ob.Pair(), &pair)
+
+				assert.True(t, len(ob.Asks()) > 0, fmt.Sprintf("%d", len(ob.Asks())))
+				assert.True(t, len(ob.Bids()) > 0, fmt.Sprintf("%d", len(ob.Bids())))
+				assert.True(t, ob.Asks()[0].OrderAction.IsSell())
+				assert.True(t, ob.Asks()[0].OrderType.IsLimit())
+				assert.True(t, ob.Bids()[0].OrderAction.IsBuy())
+				assert.True(t, ob.Bids()[0].OrderType.IsLimit())
+				assert.True(t, ob.Asks()[0].Price.AsFloat() > 0, ob.Asks()[0].Price.AsString())
+				assert.True(t, ob.Asks()[0].Volume.AsFloat() > 0)
+				assert.True(t, ob.Bids()[0].Price.AsFloat() > 0, ob.Bids()[0].Price.AsString())
+				assert.True(t, ob.Bids()[0].Volume.AsFloat() > 0)
+			})
+		}
 	}
 }
 
