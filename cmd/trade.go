@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/denisbrodbeck/machineid"
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/spf13/cobra"
 
@@ -513,8 +514,14 @@ func runTradeCmd(options inputs) {
 		guiVersionFlag = guiVersion
 	}
 
+	deviceID, e := machineid.ID()
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not generate machine id: %s", e))
+	}
+
 	metricsTracker, e := metrics.MakeMetricsTracker(
 		userID,
+		deviceID,
 		amplitudeAPIKey,
 		httpClient,
 		botStart,
