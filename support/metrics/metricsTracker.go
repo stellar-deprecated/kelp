@@ -58,6 +58,7 @@ type commonProps struct {
 	Exchange                  string  `json:"exchange"`
 	TradingPair               string  `json:"trading_pair"`
 	SecondsSinceStart         float64 `json:"seconds_since_start"`
+	IsTestnet                 bool    `json:"is_testnet"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -115,6 +116,7 @@ func MakeMetricsTracker(
 	exchange string,
 	tradingPair string,
 	isDisabled bool,
+	isTestnet bool,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion:                version,
@@ -126,6 +128,7 @@ func MakeMetricsTracker(
 		UpdateTimeIntervalSeconds: updateTimeIntervalSeconds,
 		Exchange:                  exchange,
 		TradingPair:               tradingPair,
+		IsTestnet:                 isTestnet,
 	}
 
 	return &MetricsTracker{
@@ -135,6 +138,7 @@ func MakeMetricsTracker(
 		props:      props,
 		start:      start,
 		isDisabled: isDisabled,
+    isTestnet: isTestnet,
 	}, nil
 }
 
