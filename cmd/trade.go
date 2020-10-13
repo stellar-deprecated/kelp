@@ -514,10 +514,13 @@ func runTradeCmd(options inputs) {
 		guiVersionFlag = guiVersion
 	}
 
+
 	deviceID, e := machineid.ID()
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate machine id: %s", e))
 	}
+
+	isTestnet := strings.Contains(botConfig.HorizonURL, "test") && botConfig.IsTradingSdex()
 
 	metricsTracker, e := metrics.MakeMetricsTracker(
 		userID,
@@ -534,6 +537,7 @@ func runTradeCmd(options inputs) {
 		botConfig.TickIntervalSeconds,
 		botConfig.TradingExchange,
 		botConfig.TradingPair(),
+		isTestnet,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
