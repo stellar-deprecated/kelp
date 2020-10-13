@@ -527,6 +527,7 @@ func runTradeCmd(options inputs) {
 		botConfig.TickIntervalSeconds,
 		botConfig.TradingExchange,
 		botConfig.TradingPair(),
+		*options.noHeaders, // disable metrics if the CLI specified no headers
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))

@@ -24,11 +24,12 @@ const (
 // and can be used to directly send events to the
 // Amplitude HTTP API.
 type MetricsTracker struct {
-	client *http.Client
-	apiKey string
-	userID string
-	props  commonProps
-	start  time.Time
+	client     *http.Client
+	apiKey     string
+	userID     string
+	props      commonProps
+	start      time.Time
+	isDisabled bool
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -113,6 +114,7 @@ func MakeMetricsTracker(
 	updateTimeIntervalSeconds int32,
 	exchange string,
 	tradingPair string,
+	isDisabled bool,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion:                version,
@@ -127,11 +129,12 @@ func MakeMetricsTracker(
 	}
 
 	return &MetricsTracker{
-		client: client,
-		apiKey: apiKey,
-		userID: userID,
-		props:  props,
-		start:  start,
+		client:     client,
+		apiKey:     apiKey,
+		userID:     userID,
+		props:      props,
+		start:      start,
+		isDisabled: isDisabled,
 	}, nil
 }
 
@@ -165,7 +168,7 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 }
 
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
-	if mt.apiKey == "" || mt.userID == "-1" {
+	if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
 		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
 		return nil
 	}
