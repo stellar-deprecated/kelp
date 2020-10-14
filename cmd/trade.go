@@ -506,7 +506,7 @@ func runTradeCmd(options inputs) {
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	userID := "-1" // TODO DS Properly generate and save user ID.
+	userID := "12345" // TODO DS Properly generate and save user ID.
 	httpClient := &http.Client{}
 	var guiVersionFlag string
 	if *options.ui {

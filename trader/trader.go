@@ -122,9 +122,9 @@ func (t *Trader) Start() {
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			startUpdate := time.Now()
 			success := t.update()
-			updateDuration := time.Since(startUpdate)
+			millisForUpdate := time.Since(startUpdate)
 			e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-				e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, updateDuration.Milliseconds())
+				e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate.Milliseconds())
 				if e != nil {
 					log.Printf("failed to send update event metric: %s", e)
 				}
