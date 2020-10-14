@@ -1,5 +1,5 @@
-hash: 81ecd9a85e0426d4a6332659b95c7cc3f835614b02d5b9c007e90971359167f9
-updated: 2020-07-14T01:36:52.028479+05:30
+hash: e4b1c95fb01f3196f86de34872d34c6961c0358a4d6ad7647536894b7b152420
+updated: 2020-10-13T13:50:02.186642-07:00
 imports:
 - name: cloud.google.com/go
   version: 310d83b78255a1605c3bd3a9ffe1606cf09ebcac
@@ -49,6 +49,8 @@ imports:
   version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
   subpackages:
   - spew
+- name: github.com/denisbrodbeck/machineid
+  version: f07179bb15a0bec252453468aa607c670f5c12b5
 - name: github.com/fsnotify/fsnotify
   version: 7f4cf4dd2b522a984eaca51d1ccee54101d3414a
 - name: github.com/go-chi/chi
@@ -217,6 +219,7 @@ imports:
   subpackages:
   - unix
   - windows
+  - windows/registry
 - name: golang.org/x/text
   version: afb9336c4530b4b18f37130eab53f245f7d6821e
   subpackages:

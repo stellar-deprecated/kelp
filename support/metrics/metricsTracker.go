@@ -27,6 +27,7 @@ type MetricsTracker struct {
 	client     *http.Client
 	apiKey     string
 	userID     string
+	deviceID   string
 	props      commonProps
 	start      time.Time
 	isDisabled bool
@@ -103,6 +104,7 @@ func (ar amplitudeResponse) String() string {
 // MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
 func MakeMetricsTracker(
 	userID string,
+	deviceID string,
 	apiKey string,
 	client *http.Client,
 	start time.Time,
@@ -135,10 +137,11 @@ func MakeMetricsTracker(
 		client:     client,
 		apiKey:     apiKey,
 		userID:     userID,
+		deviceID:   deviceID,
 		props:      props,
 		start:      start,
 		isDisabled: isDisabled,
-    isTestnet: isTestnet,
+		isTestnet:  isTestnet,
 	}, nil
 }
 
@@ -184,7 +187,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		Events: []event{{
 			UserID:    mt.userID,
 			SessionID: mt.start.Unix() * 1000, // convert to millis based on docs
-			DeviceID:  mt.userID,
+			DeviceID:  mt.deviceID,
 			EventType: eventType,
 			Props:     eventProps,
 		}},
