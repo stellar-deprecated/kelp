@@ -732,18 +732,20 @@ func getUserID(l logger.Logger, botConfig trader.BotConfig) (string, error) {
 		userIDPrehash = botConfig.TradingAccount()
 	} else {
 		exchangeAPIKeys := botConfig.ExchangeAPIKeys.ToExchangeAPIKeys()
+		if len(exchangeAPIKeys) == 0 {
+			return "", fmt.Errorf("could not find exchange API key on bot config")
+		}
+
 		userIDPrehash = exchangeAPIKeys[0].Key
 	}
 
 	// hash avoids exposing the user account or api key
 	userIDHashed, e := utils.HashString(userIDPrehash)
 	if e != nil {
-		logger.Fatal(l, fmt.Errorf("could not create user id: %s", e))
-		return "", e
+		return "", fmt.Errorf("could not create user id: %s", e)
 	}
 
-	userID := fmt.Sprint(userIDHashed)
-	return userID, e
+	return fmt.Sprint(userIDHashed), nil
 }
 
 func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
