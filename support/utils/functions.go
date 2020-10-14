@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"math/big"
 	"math/rand"
@@ -417,4 +418,14 @@ func Offer2TxnBuildSellOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 		Price:   offer.Price,
 		OfferID: offer.ID,
 	}
+}
+
+// HashString hashes a string using the FNV-1 hash function.
+func HashString(s string) (uint32, error) {
+	h := fnv.New32a()
+	_, e := h.Write([]byte(s))
+	if e != nil {
+		return 0, fmt.Errorf("error while hashing string: %s", e)
+	}
+	return h.Sum32(), nil
 }
