@@ -3,7 +3,6 @@ package sdk
 import (
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"log"
 	"net/http"
 	"reflect"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/support/networking"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // ccxtBaseURL should not have suffix of '/'
@@ -182,20 +182,11 @@ func makeInstanceName(exchangeName string, apiKey api.ExchangeAPIKey) (string, e
 		return exchangeName, nil
 	}
 
-	number, e := hashString(apiKey.Key)
+	number, e := utils.HashString(apiKey.Key)
 	if e != nil {
 		return "", fmt.Errorf("could not hash apiKey.Key: %s", e)
 	}
 	return fmt.Sprintf("%s%d", exchangeName, number), nil
-}
-
-func hashString(s string) (uint32, error) {
-	h := fnv.New32a()
-	_, e := h.Write([]byte(s))
-	if e != nil {
-		return 0, fmt.Errorf("error while hashing string: %s", e)
-	}
-	return h.Sum32(), nil
 }
 
 func (c *Ccxt) hasInstance(instanceList []string) bool {

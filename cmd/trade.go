@@ -507,7 +507,11 @@ func runTradeCmd(options inputs) {
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	userID := "-1" // TODO DS Properly generate and save user ID.
+	userID, e := getUserID(l, botConfig)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not get user id: %s", e))
+	}
+
 	httpClient := &http.Client{}
 	var guiVersionFlag string
 	if *options.ui {
@@ -728,6 +732,28 @@ func runTradeCmd(options inputs) {
 
 	l.Info("Starting the trader bot...")
 	bot.Start()
+}
+
+func getUserID(l logger.Logger, botConfig trader.BotConfig) (string, error) {
+	var userIDPrehash string
+	if botConfig.IsTradingSdex() {
+		userIDPrehash = botConfig.TradingAccount()
+	} else {
+		exchangeAPIKeys := botConfig.ExchangeAPIKeys.ToExchangeAPIKeys()
+		if len(exchangeAPIKeys) == 0 {
+			return "", fmt.Errorf("could not find exchange API key on bot config")
+		}
+
+		userIDPrehash = exchangeAPIKeys[0].Key
+	}
+
+	// hash avoids exposing the user account or api key
+	userIDHashed, e := utils.HashString(userIDPrehash)
+	if e != nil {
+		return "", fmt.Errorf("could not create user id: %s", e)
+	}
+
+	return fmt.Sprint(userIDHashed), nil
 }
 
 func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {

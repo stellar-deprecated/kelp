@@ -10,6 +10,7 @@ import (
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/utils"
 )
 
 func TestHashString(t *testing.T) {
@@ -28,7 +29,7 @@ func TestHashString(t *testing.T) {
 
 	for _, kase := range testCases {
 		t.Run(kase.s, func(t *testing.T) {
-			result, e := hashString(kase.s)
+			result, e := utils.HashString(kase.s)
 			if !assert.Nil(t, e) {
 				return
 			}
