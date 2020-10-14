@@ -31,6 +31,7 @@ type MetricsTracker struct {
 	props      commonProps
 	start      time.Time
 	isDisabled bool
+	isTestnet  bool
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
