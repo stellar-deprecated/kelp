@@ -541,6 +541,7 @@ func runTradeCmd(options inputs) {
 		botConfig.TickIntervalSeconds,
 		botConfig.TradingExchange,
 		botConfig.TradingPair(),
+		*options.noHeaders, // disable metrics if the CLI specified no headers
 		isTestnet,
 	)
 	if e != nil {
