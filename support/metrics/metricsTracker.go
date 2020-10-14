@@ -64,7 +64,8 @@ type commonProps struct {
 // updateProps holds the properties for the update Amplitude event.
 type updateProps struct {
 	commonProps
-	Success bool `json:"success"`
+	Success         bool  `json:"success"`
+	MillisForUpdate int64 `json:"millis_for_update"`
 }
 
 // deleteProps holds the properties for the delete Amplitude event.
@@ -147,12 +148,13 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 }
 
 // SendUpdateEvent sends the update Amplitude event.
-func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool) error {
+func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
 	commonProps := mt.props
 	commonProps.SecondsSinceStart = now.Sub(mt.start).Seconds()
 	updateProps := updateProps{
-		commonProps: commonProps,
-		Success:     success,
+		commonProps:     commonProps,
+		Success:         success,
+		MillisForUpdate: millisForUpdate,
 	}
 	return mt.sendEvent(updateEventName, updateProps)
 }
