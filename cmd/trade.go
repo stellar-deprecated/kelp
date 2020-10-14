@@ -731,7 +731,8 @@ func getUserID(l logger.Logger, botConfig trader.BotConfig) (string, error) {
 	if botConfig.IsTradingSdex() {
 		userIDPrehash = botConfig.TradingAccount()
 	} else {
-		userIDPrehash = amplitudeAPIKey
+		exchangeAPIKeys := botConfig.ExchangeAPIKeys.ToExchangeAPIKeys()
+		userIDPrehash = exchangeAPIKeys[0].Key
 	}
 
 	// hash avoids exposing the user account or api key
