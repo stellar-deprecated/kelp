@@ -24,11 +24,12 @@ const (
 // and can be used to directly send events to the
 // Amplitude HTTP API.
 type MetricsTracker struct {
-	client *http.Client
-	apiKey string
-	userID string
-	props  commonProps
-	start  time.Time
+	client   *http.Client
+	apiKey   string
+	userID   string
+	deviceID string
+	props    commonProps
+	start    time.Time
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -102,6 +103,7 @@ func (ar amplitudeResponse) String() string {
 // MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
 func MakeMetricsTracker(
 	userID string,
+	deviceID string,
 	apiKey string,
 	client *http.Client,
 	start time.Time,
@@ -130,11 +132,12 @@ func MakeMetricsTracker(
 	}
 
 	return &MetricsTracker{
-		client: client,
-		apiKey: apiKey,
-		userID: userID,
-		props:  props,
-		start:  start,
+		client:   client,
+		apiKey:   apiKey,
+		userID:   userID,
+		deviceID: deviceID,
+		props:    props,
+		start:    start,
 	}, nil
 }
 
@@ -180,7 +183,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		Events: []event{{
 			UserID:    mt.userID,
 			SessionID: mt.start.Unix() * 1000, // convert to millis based on docs
-			DeviceID:  mt.userID,
+			DeviceID:  mt.deviceID,
 			EventType: eventType,
 			Props:     eventProps,
 		}},
