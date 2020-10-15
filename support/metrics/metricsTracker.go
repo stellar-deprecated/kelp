@@ -40,6 +40,7 @@ type event struct {
 	SessionID int64       `json:"session_id"`
 	DeviceID  string      `json:"device_id"`
 	EventType string      `json:"event_type"`
+	Version   string      `json:"app_version"`
 	Props     interface{} `json:"event_properties"`
 }
 
@@ -191,6 +192,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 			DeviceID:  mt.deviceID,
 			EventType: eventType,
 			Props:     eventProps,
+			Version:   mt.props.CliVersion,
 		}},
 	}
 	requestBody, e := json.Marshal(eventW)
