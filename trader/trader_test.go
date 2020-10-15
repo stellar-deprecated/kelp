@@ -2,6 +2,7 @@ package trader
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -156,6 +157,66 @@ func TestIsStateSynchronized(t *testing.T) {
 				k.buyingAOffers2,
 			)
 			assert.Equal(t, k.wantIsStateSynchronized, actual)
+		})
+	}
+}
+
+func TestShouldSendUpdateMetric(t *testing.T) {
+	now := time.Now()
+	testCases := []struct {
+		name                 string
+		start                time.Time
+		currentUpdate        time.Time
+		lastMetricUpdate     time.Time
+		wantShouldSendMetric bool
+	}{
+		{
+			name:                 "first 5 mins - refresh",
+			start:                now.Add(-4 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-10 * time.Second),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "first 5 mins - no refresh",
+			start:                now.Add(-4 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-3 * time.Second),
+			wantShouldSendMetric: false,
+		},
+		{
+			name:                 "first hour - refresh",
+			start:                now.Add(-50 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-15 * time.Minute),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "first hour - no refresh",
+			start:                now.Add(-50 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-5 * time.Minute),
+			wantShouldSendMetric: false,
+		},
+		{
+			name:                 "past first hour - refresh",
+			start:                now.Add(-2 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-65 * time.Minute),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "past first hour - no refresh",
+			start:                now.Add(-2 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-15 * time.Minute),
+			wantShouldSendMetric: false,
+		},
+	}
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			actual := shouldSendUpdateMetric(k.start, k.currentUpdate, k.lastMetricUpdate)
+			assert.Equal(t, k.wantShouldSendMetric, actual)
 		})
 	}
 }

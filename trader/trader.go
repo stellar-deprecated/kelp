@@ -115,21 +115,28 @@ func MakeTrader(
 // Start starts the bot with the injected strategy
 func (t *Trader) Start() {
 	log.Println("----------------------------------------------------------------------------------------------------")
-	var lastUpdateTime time.Time
+	var (
+		lastUpdateTime       time.Time
+		lastMetricUpdateTime time.Time
+	)
+	startTime := time.Now()
 
 	for {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
-			millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
-			e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-				e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
+			if shouldSendUpdateMetric(startTime, currentUpdateTime, lastMetricUpdateTime) {
+				millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
+				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
+					if e != nil {
+						log.Printf("failed to send update event metric: %s", e)
+					}
+				}, nil)
 				if e != nil {
-					log.Printf("failed to send update event metric: %s", e)
+					log.Printf("failed to trigger goroutine for send update event: %s", e)
 				}
-			}, nil)
-			if e != nil {
-				log.Printf("failed to trigger goroutine for send update event: %s", e)
+				lastMetricUpdateTime = currentUpdateTime
 			}
 
 			if t.fixedIterations != nil && success {
@@ -152,6 +159,21 @@ func (t *Trader) Start() {
 		log.Printf("sleeping for %s...\n", sleepTime)
 		time.Sleep(sleepTime)
 	}
+}
+
+func shouldSendUpdateMetric(start, currentUpdate, lastMetricUpdate time.Time) bool {
+	timeFromStart := currentUpdate.Sub(start)
+	var refreshMetricInterval time.Duration
+	switch {
+	case timeFromStart < 5*time.Minute:
+		refreshMetricInterval = 5 * time.Second
+	case timeFromStart < 1*time.Hour:
+		refreshMetricInterval = 10 * time.Minute
+	default:
+		refreshMetricInterval = 1 * time.Hour
+	}
+
+	return currentUpdate.Sub(lastMetricUpdate) >= refreshMetricInterval
 }
 
 // deletes all offers for the bot (not all offers on the account)
