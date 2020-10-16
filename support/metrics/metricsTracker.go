@@ -167,7 +167,7 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 // SendDeleteEvent sends the delete Amplitude event.
 func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 	commonProps := mt.props
-	commonProps.SecondsSinceStart = time.Now().Sub(mt.start).Seconds()
+	commonProps.SecondsSinceStart = time.Now().Sub(mt.botStartTime).Seconds()
 	deleteProps := deleteProps{
 		commonProps: commonProps,
 		Exit:        exit,
