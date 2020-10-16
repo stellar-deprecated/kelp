@@ -31,7 +31,7 @@ type MetricsTracker struct {
 	props                commonProps
 	botStartTime         time.Time
 	isDisabled           bool
-	lastMetricUpdateTime time.Time
+	LastMetricUpdateTime time.Time
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -178,10 +178,10 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 }
 
 func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
-	if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
-		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
-		return nil
-	}
+	// if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
+	// 	log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
+	// 	return nil
+	// }
 
 	// session_id is the start time of the session in milliseconds since epoch (Unix Timestamp),
 	// necessary to associate events with a particular system (taken from amplitude docs)
