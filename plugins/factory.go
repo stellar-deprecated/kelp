@@ -167,6 +167,31 @@ var strategies = map[string]StrategyContainer{
 			return s, nil
 		},
 	},
+	"buy_twap": {
+		SortOrder:   7,
+		Description: "Creates buy offers by distributing orders over time for a given day using a twap metric",
+		NeedsConfig: true,
+		Complexity:  "Intermediate",
+		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			var cfg sellTwapConfig
+			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
+			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)
+			utils.LogConfig(cfg)
+			s, e := makeBuyTwapStrategy(
+				strategyFactoryData.sdex,
+				strategyFactoryData.tradingPair,
+				strategyFactoryData.ieif,
+				strategyFactoryData.assetBase,
+				strategyFactoryData.assetQuote,
+				strategyFactoryData.filterFactory,
+				&cfg,
+			)
+			if e != nil {
+				return nil, fmt.Errorf("make Fn failed: %s", e)
+			}
+			return s, nil
+		},
+	},
 }
 
 // MakeStrategy makes a strategy
