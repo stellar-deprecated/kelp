@@ -46,7 +46,7 @@ type Trader struct {
 	dataKey                        *model.BotKey
 	alert                          api.Alert
 	metricsTracker                 *metrics.MetricsTracker
-	start                          time.Time
+	startTime                      time.Time
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -84,7 +84,7 @@ func MakeTrader(
 	dataKey *model.BotKey,
 	alert api.Alert,
 	metricsTracker *metrics.MetricsTracker,
-	start time.Time,
+	startTime time.Time,
 ) *Trader {
 	return &Trader{
 		api:                            api,
@@ -109,7 +109,7 @@ func MakeTrader(
 		dataKey:                        dataKey,
 		alert:                          alert,
 		metricsTracker:                 metricsTracker,
-		start:                          start,
+		startTime:                      startTime,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
@@ -127,7 +127,7 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
-			if shouldSendUpdateMetric(t.start, currentUpdateTime, lastMetricUpdateTime) {
+			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, lastMetricUpdateTime) {
 				millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
@@ -167,9 +167,9 @@ func shouldSendUpdateMetric(start, currentUpdate, lastMetricUpdate time.Time) bo
 	timeFromStart := currentUpdate.Sub(start)
 	var refreshMetricInterval time.Duration
 	switch {
-	case timeFromStart < 5*time.Minute:
+	case timeFromStart <= 5*time.Minute:
 		refreshMetricInterval = 5 * time.Second
-	case timeFromStart < 1*time.Hour:
+	case timeFromStart <= 1*time.Hour:
 		refreshMetricInterval = 10 * time.Minute
 	default:
 		refreshMetricInterval = 1 * time.Hour
