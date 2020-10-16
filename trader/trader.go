@@ -124,14 +124,13 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
-			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, t.metricsTracker.LastMetricUpdateTime) {
+			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, t.metricsTracker.GetUpdateEventSentTime()) {
 				millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
 					if e != nil {
 						log.Printf("failed to send update event metric: %s", e)
 					}
-					t.metricsTracker.LastMetricUpdateTime = currentUpdateTime
 				}, nil)
 				if e != nil {
 					log.Printf("failed to trigger goroutine for send update event: %s", e)

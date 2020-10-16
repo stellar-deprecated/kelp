@@ -24,14 +24,14 @@ const (
 // and can be used to directly send events to the
 // Amplitude HTTP API.
 type MetricsTracker struct {
-	client               *http.Client
-	apiKey               string
-	userID               string
-	deviceID             string
-	props                commonProps
-	botStartTime         time.Time
-	isDisabled           bool
-	LastMetricUpdateTime time.Time
+	client              *http.Client
+	apiKey              string
+	userID              string
+	deviceID            string
+	props               commonProps
+	botStartTime        time.Time
+	isDisabled          bool
+	updateEventSentTime time.Time
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -147,6 +147,11 @@ func MakeMetricsTracker(
 	}, nil
 }
 
+// GetUpdateEventSentTime gets the last sent time of the update event.
+func (mt *MetricsTracker) GetUpdateEventSentTime() time.Time {
+	return mt.updateEventSentTime
+}
+
 // SendStartupEvent sends the startup Amplitude event.
 func (mt *MetricsTracker) SendStartupEvent() error {
 	return mt.sendEvent(startupEventName, mt.props)
@@ -161,7 +166,13 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 		Success:         success,
 		MillisForUpdate: millisForUpdate,
 	}
-	return mt.sendEvent(updateEventName, updateProps)
+	e := mt.sendEvent(updateEventName, updateProps)
+	if e != nil {
+		return fmt.Errorf("could not send update event: %s", e)
+	}
+
+	mt.updateEventSentTime = now
+	return nil
 }
 
 // SendDeleteEvent sends the delete Amplitude event.
