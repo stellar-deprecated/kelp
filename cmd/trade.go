@@ -384,6 +384,7 @@ func makeBot(
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 	metricsTracker *metrics.MetricsTracker,
+	botStart time.Time,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
 		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
@@ -485,6 +486,7 @@ func makeBot(
 		dataKey,
 		alert,
 		metricsTracker,
+		botStart,
 	)
 }
 
@@ -517,7 +519,6 @@ func runTradeCmd(options inputs) {
 	if *options.ui {
 		guiVersionFlag = guiVersion
 	}
-
 
 	deviceID, e := machineid.ID()
 	if e != nil {
@@ -699,6 +700,7 @@ func runTradeCmd(options inputs) {
 		threadTracker,
 		options,
 		metricsTracker,
+		botStart,
 	)
 	// --- end initialization of objects ---
 	// --- start initialization of services ---

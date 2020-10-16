@@ -46,6 +46,7 @@ type Trader struct {
 	dataKey                        *model.BotKey
 	alert                          api.Alert
 	metricsTracker                 *metrics.MetricsTracker
+	start                          time.Time
 
 	// initialized runtime vars
 	deleteCycles int64
@@ -83,6 +84,7 @@ func MakeTrader(
 	dataKey *model.BotKey,
 	alert api.Alert,
 	metricsTracker *metrics.MetricsTracker,
+	start time.Time,
 ) *Trader {
 	return &Trader{
 		api:                            api,
@@ -107,6 +109,7 @@ func MakeTrader(
 		dataKey:                        dataKey,
 		alert:                          alert,
 		metricsTracker:                 metricsTracker,
+		start:                          start,
 		// initialized runtime vars
 		deleteCycles: 0,
 	}
@@ -119,24 +122,23 @@ func (t *Trader) Start() {
 		lastUpdateTime       time.Time
 		lastMetricUpdateTime time.Time
 	)
-	startTime := time.Now()
 
 	for {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
-			if shouldSendUpdateMetric(startTime, currentUpdateTime, lastMetricUpdateTime) {
+			if shouldSendUpdateMetric(t.start, currentUpdateTime, lastMetricUpdateTime) {
 				millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
 					if e != nil {
 						log.Printf("failed to send update event metric: %s", e)
 					}
+					lastMetricUpdateTime = currentUpdateTime
 				}, nil)
 				if e != nil {
 					log.Printf("failed to trigger goroutine for send update event: %s", e)
 				}
-				lastMetricUpdateTime = currentUpdateTime
 			}
 
 			if t.fixedIterations != nil && success {
@@ -173,7 +175,8 @@ func shouldSendUpdateMetric(start, currentUpdate, lastMetricUpdate time.Time) bo
 		refreshMetricInterval = 1 * time.Hour
 	}
 
-	return currentUpdate.Sub(lastMetricUpdate) >= refreshMetricInterval
+	timeSinceLastUpdate := currentUpdate.Sub(lastMetricUpdate)
+	return timeSinceLastUpdate >= refreshMetricInterval
 }
 
 // deletes all offers for the bot (not all offers on the account)
