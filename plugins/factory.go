@@ -173,6 +173,7 @@ var strategies = map[string]StrategyContainer{
 		NeedsConfig: true,
 		Complexity:  "Intermediate",
 		makeFn: func(strategyFactoryData strategyFactoryData) (api.Strategy, error) {
+			// reuse the sellTwapConfig struct since we need the same info for buyTwap
 			var cfg sellTwapConfig
 			err := config.Read(strategyFactoryData.stratConfigPath, &cfg)
 			utils.CheckConfigError(cfg, err, strategyFactoryData.stratConfigPath)

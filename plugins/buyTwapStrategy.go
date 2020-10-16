@@ -50,6 +50,7 @@ func makeBuyTwapStrategy(
 		return nil, fmt.Errorf("error when making a sellTwapLevelProvider: %s", e)
 	}
 
+	// switch sides of base/quote here for buy side
 	buySideStrategy := makeSellSideStrategy(
 		sdex,
 		orderConstraints,
@@ -61,8 +62,10 @@ func makeBuyTwapStrategy(
 		config.AmountTolerance,
 		false,
 	)
-	// switch side of base/quote here for the delete side
-	deleteSideStrategy := makeDeleteSideStrategy(sdex, assetQuote, assetBase)
+
+	// use assetBase as param to assetBase argument, since the delete strategy is
+	// on the sell side. so the params should line up correctly with the arguments
+	deleteSideStrategy := makeDeleteSideStrategy(sdex, assetBase, assetQuote)
 
 	return makeComposeStrategy(
 		assetBase,
