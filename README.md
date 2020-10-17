@@ -43,11 +43,10 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
       * [Using Postgres](#using-postgres)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
-      * [Configuration Files](#configuration-files-1)
+      * [Configuration Files](#configuration-files)
 * [Components](#components)
    * [Strategies](#strategies)
    * [Price Feeds](#price-feeds)
-   * [Configuration Files](#configuration-files)
    * [Exchanges](#exchanges)
    * [Plugins](#plugins)
    * [Directory Structure](#directory-structure)
@@ -185,7 +184,9 @@ It's easier to learn with examples! Take a look at the walkthrough guides and sa
 
 ### Configuration Files
 
-Reference config files are in the [examples folder](examples/configs/trader). Specifically, the following sample configuration files are included:
+Each strategy you implement needs a configuration file. The format of the configuration file is specific to the selected strategy. You can use these files to customize parameters for your chosen strategy.
+
+The following reference config files are in the [examples folder](examples/configs/trader):
 
 - [Sample Sell strategy config file](examples/configs/trader/sample_sell.cfg)
 - [Sample BuySell strategy config file](examples/configs/trader/sample_buysell.cfg)
@@ -262,12 +263,6 @@ Price Feeds fetch the price of an asset from an external source. The following p
 - `function`: uses a pre-defined function to combine the above price feed types into a single feed. We currently support only two types
     - `max` - `max(exchange/ccxt-binance/XLM/USDT/mid,exchange/ccxt-coinbasepro/XLM/USD/mid)`
     - `invert` - `invert(exchange/ccxt-binance/XLM/USDT/mid)`
-
-## Configuration Files
-
-Each strategy you implement needs a configuration file. The format of the configuration file is specific to the selected strategy. You can use these files to customize parameters for your chosen strategy.
-
-For more details, check out the [examples section](#configuration-files-1) of the readme.
 
 ## Exchanges
 
