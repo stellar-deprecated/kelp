@@ -197,6 +197,8 @@ The following reference config files are in the [examples folder](examples/confi
 
 ### Winning Educational Content from StellarBattle
 
+SDF sponsored a [Kelp StellarBattle in August/September 2020][kelp-battle-1], here were the winning results ([announcement][kelp-battle-1-winners]):
+
 - [How To Create Liquidity With Kelp On The Stellar Dex (Winner)](https://medium.com/axons/how-to-create-liquidity-with-kelp-on-the-stellar-dex-5155928d4986)
 - [Make use of arbitrage opportunities with Kelp bot (Runner-Up)](https://stellarupdate.com/make-use-of-arbitrage-opportunities-with-kelp-bot-653/)
 - [Market Making in Stellar 101: Fundamentals & Kelp](https://rambling-ideas.salessandri.name/market-making-in-stellar-101-fundamentals-kelp/)
@@ -387,6 +389,8 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [ccxt-rest]: https://github.com/franz-see/ccxt-rest
 [docker]: https://www.docker.com/
 [postgres]: https://www.postgresql.org/
+[kelp-battle-1]: https://stellarbattle.com/kelp-overview-battle/
+[kelp-battle-1-winners]: https://medium.com/stellar-community/announcing-the-winners-of-the-first-kelpbot-stellarbattle-a6f28fef7776
 [kraken]: https://www.kraken.com/
 [stellar-downloader]: https://github.com/nikhilsaraf/stellar-downloader
 [stackexchange]: https://stellar.stackexchange.com/
