@@ -32,8 +32,6 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
 
 ![Kelp GUI screenshot](resources/screenshots/gui_screenshot.png)
 
-# Sign up for the new [announcements distribution list][announcements-group] and [user mailing list][discussions-group]
-
 # Table of Contents
 
 <details>
@@ -212,49 +210,42 @@ The following strategies are available **out of the box** with Kelp:
     - **What:** creates sell offers based on a reference price with a pre-specified liquidity depth
     - **Why:** To sell tokens at a fixed price or at a price that changes based on an external reference price
     - **Who:** An issuer could use Sell to distribute tokens from an ICO pre-sale
-    - **Complexity**: Beginner
 
 - sell_twap ([source](plugins/sellTwapStrategy.go)):
 
     - **What:** creates sell offers based on a reference price spread over the day for a given daily sale amount
     - **Why:** To sell tokens consistently using the time-weighted-average-price (TWAP) metric
     - **Who:** An issuer could use SellTwap to distribute tokens from an ICO pre-sale in a consistent manner
-    - **Complexity**: Intermediate
 
 - buysell ([source](plugins/buysellStrategy.go)):
 
     - **What:** creates buy and sell offers based on a specific reference price and a pre-specified liquidity depth while maintaining a [spread][spread].
     - **Why:** To make the market for tokens based on a fixed or external reference price.
     - **Who:** Anyone who wants to create liquidity for a stablecoin or [fiat][fiat] token
-    - **Complexity:** Beginner
 
 - balanced ([source](plugins/balancedStrategy.go)):
 
-    - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B. This strategy does not allow you to configure the order size but can run out of assets. This is a mean-reversion strategy.
+    - **What:** dynamically prices two tokens based on their relative demand (like AMMs). For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B. This strategy does not allow you to configure the order size but can run out of assets. This is a mean-reversion strategy.
     - **Why:** To let the market surface the _true price_ for one token in terms of another.
     - **Who:** Market makers and traders for tokens that have a neutral view on the market
-    - **Complexity:** Intermediate
 
 - pendulum ([source](plugins/pendulumStrategy.go)):
 
-    - **What:** dynamically prices two tokens based on their relative demand. For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B. This strategy allows you to configure the order size but runs the risk of running out of one of the two assets. This is a mean-reversion strategy.
+    - **What:** dynamically prices two tokens based on their relative demand (like AMMs). For example, if more traders buy token A _from_ the bot (the traders are therefore selling token B), the bot will automatically raise the price for token A and drop the price for token B. This strategy allows you to configure the order size but runs the risk of running out of one of the two assets. This is a mean-reversion strategy.
     - **Why:** To let the market surface the _true price_ for one token in terms of another.
     - **Who:** Market makers and traders for tokens that have a neutral view on the market
-    - **Complexity:** Beginner
 
 - mirror ([source](plugins/mirrorStrategy.go)):
 
     - **What:** mirrors an orderbook from another exchange by placing the same orders on Stellar after including a [spread][spread].
     - **Why:** To [hedge][hedge] your position on another exchange whenever a trade is executed to reduce inventory risk while keeping a spread
     - **Who:** Anyone who wants to reduce inventory risk and also has the capacity to take on a higher operational overhead in maintaining the bot system.
-    - **Complexity:** Advanced
 
 - delete ([source](plugins/deleteStrategy.go)):
 
     - **What:** deletes your offers from both sides of the specified orderbook. _Note: does not need a strategy-specific config file_.
     - **Why:** To kill the offers placed by the bot. _This is not a trading strategy but is used for operational purposes only_.
     - **Who:** Anyone managing the operations of the bot who wants to stop all activity by the bot.
-    - **Complexity:** Beginner
 
 Refer to this [Pull Request][pr-template-new-strategy] to see an example template of a new trading strategy.
 
@@ -348,11 +339,11 @@ It's easier to learn with examples! Take a look at the walkthrough guides and sa
 ## Walkthrough Guides
 
 - [Setting up a trading account](examples/walkthroughs/trader/account_setup.md): This guide uses an example token, `COUPON`, to show you how to set up your account before deploying the bot.
-- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the _buysell_ strategy to provide liquidity for a stablecoin. 
+- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the `buysell` strategy to provide liquidity for a stablecoin. 
 - [ICO sale](examples/walkthroughs/trader/sell.md): This guide uses the `sell` strategy to make a market using sell offers for native tokens in a hypothetical ICO. 
 - [TWAP sale](examples/walkthroughs/trader/sell_twap.md): This guide uses the `sell_twap` strategy to consistently sell tokens throughout the day. This can also be used for ICOs.
-- [Create liquidity for a Stellar-based token](examples/walkthroughs/trader/balanced.md): This guide uses the `balanced` strategy to create liquidty for a token which only trades on the Stellar network. 
-- [Create targeted liquidity within a bounded price range](examples/walkthroughs/trader/pendulum.md): This guide uses the `pendulum` strategy to create liquidty for a token. 
+- [Create liquidity AMM for a Stellar-based token](examples/walkthroughs/trader/balanced.md): This guide uses the `balanced` strategy to create liquidty for a token which only trades on the Stellar network. 
+- [Create targeted liquidity AMM within a bounded price range](examples/walkthroughs/trader/pendulum.md): This guide uses the `pendulum` strategy to create liquidty for a token. 
 
 ## Configuration Files
 
@@ -378,7 +369,7 @@ See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contribu
 
 - Ask questions on the [Stellar StackExchange][stackexchange] using the `kelp` tag
 - Announcements will be made on the [announcements distribution list][announcements-group]
-- Community discussions (outside of questions) can take place on the [mailing list][discussions-group]
+- Community discussions (outside of questions) can take place on the [user mailing list][discussions-group]
 
 ## Code of Conduct
 
