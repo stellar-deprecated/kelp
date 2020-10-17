@@ -34,38 +34,30 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
 
 # Table of Contents
 
-<details>
-    <summary>click to expand</summary>
-
-   * [Getting Started](#getting-started)
-      * [How To Get Kelp](#how-to-get-kelp)
-         * [Download Kelp Binary](#download-kelp-binary)
-         * [Compile from Source](#compile-from-source)
-      * [Running Kelp](#running-kelp)
+* [Getting Started](#getting-started)
+   * [How To Get Kelp](#how-to-get-kelp)
+      * [Download Kelp Binary](#download-kelp-binary)
+      * [Compile from Source](#compile-from-source)
+   * [Running Kelp](#running-kelp)
       * [Using CCXT](#using-ccxt)
-         * [Download CCXT Binary](#download-ccxt-binary)
-         * [Run CCXT using Docker](#run-ccxt-using-docker)
       * [Using Postgres](#using-postgres)
-   * [Components](#components)
-      * [Strategies](#strategies)
-      * [Price Feeds](#price-feeds)
-      * [Configuration Files](#configuration-files)
-      * [Exchanges](#exchanges)
-      * [Plugins](#plugins)
-      * [Directory Structure](#directory-structure)
-      * [Accounting](#accounting)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files-1)
+* [Components](#components)
+   * [Strategies](#strategies)
+   * [Price Feeds](#price-feeds)
+   * [Configuration Files](#configuration-files)
+   * [Exchanges](#exchanges)
+   * [Plugins](#plugins)
+   * [Directory Structure](#directory-structure)
+   * [Accounting](#accounting)
+* [Community](#community)
+   * [Contributing](#contributing)
    * [Changelog](#changelog)
-   * [Community](#community)
-      * [Contributing](#contributing)
-      * [Communication](#communication)
-      * [Code of Conduct](#code-of-conduct)
-      * [Project Improvements](#project-improvements)
-   * [Public Assets](#public-assets)
-
-</details>
+   * [Code of Conduct](#code-of-conduct)
+   * [Project Improvements](#project-improvements)
+* [Public Assets](#public-assets)
 
 # Getting Started
 
@@ -105,9 +97,6 @@ To run the bot in simulation mode, try this command:
 
 ### Compile from Source
 
-<details>
-    <summary>click to expand</summary>
-
 _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
 
 To compile Kelp from source:
@@ -130,8 +119,6 @@ To compile Kelp from source:
     * `./bin/kelp version`
 9. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
-
-</details>
 
 ## Running Kelp
 
@@ -158,10 +145,8 @@ Here's an example of how to start the trading bot with the _buysell_ strategy:
 
 If you are ever stuck, just run `kelp help` to bring up the help section or type `kelp help [command]` for help with a specific command.
 
-## Using CCXT
+### Using CCXT
 
-<details>
-    <summary>click to expand</summary>
 You can use the [CCXT][ccxt] library via the [CCXT REST API Wrapper][ccxt-rest] to fetch prices and orderbooks from a larger number of exchanges. You will need to run the CCXT REST server on `localhost:3000` so Kelp can connect to it.
 
 The CCXT-REST server **must** be running on port `3000` _before_ you start up the Kelp bot. You can list the exchanges (`./kelp exchanges`) to get the full list of supported exchanges via CCXT.
@@ -170,36 +155,53 @@ _Note: this integration is still **experimental** and is also **incomplete**. Pl
 
 CCXT-rest can be run in any one of the following ways.
 
-### Download CCXT Binary
+#### Download CCXT Binary
 
 We have compiled the ccxt-rest v0.0.4 server as a binary for all x86 platforms (linux, darwin, windows). This is the version that Kelp currently uses.
 
 You can find these pre-compiled binaries of the CCXT-rest server in the [releases tab here](https://github.com/stellar/kelp/releases/tag/ccxt-rest_v0.0.4).
 
-### Run CCXT using Docker
+#### Run CCXT using Docker
 
 Install [docker][docker] (linux: `sudo apt install -y docker.io`) and run the CCXT-REST docker image configured to port `3000` (linux: `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`).
 You can find more details on the [CCXT_REST github page][ccxt-rest].
 
-</details>
-
-## Using Postgres
-
-<details>
-    <summary>click to expand</summary>
+### Using Postgres
 
 [Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
 
-</details>
+## Examples
+
+It's easier to learn with examples! Take a look at the walkthrough guides and sample configuration files below.
+
+### Walkthrough Guides
+
+- [Setting up a trading account](examples/walkthroughs/trader/account_setup.md): This guide uses an example token, `COUPON`, to show you how to set up your account before deploying the bot.
+- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the `buysell` strategy to provide liquidity for a stablecoin. 
+- [ICO sale](examples/walkthroughs/trader/sell.md): This guide uses the `sell` strategy to make a market using sell offers for native tokens in a hypothetical ICO. 
+- [TWAP sale](examples/walkthroughs/trader/sell_twap.md): This guide uses the `sell_twap` strategy to consistently sell tokens throughout the day. This can also be used for ICOs.
+- [Create liquidity AMM for a Stellar-based token](examples/walkthroughs/trader/balanced.md): This guide uses the `balanced` strategy to create liquidty for a token which only trades on the Stellar network. 
+- [Create targeted liquidity AMM within a bounded price range](examples/walkthroughs/trader/pendulum.md): This guide uses the `pendulum` strategy to create liquidty for a token. 
+
+### Configuration Files
+
+Reference config files are in the [examples folder](examples/configs/trader). Specifically, the following sample configuration files are included:
+
+- [Sample Sell strategy config file](examples/configs/trader/sample_sell.cfg)
+- [Sample BuySell strategy config file](examples/configs/trader/sample_buysell.cfg)
+- [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
+- [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
+- [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
+
 
 # Components
 
 Kelp includes an assortment of strategies, price feeds, and plugins you can use to customize your bot. Kelp also enables you to create your own trading strategies.
 
-## Strategies
-
 <details>
-    <summary>click to expand</summary>
+    <summary>click to expand Components section</summary>
+
+## Strategies
 
 Strategies are at the core of Kelp. Without them it's just lazy, capable of nothing, thinking of nothing, doing nothing, like our friend [scooter][scooter video] here. The strategies give your bot purpose. Each approaches the market in a different way and is designed to achieve a particular goal.
 
@@ -249,12 +251,7 @@ The following strategies are available **out of the box** with Kelp:
 
 Refer to this [Pull Request][pr-template-new-strategy] to see an example template of a new trading strategy.
 
-</details>
-
 ## Price Feeds
-
-<details>
-    <summary>click to expand</summary>
 
 Price Feeds fetch the price of an asset from an external source. The following price feeds are available **out of the box** with Kelp:
 
@@ -266,8 +263,6 @@ Price Feeds fetch the price of an asset from an external source. The following p
     - `max` - `max(exchange/ccxt-binance/XLM/USDT/mid,exchange/ccxt-coinbasepro/XLM/USD/mid)`
     - `invert` - `invert(exchange/ccxt-binance/XLM/USDT/mid)`
 
-</details>
-
 ## Configuration Files
 
 Each strategy you implement needs a configuration file. The format of the configuration file is specific to the selected strategy. You can use these files to customize parameters for your chosen strategy.
@@ -278,9 +273,6 @@ For more details, check out the [examples section](#configuration-files-1) of th
 
 Exchange integrations provide data to trading strategies and allow you to [hedge][hedge] your positions on different exchanges. The following [exchange integrations](plugins) are available **out of the box** with Kelp:
 
-<details>
-    <summary>click to expand</summary>
-
 - sdex (_`"sdex"`_) ([source](plugins/sdex.go)): The [Stellar Decentralized Exchange][sdex]
 - kraken (_`"kraken"`_) ([source](plugins/krakenExchange.go)): [Kraken][kraken] - recommended to use `ccxt-kraken` instead
 - kraken (via CCXT) (_`"ccxt-kraken"`_) ([source](plugins/ccxtExchange.go)): Kraken via CCXT - full two-way integration (tested)
@@ -289,12 +281,7 @@ Exchange integrations provide data to trading strategies and allow you to [hedge
 - poloniex (via CCXT) (_`"ccxt-poloniex"`_) ([source](plugins/ccxtExchange.go)): Poloniex via CCXT - only tested on priceFeeds and one-way mirroring
 - bittrex (via CCXT) (_`"ccxt-bittrex"`_) ([source](plugins/ccxtExchange.go)): Bittrex via CCXT - only tested on priceFeeds and onw-way mirroring
 
-</details>
-
 ## Plugins
-
-<details>
-    <summary>click to expand</summary>
 
 Kelp can easily be extended because of its _modular plugin based architecture_.
 You can create new flavors of the following components: Strategies, PriceFeeds, and Exchanges.
@@ -304,12 +291,7 @@ These interfaces make it easy to create plugins:
 - PriceFeed ([source](api/priceFeed.go)) - API for price of an asset
 - Exchange ([source](api/exchange.go)) - API for crypto exchanges
 
-</details>
-
 ## Directory Structure
-
-<details>
-    <summary>click to expand</summary>
 
 The folders are organized to make it easy to find code and streamline development flow.
 Each folder is its own package **without any sub-packages**.
@@ -326,50 +308,28 @@ Each folder is its own package **without any sub-packages**.
     ├── main.go         # main function for our kelp binary
     └── ...
 
-</details>
-
 ## Accounting
 
 You can use [**Stellar-Downloader**][stellar-downloader] to download trade and payment data from your Stellar account as a CSV file.
 
-# Examples
-
-It's easier to learn with examples! Take a look at the walkthrough guides and sample configuration files below.
-
-## Walkthrough Guides
-
-- [Setting up a trading account](examples/walkthroughs/trader/account_setup.md): This guide uses an example token, `COUPON`, to show you how to set up your account before deploying the bot.
-- [Market making for a stablecoin](examples/walkthroughs/trader/buysell.md): This guide uses the `buysell` strategy to provide liquidity for a stablecoin. 
-- [ICO sale](examples/walkthroughs/trader/sell.md): This guide uses the `sell` strategy to make a market using sell offers for native tokens in a hypothetical ICO. 
-- [TWAP sale](examples/walkthroughs/trader/sell_twap.md): This guide uses the `sell_twap` strategy to consistently sell tokens throughout the day. This can also be used for ICOs.
-- [Create liquidity AMM for a Stellar-based token](examples/walkthroughs/trader/balanced.md): This guide uses the `balanced` strategy to create liquidty for a token which only trades on the Stellar network. 
-- [Create targeted liquidity AMM within a bounded price range](examples/walkthroughs/trader/pendulum.md): This guide uses the `pendulum` strategy to create liquidty for a token. 
-
-## Configuration Files
-
-Reference config files are in the [examples folder](examples/configs/trader). Specifically, the following sample configuration files are included:
-
-- [Sample Sell strategy config file](examples/configs/trader/sample_sell.cfg)
-- [Sample BuySell strategy config file](examples/configs/trader/sample_buysell.cfg)
-- [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
-- [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
-- [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
-
-# Changelog
-
-See the [Changelog](CHANGELOG.md).
+</details>
 
 # Community
+
+- Ask questions on the [Stellar StackExchange][stackexchange] using the `kelp` tag
+- Announcements will be made on the [announcements distribution list][announcements-group]
+- Community discussions (outside of questions) can take place on the [user mailing list][discussions-group]
+
+<details>
+    <summary>click to expand Community section</summary>
 
 ## Contributing
 
 See the [Contribution Guide](CONTRIBUTING.md) and then please [sign the Contributor License Agreement][cla].
 
-## Communication
+## Changelog
 
-- Ask questions on the [Stellar StackExchange][stackexchange] using the `kelp` tag
-- Announcements will be made on the [announcements distribution list][announcements-group]
-- Community discussions (outside of questions) can take place on the [user mailing list][discussions-group]
+See the [Changelog](CHANGELOG.md).
 
 ## Code of Conduct
 
@@ -382,10 +342,12 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 - [Raise an issue][github-new-issue] that is not a bug report or a feature request
 - [Contribute a PR][github-pulls]
 
+</details>
+
 # Public Assets
 
 <details>
-    <summary>click to expand</summary>
+    <summary>click to expand Public Assets section</summary>
 
 `TEST1` and `TEST2` issued by the `GCL4KBYTRA3QYI4JTN4FWVYVYNI67W2M6XMDUB2V6ZLWFASIYHWEJPHU` account are test assets used to test Kelp on the production Stellar Network. **These assets have no value** and are marked as `auth_required` with the intent to close them off from the rest of the Stellar ecosystem. No trustlines will be accepted against these assets. As part of our testing process, you may observe a market and trades between these two tokens. It is not intended for any of these assets to represent any meaningful volume on the Stellar Network.
 
