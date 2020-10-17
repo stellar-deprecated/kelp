@@ -2,6 +2,7 @@ package trader
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -156,6 +157,87 @@ func TestIsStateSynchronized(t *testing.T) {
 				k.buyingAOffers2,
 			)
 			assert.Equal(t, k.wantIsStateSynchronized, actual)
+		})
+	}
+}
+
+func TestShouldSendUpdateMetric(t *testing.T) {
+	now := time.Now()
+	testCases := []struct {
+		name                 string
+		start                time.Time
+		currentUpdate        time.Time
+		lastMetricUpdate     time.Time
+		wantShouldSendMetric bool
+	}{
+		{
+			name:                 "first 5 mins - border - refresh",
+			start:                now.Add(-5 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-5 * time.Second),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "first 5 mins - greater than - refresh",
+			start:                now.Add(-5 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-5*time.Second - time.Nanosecond),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "first 5 mins - less than - no refresh",
+			start:                now.Add(-5 * time.Minute),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-5*time.Second + time.Nanosecond),
+			wantShouldSendMetric: false,
+		},
+		{
+			name:                 "first hour - border - refresh",
+			start:                now.Add(-1 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-10 * time.Minute),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "first hour - greater than - refresh",
+			start:                now.Add(-1 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-10*time.Minute - time.Nanosecond),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "first hour - less than - no refresh",
+			start:                now.Add(-1 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-10*time.Minute + time.Nanosecond),
+			wantShouldSendMetric: false,
+		},
+		{
+			name:                 "past first hour - border - refresh",
+			start:                now.Add(-2 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-1 * time.Hour),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "past first hour - greater than - refresh",
+			start:                now.Add(-2 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-1*time.Hour - time.Nanosecond),
+			wantShouldSendMetric: true,
+		},
+		{
+			name:                 "past first hour - less than - no refresh",
+			start:                now.Add(-2 * time.Hour),
+			currentUpdate:        now,
+			lastMetricUpdate:     now.Add(-1*time.Hour + time.Nanosecond),
+			wantShouldSendMetric: false,
+		},
+	}
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			actual := shouldSendUpdateMetric(k.start, k.currentUpdate, k.lastMetricUpdate)
+			assert.Equal(t, k.wantShouldSendMetric, actual)
 		})
 	}
 }

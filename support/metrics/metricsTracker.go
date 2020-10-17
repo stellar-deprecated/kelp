@@ -24,13 +24,14 @@ const (
 // and can be used to directly send events to the
 // Amplitude HTTP API.
 type MetricsTracker struct {
-	client     *http.Client
-	apiKey     string
-	userID     string
-	deviceID   string
-	props      commonProps
-	start      time.Time
-	isDisabled bool
+	client              *http.Client
+	apiKey              string
+	userID              string
+	deviceID            string
+	props               commonProps
+	botStartTime        time.Time
+	isDisabled          bool
+	updateEventSentTime time.Time
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -109,7 +110,7 @@ func MakeMetricsTracker(
 	deviceID string,
 	apiKey string,
 	client *http.Client,
-	start time.Time,
+	botStartTime time.Time,
 	version string,
 	goos string,
 	goarch string,
@@ -136,14 +137,19 @@ func MakeMetricsTracker(
 	}
 
 	return &MetricsTracker{
-		client:     client,
-		apiKey:     apiKey,
-		userID:     userID,
-		deviceID:   deviceID,
-		props:      props,
-		start:      start,
-		isDisabled: isDisabled,
+		client:       client,
+		apiKey:       apiKey,
+		userID:       userID,
+		deviceID:     deviceID,
+		props:        props,
+		botStartTime: botStartTime,
+		isDisabled:   isDisabled,
 	}, nil
+}
+
+// GetUpdateEventSentTime gets the last sent time of the update event.
+func (mt *MetricsTracker) GetUpdateEventSentTime() time.Time {
+	return mt.updateEventSentTime
 }
 
 // SendStartupEvent sends the startup Amplitude event.
@@ -154,19 +160,25 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 // SendUpdateEvent sends the update Amplitude event.
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
 	commonProps := mt.props
-	commonProps.SecondsSinceStart = now.Sub(mt.start).Seconds()
+	commonProps.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
 	updateProps := updateProps{
 		commonProps:     commonProps,
 		Success:         success,
 		MillisForUpdate: millisForUpdate,
 	}
-	return mt.sendEvent(updateEventName, updateProps)
+	e := mt.sendEvent(updateEventName, updateProps)
+	if e != nil {
+		return fmt.Errorf("could not send update event: %s", e)
+	}
+
+	mt.updateEventSentTime = now
+	return nil
 }
 
 // SendDeleteEvent sends the delete Amplitude event.
 func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 	commonProps := mt.props
-	commonProps.SecondsSinceStart = time.Now().Sub(mt.start).Seconds()
+	commonProps.SecondsSinceStart = time.Now().Sub(mt.botStartTime).Seconds()
 	deleteProps := deleteProps{
 		commonProps: commonProps,
 		Exit:        exit,
@@ -188,7 +200,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		ApiKey: mt.apiKey,
 		Events: []event{{
 			UserID:    mt.userID,
-			SessionID: mt.start.Unix() * 1000, // convert to millis based on docs
+			SessionID: mt.botStartTime.Unix() * 1000, // convert to millis based on docs
 			DeviceID:  mt.deviceID,
 			EventType: eventType,
 			Props:     eventProps,
