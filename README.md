@@ -44,6 +44,7 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files)
+      * [Winning Educational Content from StellarBattle](#winning-educational-content-from-stellarbattle)
 * [Components](#components)
    * [Strategies](#strategies)
    * [Price Feeds](#price-feeds)
@@ -194,6 +195,13 @@ The following reference config files are in the [examples folder](examples/confi
 - [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
 
+### Winning Educational Content from StellarBattle
+
+- [How To Create Liquidity With Kelp On The Stellar Dex (Winner)](https://medium.com/axons/how-to-create-liquidity-with-kelp-on-the-stellar-dex-5155928d4986)
+- [Make use of arbitrage opportunities with Kelp bot (Runner-Up)](https://stellarupdate.com/make-use-of-arbitrage-opportunities-with-kelp-bot-653/)
+- [Market Making in Stellar 101: Fundamentals & Kelp](https://rambling-ideas.salessandri.name/market-making-in-stellar-101-fundamentals-kelp/)
+- [Market Making on Stellar with Kelp Quickstart Guide](https://medium.com/@dexter0x8/market-making-on-stellar-101-with-kelp-trading-bot-5adbb05c3cb9)
+- [Kelp: Setup your first trading bot on the Stellar Network (using Windows)](https://edunode.org/blog/kelp)
 
 # Components
 
