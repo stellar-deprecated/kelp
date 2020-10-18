@@ -72,6 +72,18 @@ commands:
       - run:
           name: Run Kelp tests integration - balanced
           command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s balanced -f examples/configs/trader/sample_balanced.cfg --iter 1
+  
+  test_kelp__integration_pendulum:
+    steps:
+      - run:
+          name: Run Kelp tests integration - pendulum
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s pendulum -f examples/configs/trader/sample_pendulum.cfg --iter 1
+  
+  test_kelp__integration_selltwap:
+    steps:
+      - run:
+          name: Run Kelp tests integration - sell_twap
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s sell_twap -f examples/configs/trader/sample_selltwap.cfg --iter 1
 
   test_kelp__integration_mirror:
     steps:
@@ -109,7 +121,8 @@ jobs:
       - test_kelp__integration_delete
       - test_kelp__integration_buysell
       - test_kelp__integration_balanced
-      # run mirror last because it produces many offers
+      - test_kelp__integration_pendulum
+      - test_kelp__integration_selltwap
       - test_kelp__integration_mirror
 
 workflows:
