@@ -85,17 +85,17 @@ commands:
           name: Run Kelp tests integration - pendulum
           command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s pendulum -f examples/configs/trader/sample_pendulum.cfg --iter 1
 
-  test_kelp__integration_mirror:
-    steps:
-      - run:
-          name: Run Kelp tests integration - mirror
-          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s mirror -f examples/configs/trader/sample_mirror.cfg --iter 1
-
   test_kelp__integration_selltwap:
     steps:
       - run:
           name: Run Kelp tests integration - sell_twap
           command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s sell_twap -f examples/configs/trader/sample_selltwap.cfg --iter 1
+
+  test_kelp__integration_mirror:
+    steps:
+      - run:
+          name: Run Kelp tests integration - mirror
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s mirror -f examples/configs/trader/sample_mirror.cfg --iter 1
                   
 
 jobs:
@@ -114,27 +114,23 @@ jobs:
       - build_kelp
       - test_kelp
   
-  # test runs all the strategies as integration tests
+  # test runs all the strategies as integration tests, one after the other so there's no interference
   test_1_13__integration:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
     steps:
-      # test one after the other so there is no interference
       - install_deps
       - build_kelp
+      # delete once before we start our set of tests, don't delete in between tests because of rate limit issues
       - test_kelp__integration_delete
       - test_kelp__integration_buysell
-      - test_kelp__integration_delete
       - test_kelp__integration_sell
-      - test_kelp__integration_delete
       - test_kelp__integration_balanced
-      - test_kelp__integration_delete
       - test_kelp__integration_pendulum
-      - test_kelp__integration_delete
-      - test_kelp__integration_mirror
-      - test_kelp__integration_delete
       - test_kelp__integration_selltwap
+      # run mirror last because it produces many offers
+      - test_kelp__integration_mirror
 
 workflows:
   version: 2
