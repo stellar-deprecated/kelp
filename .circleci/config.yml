@@ -55,11 +55,42 @@ commands:
           name: Run Kelp tests
           command: go test --short -ldflags="-X github.com/stellar/kelp/cmd.version=test_compile -X github.com/stellar/kelp/cmd.guiVersion=test_compile -X github.com/stellar/kelp/cmd.gitBranch=test_compile -X github.com/stellar/kelp/cmd.gitHash=test_compile -X github.com/stellar/kelp/cmd.buildDate=test_compile -X github.com/stellar/kelp/cmd.env=dev" ./...
 
-  test_kelp__integration:
+  test_kelp__integration_buysell:
     steps:
       - run:
-          name: Run Kelp tests integration
+          name: Run Kelp tests integration - buysell
           command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s buysell -f examples/configs/trader/sample_buysell.cfg --iter 1
+
+  test_kelp__integration_sell:
+    steps:
+      - run:
+          name: Run Kelp tests integration - sell
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s sell -f examples/configs/trader/sample_sell.cfg --iter 1
+
+  test_kelp__integration_balanced:
+    steps:
+      - run:
+          name: Run Kelp tests integration - balanced
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s balanced -f examples/configs/trader/sample_balanced.cfg --iter 1
+
+  test_kelp__integration_pendulum:
+    steps:
+      - run:
+          name: Run Kelp tests integration - pendulum
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s pendulum -f examples/configs/trader/sample_pendulum.cfg --iter 1
+
+  test_kelp__integration_mirror:
+    steps:
+      - run:
+          name: Run Kelp tests integration - mirror
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s mirror -f examples/configs/trader/sample_mirror.cfg --iter 1
+
+  test_kelp__integration_selltwap:
+    steps:
+      - run:
+          name: Run Kelp tests integration - sell_twap
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s sell_twap -f examples/configs/trader/sample_selltwap.cfg --iter 1
+                  
 
 jobs:
   # test performs all package tests from Kelp
@@ -77,19 +108,74 @@ jobs:
       - build_kelp
       - test_kelp
   
-  # test performs all package tests from Kelp
-  test_1_13__integration:
+  # test runs the buysell strategy
+  test_1_13__integration_buysell:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
     steps:
       - install_deps
       - build_kelp
-      - test_kelp__integration
+      - test_kelp__integration_buysell
+  
+  # test runs the sell strategy
+  test_1_13__integration_sell:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - install_deps
+      - build_kelp
+      - test_kelp__integration_sell
+
+  # test runs the balanced strategy
+  test_1_13__integration_balanced:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - install_deps
+      - build_kelp
+      - test_kelp__integration_balanced
+
+  # test runs the pendulum strategy
+  test_1_13__integration_pendulum:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - install_deps
+      - build_kelp
+      - test_kelp__integration_pendulum
+  
+  # test runs the mirror strategy
+  test_1_13__integration_mirror:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - install_deps
+      - build_kelp
+      - test_kelp__integration_mirror
+  
+  # test runs the sell_twap strategy
+  test_1_13__integration_selltwap:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - install_deps
+      - build_kelp
+      - test_kelp__integration_selltwap
 
 workflows:
   version: 2
   build-and-test:
     jobs:
       - test_1_13
-      - test_1_13__integration
+      - test_1_13__integration_buysell
+      - test_1_13__integration_sell
+      - test_1_13__integration_balanced
+      - test_1_13__integration_pendulum
+      - test_1_13__integration_mirror
+      - test_1_13__integration_selltwap
