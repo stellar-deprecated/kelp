@@ -155,6 +155,18 @@ func makeMirrorStrategy(
 	} else {
 		askVolumeDivideBy = *config.AskVolumeDivideBy
 	}
+	if bidVolumeDivideBy == -1.0 && askVolumeDivideBy == -1.0 {
+		utils.PrintErrorHintf("both BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY cannot be -1.0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, cannot set both BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY to -1.0")
+	}
+	if bidVolumeDivideBy != -1.0 && bidVolumeDivideBy <= 0 {
+		utils.PrintErrorHintf("need to set a valid value for BID_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, BID_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
+	}
+	if askVolumeDivideBy != -1.0 && askVolumeDivideBy <= 0 {
+		utils.PrintErrorHintf("need to set a valid value for ASK_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, ASK_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
+	}
 
 	var exchange api.Exchange
 	var e error
@@ -399,8 +411,16 @@ func (s *mirrorStrategy) UpdateWithOps(
 	printBidsAndAsks(bids, asks)
 
 	// we modify the bids and ask to represent the new orders to place so we reduce unnecessary memory allocations
-	transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy))
-	transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy))
+	if s.bidVolumeDivideBy == -1.0 {
+		bids = []model.Order{}
+	} else {
+		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy))
+	}
+	if s.askVolumeDivideBy == -1.0 {
+		asks = []model.Order{}
+	} else {
+		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy))
+	}
 	log.Printf("new orders (orderbook after transformations):\n")
 	printBidsAndAsks(bids, asks)
 
