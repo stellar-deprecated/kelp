@@ -168,7 +168,7 @@ You can find more details on the [CCXT_REST github page][ccxt-rest].
 
 ### Using Postgres
 
-[Postgres][postgres] must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
+[Postgres][postgres] v12.1 or later must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
 
 ## Examples
 
