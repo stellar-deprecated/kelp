@@ -364,22 +364,20 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if len(asks) > 50 {
 		asks = asks[:50]
 	}
+	log.Printf("backing orderbook (before transformations):\n")
+	printBidsAndAsks(bids, asks)
 
-	log.Printf("bids on backing exchange:\n")
-	for _, o := range bids {
-		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
-	}
-	log.Printf("asks on backing exchange:\n")
-	for _, o := range asks {
-		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
-	}
+	// we modify the bids and ask to represent the new orders to place so we reduce unnecessary memory allocations
+	transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.volumeDivideBy))
+	transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.volumeDivideBy))
+	log.Printf("new orders (orderbook after transformations):\n")
+	printBidsAndAsks(bids, asks)
 
 	deleteBuyOps, buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
 		s.sdex.ModifyBuyOffer,
 		s.sdex.CreateBuyOffer,
-		(1 - s.perLevelSpread),
 		true,
 		s.buyOnPrimaryBalanceCoordinator, // we sell on the backing exchange to offset trades that are bought on the primary exchange
 	)
@@ -393,7 +391,6 @@ func (s *mirrorStrategy) UpdateWithOps(
 		asks,
 		s.sdex.ModifySellOffer,
 		s.sdex.CreateSellOffer,
-		(1 + s.perLevelSpread),
 		false,
 		s.sellOnPrimaryBalanceCoordinator, // we buy on the backing exchange to offset trades that are sold on the primary exchange
 	)
@@ -432,6 +429,24 @@ func (s *mirrorStrategy) UpdateWithOps(
 	}
 
 	return api.ConvertOperation2TM(ops), nil
+}
+
+func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64) {
+	for _, o := range orders {
+		o.Price = o.Price.Scale(priceMultiplier)
+		o.Volume = o.Volume.Scale(volumeMultiplier)
+	}
+}
+
+func printBidsAndAsks(bids []model.Order, asks []model.Order) {
+	log.Printf("    bids on backing exchange:\n")
+	for _, o := range bids {
+		log.Printf("        price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
+	log.Printf("    asks on backing exchange:\n")
+	for _, o := range asks {
+		log.Printf("        price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
 }
 
 func printDebugOffersAndOps(
@@ -486,7 +501,6 @@ func (s *mirrorStrategy) updateLevels(
 	newOrders []model.Order,
 	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	createOffer func(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
-	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 	bc *balanceCoordinator,
 ) ([]txnbuild.Operation /*deleteOps*/, []txnbuild.Operation /*ops*/, error) {
@@ -494,10 +508,6 @@ func (s *mirrorStrategy) updateLevels(
 	deleteOps := []txnbuild.Operation{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			// TODO NS - don't modify existing variables
-			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
-			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
-
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
@@ -507,7 +517,7 @@ func (s *mirrorStrategy) updateLevels(
 				newOrders[i].Volume = newBaseVolume
 			}
 
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
 			}
@@ -522,8 +532,8 @@ func (s *mirrorStrategy) updateLevels(
 
 		// create offers for remaining new bids
 		for i := len(oldOffers); i < len(newOrders); i++ {
-			price := newOrders[i].Price.Scale(priceMultiplier)
-			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
+			price := newOrders[i].Price
+			vol := newOrders[i].Volume
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVol, _ := bc.checkBalance(vol, price)
 				if !hasBackingBalance {
@@ -555,10 +565,6 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			// TODO NS - don't modify existing variables
-			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
-			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
-
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
@@ -568,7 +574,7 @@ func (s *mirrorStrategy) updateLevels(
 				newOrders[i].Volume = newBaseVolume
 			}
 
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
 			}
@@ -595,7 +601,6 @@ func (s *mirrorStrategy) updateLevels(
 func (s *mirrorStrategy) doModifyOffer(
 	oldOffer hProtocol.Offer,
 	newOrder model.Order,
-	priceMultiplier float64,
 	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) (txnbuild.Operation, txnbuild.Operation, error) {
