@@ -464,8 +464,8 @@ func (s *mirrorStrategy) UpdateWithOps(
 
 func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64) {
 	for _, o := range orders {
-		o.Price = o.Price.Scale(priceMultiplier)
-		o.Volume = o.Volume.Scale(volumeMultiplier)
+		*o.Price = *o.Price.Scale(priceMultiplier)
+		*o.Volume = *o.Volume.Scale(volumeMultiplier)
 	}
 }
 
