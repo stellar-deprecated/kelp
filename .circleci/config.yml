@@ -114,7 +114,7 @@ jobs:
     docker:
       - image: circleci/golang:1.13
     steps:
-      # limit to only the key strategies because of rate limit issues, remaining strategies: sell, sell_twap, pendulum
+      # limit to only the key strategies because of rate limit issues, remaining strategies: sell
       - install_deps
       - build_kelp
       # delete once before we start our set of tests, don't delete in between tests because of rate limit issues
