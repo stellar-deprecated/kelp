@@ -73,18 +73,6 @@ commands:
           name: Run Kelp tests integration - balanced
           command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s balanced -f examples/configs/trader/sample_balanced.cfg --iter 1
   
-  test_kelp__integration_pendulum:
-    steps:
-      - run:
-          name: Run Kelp tests integration - pendulum
-          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s pendulum -f examples/configs/trader/sample_pendulum.cfg --iter 1
-  
-  test_kelp__integration_selltwap:
-    steps:
-      - run:
-          name: Run Kelp tests integration - sell_twap
-          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s sell_twap -f examples/configs/trader/sample_selltwap.cfg --iter 1
-
   test_kelp__integration_mirror:
     steps:
       - run:
@@ -114,15 +102,14 @@ jobs:
     docker:
       - image: circleci/golang:1.13
     steps:
-      # limit to only the key strategies because of rate limit issues, remaining strategies: sell
+      # limit to only the key strategies because of rate limit issues, remaining strategies: sell, pendulum
+      # don't list sell_twap strategy for now because it requires a db to be enabled in sample_trader.cfg
       - install_deps
       - build_kelp
       # delete once before we start our set of tests, don't delete in between tests because of rate limit issues
       - test_kelp__integration_delete
       - test_kelp__integration_buysell
       - test_kelp__integration_balanced
-      - test_kelp__integration_pendulum
-      - test_kelp__integration_selltwap
       - test_kelp__integration_mirror
 
 workflows:
