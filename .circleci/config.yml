@@ -92,3 +92,4 @@ workflows:
   build-and-test:
     jobs:
       - test_1_13
+      - test_1_13__integration
