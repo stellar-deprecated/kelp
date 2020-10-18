@@ -15,9 +15,9 @@ import (
 // so the web console displays it as "[Custom] event_name".
 const (
 	amplitudeAPIURL  string = "https://api2.amplitude.com/2/httpapi"
-	startupEventName string = "ce:test_startup"
-	updateEventName  string = "ce:test_update"
-	deleteEventName  string = "ce:test_delete"
+	startupEventName string = "ce:startup"
+	updateEventName  string = "ce:update"
+	deleteEventName  string = "ce:delete"
 )
 
 // MetricsTracker wraps the properties for Amplitude events,
