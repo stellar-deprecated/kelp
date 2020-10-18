@@ -21,6 +21,9 @@ var NumberConstants = struct {
 // InvertPrecision is the precision of the number after it is inverted
 const InvertPrecision = 15
 
+// InternalCalculationsPrecision is the precision to be used for internal calculations in a function
+const InternalCalculationsPrecision = 15
+
 // Number abstraction
 type Number struct {
 	value     float64

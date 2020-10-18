@@ -687,10 +687,10 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(2.0, 2),   // intentionally use a less precise volume
 			inputPrice:             model.NumberFromFloat(368.0, 8), // intentionally use a precision of price more than volume
 			wantHasBackingBalance:  true,
-			wantNewBaseVolume:      model.NumberFromFloat(1.75, 2),  // for now, don't modify precision volume nunmbers
-			wantNewQuoteVolume:     model.NumberFromFloat(644.0, 2), // for now, don't modify precision volume nunmbers
-			wantPlacedPrimaryUnits: model.NumberFromFloat(646, 7),
-			wantPlacedBackingUnits: model.NumberFromFloat(1.75, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(1.75, 2),  // don't modify precision volume nunmbers
+			wantNewQuoteVolume:     model.NumberFromFloat(644.0, 2), // don't modify precision volume nunmbers
+			wantPlacedPrimaryUnits: model.NumberFromFloat(644.0, 2),
+			wantPlacedBackingUnits: model.NumberFromFloat(1.75, 2),
 		}, {
 			name: "rounding - sell base on primary - truncate rounding",
 			bc: &balanceCoordinator{
@@ -705,10 +705,10 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(2.0, 2),   // intentionally use a less precise volume
 			inputPrice:             model.NumberFromFloat(368.0, 8), // intentionally use a precision of price more than volume
 			wantHasBackingBalance:  true,
-			wantNewBaseVolume:      model.NumberFromFloat(1.75, 2),  // for now, don't modify precision volume nunmbers
-			wantNewQuoteVolume:     model.NumberFromFloat(644.0, 2), // for now, don't modify precision volume nunmbers
-			wantPlacedPrimaryUnits: model.NumberFromFloat(1.75, 7),
-			wantPlacedBackingUnits: model.NumberFromFloat(646.1, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(1.75, 2),  // don't modify precision volume nunmbers
+			wantNewQuoteVolume:     model.NumberFromFloat(644.0, 2), // don't modify precision volume nunmbers
+			wantPlacedPrimaryUnits: model.NumberFromFloat(1.75, 2),
+			wantPlacedBackingUnits: model.NumberFromFloat(644.0, 2),
 		},
 	}
 
