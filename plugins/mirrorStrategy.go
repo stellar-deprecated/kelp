@@ -25,14 +25,17 @@ const debugLogOffersOrders = true
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange                string  `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase            string  `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote           string  `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth          int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy          float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread          float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	PricePrecisionOverride  *int8   `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
-	VolumePrecisionOverride *int8   `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	Exchange       string `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase   string `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote  string `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth int32  `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	// Deprecated: use BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY instead
+	VolumeDivideByDeprecated *float64 `valid:"-" toml:"VOLUME_DIVIDE_BY" deprecated:"true"`
+	BidVolumeDivideBy        *float64 `valid:"-" toml:"BID_VOLUME_DIVIDE_BY"`
+	AskVolumeDivideBy        *float64 `valid:"-" toml:"ASK_VOLUME_DIVIDE_BY"`
+	PerLevelSpread           float64  `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	PricePrecisionOverride   *int8    `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
+	VolumePrecisionOverride  *int8    `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	// Deprecated: use MIN_BASE_VOLUME_OVERRIDE instead
 	MinBaseVolumeDeprecated                   *float64                 `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
 	MinBaseVolumeOverride                     *float64                 `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
@@ -84,7 +87,8 @@ type mirrorStrategy struct {
 	strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
 	orderbookDepth                        int32
 	perLevelSpread                        float64
-	volumeDivideBy                        float64
+	bidVolumeDivideBy                     float64
+	askVolumeDivideBy                     float64
 	exchange                              api.Exchange
 	offsetTrades                          bool
 	mutex                                 *sync.Mutex
@@ -111,6 +115,19 @@ func convertDeprecatedMirrorConfigValues(config *mirrorConfig) {
 	if config.MinBaseVolumeOverride == nil {
 		config.MinBaseVolumeOverride = config.MinBaseVolumeDeprecated
 	}
+
+	if (config.BidVolumeDivideBy != nil || config.AskVolumeDivideBy != nil) && config.VolumeDivideByDeprecated != nil {
+		log.Printf("deprecation warning: cannot set both '%s' (deprecated) and ('%s' / '%s') in the mirror strategy config, overriding with values set from '%s' and '%s'\n", "VOLUME_DIVIDE_BY", "BID_VOLUME_DIVIDE_BY", "ASK_VOLUME_DIVIDE_BY", "BID_VOLUME_DIVIDE_BY", "ASK_VOLUME_DIVIDE_BY")
+	} else if config.VolumeDivideByDeprecated != nil {
+		log.Printf("deprecation warning: '%s' is deprecated, use the fields '%s' and '%s' in the mirror strategy config instead, see sample_mirror.cfg as an example\n", "VOLUME_DIVIDE_BY", "BID_VOLUME_DIVIDE_BY", "ASK_VOLUME_DIVIDE_BY")
+	}
+	// if only one is specified, we will use the deprecated value for the unspecified value right now
+	if config.BidVolumeDivideBy == nil {
+		config.BidVolumeDivideBy = config.VolumeDivideByDeprecated
+	}
+	if config.AskVolumeDivideBy == nil {
+		config.AskVolumeDivideBy = config.VolumeDivideByDeprecated
+	}
 }
 
 // makeMirrorStrategy is a factory method
@@ -126,6 +143,19 @@ func makeMirrorStrategy(
 	simMode bool,
 ) (api.Strategy, error) {
 	convertDeprecatedMirrorConfigValues(config)
+	var bidVolumeDivideBy float64
+	var askVolumeDivideBy float64
+	if config.BidVolumeDivideBy == nil {
+		bidVolumeDivideBy = 1.0
+	} else {
+		bidVolumeDivideBy = *config.BidVolumeDivideBy
+	}
+	if config.AskVolumeDivideBy == nil {
+		askVolumeDivideBy = 1.0
+	} else {
+		askVolumeDivideBy = *config.AskVolumeDivideBy
+	}
+
 	var exchange api.Exchange
 	var e error
 	var strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
@@ -269,7 +299,8 @@ func makeMirrorStrategy(
 		strategyMirrorTradeTriggerExistsQuery: strategyMirrorTradeTriggerExistsQuery,
 		orderbookDepth:                        config.OrderbookDepth,
 		perLevelSpread:                        config.PerLevelSpread,
-		volumeDivideBy:                        config.VolumeDivideBy,
+		bidVolumeDivideBy:                     bidVolumeDivideBy,
+		askVolumeDivideBy:                     askVolumeDivideBy,
 		exchange:                              exchange,
 		offsetTrades:                          config.OffsetTrades,
 		mutex:                                 &sync.Mutex{},
@@ -368,8 +399,8 @@ func (s *mirrorStrategy) UpdateWithOps(
 	printBidsAndAsks(bids, asks)
 
 	// we modify the bids and ask to represent the new orders to place so we reduce unnecessary memory allocations
-	transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.volumeDivideBy))
-	transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.volumeDivideBy))
+	transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy))
+	transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy))
 	log.Printf("new orders (orderbook after transformations):\n")
 	printBidsAndAsks(bids, asks)
 
