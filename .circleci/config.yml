@@ -36,12 +36,6 @@ commands:
           paths:
             - "/go/src/github.com/stellar/kelp/vendor"
 
-  test_kelp:
-    steps:
-      - run:
-          name: Run Kelp tests
-          command: go test --short -ldflags="-X github.com/stellar/kelp/cmd.version=test_compile -X github.com/stellar/kelp/cmd.guiVersion=test_compile -X github.com/stellar/kelp/cmd.gitBranch=test_compile -X github.com/stellar/kelp/cmd.gitHash=test_compile -X github.com/stellar/kelp/cmd.buildDate=test_compile -X github.com/stellar/kelp/cmd.env=dev" ./...
-
   build_kelp:
     steps:
       - run:
@@ -55,6 +49,18 @@ commands:
           name: Ensure build was successful
           command: ./bin/kelp version
 
+  test_kelp:
+    steps:
+      - run:
+          name: Run Kelp tests
+          command: go test --short -ldflags="-X github.com/stellar/kelp/cmd.version=test_compile -X github.com/stellar/kelp/cmd.guiVersion=test_compile -X github.com/stellar/kelp/cmd.gitBranch=test_compile -X github.com/stellar/kelp/cmd.gitHash=test_compile -X github.com/stellar/kelp/cmd.buildDate=test_compile -X github.com/stellar/kelp/cmd.env=dev" ./...
+
+  test_kelp__integration:
+    steps:
+      - run:
+          name: Run Kelp tests integration
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s buysell -f examples/configs/trader/sample_buysell.cfg --iter 1
+
 jobs:
   # test performs all package tests from Kelp
   test_1_13:
@@ -66,11 +72,20 @@ jobs:
       - image: circleci/postgres:12.1-alpine-ram
     environment:
       POSTGRES_USER: postgres
-
     steps:
       - install_deps
       - build_kelp
       - test_kelp
+  
+  # test performs all package tests from Kelp
+  test_1_13__integration:
+    working_directory: /go/src/github.com/stellar/kelp
+    docker:
+      - image: circleci/golang:1.13
+    steps:
+      - install_deps
+      - build_kelp
+      - test_kelp__integration
 
 workflows:
   version: 2
