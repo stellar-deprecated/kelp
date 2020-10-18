@@ -55,6 +55,12 @@ commands:
           name: Run Kelp tests
           command: go test --short -ldflags="-X github.com/stellar/kelp/cmd.version=test_compile -X github.com/stellar/kelp/cmd.guiVersion=test_compile -X github.com/stellar/kelp/cmd.gitBranch=test_compile -X github.com/stellar/kelp/cmd.gitHash=test_compile -X github.com/stellar/kelp/cmd.buildDate=test_compile -X github.com/stellar/kelp/cmd.env=dev" ./...
 
+  test_kelp__integration_delete:
+    steps:
+      - run:
+          name: Run Kelp tests integration - delete
+          command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s delete --iter 1
+
   test_kelp__integration_buysell:
     steps:
       - run:
@@ -108,64 +114,26 @@ jobs:
       - build_kelp
       - test_kelp
   
-  # test runs the buysell strategy
-  test_1_13__integration_buysell:
+  # test runs all the strategies as integration tests
+  test_1_13__integration:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
     steps:
+      # test one after the other so there is no interference
       - install_deps
       - build_kelp
+      - test_kelp__integration_delete
       - test_kelp__integration_buysell
-  
-  # test runs the sell strategy
-  test_1_13__integration_sell:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - install_deps
-      - build_kelp
+      - test_kelp__integration_delete
       - test_kelp__integration_sell
-
-  # test runs the balanced strategy
-  test_1_13__integration_balanced:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - install_deps
-      - build_kelp
+      - test_kelp__integration_delete
       - test_kelp__integration_balanced
-
-  # test runs the pendulum strategy
-  test_1_13__integration_pendulum:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - install_deps
-      - build_kelp
+      - test_kelp__integration_delete
       - test_kelp__integration_pendulum
-  
-  # test runs the mirror strategy
-  test_1_13__integration_mirror:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - install_deps
-      - build_kelp
+      - test_kelp__integration_delete
       - test_kelp__integration_mirror
-  
-  # test runs the sell_twap strategy
-  test_1_13__integration_selltwap:
-    working_directory: /go/src/github.com/stellar/kelp
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - install_deps
-      - build_kelp
+      - test_kelp__integration_delete
       - test_kelp__integration_selltwap
 
 workflows:
@@ -173,9 +141,4 @@ workflows:
   build-and-test:
     jobs:
       - test_1_13
-      - test_1_13__integration_buysell
-      - test_1_13__integration_sell
-      - test_1_13__integration_balanced
-      - test_1_13__integration_pendulum
-      - test_1_13__integration_mirror
-      - test_1_13__integration_selltwap
+      - test_1_13__integration
