@@ -8,6 +8,42 @@ import (
 	"github.com/stellar/kelp/model"
 )
 
+func TestTransformOrders(t *testing.T) {
+	// setup
+	orders := []model.Order{
+		{
+			Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+			OrderAction: model.OrderActionBuy,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(0.15, 6),
+			Volume:      model.NumberFromFloat(51.5, 5),
+		}, {
+			Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+			OrderAction: model.OrderActionSell,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(1.15, 6),
+			Volume:      model.NumberFromFloat(1.5123, 5),
+		},
+	}
+
+	// run
+	transformOrders(orders, 0.90, 0.25)
+
+	// validate
+	order := orders[0]
+	assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
+	assert.Equal(t, model.OrderActionBuy, order.OrderAction)
+	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
+	assert.Equal(t, model.NumberFromFloat(0.135, 6), order.Price)
+	assert.Equal(t, model.NumberFromFloat(12.875, 5), order.Volume)
+	order = orders[1]
+	assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
+	assert.Equal(t, model.OrderActionSell, order.OrderAction)
+	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
+	assert.Equal(t, model.NumberFromFloat(1.035, 6), order.Price)
+	assert.Equal(t, model.NumberFromFloat(0.37808, 5), order.Volume) // round up
+}
+
 func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 	// imagine prices such that we are trading base asset as XLM and quote asset as USD
 	testCases := []struct {

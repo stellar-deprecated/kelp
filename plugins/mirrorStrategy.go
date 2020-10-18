@@ -25,14 +25,17 @@ const debugLogOffersOrders = true
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
-	Exchange                string  `valid:"-" toml:"EXCHANGE"`
-	ExchangeBase            string  `valid:"-" toml:"EXCHANGE_BASE"`
-	ExchangeQuote           string  `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth          int32   `valid:"-" toml:"ORDERBOOK_DEPTH"`
-	VolumeDivideBy          float64 `valid:"-" toml:"VOLUME_DIVIDE_BY"`
-	PerLevelSpread          float64 `valid:"-" toml:"PER_LEVEL_SPREAD"`
-	PricePrecisionOverride  *int8   `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
-	VolumePrecisionOverride *int8   `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
+	Exchange       string `valid:"-" toml:"EXCHANGE"`
+	ExchangeBase   string `valid:"-" toml:"EXCHANGE_BASE"`
+	ExchangeQuote  string `valid:"-" toml:"EXCHANGE_QUOTE"`
+	OrderbookDepth int32  `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	// Deprecated: use BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY instead
+	VolumeDivideByDeprecated *float64 `valid:"-" toml:"VOLUME_DIVIDE_BY" deprecated:"true"`
+	BidVolumeDivideBy        *float64 `valid:"-" toml:"BID_VOLUME_DIVIDE_BY"`
+	AskVolumeDivideBy        *float64 `valid:"-" toml:"ASK_VOLUME_DIVIDE_BY"`
+	PerLevelSpread           float64  `valid:"-" toml:"PER_LEVEL_SPREAD"`
+	PricePrecisionOverride   *int8    `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
+	VolumePrecisionOverride  *int8    `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
 	// Deprecated: use MIN_BASE_VOLUME_OVERRIDE instead
 	MinBaseVolumeDeprecated                   *float64                 `valid:"-" toml:"MIN_BASE_VOLUME" deprecated:"true"`
 	MinBaseVolumeOverride                     *float64                 `valid:"-" toml:"MIN_BASE_VOLUME_OVERRIDE"`
@@ -84,7 +87,8 @@ type mirrorStrategy struct {
 	strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
 	orderbookDepth                        int32
 	perLevelSpread                        float64
-	volumeDivideBy                        float64
+	bidVolumeDivideBy                     float64
+	askVolumeDivideBy                     float64
 	exchange                              api.Exchange
 	offsetTrades                          bool
 	mutex                                 *sync.Mutex
@@ -111,6 +115,19 @@ func convertDeprecatedMirrorConfigValues(config *mirrorConfig) {
 	if config.MinBaseVolumeOverride == nil {
 		config.MinBaseVolumeOverride = config.MinBaseVolumeDeprecated
 	}
+
+	if (config.BidVolumeDivideBy != nil || config.AskVolumeDivideBy != nil) && config.VolumeDivideByDeprecated != nil {
+		log.Printf("deprecation warning: cannot set both '%s' (deprecated) and ('%s' / '%s') in the mirror strategy config, overriding with values set from '%s' and '%s'\n", "VOLUME_DIVIDE_BY", "BID_VOLUME_DIVIDE_BY", "ASK_VOLUME_DIVIDE_BY", "BID_VOLUME_DIVIDE_BY", "ASK_VOLUME_DIVIDE_BY")
+	} else if config.VolumeDivideByDeprecated != nil {
+		log.Printf("deprecation warning: '%s' is deprecated, use the fields '%s' and '%s' in the mirror strategy config instead, see sample_mirror.cfg as an example\n", "VOLUME_DIVIDE_BY", "BID_VOLUME_DIVIDE_BY", "ASK_VOLUME_DIVIDE_BY")
+	}
+	// if only one is specified, we will use the deprecated value for the unspecified value right now
+	if config.BidVolumeDivideBy == nil {
+		config.BidVolumeDivideBy = config.VolumeDivideByDeprecated
+	}
+	if config.AskVolumeDivideBy == nil {
+		config.AskVolumeDivideBy = config.VolumeDivideByDeprecated
+	}
 }
 
 // makeMirrorStrategy is a factory method
@@ -126,6 +143,31 @@ func makeMirrorStrategy(
 	simMode bool,
 ) (api.Strategy, error) {
 	convertDeprecatedMirrorConfigValues(config)
+	var bidVolumeDivideBy float64
+	var askVolumeDivideBy float64
+	if config.BidVolumeDivideBy == nil {
+		bidVolumeDivideBy = 1.0
+	} else {
+		bidVolumeDivideBy = *config.BidVolumeDivideBy
+	}
+	if config.AskVolumeDivideBy == nil {
+		askVolumeDivideBy = 1.0
+	} else {
+		askVolumeDivideBy = *config.AskVolumeDivideBy
+	}
+	if bidVolumeDivideBy == -1.0 && askVolumeDivideBy == -1.0 {
+		utils.PrintErrorHintf("both BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY cannot be -1.0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, cannot set both BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY to -1.0")
+	}
+	if bidVolumeDivideBy != -1.0 && bidVolumeDivideBy <= 0 {
+		utils.PrintErrorHintf("need to set a valid value for BID_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, BID_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
+	}
+	if askVolumeDivideBy != -1.0 && askVolumeDivideBy <= 0 {
+		utils.PrintErrorHintf("need to set a valid value for ASK_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, ASK_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
+	}
+
 	var exchange api.Exchange
 	var e error
 	var strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
@@ -269,7 +311,8 @@ func makeMirrorStrategy(
 		strategyMirrorTradeTriggerExistsQuery: strategyMirrorTradeTriggerExistsQuery,
 		orderbookDepth:                        config.OrderbookDepth,
 		perLevelSpread:                        config.PerLevelSpread,
-		volumeDivideBy:                        config.VolumeDivideBy,
+		bidVolumeDivideBy:                     bidVolumeDivideBy,
+		askVolumeDivideBy:                     askVolumeDivideBy,
 		exchange:                              exchange,
 		offsetTrades:                          config.OffsetTrades,
 		mutex:                                 &sync.Mutex{},
@@ -364,22 +407,28 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if len(asks) > 50 {
 		asks = asks[:50]
 	}
+	log.Printf("backing orderbook (before transformations):\n")
+	printBidsAndAsks(bids, asks)
 
-	log.Printf("bids on backing exchange:\n")
-	for _, o := range bids {
-		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	// we modify the bids and ask to represent the new orders to place so we reduce unnecessary memory allocations
+	if s.bidVolumeDivideBy == -1.0 {
+		bids = []model.Order{}
+	} else {
+		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy))
 	}
-	log.Printf("asks on backing exchange:\n")
-	for _, o := range asks {
-		log.Printf("    price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	if s.askVolumeDivideBy == -1.0 {
+		asks = []model.Order{}
+	} else {
+		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy))
 	}
+	log.Printf("new orders (orderbook after transformations):\n")
+	printBidsAndAsks(bids, asks)
 
 	deleteBuyOps, buyOps, e := s.updateLevels(
 		buyingAOffers,
 		bids,
 		s.sdex.ModifyBuyOffer,
 		s.sdex.CreateBuyOffer,
-		(1 - s.perLevelSpread),
 		true,
 		s.buyOnPrimaryBalanceCoordinator, // we sell on the backing exchange to offset trades that are bought on the primary exchange
 	)
@@ -393,7 +442,6 @@ func (s *mirrorStrategy) UpdateWithOps(
 		asks,
 		s.sdex.ModifySellOffer,
 		s.sdex.CreateSellOffer,
-		(1 + s.perLevelSpread),
 		false,
 		s.sellOnPrimaryBalanceCoordinator, // we buy on the backing exchange to offset trades that are sold on the primary exchange
 	)
@@ -432,6 +480,24 @@ func (s *mirrorStrategy) UpdateWithOps(
 	}
 
 	return api.ConvertOperation2TM(ops), nil
+}
+
+func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64) {
+	for _, o := range orders {
+		*o.Price = *o.Price.Scale(priceMultiplier)
+		*o.Volume = *o.Volume.Scale(volumeMultiplier)
+	}
+}
+
+func printBidsAndAsks(bids []model.Order, asks []model.Order) {
+	log.Printf("    bids on backing exchange:\n")
+	for _, o := range bids {
+		log.Printf("        price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
+	log.Printf("    asks on backing exchange:\n")
+	for _, o := range asks {
+		log.Printf("        price=%s, amount=%s\n", o.Price.AsString(), o.Volume.AsString())
+	}
 }
 
 func printDebugOffersAndOps(
@@ -486,7 +552,6 @@ func (s *mirrorStrategy) updateLevels(
 	newOrders []model.Order,
 	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	createOffer func(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
-	priceMultiplier float64,
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 	bc *balanceCoordinator,
 ) ([]txnbuild.Operation /*deleteOps*/, []txnbuild.Operation /*ops*/, error) {
@@ -494,10 +559,6 @@ func (s *mirrorStrategy) updateLevels(
 	deleteOps := []txnbuild.Operation{}
 	if len(newOrders) >= len(oldOffers) {
 		for i := 0; i < len(oldOffers); i++ {
-			// TODO NS - don't modify existing variables
-			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
-			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
-
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
@@ -507,7 +568,7 @@ func (s *mirrorStrategy) updateLevels(
 				newOrders[i].Volume = newBaseVolume
 			}
 
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
 			}
@@ -522,8 +583,8 @@ func (s *mirrorStrategy) updateLevels(
 
 		// create offers for remaining new bids
 		for i := len(oldOffers); i < len(newOrders); i++ {
-			price := newOrders[i].Price.Scale(priceMultiplier)
-			vol := newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
+			price := newOrders[i].Price
+			vol := newOrders[i].Volume
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVol, _ := bc.checkBalance(vol, price)
 				if !hasBackingBalance {
@@ -555,10 +616,6 @@ func (s *mirrorStrategy) updateLevels(
 		}
 	} else {
 		for i := 0; i < len(newOrders); i++ {
-			// TODO NS - don't modify existing variables
-			newOrders[i].Price = newOrders[i].Price.Scale(priceMultiplier)
-			newOrders[i].Volume = newOrders[i].Volume.Scale(1.0 / s.volumeDivideBy)
-
 			if s.offsetTrades {
 				hasBackingBalance, newBaseVolume, _ := bc.checkBalance(newOrders[i].Volume, newOrders[i].Price)
 				if !hasBackingBalance {
@@ -568,7 +625,7 @@ func (s *mirrorStrategy) updateLevels(
 				newOrders[i].Volume = newBaseVolume
 			}
 
-			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], priceMultiplier, modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
+			modifyOp, deleteOp, e := s.doModifyOffer(oldOffers[i], newOrders[i], modifyOffer, hackPriceInvertForBuyOrderChangeCheck)
 			if e != nil {
 				return nil, nil, e
 			}
@@ -595,7 +652,6 @@ func (s *mirrorStrategy) updateLevels(
 func (s *mirrorStrategy) doModifyOffer(
 	oldOffer hProtocol.Offer,
 	newOrder model.Order,
-	priceMultiplier float64,
 	modifyOffer func(offer hProtocol.Offer, price float64, amount float64, incrementalNativeAmountRaw float64) (*txnbuild.ManageSellOffer, error),
 	hackPriceInvertForBuyOrderChangeCheck bool, // needed because createBuy and modBuy inverts price so we need this for price comparison in doModifyOffer
 ) (txnbuild.Operation, txnbuild.Operation, error) {
