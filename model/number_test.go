@@ -55,50 +55,110 @@ func TestNumberFromFloat(t *testing.T) {
 	}
 }
 
-func TestMath(t *testing.T) {
+func TestNumberFromFloatRoundTruncate(t *testing.T) {
 	testCases := []struct {
-		n1           *Number
-		n2           *Number
-		wantAdd      float64
-		wantSubtract float64
-		wantMultiply float64
-		wantDivide   float64
+		f          float64
+		precision  int8
+		wantString string
+		wantFloat  float64
 	}{
 		{
-			n1:           NumberFromFloat(1.1, 1),
-			n2:           NumberFromFloat(2.1, 1),
-			wantAdd:      3.2,
-			wantSubtract: -1.0,
-			wantMultiply: 2.3,
-			wantDivide:   0.5,
+			f:          1.1,
+			precision:  1,
+			wantString: "1.1",
+			wantFloat:  1.1,
 		}, {
-			n1:           NumberFromFloat(1.15, 1),
-			n2:           NumberFromFloat(2.1, 1),
-			wantAdd:      3.3,
-			wantSubtract: -0.9,
-			wantMultiply: 2.5,
-			wantDivide:   0.6,
+			f:          1.1,
+			precision:  2,
+			wantString: "1.10",
+			wantFloat:  1.10,
 		}, {
-			n1:           NumberFromFloat(1.15, 2),
-			n2:           NumberFromFloat(2.1, 1),
-			wantAdd:      3.3,
-			wantSubtract: -1.0,
-			wantMultiply: 2.4,
-			wantDivide:   0.5,
+			f:          1.12,
+			precision:  1,
+			wantString: "1.1",
+			wantFloat:  1.1,
 		}, {
-			n1:           NumberFromFloat(1.15, 2),
-			n2:           NumberFromFloat(2.1, 2),
-			wantAdd:      3.25,
-			wantSubtract: -0.95,
-			wantMultiply: 2.42,
-			wantDivide:   0.55,
+			f:          1.15,
+			precision:  1,
+			wantString: "1.1",
+			wantFloat:  1.1,
 		}, {
-			n1:           NumberFromFloat(1.12, 2),
-			n2:           NumberFromFloat(2.1, 1),
-			wantAdd:      3.2,
-			wantSubtract: -1.0,
-			wantMultiply: 2.4,
-			wantDivide:   0.5,
+			f:          0.12,
+			precision:  1,
+			wantString: "0.1",
+			wantFloat:  0.1,
+		},
+	}
+
+	for _, kase := range testCases {
+		t.Run(fmt.Sprintf("%f_%d", kase.f, kase.precision), func(t *testing.T) {
+			n := NumberFromFloatRoundTruncate(kase.f, kase.precision)
+			if !assert.Equal(t, kase.wantString, n.AsString()) {
+				return
+			}
+			if !assert.Equal(t, kase.wantFloat, n.AsFloat()) {
+				return
+			}
+		})
+	}
+}
+
+func TestMath(t *testing.T) {
+	testCases := []struct {
+		n1                        *Number
+		n2                        *Number
+		wantAdd                   float64
+		wantSubtract              float64
+		wantMultiply              float64
+		wantMultiplyRoundTruncate float64
+		wantDivide                float64
+		wantDivideRoundTruncate   float64
+	}{
+		{
+			n1:                        NumberFromFloat(1.1, 1),
+			n2:                        NumberFromFloat(2.1, 1),
+			wantAdd:                   3.2,
+			wantSubtract:              -1.0,
+			wantMultiply:              2.3,
+			wantMultiplyRoundTruncate: 2.3,
+			wantDivide:                0.5,
+			wantDivideRoundTruncate:   0.5,
+		}, {
+			n1:                        NumberFromFloat(1.15, 1),
+			n2:                        NumberFromFloat(2.1, 1),
+			wantAdd:                   3.3,
+			wantSubtract:              -0.9,
+			wantMultiply:              2.5,
+			wantMultiplyRoundTruncate: 2.5,
+			wantDivide:                0.6,
+			wantDivideRoundTruncate:   0.5,
+		}, {
+			n1:                        NumberFromFloat(1.15, 2),
+			n2:                        NumberFromFloat(2.1, 1),
+			wantAdd:                   3.3,
+			wantSubtract:              -1.0,
+			wantMultiply:              2.4,
+			wantMultiplyRoundTruncate: 2.4,
+			wantDivide:                0.5,
+			wantDivideRoundTruncate:   0.5,
+		}, {
+			n1:                        NumberFromFloat(1.15, 2),
+			n2:                        NumberFromFloat(2.1, 2),
+			wantAdd:                   3.25,
+			wantSubtract:              -0.95,
+			wantMultiply:              2.42,
+			wantMultiplyRoundTruncate: 2.41,
+			wantDivide:                0.55,
+			wantDivideRoundTruncate:   0.54,
+		}, {
+			n1:                        NumberFromFloat(1.12, 2),
+			n2:                        NumberFromFloat(2.1, 1),
+			wantAdd:                   3.2,
+			wantSubtract:              -1.0,
+			wantMultiply:              2.4,
+			wantMultiplyRoundTruncate: 2.3,
+			wantDivide:                0.5,
+			wantDivideRoundTruncate:   0.5,
 		},
 	}
 

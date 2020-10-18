@@ -55,10 +55,10 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(3.14, 5),
 			inputPrice:             model.NumberFromFloat(0.131, 5),
 			wantHasBackingBalance:  true,
-			wantNewBaseVolume:      model.NumberFromFloat(3.14, 5),
-			wantNewQuoteVolume:     model.NumberFromFloat(0.41134, 5),
-			wantPlacedPrimaryUnits: model.NumberFromFloat(103.7, 5),
-			wantPlacedBackingUnits: model.NumberFromFloat(8.86834, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(3.13999, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.41133, 5),
+			wantPlacedPrimaryUnits: model.NumberFromFloat(103.69999, 5),
+			wantPlacedBackingUnits: model.NumberFromFloat(8.86833, 5),
 		}, {
 			name: "3. sell primary-available backing-partial zero",
 			bc: &balanceCoordinator{
@@ -73,10 +73,10 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  true,
-			wantNewBaseVolume:      model.NumberFromFloat(0.89286, 5),
-			wantNewQuoteVolume:     model.NumberFromFloat(0.1, 5),
-			wantPlacedPrimaryUnits: model.NumberFromFloat(0.89286, 5),
-			wantPlacedBackingUnits: model.NumberFromFloat(0.1, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(0.89285, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.09999, 5),
+			wantPlacedPrimaryUnits: model.NumberFromFloat(0.89285, 5),
+			wantPlacedBackingUnits: model.NumberFromFloat(0.09999, 5),
 		}, {
 			name: "4. sell primary-available backing-partial non-zero",
 			bc: &balanceCoordinator{
@@ -91,10 +91,10 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputVol:               model.NumberFromFloat(1.0, 5),
 			inputPrice:             model.NumberFromFloat(0.112, 5),
 			wantHasBackingBalance:  true,
-			wantNewBaseVolume:      model.NumberFromFloat(0.71429, 5),
-			wantNewQuoteVolume:     model.NumberFromFloat(0.08, 5),
-			wantPlacedPrimaryUnits: model.NumberFromFloat(5.83429, 5),
-			wantPlacedBackingUnits: model.NumberFromFloat(0.1, 5),
+			wantNewBaseVolume:      model.NumberFromFloat(0.71428, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(0.07999, 5),
+			wantPlacedPrimaryUnits: model.NumberFromFloat(5.83428, 5),
+			wantPlacedBackingUnits: model.NumberFromFloat(0.09999, 5),
 		}, {
 			name: "5. sell primary-available backing-empty zero",
 			bc: &balanceCoordinator{
@@ -182,9 +182,9 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			inputPrice:             model.NumberFromFloat(0.21, 5),
 			wantHasBackingBalance:  true,
 			wantNewBaseVolume:      model.NumberFromFloat(480.95238, 5),
-			wantNewQuoteVolume:     model.NumberFromFloat(101.0, 5),
+			wantNewQuoteVolume:     model.NumberFromFloat(100.99999, 5),
 			wantPlacedPrimaryUnits: model.NumberFromFloat(480.95238, 5),
-			wantPlacedBackingUnits: model.NumberFromFloat(101.0, 5),
+			wantPlacedBackingUnits: model.NumberFromFloat(100.99999, 5),
 		}, {
 			name: "10. sell primary-partial backing-partial non-zero",
 			bc: &balanceCoordinator{
@@ -671,6 +671,44 @@ func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 			wantNewQuoteVolume:     nil,
 			wantPlacedPrimaryUnits: model.NumberFromFloat(100.0, 5),
 			wantPlacedBackingUnits: model.NumberFromFloat(100.45, 5),
+		},
+		// these are the tests spawned from https://github.com/stellar/kelp/issues/541
+		{
+			name: "rounding - buy base on primary - truncate rounding",
+			bc: &balanceCoordinator{
+				primaryBalance:     model.NumberFromFloat(646.1, 7),
+				placedPrimaryUnits: model.NumberConstants.Zero,
+				primaryAssetType:   "quote",
+				isPrimaryBuy:       true,
+				backingBalance:     model.NumberFromFloat(1.9, 5),
+				placedBackingUnits: model.NumberConstants.Zero,
+				backingAssetType:   "base",
+			},
+			inputVol:               model.NumberFromFloat(2.0, 2),   // intentionally use a less precise volume
+			inputPrice:             model.NumberFromFloat(368.0, 8), // intentionally use a precision of price more than volume
+			wantHasBackingBalance:  true,
+			wantNewBaseVolume:      model.NumberFromFloat(1.75, 2),  // don't modify precision volume nunmbers
+			wantNewQuoteVolume:     model.NumberFromFloat(644.0, 2), // don't modify precision volume nunmbers
+			wantPlacedPrimaryUnits: model.NumberFromFloat(644.0, 2),
+			wantPlacedBackingUnits: model.NumberFromFloat(1.75, 2),
+		}, {
+			name: "rounding - sell base on primary - truncate rounding",
+			bc: &balanceCoordinator{
+				primaryBalance:     model.NumberFromFloat(1.9, 7),
+				placedPrimaryUnits: model.NumberConstants.Zero,
+				primaryAssetType:   "base",
+				isPrimaryBuy:       false,
+				backingBalance:     model.NumberFromFloat(646.1, 5),
+				placedBackingUnits: model.NumberConstants.Zero,
+				backingAssetType:   "quote",
+			},
+			inputVol:               model.NumberFromFloat(2.0, 2),   // intentionally use a less precise volume
+			inputPrice:             model.NumberFromFloat(368.0, 8), // intentionally use a precision of price more than volume
+			wantHasBackingBalance:  true,
+			wantNewBaseVolume:      model.NumberFromFloat(1.75, 2),  // don't modify precision volume nunmbers
+			wantNewQuoteVolume:     model.NumberFromFloat(644.0, 2), // don't modify precision volume nunmbers
+			wantPlacedPrimaryUnits: model.NumberFromFloat(1.75, 2),
+			wantPlacedBackingUnits: model.NumberFromFloat(644.0, 2),
 		},
 	}
 

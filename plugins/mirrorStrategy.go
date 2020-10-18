@@ -828,12 +828,17 @@ func (b *balanceCoordinator) getPlacedBackingUnits() *model.Number {
 	return b.placedBackingUnits
 }
 
+// checkBalance uses a larger precision for internal calculations because of this bug: https://github.com/stellar/kelp/issues/541
+// it eventually rounds back to the precision of the passed in volume
 func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number) (bool /*hasBackingBalance*/, *model.Number /*newBaseVolume*/, *model.Number /*newQuoteVolume*/) {
+	expandedPrecisionVolume := model.NumberFromFloat(vol.AsFloat(), model.InternalCalculationsPrecision)
+	expandedPrecisionPrice := model.NumberFromFloat(price.AsFloat(), model.InternalCalculationsPrecision)
+
 	// we want to constrain units on primary exchange to ensure we can mirror correctly
-	additionalPrimaryUnits := vol
+	additionalPrimaryUnits := expandedPrecisionVolume
 	if b.isPrimaryBuy { // buying base on primary, selling base on backing
 		// convert to quote units since we are selling quote on primary
-		additionalPrimaryUnits = vol.Multiply(*price)
+		additionalPrimaryUnits = vol.MultiplyRoundTruncate(*expandedPrecisionPrice)
 	}
 	remainingPrimaryUnits := b.primaryBalance.Subtract(*b.placedPrimaryUnits)
 	if remainingPrimaryUnits.AsFloat() < 0.0000002 {
@@ -846,10 +851,10 @@ func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number
 	}
 
 	// now do for backing exchange to ensure we can offset trades correctly
-	additionalBackingUnits := vol
+	additionalBackingUnits := expandedPrecisionVolume
 	if !b.isPrimaryBuy { // selling base on primary, buying base on backing
 		// convert to quote units since we are selling quote on backing
-		additionalBackingUnits = vol.Multiply(*price)
+		additionalBackingUnits = vol.MultiplyRoundTruncate(*expandedPrecisionPrice)
 	}
 	remainingBackingUnits := b.backingBalance.Subtract(*b.placedBackingUnits)
 	if remainingBackingUnits.AsFloat() < 0.0000002 {
@@ -865,9 +870,9 @@ func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number
 	normalizedPrimaryUnits := additionalPrimaryUnits
 	normalizedBackingUnits := additionalBackingUnits
 	if b.isPrimaryBuy {
-		normalizedPrimaryUnits = normalizedPrimaryUnits.Divide(*price)
+		normalizedPrimaryUnits = normalizedPrimaryUnits.DivideRoundTruncate(*expandedPrecisionPrice)
 	} else {
-		normalizedBackingUnits = normalizedBackingUnits.Divide(*price)
+		normalizedBackingUnits = normalizedBackingUnits.DivideRoundTruncate(*expandedPrecisionPrice)
 	}
 	var minBaseUnitsFloat float64
 	if normalizedBackingUnits.AsFloat() < normalizedPrimaryUnits.AsFloat() {
@@ -880,21 +885,22 @@ func (b *balanceCoordinator) checkBalance(vol *model.Number, price *model.Number
 		minBaseUnitsFloat = normalizedPrimaryUnits.AsFloat()
 		log.Printf("balanceCoordinator: nothing to constrain since normalizedPrimaryUnits and normalizedBackingUnits were equal (%.10f)\n", normalizedPrimaryUnits.AsFloat())
 	}
-	minPrecision := normalizedPrimaryUnits.Precision()
-	if normalizedBackingUnits.Precision() < normalizedPrimaryUnits.Precision() {
-		minPrecision = normalizedBackingUnits.Precision()
-	}
-	minBaseUnits := model.NumberFromFloat(minBaseUnitsFloat, minPrecision)
-	// finally convert back to quote units where necessary
-	minPrimaryUnits := minBaseUnits
-	minBackingUnits := minBaseUnits
+	minBaseUnits := model.NumberFromFloat(minBaseUnitsFloat, model.InternalCalculationsPrecision)
+
+	// convert to final precision values now
+	minBaseUnitsFinalPrecision := model.NumberFromFloatRoundTruncate(minBaseUnits.AsFloat(), vol.Precision())
+	minQuoteUnits := minBaseUnitsFinalPrecision.MultiplyRoundTruncate(*expandedPrecisionPrice)
+	minQuoteUnitsFinalPrecision := model.NumberFromFloatRoundTruncate(minQuoteUnits.AsFloat(), vol.Precision())
+	var minPrimaryUnitsFinalPrecision, minBackingUnitsFinalPrecision *model.Number
 	if b.isPrimaryBuy {
-		minPrimaryUnits = minPrimaryUnits.Multiply(*price)
+		minPrimaryUnitsFinalPrecision = minQuoteUnitsFinalPrecision
+		minBackingUnitsFinalPrecision = minBaseUnitsFinalPrecision
 	} else {
-		minBackingUnits = minBackingUnits.Multiply(*price)
+		minPrimaryUnitsFinalPrecision = minBaseUnitsFinalPrecision
+		minBackingUnitsFinalPrecision = minQuoteUnitsFinalPrecision
 	}
 
-	b.placedPrimaryUnits = b.placedPrimaryUnits.Add(*minPrimaryUnits)
-	b.placedBackingUnits = b.placedBackingUnits.Add(*minBackingUnits)
-	return true, minBaseUnits, minBaseUnits.Multiply(*price)
+	b.placedPrimaryUnits = b.placedPrimaryUnits.Add(*minPrimaryUnitsFinalPrecision)
+	b.placedBackingUnits = b.placedBackingUnits.Add(*minBackingUnitsFinalPrecision)
+	return true, minBaseUnitsFinalPrecision, minQuoteUnitsFinalPrecision
 }
