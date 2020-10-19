@@ -527,7 +527,7 @@ func runTradeCmd(options inputs) {
 
 	isTestnet := strings.Contains(botConfig.HorizonURL, "test") && botConfig.IsTradingSdex()
 
-	metricsTracker, e := metrics.MakeMetricsTracker(
+	metricsTracker, e := metrics.MakeMetricsTrackerCli(
 		userID,
 		deviceID,
 		amplitudeAPIKey,
