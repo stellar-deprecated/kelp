@@ -60,7 +60,7 @@ func makeBuyTwapStrategy(
 		levelProvider,
 		config.PriceTolerance,
 		config.AmountTolerance,
-		false,
+		true,
 	)
 
 	// use assetBase as param to assetBase argument, since the delete strategy is

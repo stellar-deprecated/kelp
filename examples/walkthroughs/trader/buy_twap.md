@@ -1,8 +1,8 @@
-# TWAP Sale
+# TWAP Buy
 
 This guide shows you how to setup the **kelp** bot using the [buy_twap](../../../plugins/buyTwapStrategy.go) strategy. This strategy will buy tokens using the well-known [TWAP metric](https://en.wikipedia.org/wiki/Time-weighted_average_price). We'll configure it to buy a `COUPON` token; `COUPON` can be any token you want and is only used as a sample token for the purpose of this walkthrough guide.
 
-The bot places a single buy order which is refreshed and randomized at every bot update as configured in `trader.cfg`. There is a fixed buy capacity for each `bucket` based on the daily buy limit configuration. Any value that is unsold in a given bucket (surplus) is distributed over the remaining buckets. The config values control the bucket size along with other factors to determine the distribution of the surplus.
+The bot places a single buy order which is refreshed and randomized at every bot update as configured in `trader.cfg`. There is a fixed buy capacity for each `bucket` based on the daily buy limit configuration. Any value that is unbought in a given bucket (surplus) is distributed over the remaining buckets. The config values control the bucket size along with other factors to determine the distribution of the surplus.
 
 ## Account Setup
 
@@ -12,13 +12,13 @@ First, go through the [Account Setup guide](account_setup.md) to set up your Ste
 
 Download the pre-compiled binaries for **kelp** for your platform from the [Github Releases Page](https://github.com/stellar/kelp/releases). If you have downloaded the correct version for your platform you can run it directly.
 
-## SellTwap Strategy Configuration
+## BuyTwap Strategy Configuration
 
 Use the [sample configuration file for the buy_twap strategy](../../configs/trader/sample_buytwap.cfg) as a template. We will walkthrough the configuration parameters below.
 
 ### Price Feeds
 
-SellTwap requires one price feed, `START_ASK_FEED`. This computes the price used when placing the single buy order.
+BuyTwap requires one price feed, `START_ASK_FEED`. This computes the price used when placing the single buy order.
 
 To give `COUPON` a stable price against USD, we're going to set `START_ASK_FEED_TYPE` to `"exchange"` and `START_ASK_FEED_URL` to `"kraken/XXLM/ZUSD"`. This points our bot to Kraken's price for 1 XLM, quoted in USD.
 
