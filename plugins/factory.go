@@ -275,7 +275,7 @@ func loadExchanges() {
 			SortOrder:    0,
 			Description:  "Kraken is a popular centralized cryptocurrency exchange",
 			TradeEnabled: true,
-			Tested:       false,
+			Tested:       true,
 			makeFn: func(exchangeFactoryData exchangeFactoryData) (api.Exchange, error) {
 				return makeKrakenExchange(exchangeFactoryData.apiKeys, exchangeFactoryData.simMode)
 			},
