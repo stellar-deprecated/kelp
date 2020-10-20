@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // sqlQueryDailyValuesTemplateAllAccounts queries the trades table to get the values for a given day
@@ -37,6 +38,7 @@ func MakeDailyVolumeByDateForMarketIdsAction(
 	optionalAccountIDs []string,
 ) (*DailyVolumeByDate, error) {
 	if db == nil {
+		utils.PrintErrorHintf("the provided POSTGRES_DB config in the trader.cfg file should be non-nil")
 		return nil, fmt.Errorf("the provided db should be non-nil")
 	}
 
