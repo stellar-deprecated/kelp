@@ -186,6 +186,20 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 	return mt.sendEvent(startupEventName, mt.props)
 }
 
+// SendGuiEvent sends an event from the GUI.
+// TODO DS Determine generic properties to send with the GUI event.
+func (mt *MetricsTracker) SendGuiEvent(eventName string) error {
+	commonProps := mt.props
+	// TODO DS Populate a larger props interface containing the commonProps.
+
+	e := mt.sendEvent(eventName, commonProps)
+	if e != nil {
+		return fmt.Errorf("could not send gui event - %s: %s", eventName, e)
+	}
+
+	return nil
+}
+
 // SendUpdateEvent sends the update Amplitude event.
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
 	commonProps := mt.props
