@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+
+## [v1.10.0] - 2020-10-20
+
+### Added
+
 - New Trading Strategy: Pendulum Strategy ([#427](https://github.com/stellar/kelp/issues/427))
 - Log value of total assets in a common format ([#433](https://github.com/stellar/kelp/issues/433))
 - Always log levels returned for all strategies ([#436](https://github.com/stellar/kelp/issues/436))
@@ -40,8 +56,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - mirror strategy should allow different divide by values for bid and ask sides, deprecate VOLUME_DIVIDE_BY config field ([#545](https://github.com/stellar/kelp/issues/545))
 
-### Removed
-
 ### Fixed
 
 - Kelp GUI: fix issue of fiat currency dropdown not updating correctly ([fe19dcbaac0845e5bec7415528ffe02db93245af](https://github.com/stellar/kelp/commit/fe19dcbaac0845e5bec7415528ffe02db93245af))
@@ -62,9 +76,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - mirror strategy fails to start up without db enabled, nil pointer dereference ([#525](https://github.com/stellar/kelp/issues/525))
 - modify offers in mirror strategy is not correctly adjusting price and amount ([#526](https://github.com/stellar/kelp/issues/526))
 - Rounding issues in mirror strategy causing offers to not be placed ([#541](https://github.com/stellar/kelp/issues/541))
-
-### Security
-
 
 ## [v1.9.0] - 2020-05-07
 
@@ -343,7 +354,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.10.0...HEAD
+[v1.10.0]: https://github.com/stellar/kelp/compare/v1.9.0...v1.10.0
 [v1.9.0]: https://github.com/stellar/kelp/compare/v1.8.1...v1.9.0
 [v1.8.1]: https://github.com/stellar/kelp/compare/v1.8.0...v1.8.1
 [v1.8.0]: https://github.com/stellar/kelp/compare/v1.7.2...v1.8.0
