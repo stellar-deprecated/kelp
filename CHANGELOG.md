@@ -8,15 +8,60 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- New Trading Strategy: Pendulum Strategy ([#427](https://github.com/stellar/kelp/issues/427))
+- Log value of total assets in a common format ([#433](https://github.com/stellar/kelp/issues/433))
+- Always log levels returned for all strategies ([#436](https://github.com/stellar/kelp/issues/436))
+- Add code version used to upgrade database in the db_version table ([#445](https://github.com/stellar/kelp/issues/445) and [#447](https://github.com/stellar/kelp/issues/447))
+- Database Schema Test Infrastructure also tests indexes on tables ([ad607653c13eb76ba3be5b17a5203a08b2ea11af](https://github.com/stellar/kelp/commit/ad607653c13eb76ba3be5b17a5203a08b2ea11af))
+- Upgrade Script for postgres database to include an accountId in the trades database ([#444](https://github.com/stellar/kelp/issues/444))
+- Sell TWAP strategy ([#454](https://github.com/stellar/kelp/issues/454))
+- Cheaper and more accurate fill tracking (trade tracking) ([#456](https://github.com/stellar/kelp/issues/456) and [a52a1571d39d326640f1eadf4e1ea62e8953a416](https://github.com/stellar/kelp/commit/a52a1571d39d326640f1eadf4e1ea62e8953a416))
+- Kelp GUI: Add legal disclaimer about running on mainnet ([#484](https://github.com/stellar/kelp/issues/484))
+- Kelp GUI: make pubnet bots available with a single boolean switch ([#475](https://github.com/stellar/kelp/issues/475))
+- Add link to PR with new trading template ([#453](https://github.com/stellar/kelp/issues/453))
+- Mirror Strategy: track orders triggered on backingExchange by trades on primaryExchange ([#503](https://github.com/stellar/kelp/issues/503))
+- Set up CLI data tracking ([#478](https://github.com/stellar/kelp/issues/478) [#516](https://github.com/stellar/kelp/issues/516), [539](https://github.com/stellar/kelp/issues/539))
+- ccxtExchange should allow fetching binance orderbook with limits between the hardcoded binance limits ([#528](https://github.com/stellar/kelp/issues/528) and [00508f6277f164b58f13fab0ed2e41e9e4241ea7](https://github.com/stellar/kelp/commit/00508f6277f164b58f13fab0ed2e41e9e4241ea7))
+- Simple Integration tests in CircleCI ([#51](https://github.com/stellar/kelp/issues/51))
+
 ### Changed
 
+- Post-only support for some exchanges when using maker_only submit mode ([#440](https://github.com/stellar/kelp/issues/440))
+- update disclaimer in Kelp README ([#485](https://github.com/stellar/kelp/issues/485))
+- mirror strategy should handle primary and backing exchange balance calculations and constraints better ([#524](https://github.com/stellar/kelp/issues/524))
+- various updates to README ([ee1fe1f847b5ace97272b82de2bf758e4bb732e5](https://github.com/stellar/kelp/commit/ee1fe1f847b5ace97272b82de2bf758e4bb732e5), [c22e46bd46307d31f47829cad0d4f57921abfb9e](https://github.com/stellar/kelp/commit/c22e46bd46307d31f47829cad0d4f57921abfb9e), [2d15399fbf1d0533563d54d0450c3eab950c5525](https://github.com/stellar/kelp/commit/2d15399fbf1d0533563d54d0450c3eab950c5525))
+- add winning StellarBattle content to README ([0ba9a2c563a9fb664611f326a03ad8d2e83ccb39](https://github.com/stellar/kelp/commit/0ba9a2c563a9fb664611f326a03ad8d2e83ccb39) and [2baa57f34946f48d4e6592cb7c1832b585a40d19](https://github.com/stellar/kelp/commit/2baa57f34946f48d4e6592cb7c1832b585a40d19))
+- add min postgres version number to README ([#514](https://github.com/stellar/kelp/issues/514))
+- Fix sample config files ([#538](https://github.com/stellar/kelp/issues/538))
+- mirror strategy should allow different divide by values for bid and ask sides, deprecate VOLUME_DIVIDE_BY config field ([#545](https://github.com/stellar/kelp/issues/545))
+- mark Kraken exchange as tested ([2e3db3c6d530663af783604c59ba0c7407b9ba7d](https://github.com/stellar/kelp/commit/2e3db3c6d530663af783604c59ba0c7407b9ba7d))
+
 ### Deprecated
+
+- mirror strategy should allow different divide by values for bid and ask sides, deprecate VOLUME_DIVIDE_BY config field ([#545](https://github.com/stellar/kelp/issues/545))
 
 ### Removed
 
 ### Fixed
 
 - Kelp GUI: fix issue of fiat currency dropdown not updating correctly ([fe19dcbaac0845e5bec7415528ffe02db93245af](https://github.com/stellar/kelp/commit/fe19dcbaac0845e5bec7415528ffe02db93245af))
+- fix index out of range when getting prices from sdex ([#416](https://github.com/stellar/kelp/issues/416))
+- Fix baseAmount used when placing orders ([#435](https://github.com/stellar/kelp/issues/435))
+- Fix FetchTrades for Kraken ([#450](https://github.com/stellar/kelp/issues/450))
+- sellSideStrategy.go#PreUpdate does not call GetLevels when base asset is 0.0 ([#457](https://github.com/stellar/kelp/issues/457))
+- KrakenExchange should get latest cursor in seconds instead of millis ([#465](https://github.com/stellar/kelp/issues/465))
+- bot should crash if delete cycles threshold is exceeded ([#471](https://github.com/stellar/kelp/issues/471))
+- remove minOrderSizeBase from UUID in sellTwapLevelProvider.go ([#482](https://github.com/stellar/kelp/issues/482))
+- Kelp GUI: fix another instance of OSPath.String() being called ([#430](https://github.com/stellar/kelp/issues/430))
+- failure to submit ops (async or sync) should count towards the delete cycles threshold ([#498](https://github.com/stellar/kelp/issues/498))
+- mirror strategy should prepend deleteOps before both bid and ask ops ([#501](https://github.com/stellar/kelp/issues/501))
+- mirror strategy: log num trades received from backing exchange on triggered fill ([#505](https://github.com/stellar/kelp/issues/505))
+- Kelp GUI: Propagate bot initialization & startup errors back to GUI ([#506](https://github.com/stellar/kelp/issues/506))
+- More granular Kelp AppNames ([#488](https://github.com/stellar/kelp/issues/488))
+- Kelp GUI: disallow invalid characters in bot name ([#429](https://github.com/stellar/kelp/issues/429))
+- mirror strategy fails to start up without db enabled, nil pointer dereference ([#525](https://github.com/stellar/kelp/issues/525))
+- modify offers in mirror strategy is not correctly adjusting price and amount ([#526](https://github.com/stellar/kelp/issues/526))
+- Rounding issues in mirror strategy causing offers to not be placed ([#541](https://github.com/stellar/kelp/issues/541))
 
 ### Security
 
