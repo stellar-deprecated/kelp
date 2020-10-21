@@ -11,13 +11,12 @@ import (
 	"github.com/stellar/kelp/support/networking"
 )
 
-// Custom events in Amplitude should be named with "ce:event_name",
-// so the web console displays it as "[Custom] event_name".
+// we don't want this to be a custom event, custom events should only be added from the amplitude UI
 const (
 	amplitudeAPIURL  string = "https://api2.amplitude.com/2/httpapi"
-	startupEventName string = "ce:bot_startup"
-	updateEventName  string = "ce:update_offers"
-	deleteEventName  string = "ce:delete_offers"
+	startupEventName string = "bot_startup"
+	updateEventName  string = "update_offers"
+	deleteEventName  string = "delete_offers"
 )
 
 // MetricsTracker wraps the properties for Amplitude events,
