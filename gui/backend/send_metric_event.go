@@ -9,8 +9,8 @@ import (
 )
 
 type sendMetricEventRequest struct {
-	EventName string `json:"name"`
-	// TODO DS Populate request struct.
+	EventType  string      `json:"type"`
+	EventProps interface{} `json:"props"`
 }
 
 type sendMetricEventResponse struct {
@@ -32,9 +32,9 @@ func (s *APIServer) sendMetricEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e = s.metricsTracker.SendGuiEvent(req.EventName)
+	e = s.metricsTracker.SendEvent(req.EventType, req.EventProps)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error sending gui event %s: %s", req.EventName, e))
+		s.writeErrorJson(w, fmt.Sprintf("error sending gui event %s: %s", req.EventType, e))
 		return
 	}
 

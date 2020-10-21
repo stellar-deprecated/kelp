@@ -66,7 +66,6 @@ type commonProps struct {
 
 // updateProps holds the properties for the update Amplitude event.
 type updateProps struct {
-	commonProps
 	Success         bool  `json:"success"`
 	MillisForUpdate int64 `json:"millis_for_update"`
 }
@@ -75,7 +74,6 @@ type updateProps struct {
 // TODO DS StackTrace may need to be a message instead of or in addition to a
 // stack trace. The goal is to get crash logs, Amplitude may not enable this.
 type deleteProps struct {
-	commonProps
 	Exit       bool   `json:"exit"`
 	StackTrace string `json:"stack_trace"`
 }
@@ -150,6 +148,7 @@ func MakeMetricsTrackerCli(
 // MakeMetricsTrackerGui is a factory method to create a `metrics.Tracker` from the CLI.
 func MakeMetricsTrackerGui(
 	userID string,
+	deviceID string,
 	apiKey string,
 	client *http.Client,
 	botStartTime time.Time,
@@ -171,6 +170,7 @@ func MakeMetricsTrackerGui(
 		client:       client,
 		apiKey:       apiKey,
 		userID:       userID,
+		deviceID:     deviceID,
 		props:        props,
 		botStartTime: botStartTime,
 	}, nil
@@ -183,33 +183,17 @@ func (mt *MetricsTracker) GetUpdateEventSentTime() time.Time {
 
 // SendStartupEvent sends the startup Amplitude event.
 func (mt *MetricsTracker) SendStartupEvent() error {
-	return mt.sendEvent(startupEventName, mt.props)
-}
-
-// SendGuiEvent sends an event from the GUI.
-// TODO DS Determine generic properties to send with the GUI event.
-func (mt *MetricsTracker) SendGuiEvent(eventName string) error {
-	commonProps := mt.props
-	// TODO DS Populate a larger props interface containing the commonProps.
-
-	e := mt.sendEvent(eventName, commonProps)
-	if e != nil {
-		return fmt.Errorf("could not send gui event - %s: %s", eventName, e)
-	}
-
-	return nil
+	return mt.SendEvent(startupEventName, mt.props)
 }
 
 // SendUpdateEvent sends the update Amplitude event.
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
-	commonProps := mt.props
-	commonProps.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
+	mt.props.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
 	updateProps := updateProps{
-		commonProps:     commonProps,
 		Success:         success,
 		MillisForUpdate: millisForUpdate,
 	}
-	e := mt.sendEvent(updateEventName, updateProps)
+	e := mt.SendEvent(updateEventName, updateProps)
 	if e != nil {
 		return fmt.Errorf("could not send update event: %s", e)
 	}
@@ -220,21 +204,25 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 
 // SendDeleteEvent sends the delete Amplitude event.
 func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
-	commonProps := mt.props
-	commonProps.SecondsSinceStart = time.Now().Sub(mt.botStartTime).Seconds()
+	mt.props.SecondsSinceStart = time.Now().Sub(mt.botStartTime).Seconds()
 	deleteProps := deleteProps{
-		commonProps: commonProps,
-		Exit:        exit,
-		StackTrace:  string(debug.Stack()),
+		Exit:       exit,
+		StackTrace: string(debug.Stack()),
 	}
 
-	return mt.sendEvent(deleteEventName, deleteProps)
+	return mt.SendEvent(deleteEventName, deleteProps)
 }
 
-func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
+// SendEvent sends an event with its type and properties to
+func (mt *MetricsTracker) SendEvent(eventType string, eventProps interface{}) error {
 	if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
 		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
 		return nil
+	}
+
+	mergedProps, e := mt.mergeEventProps(eventProps)
+	if e != nil {
+		return fmt.Errorf("could not merge event properties: %s", e)
 	}
 
 	// session_id is the start time of the session in milliseconds since epoch (Unix Timestamp),
@@ -246,7 +234,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 			SessionID: mt.botStartTime.Unix() * 1000, // convert to millis based on docs
 			DeviceID:  mt.deviceID,
 			EventType: eventType,
-			Props:     eventProps,
+			Props:     mergedProps,
 			Version:   mt.props.CliVersion,
 		}},
 	}
@@ -277,4 +265,29 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		}
 	}
 	return nil
+}
+
+func (mt *MetricsTracker) mergeEventProps(eventProps interface{}) (map[string]interface{}, error) {
+	var m map[string]interface{}
+	eventJSON, e := json.Marshal(eventProps)
+	if e != nil {
+		return nil, fmt.Errorf("metric - could not marshal event props json: %s", e)
+	}
+
+	e = json.Unmarshal(eventJSON, &m)
+	if e != nil {
+		return nil, fmt.Errorf("metric - could not unmarshal event json: %s", e)
+	}
+
+	commonJSON, e := json.Marshal(mt.props)
+	if e != nil {
+		return nil, fmt.Errorf("metric - could not marshal common props json: %s", e)
+	}
+
+	e = json.Unmarshal(commonJSON, &m)
+	if e != nil {
+		return nil, fmt.Errorf("metric - could not unmarshal common props json: %s", e)
+	}
+
+	return m, nil
 }

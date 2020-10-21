@@ -20,6 +20,7 @@ import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
+	"github.com/denisbrodbeck/machineid"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -291,20 +292,25 @@ func init() {
 
 		var metricsTracker *metrics.MetricsTracker
 		if isLocalDevMode {
-			log.Printf("not sending data metrics in dev mode")
+			log.Printf("metric - not sending data metrics in dev mode")
 		} else {
-			userID := "-1" // TODO DS Determine how to get user ID in GUI mode.
+			deviceID, e := machineid.ID()
+			if e != nil {
+				panic(fmt.Errorf("could not generate machine id: %s", e))
+			}
+
 			httpClient := &http.Client{}
 			metricsTracker, e = metrics.MakeMetricsTrackerGui(
-				userID,
+				deviceID,
+				deviceID,
 				amplitudeAPIKey,
 				httpClient,
 				time.Now(), // TODO: Find proper time.
 				version,
 				runtime.GOOS,
 				runtime.GOARCH,
-				"unknown_todo",   // TODO DS Determine how to get GOARM.
-				"guiVersionFlag", // TODO DS Determine how to get GUI version flag.
+				"unknown_todo", // TODO DS Determine how to get GOARM.
+				guiVersion,     // TODO DS Determine how to get GUI version flag.
 			)
 			if e != nil {
 				panic(e)
