@@ -544,6 +544,18 @@ func runTradeCmd(options inputs) {
 		botConfig.TradingPair(),
 		*options.noHeaders, // disable metrics if the CLI specified no headers
 		isTestnet,
+		botConfig.MaxTickDelayMillis,
+		botConfig.SubmitMode,
+		botConfig.DeleteCyclesThreshold,
+		botConfig.FillTrackerSleepMillis,
+		botConfig.FillTrackerDeleteCyclesThreshold,
+		botConfig.SynchronizeStateLoadEnable,
+		botConfig.SynchronizeStateLoadMaxRetries,
+		botConfig.DollarValueFeedBaseAsset != "" && botConfig.DollarValueFeedQuoteAsset != "",
+		botConfig.AlertType,
+		int(botConfig.MonitoringPort) != 0,
+		len(botConfig.Filters) > 0,
+		botConfig.PostgresDbConfig != nil,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))

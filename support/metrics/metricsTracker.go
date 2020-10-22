@@ -50,17 +50,29 @@ type event struct {
 // TODO DS Add cloud server information.
 // TODO DS Add time to run update function as `millisForUpdate`.
 type commonProps struct {
-	CliVersion                string  `json:"cli_version"`
-	Goos                      string  `json:"goos"`
-	Goarch                    string  `json:"goarch"`
-	Goarm                     string  `json:"goarm"`
-	GuiVersion                string  `json:"gui_version"`
-	Strategy                  string  `json:"strategy"`
-	UpdateTimeIntervalSeconds int32   `json:"update_time_interval_seconds"`
-	Exchange                  string  `json:"exchange"`
-	TradingPair               string  `json:"trading_pair"`
-	SecondsSinceStart         float64 `json:"seconds_since_start"`
-	IsTestnet                 bool    `json:"is_testnet"`
+	CliVersion                       string  `json:"cli_version"`
+	Goos                             string  `json:"goos"`
+	Goarch                           string  `json:"goarch"`
+	Goarm                            string  `json:"goarm"`
+	GuiVersion                       string  `json:"gui_version"`
+	Strategy                         string  `json:"strategy"`
+	UpdateTimeIntervalSeconds        int32   `json:"update_time_interval_seconds"`
+	Exchange                         string  `json:"exchange"`
+	TradingPair                      string  `json:"trading_pair"`
+	SecondsSinceStart                float64 `json:"seconds_since_start"`
+	IsTestnet                        bool    `json:"is_testnet"`
+	MaxTickDelayMillis               int64   `json:"max_tick_delay_millis"`
+	SubmitMode                       string  `json:"submit_mode"`
+	DeleteCyclesThreshold            int64   `json:"delete_cycles_threshold"`
+	FillTrackerSleepMillis           uint32  `json:"fill_tracker_sleep_millis"`
+	FillTrackerDeleteCyclesThreshold int64   `json:"fill_tracker_delete_cycles_threshold"`
+	SynchronizeStateLoadEnable       bool    `json:"synchronize_state_load_enable"`
+	SynchronizeStateLoadMaxRetries   int     `json:"synchronize_state_load_max_retries"`
+	EnabledFeatureDollarValue        bool    `json:"enabled_feature_dollar_value"`
+	AlertType                        string  `json:"alert_type"`
+	EnabledFeatureMonitoring         bool    `json:"enabled_feature_monitoring"`
+	EnabledFeatureFilters            bool    `json:"enabled_feature_filters"`
+	EnabledFeaturePostgres           bool    `json:"enabled_feature_postgres"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -122,18 +134,42 @@ func MakeMetricsTracker(
 	tradingPair string,
 	isDisabled bool,
 	isTestnet bool,
+	maxTickDelayMillis int64,
+	submitMode string,
+	deleteCyclesThreshold int64,
+	fillTrackerSleepMillis uint32,
+	fillTrackerDeleteCyclesThreshold int64,
+	synchronizeStateLoadEnable bool,
+	synchronizeStateLoadMaxRetries int,
+	enabledFeatureDollarValue bool,
+	alertType string,
+	enabledFeatureMonitoring bool,
+	enabledFeatureFilters bool,
+	enabledFeaturePostgres bool,
 ) (*MetricsTracker, error) {
 	props := commonProps{
-		CliVersion:                version,
-		Goos:                      goos,
-		Goarch:                    goarch,
-		Goarm:                     goarm,
-		GuiVersion:                guiVersion,
-		Strategy:                  strategy,
-		UpdateTimeIntervalSeconds: updateTimeIntervalSeconds,
-		Exchange:                  exchange,
-		TradingPair:               tradingPair,
-		IsTestnet:                 isTestnet,
+		CliVersion:                       version,
+		Goos:                             goos,
+		Goarch:                           goarch,
+		Goarm:                            goarm,
+		GuiVersion:                       guiVersion,
+		Strategy:                         strategy,
+		UpdateTimeIntervalSeconds:        updateTimeIntervalSeconds,
+		Exchange:                         exchange,
+		TradingPair:                      tradingPair,
+		IsTestnet:                        isTestnet,
+		MaxTickDelayMillis:               maxTickDelayMillis,
+		SubmitMode:                       submitMode,
+		DeleteCyclesThreshold:            deleteCyclesThreshold,
+		FillTrackerSleepMillis:           fillTrackerSleepMillis,
+		FillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
+		SynchronizeStateLoadEnable:       synchronizeStateLoadEnable,
+		SynchronizeStateLoadMaxRetries:   synchronizeStateLoadMaxRetries,
+		EnabledFeatureDollarValue:        enabledFeatureDollarValue,
+		AlertType:                        alertType,
+		EnabledFeatureMonitoring:         enabledFeatureMonitoring,
+		EnabledFeatureFilters:            enabledFeatureFilters,
+		EnabledFeaturePostgres:           enabledFeaturePostgres,
 	}
 
 	return &MetricsTracker{
