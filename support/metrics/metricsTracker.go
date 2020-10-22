@@ -30,7 +30,7 @@ type MetricsTracker struct {
 	props               commonProps
 	botStartTime        time.Time
 	isDisabled          bool
-	updateEventSentTime time.Time
+	updateEventSentTime *time.Time
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -180,12 +180,12 @@ func MakeMetricsTracker(
 		props:               props,
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
-		updateEventSentTime: botStartTime, // use botStartTime as the last event sent time since that makes sense as a default value
+		updateEventSentTime: nil,
 	}, nil
 }
 
 // GetUpdateEventSentTime gets the last sent time of the update event.
-func (mt *MetricsTracker) GetUpdateEventSentTime() time.Time {
+func (mt *MetricsTracker) GetUpdateEventSentTime() *time.Time {
 	return mt.updateEventSentTime
 }
 
@@ -199,7 +199,12 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 	commonProps := mt.props
 	commonProps.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
 
-	secondsSinceLastUpdateMetric := now.Sub(mt.updateEventSentTime).Seconds()
+	var secondsSinceLastUpdateMetric float64
+	if mt.updateEventSentTime == nil {
+		secondsSinceLastUpdateMetric = commonProps.SecondsSinceStart
+	} else {
+		secondsSinceLastUpdateMetric = now.Sub(*mt.updateEventSentTime).Seconds()
+	}
 	updateProps := updateProps{
 		commonProps:                  commonProps,
 		Success:                      success,
@@ -211,7 +216,7 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 		return fmt.Errorf("could not send update event: %s", e)
 	}
 
-	mt.updateEventSentTime = now
+	mt.updateEventSentTime = &now
 	return nil
 }
 
