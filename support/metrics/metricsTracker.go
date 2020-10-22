@@ -66,8 +66,9 @@ type commonProps struct {
 // updateProps holds the properties for the update Amplitude event.
 type updateProps struct {
 	commonProps
-	Success         bool  `json:"success"`
-	MillisForUpdate int64 `json:"millis_for_update"`
+	Success                      bool    `json:"success"`
+	MillisForUpdate              int64   `json:"millis_for_update"`
+	SecondsSinceLastUpdateMetric float64 `json:"seconds_since_last_update_metric"` // helps understand total runtime of bot when summing this field across events
 }
 
 // deleteProps holds the properties for the delete Amplitude event.
@@ -136,13 +137,14 @@ func MakeMetricsTracker(
 	}
 
 	return &MetricsTracker{
-		client:       client,
-		apiKey:       apiKey,
-		userID:       userID,
-		deviceID:     deviceID,
-		props:        props,
-		botStartTime: botStartTime,
-		isDisabled:   isDisabled,
+		client:              client,
+		apiKey:              apiKey,
+		userID:              userID,
+		deviceID:            deviceID,
+		props:               props,
+		botStartTime:        botStartTime,
+		isDisabled:          isDisabled,
+		updateEventSentTime: botStartTime, // use botStartTime as the last event sent time since that makes sense as a default value
 	}, nil
 }
 
@@ -160,10 +162,13 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
 	commonProps := mt.props
 	commonProps.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
+
+	secondsSinceLastUpdateMetric := now.Sub(mt.updateEventSentTime).Seconds()
 	updateProps := updateProps{
-		commonProps:     commonProps,
-		Success:         success,
-		MillisForUpdate: millisForUpdate,
+		commonProps:                  commonProps,
+		Success:                      success,
+		MillisForUpdate:              millisForUpdate,
+		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
 	}
 	e := mt.sendEvent(updateEventName, updateProps)
 	if e != nil {
