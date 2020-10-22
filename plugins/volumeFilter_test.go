@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stellar/go/txnbuild"
+
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/postgresdb"
@@ -34,10 +36,12 @@ func connectTestDb() *sql.DB {
 	return db
 }
 
+var testNativeAsset hProtocol.Asset = hProtocol.Asset{Type: "native"}
+
 func TestMakeFilterVolume(t *testing.T) {
 	testAssetDisplayFn := model.AssetDisplayFn(func(asset model.Asset) (string, error) {
 		sdexAssetMap := map[model.Asset]hProtocol.Asset{
-			model.Asset("XLM"): hProtocol.Asset{Type: "native"},
+			model.Asset("XLM"): testNativeAsset,
 		}
 		assetString, ok := sdexAssetMap[asset]
 		if !ok {
@@ -46,7 +50,6 @@ func TestMakeFilterVolume(t *testing.T) {
 		return utils.Asset2String(assetString), nil
 	})
 
-	testNativeAsset := hProtocol.Asset{Type: "native"}
 	testEmptyVolumeConfig := &VolumeFilterConfig{}
 	db := connectTestDb()
 
@@ -224,4 +227,213 @@ func TestMakeFilterVolume(t *testing.T) {
 			assert.Equal(t, k.wantSubmitFilter, actual)
 		})
 	}
+}
+
+func TestVolumeFilterFn(t *testing.T) {
+	db := connectTestDb()
+	dailyVolumeByDateQuery, e := makeDailyVolumeByDateQuery(db, "", "native", "native", []string{}, []string{})
+	if e != nil {
+		t.Log("could not make empty config volume query")
+		return
+	}
+
+	emptyFilter := &volumeFilter{
+		name:                   "volumeFilter",
+		configValue:            "",
+		baseAsset:              testNativeAsset,
+		quoteAsset:             testNativeAsset,
+		config:                 &VolumeFilterConfig{},
+		dailyVolumeByDateQuery: dailyVolumeByDateQuery,
+	}
+
+	testCases := []struct {
+		name      string
+		filter    *volumeFilter
+		dailyOTB  *VolumeFilterConfig
+		dailyTBB  *VolumeFilterConfig
+		op        *txnbuild.ManageSellOffer
+		wantOp    *txnbuild.ManageSellOffer
+		wantError error
+		wantTBB   *VolumeFilterConfig
+	}{
+		{
+			name:      "failure - is selling",
+			filter:    emptyFilter,
+			dailyOTB:  nil,
+			dailyTBB:  nil,
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.CreditAsset{}},
+			wantOp:    nil,
+			wantError: fmt.Errorf("error when running the isSelling check for offer '{Selling:{Code: Issuer:} Buying:{} Amount: Price: OfferID:0 SourceAccount:<nil>}': invalid assets, there are more than 2 distinct assets: sdexBase={native  }, sdexQuote={native  }, selling={ }, buying={}"),
+			wantTBB:   nil,
+		},
+		{
+			name:      "failure - invalid sell price in op",
+			filter:    emptyFilter,
+			dailyOTB:  nil,
+			dailyTBB:  nil,
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}},
+			wantOp:    nil,
+			wantError: fmt.Errorf("could not convert price () to float: strconv.ParseFloat: parsing \"\": invalid syntax"),
+			wantTBB:   nil,
+		},
+		{
+			name:      "failure - invalid amount in op",
+			filter:    emptyFilter,
+			dailyOTB:  nil,
+			dailyTBB:  nil,
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "0.0"},
+			wantOp:    nil,
+			wantError: fmt.Errorf("could not convert amount () to float: strconv.ParseFloat: parsing \"\": invalid syntax"),
+			wantTBB:   nil,
+		},
+		{
+			name:      "failure - invalid amount in op",
+			filter:    emptyFilter,
+			dailyOTB:  nil,
+			dailyTBB:  nil,
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "0.0"},
+			wantOp:    nil,
+			wantError: fmt.Errorf("could not convert amount () to float: strconv.ParseFloat: parsing \"\": invalid syntax"),
+			wantTBB:   nil,
+		},
+		{
+			name:      "success - selling, no filter sell caps",
+			filter:    emptyFilter,
+			dailyOTB:  &VolumeFilterConfig{},
+			dailyTBB:  &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(0.0), SellBaseAssetCapInQuoteUnits: createFloat(0.0)},
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantError: nil,
+			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(100.0), SellBaseAssetCapInQuoteUnits: createFloat(100.0)},
+		},
+		{
+			name: "success - selling, base units sell cap, don't keep selling base",
+			filter: &volumeFilter{
+				name:                   "volumeFilter",
+				configValue:            "",
+				baseAsset:              testNativeAsset,
+				quoteAsset:             testNativeAsset,
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(0.0)},
+				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
+			},
+			dailyOTB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			dailyTBB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantOp:    nil,
+			wantError: nil,
+			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(0.0), SellBaseAssetCapInQuoteUnits: createFloat(0.0)},
+		},
+		{
+			name: "success - selling, base units sell cap, keep selling base",
+			filter: &volumeFilter{
+				name:                   "volumeFilter",
+				configValue:            "",
+				baseAsset:              testNativeAsset,
+				quoteAsset:             testNativeAsset,
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(1.0), mode: volumeFilterModeExact},
+				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
+			},
+			dailyOTB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			dailyTBB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "1.0000000"},
+			wantError: nil,
+			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(1.0), SellBaseAssetCapInQuoteUnits: createFloat(1.0)},
+		},
+		{
+			name: "success - selling, quote units sell cap, don't keep selling quote",
+			filter: &volumeFilter{
+				name:                   "volumeFilter",
+				configValue:            "",
+				baseAsset:              testNativeAsset,
+				quoteAsset:             testNativeAsset,
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInQuoteUnits: createFloat(0.0)},
+				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
+			},
+			dailyOTB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			dailyTBB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantOp:    nil,
+			wantError: nil,
+			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(0.0), SellBaseAssetCapInQuoteUnits: createFloat(0.0)},
+		},
+		{
+			name: "success - selling, quote units sell cap, keep selling quote",
+			filter: &volumeFilter{
+				name:                   "volumeFilter",
+				configValue:            "",
+				baseAsset:              testNativeAsset,
+				quoteAsset:             testNativeAsset,
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInQuoteUnits: createFloat(1.0), mode: volumeFilterModeExact},
+				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
+			},
+			dailyOTB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			dailyTBB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "1.0000000"},
+			wantError: nil,
+			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(1.0), SellBaseAssetCapInQuoteUnits: createFloat(1.0)},
+		},
+		{
+			name: "success - selling, base and quote units sell cap, keep selling base and quote",
+			filter: &volumeFilter{
+				name:                   "volumeFilter",
+				configValue:            "",
+				baseAsset:              testNativeAsset,
+				quoteAsset:             testNativeAsset,
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(1.0), SellBaseAssetCapInQuoteUnits: createFloat(1.0), mode: volumeFilterModeExact},
+				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
+			},
+			dailyOTB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			dailyTBB: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits:  createFloat(0.0),
+				SellBaseAssetCapInQuoteUnits: createFloat(0.0),
+			},
+			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
+			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "1.0000000"},
+			wantError: nil,
+			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloat(1.0), SellBaseAssetCapInQuoteUnits: createFloat(1.0)},
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			tbb := k.dailyTBB
+			actual, e := k.filter.volumeFilterFn(k.dailyOTB, tbb, k.op)
+			assert.Equal(t, k.wantError, e)
+			assert.Equal(t, k.wantOp, actual)
+			assert.Equal(t, k.wantTBB, tbb)
+		})
+	}
+}
+
+func createFloat(x float64) *float64 {
+	return &x
 }
