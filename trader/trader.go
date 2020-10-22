@@ -159,7 +159,11 @@ func (t *Trader) Start() {
 	}
 }
 
-func shouldSendUpdateMetric(start, currentUpdate, lastMetricUpdate time.Time) bool {
+func shouldSendUpdateMetric(start time.Time, currentUpdate time.Time, lastMetricUpdate *time.Time) bool {
+	if lastMetricUpdate == nil {
+		return true
+	}
+
 	timeFromStart := currentUpdate.Sub(start)
 	var refreshMetricInterval time.Duration
 	switch {
@@ -171,7 +175,7 @@ func shouldSendUpdateMetric(start, currentUpdate, lastMetricUpdate time.Time) bo
 		refreshMetricInterval = 1 * time.Hour
 	}
 
-	timeSinceLastUpdate := currentUpdate.Sub(lastMetricUpdate)
+	timeSinceLastUpdate := currentUpdate.Sub(*lastMetricUpdate)
 	return timeSinceLastUpdate >= refreshMetricInterval
 }
 
