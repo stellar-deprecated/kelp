@@ -51,6 +51,8 @@ type event struct {
 // TODO DS Add time to run update function as `millisForUpdate`.
 type commonProps struct {
 	CliVersion                       string  `json:"cli_version"`
+	GitHash                          string  `json:"git_hash"`
+	Env                              string  `json:"env"`
 	Goos                             string  `json:"goos"`
 	Goarch                           string  `json:"goarch"`
 	Goarm                            string  `json:"goarm"`
@@ -124,6 +126,8 @@ func MakeMetricsTracker(
 	client *http.Client,
 	botStartTime time.Time,
 	version string,
+	gitHash string,
+	env string,
 	goos string,
 	goarch string,
 	goarm string,
@@ -149,6 +153,8 @@ func MakeMetricsTracker(
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion:                       version,
+		GitHash:                          gitHash,
+		Env:                              env,
 		Goos:                             goos,
 		Goarch:                           goarch,
 		Goarm:                            goarm,

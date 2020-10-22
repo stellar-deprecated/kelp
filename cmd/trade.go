@@ -534,6 +534,8 @@ func runTradeCmd(options inputs) {
 		httpClient,
 		botStart,
 		version,
+		gitHash,
+		env,
 		runtime.GOOS,
 		runtime.GOARCH,
 		"unknown_todo", // TODO DS Determine how to get GOARM.
