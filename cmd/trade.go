@@ -160,7 +160,7 @@ func init() {
 	options.simMode = tradeCmd.Flags().Bool("sim", false, "simulate the bot's actions without placing any trades")
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
-	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not set X-App-Name and X-App-Version headers on requests to horizon")
+	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.ui = tradeCmd.Flags().Bool("ui", false, "indicates a bot that is started from the Kelp UI server")
 
 	requiredFlag("botConf")
@@ -544,6 +544,18 @@ func runTradeCmd(options inputs) {
 		botConfig.TradingPair(),
 		*options.noHeaders, // disable metrics if the CLI specified no headers
 		isTestnet,
+		botConfig.MaxTickDelayMillis,
+		botConfig.SubmitMode,
+		botConfig.DeleteCyclesThreshold,
+		botConfig.FillTrackerSleepMillis,
+		botConfig.FillTrackerDeleteCyclesThreshold,
+		botConfig.SynchronizeStateLoadEnable,
+		botConfig.SynchronizeStateLoadMaxRetries,
+		botConfig.DollarValueFeedBaseAsset != "" && botConfig.DollarValueFeedQuoteAsset != "",
+		botConfig.AlertType,
+		int(botConfig.MonitoringPort) != 0,
+		len(botConfig.Filters) > 0,
+		botConfig.PostgresDbConfig != nil,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
@@ -576,7 +588,7 @@ func runTradeCmd(options inputs) {
 
 		p := prefs.Make(prefsFilename)
 		if p.FirstTime() {
-			log.Printf("Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.\n")
+			log.Printf("Kelp sets the `X-App-Name` and `X-App-Version` headers on requests made to Horizon. These headers help us track overall Kelp usage, so that we can learn about general usage patterns and adapt Kelp to be more useful in the future. Kelp also uses Amplitude for metric tracking. These can be turned off using the `--no-headers` flag. See `kelp trade --help` for more information.\n")
 			e := p.SetNotFirstTime()
 			if e != nil {
 				l.Info("")
