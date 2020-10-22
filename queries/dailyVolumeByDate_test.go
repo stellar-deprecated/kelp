@@ -39,6 +39,7 @@ func connectTestDb() *sql.DB {
 
 func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 	testCases := []struct {
+		action                    DailyVolumeAction
 		queryByOptionalAccountIDs []string
 		wantYesterdayBase         float64
 		wantYesterdayQuote        float64
@@ -48,6 +49,17 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 		wantTomorrowQuote         float64
 	}{
 		{
+			// TODO add case for buy base/quote and add trade data in test below accordingly
+			// 	action:                    DailyVolumeActionBuy,
+			// 	queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
+			// 	wantYesterdayBase:         100.0,
+			// 	wantYesterdayQuote:        10.0,
+			// 	wantTodayBase:             207.0,
+			// 	wantTodayQuote:            21.83,
+			// 	wantTomorrowBase:          102.0,
+			// 	wantTomorrowQuote:         12.24,
+			// }, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,
@@ -56,6 +68,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          102.0,
 			wantTomorrowQuote:         12.24,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID1", "accountID2"}, // accountID1 and accountID2 are the only ones that exists
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,
@@ -64,6 +77,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          102.0,
 			wantTomorrowQuote:         12.24,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID1"}, // accountID1 has most of the entries
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,
@@ -72,6 +86,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          102.0,
 			wantTomorrowQuote:         12.24,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID2"}, //accountID2 has only one entry, which is for today
 			wantYesterdayBase:         0.0,
 			wantYesterdayQuote:        0.0,
@@ -80,6 +95,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          0.0,
 			wantTomorrowQuote:         0.0,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID3"}, //accountID3 does not exist
 			wantYesterdayBase:         0.0,
 			wantYesterdayQuote:        0.0,
@@ -196,7 +212,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			dailyVolumeByDateQuery, e := MakeDailyVolumeByDateForMarketIdsAction(
 				db,
 				[]string{"market1"},
-				"sell",
+				k.action,
 				k.queryByOptionalAccountIDs,
 			)
 			if !assert.NoError(t, e) {
