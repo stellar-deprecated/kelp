@@ -69,15 +69,15 @@ func makeFilterVolume(
 	if e != nil {
 		return nil, fmt.Errorf("could not convert base asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Base), e)
 	}
+
 	quoteAssetString, e := assetDisplayFn(tradingPair.Quote)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
 	}
-	marketID := MakeMarketID(exchangeName, baseAssetString, quoteAssetString)
-	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
-	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", config.optionalAccountIDs)
+
+	dailyVolumeByDateQuery, e := makeDailyVolumeByDateQuery(db, exchangeName, baseAssetString, quoteAssetString, config.optionalAccountIDs, config.additionalMarketIDs)
 	if e != nil {
-		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
+		return nil, fmt.Errorf("could not make daily volume by date query: %s", e)
 	}
 
 	return &volumeFilter{
@@ -88,6 +88,24 @@ func makeFilterVolume(
 		config:                 config,
 		dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 	}, nil
+}
+
+func makeDailyVolumeByDateQuery(
+	db *sql.DB,
+	exchangeName string,
+	baseAsset string,
+	quoteAsset string,
+	optionalAccountIDs []string,
+	additionalMarketIDs []string,
+) (*queries.DailyVolumeByDate, error) {
+	marketID := MakeMarketID(exchangeName, baseAsset, quoteAsset)
+	marketIDs := utils.Dedupe(append([]string{marketID}, additionalMarketIDs...))
+	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", optionalAccountIDs)
+	if e != nil {
+		return nil, fmt.Errorf("could not make daily volume by date action: %s", e)
+	}
+
+	return dailyVolumeByDateQuery, nil
 }
 
 var _ SubmitFilter = &volumeFilter{}
