@@ -69,7 +69,6 @@ func makeFilterVolume(
 	if e != nil {
 		return nil, fmt.Errorf("could not convert base asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Base), e)
 	}
-
 	quoteAssetString, e := assetDisplayFn(tradingPair.Quote)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
@@ -77,7 +76,7 @@ func makeFilterVolume(
 
 	dailyVolumeByDateQuery, e := makeDailyVolumeByDateQuery(db, exchangeName, baseAssetString, quoteAssetString, config.optionalAccountIDs, config.additionalMarketIDs)
 	if e != nil {
-		return nil, fmt.Errorf("could not make daily volume by date query: %s", e)
+		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
 	}
 
 	return &volumeFilter{
