@@ -129,7 +129,7 @@ func TestMakeFilterVolume(t *testing.T) {
 			quoteAsset:       testNativeAsset,
 			config:           &VolumeFilterConfig{},
 			db:               nil,
-			wantError:        fmt.Errorf("could not make daily volume by date query: could not make daily volume by date action: the provided db should be non-nil"),
+			wantError:        fmt.Errorf("could not make daily volume by date Query: could not make daily volume by date action: the provided db should be non-nil"),
 			wantSubmitFilter: nil,
 		},
 		{
