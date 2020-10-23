@@ -232,11 +232,20 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 // SendUpdateEvent sends the update Amplitude event.
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
 	mt.props.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
-	updateProps := updateProps{
-		Success:         success,
-		MillisForUpdate: millisForUpdate,
-    SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
+
+	var secondsSinceLastUpdateMetric float64
+	if mt.updateEventSentTime == nil {
+		secondsSinceLastUpdateMetric = mt.props.SecondsSinceStart
+	} else {
+		secondsSinceLastUpdateMetric = now.Sub(*mt.updateEventSentTime).Seconds()
 	}
+
+	updateProps := updateProps{
+		Success:                      success,
+		MillisForUpdate:              millisForUpdate,
+		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
+	}
+
 	e := mt.SendEvent(updateEventName, updateProps)
 	if e != nil {
 		return fmt.Errorf("could not send update event: %s", e)
