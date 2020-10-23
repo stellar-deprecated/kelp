@@ -538,6 +538,7 @@ func runTradeCmd(options inputs) {
 		env,
 		runtime.GOOS,
 		runtime.GOARCH,
+		runtime.Version(),
 		"unknown_todo", // TODO DS Determine how to get GOARM.
 		guiVersionFlag,
 		*options.strategy,
@@ -558,6 +559,11 @@ func runTradeCmd(options inputs) {
 		int(botConfig.MonitoringPort) != 0,
 		len(botConfig.Filters) > 0,
 		botConfig.PostgresDbConfig != nil,
+		*options.operationalBuffer,
+		*options.operationalBufferNonNativePct,
+		*options.simMode,
+		*options.logPrefix,
+		*options.fixedIterations,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
