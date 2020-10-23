@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
-## [v1.10.0] - 2020-10-20
+## [v1.10.0] - 2020-10-22
 
 ### Added
 
@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Kelp GUI: make pubnet bots available with a single boolean switch ([#475](https://github.com/stellar/kelp/issues/475))
 - Add link to PR with new trading template ([#453](https://github.com/stellar/kelp/issues/453))
 - Mirror Strategy: track orders triggered on backingExchange by trades on primaryExchange ([#503](https://github.com/stellar/kelp/issues/503))
-- Set up CLI data tracking ([#478](https://github.com/stellar/kelp/issues/478) [#516](https://github.com/stellar/kelp/issues/516), [539](https://github.com/stellar/kelp/issues/539))
+- Set up CLI data tracking ([#478](https://github.com/stellar/kelp/issues/478), [#516](https://github.com/stellar/kelp/issues/516), [539](https://github.com/stellar/kelp/issues/539), [96bd33d3e6bae5de3bd96361eeb1e195ece55f89](https://github.com/stellar/kelp/commit/96bd33d3e6bae5de3bd96361eeb1e195ece55f89), [84e258208cbae8df6ba6f93e35340351ac58cbba](https://github.com/stellar/kelp/commit/96bd33d3e6bae5de3bd96361eeb1e195ece55f89), [6da8ddc642e9f0112bb20064ada554a7a099f7aa](https://github.com/stellar/kelp/commit/96bd33d3e6bae5de3bd96361eeb1e195ece55f89))
 - ccxtExchange should allow fetching binance orderbook with limits between the hardcoded binance limits ([#528](https://github.com/stellar/kelp/issues/528) and [00508f6277f164b58f13fab0ed2e41e9e4241ea7](https://github.com/stellar/kelp/commit/00508f6277f164b58f13fab0ed2e41e9e4241ea7))
 - Simple Integration tests in CircleCI ([#51](https://github.com/stellar/kelp/issues/51))
 

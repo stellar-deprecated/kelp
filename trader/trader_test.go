@@ -236,8 +236,14 @@ func TestShouldSendUpdateMetric(t *testing.T) {
 	}
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
-			actual := shouldSendUpdateMetric(k.start, k.currentUpdate, k.lastMetricUpdate)
+			actual := shouldSendUpdateMetric(k.start, k.currentUpdate, &k.lastMetricUpdate)
 			assert.Equal(t, k.wantShouldSendMetric, actual)
 		})
 	}
+}
+
+func TestShouldSendUpdateMetric_NilLastMetricUpdate(t *testing.T) {
+	now := time.Now()
+	shouldUpdate := shouldSendUpdateMetric(now, now, nil)
+	assert.Equal(t, true, shouldUpdate)
 }
