@@ -24,10 +24,24 @@ func TestTransformOrders(t *testing.T) {
 			Price:       model.NumberFromFloat(1.15, 6),
 			Volume:      model.NumberFromFloat(1.5123, 5),
 		},
+		// amounts above capped
+		{
+			Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+			OrderAction: model.OrderActionBuy,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(0.15, 6),
+			Volume:      model.NumberFromFloat(80.0, 5),
+		}, {
+			Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+			OrderAction: model.OrderActionSell,
+			OrderType:   model.OrderTypeLimit,
+			Price:       model.NumberFromFloat(1.15, 6),
+			Volume:      model.NumberFromFloat(151.23, 5),
+		},
 	}
 
 	// run
-	transformOrders(orders, 0.90, 0.25)
+	transformOrders(orders, 0.90, 0.25, 15.0)
 
 	// validate
 	order := orders[0]
@@ -42,6 +56,18 @@ func TestTransformOrders(t *testing.T) {
 	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
 	assert.Equal(t, model.NumberFromFloat(1.035, 6), order.Price)
 	assert.Equal(t, model.NumberFromFloat(0.37808, 5), order.Volume) // round up
+	order = orders[2]
+	assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
+	assert.Equal(t, model.OrderActionBuy, order.OrderAction)
+	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
+	assert.Equal(t, model.NumberFromFloat(0.135, 6), order.Price)
+	assert.Equal(t, model.NumberFromFloat(15.0, 5), order.Volume)
+	order = orders[3]
+	assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
+	assert.Equal(t, model.OrderActionSell, order.OrderAction)
+	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
+	assert.Equal(t, model.NumberFromFloat(1.035, 6), order.Price)
+	assert.Equal(t, model.NumberFromFloat(15.0, 5), order.Volume)
 }
 
 func TestBalanceCoordinatorCheckBalance(t *testing.T) {

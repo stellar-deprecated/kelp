@@ -422,12 +422,12 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if s.bidVolumeDivideBy == -1.0 {
 		bids = []model.Order{}
 	} else {
-		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy))
+		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maxOrderBaseCap)
 	}
 	if s.askVolumeDivideBy == -1.0 {
 		asks = []model.Order{}
 	} else {
-		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy))
+		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maxOrderBaseCap)
 	}
 	log.Printf("new orders (orderbook after transformations):\n")
 	printBidsAndAsks(bids, asks)
@@ -490,10 +490,13 @@ func (s *mirrorStrategy) UpdateWithOps(
 	return api.ConvertOperation2TM(ops), nil
 }
 
-func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64) {
+func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64, maxVolumeCap float64) {
 	for _, o := range orders {
 		*o.Price = *o.Price.Scale(priceMultiplier)
 		*o.Volume = *o.Volume.Scale(volumeMultiplier)
+		if o.Volume.AsFloat() > maxVolumeCap {
+			*o.Volume = *model.NumberFromFloat(maxVolumeCap, o.Volume.Precision())
+		}
 	}
 }
 
