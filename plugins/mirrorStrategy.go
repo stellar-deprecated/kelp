@@ -33,6 +33,7 @@ type mirrorConfig struct {
 	VolumeDivideByDeprecated *float64 `valid:"-" toml:"VOLUME_DIVIDE_BY" deprecated:"true"`
 	BidVolumeDivideBy        *float64 `valid:"-" toml:"BID_VOLUME_DIVIDE_BY"`
 	AskVolumeDivideBy        *float64 `valid:"-" toml:"ASK_VOLUME_DIVIDE_BY"`
+	MaxOrderBaseCap          float64  `valid:"-" toml:"MAX_ORDER_BASE_CAP"`
 	PerLevelSpread           float64  `valid:"-" toml:"PER_LEVEL_SPREAD"`
 	PricePrecisionOverride   *int8    `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	VolumePrecisionOverride  *int8    `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
@@ -89,6 +90,7 @@ type mirrorStrategy struct {
 	perLevelSpread                        float64
 	bidVolumeDivideBy                     float64
 	askVolumeDivideBy                     float64
+	maxOrderBaseCap                       float64
 	exchange                              api.Exchange
 	offsetTrades                          bool
 	mutex                                 *sync.Mutex
@@ -166,6 +168,11 @@ func makeMirrorStrategy(
 	if askVolumeDivideBy != -1.0 && askVolumeDivideBy <= 0 {
 		utils.PrintErrorHintf("need to set a valid value for ASK_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
 		return nil, fmt.Errorf("invalid mirror strategy config file, ASK_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
+	}
+
+	if config.MaxOrderBaseCap < 0.0 {
+		utils.PrintErrorHintf("need to set a valid value for MAX_ORDER_BASE_CAP, needs to be >= 0.0")
+		return nil, fmt.Errorf("invalid mirror strategy config file, MAX_ORDER_BASE_CAP needs to be >= 0.0")
 	}
 
 	var exchange api.Exchange
@@ -313,6 +320,7 @@ func makeMirrorStrategy(
 		perLevelSpread:                        config.PerLevelSpread,
 		bidVolumeDivideBy:                     bidVolumeDivideBy,
 		askVolumeDivideBy:                     askVolumeDivideBy,
+		maxOrderBaseCap:                       config.MaxOrderBaseCap,
 		exchange:                              exchange,
 		offsetTrades:                          config.OffsetTrades,
 		mutex:                                 &sync.Mutex{},
