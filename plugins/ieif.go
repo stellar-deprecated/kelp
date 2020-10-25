@@ -237,11 +237,11 @@ func (ieif *IEIF) pairLiabilities(asset hProtocol.Asset, otherAsset hProtocol.As
 // liabilities returns the asset liabilities and pairLiabilities (non-nil only if the other asset is specified)
 func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
 	// uses all offers for this trading account to accommodate sharing by other bots
-	offers, err := ieif.exchangeShim.LoadOffersHack()
-	if err != nil {
+	offers, e := ieif.exchangeShim.LoadOffersHack()
+	if e != nil {
 		assetString := utils.Asset2String(asset)
-		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
-		return nil, nil, err
+		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, e)
+		return nil, nil, e
 	}
 
 	// liabilities for the asset
@@ -250,9 +250,9 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 	pairLiabilities := Liabilities{}
 	for _, offer := range offers {
 		if offer.Selling == asset {
-			offerAmt, err := utils.ParseOfferAmount(offer.Amount)
-			if err != nil {
-				return nil, nil, err
+			offerAmt, e := utils.ParseOfferAmount(offer.Amount)
+			if e != nil {
+				return nil, nil, e
 			}
 			liabilities.Selling += offerAmt
 
@@ -260,13 +260,13 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 				pairLiabilities.Selling += offerAmt
 			}
 		} else if offer.Buying == asset {
-			offerAmt, err := utils.ParseOfferAmount(offer.Amount)
-			if err != nil {
-				return nil, nil, err
+			offerAmt, e := utils.ParseOfferAmount(offer.Amount)
+			if e != nil {
+				return nil, nil, e
 			}
-			offerPrice, err := utils.ParseOfferAmount(offer.Price)
-			if err != nil {
-				return nil, nil, err
+			offerPrice, e := utils.ParseOfferAmount(offer.Price)
+			if e != nil {
+				return nil, nil, e
 			}
 			buyingAmount := offerAmt * offerPrice
 			liabilities.Buying += buyingAmount
