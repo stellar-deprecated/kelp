@@ -240,8 +240,7 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 	offers, e := ieif.exchangeShim.LoadOffersHack()
 	if e != nil {
 		assetString := utils.Asset2String(asset)
-		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, e)
-		return nil, nil, e
+		return nil, nil, fmt.Errorf("cannot load offers to compute liabilities for asset (%s): %s", assetString, e)
 	}
 
 	// liabilities for the asset
@@ -252,7 +251,7 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 		if offer.Selling == asset {
 			offerAmt, e := utils.ParseOfferAmount(offer.Amount)
 			if e != nil {
-				return nil, nil, e
+				return nil, nil, fmt.Errorf("unable to parse offer amount '%s': %s", offer.Amount, e)
 			}
 			liabilities.Selling += offerAmt
 
@@ -262,11 +261,11 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 		} else if offer.Buying == asset {
 			offerAmt, e := utils.ParseOfferAmount(offer.Amount)
 			if e != nil {
-				return nil, nil, e
+				return nil, nil, fmt.Errorf("unable to parse offer amount '%s': %s", offer.Amount, e)
 			}
 			offerPrice, e := utils.ParseOfferAmount(offer.Price)
 			if e != nil {
-				return nil, nil, e
+				return nil, nil, fmt.Errorf("unable to parse offer price '%s': %s", offer.Price, e)
 			}
 			buyingAmount := offerAmt * offerPrice
 			liabilities.Buying += buyingAmount
