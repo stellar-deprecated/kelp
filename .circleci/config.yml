@@ -55,6 +55,18 @@ commands:
           name: Run Kelp tests
           command: go test --short -ldflags="-X github.com/stellar/kelp/cmd.version=test_compile -X github.com/stellar/kelp/cmd.guiVersion=test_compile -X github.com/stellar/kelp/cmd.gitBranch=test_compile -X github.com/stellar/kelp/cmd.gitHash=test_compile -X github.com/stellar/kelp/cmd.buildDate=test_compile -X github.com/stellar/kelp/cmd.env=dev" ./...
 
+  replace_trader_secret:
+    steps:
+      - run:
+          name: Replace Trader Secret
+          command: sed -i -e 's/SAOQ6IG2WWDEP47WEJNLIU27OBODMEWFDN6PVUR5KHYDOCVCL34J2CUD/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
+
+  replace_source_secret:
+    steps:
+      - run:
+          name: Replace Source Secret
+          command: sed -i -e 's/SDDAHRX2JB663N3OLKZIBZPF33ZEKMHARX362S737JEJS2AX3GJZY5LU/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
+
   test_kelp__integration_delete:
     steps:
       - run:
@@ -106,6 +118,8 @@ jobs:
       # don't list sell_twap strategy for now because it requires a db to be enabled in sample_trader.cfg
       - install_deps
       - build_kelp
+      - replace_trader_secret
+      - replace_source_secret
       # delete once before we start our set of tests, don't delete in between tests because of rate limit issues
       - test_kelp__integration_delete
       - test_kelp__integration_buysell
