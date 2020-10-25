@@ -458,7 +458,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 	}
 	log.Printf("num. sellOps in this update: %d\n", len(sellOps))
 
-	placeSellOpsFirst := len(ob.Bids()) > 0 && len(sellingAOffers) > 0 && ob.Bids()[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price)
+	placeSellOpsFirst := len(bids) > 0 && len(sellingAOffers) > 0 && bids[0].Price.AsFloat() >= utils.PriceAsFloat(sellingAOffers[0].Price)
 	if debugLogOffersOrders {
 		if placeSellOpsFirst {
 			log.Printf("---> passed placeSellOpsFirst condition where top bid (bids[0]) > first open ask offer (sellingAOffers[0]), placing sellOps first\n")
