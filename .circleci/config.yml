@@ -59,13 +59,13 @@ commands:
     steps:
       - run:
           name: Replace Trader Secret
-          command: sed -i '' 's/SAOQ6IG2WWDEP47WEJNLIU27OBODMEWFDN6PVUR5KHYDOCVCL34J2CUD/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
+          command: sed -i -e 's/SAOQ6IG2WWDEP47WEJNLIU27OBODMEWFDN6PVUR5KHYDOCVCL34J2CUD/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
 
   replace_source_secret:
     steps:
       - run:
           name: Replace Source Secret
-          command: sed -i '' 's/SDDAHRX2JB663N3OLKZIBZPF33ZEKMHARX362S737JEJS2AX3GJZY5LU/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
+          command: sed -i -e 's/SDDAHRX2JB663N3OLKZIBZPF33ZEKMHARX362S737JEJS2AX3GJZY5LU/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
 
   test_kelp__integration_delete:
     steps:
