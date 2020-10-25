@@ -67,6 +67,12 @@ commands:
           name: Replace Source Secret
           command: sed -i -e 's/SDDAHRX2JB663N3OLKZIBZPF33ZEKMHARX362S737JEJS2AX3GJZY5LU/SCNWRBLLRCPKKMFTDBU2JN6DWOLJ42FGOQHVF62FMXRQRI7HEERAAO2B/' examples/configs/trader/sample_trader.cfg
 
+  replace_quote_asset:
+    steps:
+      - run:
+          name: Replace Quote Asset
+          command: sed -i -e 's/COUPON/CITEST/' examples/configs/trader/sample_trader.cfg
+
   test_kelp__integration_delete:
     steps:
       - run:
@@ -120,6 +126,7 @@ jobs:
       - build_kelp
       - replace_trader_secret
       - replace_source_secret
+      - replace_quote_asset
       # delete once before we start our set of tests, don't delete in between tests because of rate limit issues
       - test_kelp__integration_delete
       - test_kelp__integration_buysell
