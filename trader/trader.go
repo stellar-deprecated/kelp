@@ -124,8 +124,9 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
+			millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
+			log.Printf("time taken for update loop: %d millis\n", millisForUpdate)
 			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, t.metricsTracker.GetUpdateEventSentTime()) {
-				millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
 					if e != nil {
