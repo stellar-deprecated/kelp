@@ -494,7 +494,7 @@ func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultip
 	for _, o := range orders {
 		*o.Price = *o.Price.Scale(priceMultiplier)
 		*o.Volume = *o.Volume.Scale(volumeMultiplier)
-		if o.Volume.AsFloat() > maxVolumeCap {
+		if maxVolumeCap > 0.0 && o.Volume.AsFloat() > maxVolumeCap {
 			*o.Volume = *model.NumberFromFloat(maxVolumeCap, o.Volume.Precision())
 		}
 	}
