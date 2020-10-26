@@ -9,39 +9,98 @@ import (
 )
 
 func TestTransformOrders(t *testing.T) {
-	// setup
-	orders := []model.Order{
+	testCases := []struct {
+		name             string
+		inputPrice       *model.Number
+		inputVolume      *model.Number
+		orderAction      model.OrderAction
+		priceMultiplier  float64
+		volumeMultiplier float64
+		maxVolumeBaseCap float64
+		wantPrice        *model.Number
+		wantVolume       *model.Number
+	}{
 		{
-			Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
-			OrderAction: model.OrderActionBuy,
-			OrderType:   model.OrderTypeLimit,
-			Price:       model.NumberFromFloat(0.15, 6),
-			Volume:      model.NumberFromFloat(51.5, 5),
+			name:             "buy below capped",
+			inputPrice:       model.NumberFromFloat(0.15, 6),
+			inputVolume:      model.NumberFromFloat(51.5, 5),
+			orderAction:      model.OrderActionBuy,
+			priceMultiplier:  0.90,
+			volumeMultiplier: 0.25,
+			maxVolumeBaseCap: 15.0,
+			wantPrice:        model.NumberFromFloat(0.135, 6),
+			wantVolume:       model.NumberFromFloat(12.875, 5),
 		}, {
-			Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
-			OrderAction: model.OrderActionSell,
-			OrderType:   model.OrderTypeLimit,
-			Price:       model.NumberFromFloat(1.15, 6),
-			Volume:      model.NumberFromFloat(1.5123, 5),
+			name:             "sell below capped",
+			inputPrice:       model.NumberFromFloat(1.15, 6),
+			inputVolume:      model.NumberFromFloat(1.5123, 5),
+			orderAction:      model.OrderActionSell,
+			priceMultiplier:  0.90,
+			volumeMultiplier: 0.25,
+			maxVolumeBaseCap: 15.0,
+			wantPrice:        model.NumberFromFloat(1.035, 6),
+			wantVolume:       model.NumberFromFloat(0.37808, 5), // round up
+		}, {
+			name:             "buy above capped",
+			inputPrice:       model.NumberFromFloat(0.15, 6),
+			inputVolume:      model.NumberFromFloat(80.0, 5),
+			orderAction:      model.OrderActionBuy,
+			priceMultiplier:  0.90,
+			volumeMultiplier: 0.25,
+			maxVolumeBaseCap: 15.0,
+			wantPrice:        model.NumberFromFloat(0.135, 6),
+			wantVolume:       model.NumberFromFloat(15.0, 5),
+		}, {
+			name:             "sell above capped",
+			inputPrice:       model.NumberFromFloat(1.15, 6),
+			inputVolume:      model.NumberFromFloat(151.23, 5),
+			orderAction:      model.OrderActionSell,
+			priceMultiplier:  0.90,
+			volumeMultiplier: 0.25,
+			maxVolumeBaseCap: 15.0,
+			wantPrice:        model.NumberFromFloat(1.035, 6),
+			wantVolume:       model.NumberFromFloat(15.0, 5),
+		}, {
+			name:             "buy with 0 cap",
+			inputPrice:       model.NumberFromFloat(0.15, 6),
+			inputVolume:      model.NumberFromFloat(80.0, 5),
+			orderAction:      model.OrderActionBuy,
+			priceMultiplier:  0.90,
+			volumeMultiplier: 0.25,
+			maxVolumeBaseCap: 0.0,
+			wantPrice:        model.NumberFromFloat(0.135, 6),
+			wantVolume:       model.NumberFromFloat(20.0, 5),
+		}, {
+			name:             "sell with 0 cap",
+			inputPrice:       model.NumberFromFloat(1.15, 6),
+			inputVolume:      model.NumberFromFloat(151.23, 5),
+			orderAction:      model.OrderActionSell,
+			priceMultiplier:  0.90,
+			volumeMultiplier: 0.25,
+			maxVolumeBaseCap: 0.0,
+			wantPrice:        model.NumberFromFloat(1.035, 6),
+			wantVolume:       model.NumberFromFloat(37.8075, 5),
 		},
 	}
 
-	// run
-	transformOrders(orders, 0.90, 0.25)
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			order := model.Order{
+				Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+				OrderAction: k.orderAction,
+				OrderType:   model.OrderTypeLimit,
+				Price:       k.inputPrice,
+				Volume:      k.inputVolume,
+			}
+			transformOrders([]model.Order{order}, k.priceMultiplier, k.volumeMultiplier, k.maxVolumeBaseCap)
 
-	// validate
-	order := orders[0]
-	assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
-	assert.Equal(t, model.OrderActionBuy, order.OrderAction)
-	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
-	assert.Equal(t, model.NumberFromFloat(0.135, 6), order.Price)
-	assert.Equal(t, model.NumberFromFloat(12.875, 5), order.Volume)
-	order = orders[1]
-	assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
-	assert.Equal(t, model.OrderActionSell, order.OrderAction)
-	assert.Equal(t, model.OrderTypeLimit, order.OrderType)
-	assert.Equal(t, model.NumberFromFloat(1.035, 6), order.Price)
-	assert.Equal(t, model.NumberFromFloat(0.37808, 5), order.Volume) // round up
+			assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
+			assert.Equal(t, k.orderAction, order.OrderAction)
+			assert.Equal(t, model.OrderTypeLimit, order.OrderType)
+			assert.Equal(t, k.wantPrice, order.Price)
+			assert.Equal(t, k.wantVolume, order.Volume)
+		})
+	}
 }
 
 func TestBalanceCoordinatorCheckBalance(t *testing.T) {

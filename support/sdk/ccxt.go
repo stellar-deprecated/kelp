@@ -226,6 +226,11 @@ func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam
 
 // symbolExists returns an error if the symbol does not exist
 func (c *Ccxt) symbolExists(tradingPair string) error {
+	if _, ok := c.markets[tradingPair]; ok {
+		log.Printf("found trading pair symbol '%s' in markets map", tradingPair)
+		return nil
+	}
+
 	// get list of symbols available on exchange
 	url := ccxtBaseURL + pathExchanges + "/" + c.exchangeName + "/" + c.instanceName
 	// decode generic data (see "https://blog.golang.org/json-and-go#TOC_4.")
