@@ -365,7 +365,18 @@ func mergeEventProps(commonProps, eventProps map[string]interface{}) (map[string
 }
 
 func toMapStringInterface(v interface{}) (map[string]interface{}, error) {
-	m, ok := v.(map[string]interface{})
+	b, e := json.Marshal(v)
+	if e != nil {
+		return nil, fmt.Errorf("could not marshal interface to json: %s", e)
+	}
+
+	var i interface{}
+	e = json.Unmarshal(b, &i)
+	if e != nil {
+		return nil, fmt.Errorf("could not unmarshal json to interface: %s", e)
+	}
+
+	m, ok := i.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("could not create map[string]interface{}")
 	}
