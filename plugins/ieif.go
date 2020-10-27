@@ -73,15 +73,20 @@ func (ieif *IEIF) RecomputeAndLogCachedLiabilities(assetBase hProtocol.Asset, as
 
 // ResetCachedLiabilities resets the cache to include only the two assets passed in
 func (ieif *IEIF) ResetCachedLiabilities(assetBase hProtocol.Asset, assetQuote hProtocol.Asset) error {
-	// re-compute the liabilities
 	ieif.cachedLiabilities = map[hProtocol.Asset]Liabilities{}
-	baseLiabilities, basePairLiabilities, e := ieif.pairLiabilities(assetBase, assetQuote)
+
+	// re-compute the liabilities
+	offers, e := ieif.exchangeShim.LoadOffersHack()
 	if e != nil {
-		return e
+		return fmt.Errorf("cannot load offers when trying to reset cached liabilities: %s", e)
 	}
-	quoteLiabilities, quotePairLiabilities, e := ieif.pairLiabilities(assetQuote, assetBase)
+	baseLiabilities, basePairLiabilities, e := ieif.pairLiabilities(offers, assetBase, assetQuote)
 	if e != nil {
-		return e
+		return fmt.Errorf("could not get pairLiabilities for base asset: %s", e)
+	}
+	quoteLiabilities, quotePairLiabilities, e := ieif.pairLiabilities(offers, assetQuote, assetBase)
+	if e != nil {
+		return fmt.Errorf("could not get pairLiabilities for quote asset: %s", e)
 	}
 
 	// delete liability amounts related to all offers (filter on only those offers involving **both** assets in case the account is used by multiple bots)
@@ -224,25 +229,25 @@ func (ieif *IEIF) assetLiabilities(asset hProtocol.Asset) (*Liabilities, error) 
 		return &v, nil
 	}
 
-	assetLiabilities, _, e := ieif._liabilities(asset, asset) // pass in the same asset, we ignore the returned object anyway
+	offers, e := ieif.exchangeShim.LoadOffersHack()
+	if e != nil {
+		assetString := utils.Asset2String(asset)
+		return nil, fmt.Errorf("cannot load offers to compute liabilities for asset (%s): %s", assetString, e)
+	}
+
+	assetLiabilities, _, e := ieif._liabilities(offers, asset, asset) // pass in the same asset, we ignore the returned object anyway
 	return assetLiabilities, e
 }
 
 // pairLiabilities returns the liabilities for the asset along with the pairLiabilities
-func (ieif *IEIF) pairLiabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
-	assetLiabilities, pairLiabilities, e := ieif._liabilities(asset, otherAsset)
+func (ieif *IEIF) pairLiabilities(offers []hProtocol.Offer, asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
+	assetLiabilities, pairLiabilities, e := ieif._liabilities(offers, asset, otherAsset)
 	return assetLiabilities, pairLiabilities, e
 }
 
 // liabilities returns the asset liabilities and pairLiabilities (non-nil only if the other asset is specified)
-func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
+func (ieif *IEIF) _liabilities(offers []hProtocol.Offer, asset hProtocol.Asset, otherAsset hProtocol.Asset) (*Liabilities, *Liabilities, error) {
 	// uses all offers for this trading account to accommodate sharing by other bots
-	offers, err := ieif.exchangeShim.LoadOffersHack()
-	if err != nil {
-		assetString := utils.Asset2String(asset)
-		log.Printf("error: cannot load offers to compute liabilities for asset (%s): %s\n", assetString, err)
-		return nil, nil, err
-	}
 
 	// liabilities for the asset
 	liabilities := Liabilities{}
@@ -250,9 +255,9 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 	pairLiabilities := Liabilities{}
 	for _, offer := range offers {
 		if offer.Selling == asset {
-			offerAmt, err := utils.ParseOfferAmount(offer.Amount)
-			if err != nil {
-				return nil, nil, err
+			offerAmt, e := utils.ParseOfferAmount(offer.Amount)
+			if e != nil {
+				return nil, nil, fmt.Errorf("unable to parse offer amount '%s': %s", offer.Amount, e)
 			}
 			liabilities.Selling += offerAmt
 
@@ -260,13 +265,13 @@ func (ieif *IEIF) _liabilities(asset hProtocol.Asset, otherAsset hProtocol.Asset
 				pairLiabilities.Selling += offerAmt
 			}
 		} else if offer.Buying == asset {
-			offerAmt, err := utils.ParseOfferAmount(offer.Amount)
-			if err != nil {
-				return nil, nil, err
+			offerAmt, e := utils.ParseOfferAmount(offer.Amount)
+			if e != nil {
+				return nil, nil, fmt.Errorf("unable to parse offer amount '%s': %s", offer.Amount, e)
 			}
-			offerPrice, err := utils.ParseOfferAmount(offer.Price)
-			if err != nil {
-				return nil, nil, err
+			offerPrice, e := utils.ParseOfferAmount(offer.Price)
+			if e != nil {
+				return nil, nil, fmt.Errorf("unable to parse offer price '%s': %s", offer.Price, e)
 			}
 			buyingAmount := offerAmt * offerPrice
 			liabilities.Buying += buyingAmount
