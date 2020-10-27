@@ -563,7 +563,7 @@ func runTradeCmd(options inputs) {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
 	}
 
-	e = metricsTracker.SendStartupEvent()
+	e = metricsTracker.SendStartupEvent(time.Now())
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not send startup event metric: %s", e))
 	}

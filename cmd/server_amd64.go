@@ -307,10 +307,14 @@ func init() {
 				httpClient,
 				time.Now(), // TODO: Find proper time.
 				version,
+				gitHash,
+				env,
 				runtime.GOOS,
 				runtime.GOARCH,
 				"unknown_todo", // TODO DS Determine how to get GOARM.
-				guiVersion,     // TODO DS Determine how to get GUI version flag.
+				guiVersion,
+				*options.noHeaders, // disable metrics if the CLI specified no headers
+
 			)
 			if e != nil {
 				panic(e)
