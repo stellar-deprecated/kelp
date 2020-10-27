@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 type sendMetricEventRequest struct {
@@ -32,7 +33,8 @@ func (s *APIServer) sendMetricEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e = s.metricsTracker.SendEvent(req.EventName, req.EventProps)
+	// TODO DS Properly extract and compute time for SendEvent
+	e = s.metricsTracker.SendEvent(req.EventName, req.EventProps, time.Now())
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error sending gui event %s: %s", req.EventName, e))
 		return
