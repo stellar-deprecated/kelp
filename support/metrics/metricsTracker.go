@@ -352,7 +352,7 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 }
 
 func mergeEventProps(commonProps, eventProps map[string]interface{}) (map[string]interface{}, error) {
-	var m map[string]interface{}
+	m := make(map[string]interface{})
 	for k, v := range commonProps {
 		m[k] = v
 	}
