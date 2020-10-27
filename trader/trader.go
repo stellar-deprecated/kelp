@@ -124,8 +124,9 @@ func (t *Trader) Start() {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			success := t.update()
+			millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
+			log.Printf("time taken for update loop: %d millis\n", millisForUpdate)
 			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, t.metricsTracker.GetUpdateEventSentTime()) {
-				millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
 					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
 					if e != nil {
@@ -399,19 +400,19 @@ func (t *Trader) update() bool {
 			t.deleteAllOffers(false)
 			return false
 		}
-	}
 
-	// TODO 2 streamline the request data instead of caching
-	// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
-	t.sdex.IEIF().ResetCachedBalances()
-	// reset and recompute cached liabilities for this update cycle
-	e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
-	log.Printf("liabilities after resetting\n")
-	t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
-	if e != nil {
-		log.Println(e)
-		t.deleteAllOffers(false)
-		return false
+		// TODO 2 streamline the request data instead of caching - may not need this since result of PruneOps is async
+		// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
+		t.sdex.IEIF().ResetCachedBalances()
+		// reset and recompute cached liabilities for this update cycle
+		e = t.sdex.IEIF().ResetCachedLiabilities(t.assetBase, t.assetQuote)
+		log.Printf("liabilities after resetting\n")
+		t.sdex.IEIF().LogAllLiabilities(t.assetBase, t.assetQuote)
+		if e != nil {
+			log.Println(e)
+			t.deleteAllOffers(false)
+			return false
+		}
 	}
 
 	opsOld, e := t.strategy.UpdateWithOps(t.buyingAOffers, t.sellingAOffers)

@@ -9,6 +9,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -106,6 +107,8 @@ type inputs struct {
 	fixedIterations               *uint64
 	noHeaders                     *bool
 	ui                            *bool
+	cpuProfile                    *string
+	memProfile                    *string
 }
 
 func validateCliParams(l logger.Logger, options inputs) {
@@ -162,6 +165,8 @@ func init() {
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.ui = tradeCmd.Flags().Bool("ui", false, "indicates a bot that is started from the Kelp UI server")
+	options.cpuProfile = tradeCmd.Flags().String("cpuprofile", "", "write cpu profile to `file`")
+	options.memProfile = tradeCmd.Flags().String("memprofile", "", "write memory profile to `file`")
 
 	requiredFlag("botConf")
 	requiredFlag("strategy")
@@ -171,7 +176,42 @@ func init() {
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
+		// TODO NS - profiling fails if we call os.Exit
+		if *options.cpuProfile != "" {
+			f, e := os.Create(*options.cpuProfile)
+			if e != nil {
+				log.Fatal("could not create CPU profile: ", e)
+			}
+			defer func() {
+				e := f.Close()
+				if e != nil {
+					log.Fatalf("could not close file: %s", e)
+				}
+			}()
+			if e := pprof.StartCPUProfile(f); e != nil {
+				log.Fatal("could not start CPU profile: ", e)
+			}
+			defer pprof.StopCPUProfile()
+		}
+
 		runTradeCmd(options)
+
+		if *options.memProfile != "" {
+			f, e := os.Create(*options.memProfile)
+			if e != nil {
+				log.Fatal("could not create memory profile: ", e)
+			}
+			defer func() {
+				e := f.Close()
+				if e != nil {
+					log.Fatalf("could not close file: %s", e)
+				}
+			}()
+			runtime.GC() // get up-to-date statistics
+			if e := pprof.WriteHeapProfile(f); e != nil {
+				log.Fatal("could not write memory profile: ", e)
+			}
+		}
 	}
 }
 
