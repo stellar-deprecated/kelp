@@ -538,8 +538,8 @@ func runTradeCmd(options inputs) {
 		env,
 		runtime.GOOS,
 		runtime.GOARCH,
-		runtime.Version(),
 		"unknown_todo", // TODO DS Determine how to get GOARM.
+		runtime.Version(),
 		guiVersionFlag,
 		*options.strategy,
 		botConfig.TickIntervalSeconds,
@@ -559,10 +559,10 @@ func runTradeCmd(options inputs) {
 		int(botConfig.MonitoringPort) != 0,
 		len(botConfig.Filters) > 0,
 		botConfig.PostgresDbConfig != nil,
+		*options.logPrefix != "",
 		*options.operationalBuffer,
 		*options.operationalBufferNonNativePct,
 		*options.simMode,
-		*options.logPrefix,
 		*options.fixedIterations,
 	)
 	if e != nil {

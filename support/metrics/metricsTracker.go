@@ -76,10 +76,10 @@ type commonProps struct {
 	EnabledFeatureMonitoring         bool    `json:"enabled_feature_monitoring"`
 	EnabledFeatureFilters            bool    `json:"enabled_feature_filters"`
 	EnabledFeaturePostgres           bool    `json:"enabled_feature_postgres"`
+	EnabledFeatureLogging            bool    `json:"enabled_feature_logging"`
 	OperationalBuffer                float64 `json:"operational_buffer"`
 	OperationalBufferNonNativePct    float64 `json:"operational_buffer_non_native_pct"`
 	SimMode                          bool    `json:"sim_mode"`
-	LogPrefix                        string  `json:"log_prefix"`
 	FixedIterations                  uint64  `json:"fixed_iterations"`
 }
 
@@ -157,10 +157,10 @@ func MakeMetricsTracker(
 	enabledFeatureMonitoring bool,
 	enabledFeatureFilters bool,
 	enabledFeaturePostgres bool,
+	enabledFeatureLogging bool,
 	operationalBuffer float64,
 	operationalBufferNonNativePct float64,
 	simMode bool,
-	logPrefix string,
 	fixedIterations uint64,
 ) (*MetricsTracker, error) {
 	props := commonProps{
@@ -189,10 +189,10 @@ func MakeMetricsTracker(
 		EnabledFeatureMonitoring:         enabledFeatureMonitoring,
 		EnabledFeatureFilters:            enabledFeatureFilters,
 		EnabledFeaturePostgres:           enabledFeaturePostgres,
+		EnabledFeatureLogging:            enabledFeatureLogging,
 		OperationalBuffer:                operationalBuffer,
 		OperationalBufferNonNativePct:    operationalBufferNonNativePct,
 		SimMode:                          simMode,
-		LogPrefix:                        logPrefix,
 		FixedIterations:                  fixedIterations,
 	}
 
