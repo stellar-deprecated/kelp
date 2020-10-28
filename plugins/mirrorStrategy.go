@@ -21,19 +21,24 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
+// numOrdersBufferMinVolumeFilter is the number of extra orders we want to fetch from the exchange in addition to the configured OrderbookDepth
+// to allow us to account for any skipped orders because of min base volume requirements
+const numOrdersBufferMinVolumeFilter = 3
 const debugLogOffersOrders = true
+
+const maxOrderbookDepth int32 = 50
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
 	Exchange       string `valid:"-" toml:"EXCHANGE"`
 	ExchangeBase   string `valid:"-" toml:"EXCHANGE_BASE"`
 	ExchangeQuote  string `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth int32  `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	OrderbookDepth int    `valid:"-" toml:"ORDERBOOK_DEPTH"`
 	// Deprecated: use BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY instead
 	VolumeDivideByDeprecated *float64 `valid:"-" toml:"VOLUME_DIVIDE_BY" deprecated:"true"`
 	BidVolumeDivideBy        *float64 `valid:"-" toml:"BID_VOLUME_DIVIDE_BY"`
 	AskVolumeDivideBy        *float64 `valid:"-" toml:"ASK_VOLUME_DIVIDE_BY"`
-	MaxOrderBaseCap          float64  `valid:"-" toml:"MAX_ORDER_BASE_CAP"`
+	MaxOrderBaseCap          *float64 `valid:"-" toml:"MAX_ORDER_BASE_CAP"` // use a pointer here so we don't need to special case 0.0 everywhere and a nil value is clearly not user-entered
 	PerLevelSpread           float64  `valid:"-" toml:"PER_LEVEL_SPREAD"`
 	PricePrecisionOverride   *int8    `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	VolumePrecisionOverride  *int8    `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
@@ -86,11 +91,11 @@ type mirrorStrategy struct {
 	backingMarketID                       string
 	backingFillTracker                    api.FillTracker
 	strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
-	orderbookDepth                        int32
+	orderbookDepth                        int
 	perLevelSpread                        float64
 	bidVolumeDivideBy                     float64
 	askVolumeDivideBy                     float64
-	maxOrderBaseCap                       float64
+	maybeMaxOrderBaseCap                  *float64 // using a nil value makes it clear whether this value exists or not
 	exchange                              api.Exchange
 	offsetTrades                          bool
 	mutex                                 *sync.Mutex
@@ -168,11 +173,6 @@ func makeMirrorStrategy(
 	if askVolumeDivideBy != -1.0 && askVolumeDivideBy <= 0 {
 		utils.PrintErrorHintf("need to set a valid value for ASK_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
 		return nil, fmt.Errorf("invalid mirror strategy config file, ASK_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
-	}
-
-	if config.MaxOrderBaseCap < 0.0 {
-		utils.PrintErrorHintf("need to set a valid value for MAX_ORDER_BASE_CAP, needs to be >= 0.0")
-		return nil, fmt.Errorf("invalid mirror strategy config file, MAX_ORDER_BASE_CAP needs to be >= 0.0")
 	}
 
 	var exchange api.Exchange
@@ -282,6 +282,16 @@ func makeMirrorStrategy(
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
+	if config.MaxOrderBaseCap != nil {
+		if *config.MaxOrderBaseCap < backingConstraints.MinBaseVolume.AsFloat() {
+			utils.PrintErrorHintf("MAX_ORDER_BASE_CAP (%f) cannot be less than minBaseVolume allowed on backing exchange (%s)", *config.MaxOrderBaseCap, backingConstraints.MinBaseVolume.AsString())
+			return nil, fmt.Errorf("MAX_ORDER_BASE_CAP (%f) cannot be less than minBaseVolume allowed on backing exchange (%s)", *config.MaxOrderBaseCap, backingConstraints.MinBaseVolume.AsString())
+		}
+		if *config.MaxOrderBaseCap <= 0.0 {
+			utils.PrintErrorHintf("invalid mirror strategy config file, if you set a value for MAX_ORDER_BASE_CAP it needs to be > 0.0, leaving it unset does not constrain the order size")
+			return nil, fmt.Errorf("invalid mirror strategy config file, if you set a value for MAX_ORDER_BASE_CAP it needs to be > 0.0, leaving it unset does not constrain the order size")
+		}
+	}
 
 	// insert into database if needed
 	var backingMarketID string
@@ -304,6 +314,10 @@ func makeMirrorStrategy(
 		log.Printf("backingFillTracker was nil so not loading trades at creation time\n")
 	}
 
+	if config.OrderbookDepth > int(maxOrderbookDepth) {
+		return nil, fmt.Errorf("cannot construct the mirrorStrategy, ORDERBOOK_DEPTH config param should not exceed %d", maxOrderbookDepth)
+	}
+
 	return &mirrorStrategy{
 		sdex:                                  sdex,
 		ieif:                                  ieif,
@@ -320,7 +334,7 @@ func makeMirrorStrategy(
 		perLevelSpread:                        config.PerLevelSpread,
 		bidVolumeDivideBy:                     bidVolumeDivideBy,
 		askVolumeDivideBy:                     askVolumeDivideBy,
-		maxOrderBaseCap:                       config.MaxOrderBaseCap,
+		maybeMaxOrderBaseCap:                  config.MaxOrderBaseCap,
 		exchange:                              exchange,
 		offsetTrades:                          config.OffsetTrades,
 		mutex:                                 &sync.Mutex{},
@@ -401,35 +415,41 @@ func (s *mirrorStrategy) UpdateWithOps(
 	buyingAOffers []hProtocol.Offer,
 	sellingAOffers []hProtocol.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.exchange.GetOrderBook(s.backingPair, s.orderbookDepth)
+	// we want to fetch a few extra orders to account for potentially filtering out orders that don't meet the min base volume requirements
+	ordersToFetch := int32(s.orderbookDepth + numOrdersBufferMinVolumeFilter)
+	ob, e := s.exchange.GetOrderBook(s.backingPair, ordersToFetch)
 	if e != nil {
 		return nil, e
 	}
 
 	// limit bids and asks to max 50 operations each because of Stellar's limit of 100 ops/tx
 	bids := ob.Bids()
-	if len(bids) > 50 {
-		bids = bids[:50]
-	}
 	asks := ob.Asks()
-	if len(asks) > 50 {
-		asks = asks[:50]
-	}
-	log.Printf("backing orderbook (before transformations):\n")
+	log.Printf("backing orderbook before transformations, including %d additional buffer orders:\n", numOrdersBufferMinVolumeFilter)
 	printBidsAndAsks(bids, asks)
 
 	// we modify the bids and ask to represent the new orders to place so we reduce unnecessary memory allocations
 	if s.bidVolumeDivideBy == -1.0 {
 		bids = []model.Order{}
 	} else {
-		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maxOrderBaseCap)
+		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maybeMaxOrderBaseCap)
+		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
+		bids = filterOrdersByVolume(bids, s.backingConstraints.MinBaseVolume.AsFloat())
+		if len(bids) > s.orderbookDepth {
+			bids = bids[:s.orderbookDepth]
+		}
 	}
 	if s.askVolumeDivideBy == -1.0 {
 		asks = []model.Order{}
 	} else {
-		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maxOrderBaseCap)
+		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maybeMaxOrderBaseCap)
+		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
+		asks = filterOrdersByVolume(asks, s.backingConstraints.MinBaseVolume.AsFloat())
+		if len(asks) > s.orderbookDepth {
+			asks = asks[:s.orderbookDepth]
+		}
 	}
-	log.Printf("new orders (orderbook after transformations):\n")
+	log.Printf("new orders to be placed (after transforming and filtering orders from backing exchange):\n")
 	printBidsAndAsks(bids, asks)
 
 	deleteBuyOps, buyOps, e := s.updateLevels(
@@ -490,14 +510,24 @@ func (s *mirrorStrategy) UpdateWithOps(
 	return api.ConvertOperation2TM(ops), nil
 }
 
-func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64, maxVolumeCap float64) {
+func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64, maxVolumeCap *float64) {
 	for _, o := range orders {
 		*o.Price = *o.Price.Scale(priceMultiplier)
 		*o.Volume = *o.Volume.Scale(volumeMultiplier)
-		if maxVolumeCap > 0.0 && o.Volume.AsFloat() > maxVolumeCap {
-			*o.Volume = *model.NumberFromFloat(maxVolumeCap, o.Volume.Precision())
+		if maxVolumeCap != nil && o.Volume.AsFloat() > *maxVolumeCap {
+			*o.Volume = *model.NumberFromFloat(*maxVolumeCap, o.Volume.Precision())
 		}
 	}
+}
+
+func filterOrdersByVolume(orders []model.Order, minBaseVolume float64) []model.Order {
+	ret := []model.Order{}
+	for _, o := range orders {
+		if o.Volume.AsFloat() >= minBaseVolume {
+			ret = append(ret, o)
+		}
+	}
+	return ret
 }
 
 func printBidsAndAsks(bids []model.Order, asks []model.Order) {
