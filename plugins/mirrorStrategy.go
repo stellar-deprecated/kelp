@@ -420,7 +420,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 	// limit bids and asks to max 50 operations each because of Stellar's limit of 100 ops/tx
 	bids := ob.Bids()
 	asks := ob.Asks()
-	log.Printf("backing orderbook (before transformations):\n")
+	log.Printf("backing orderbook before transformations, including %d additional buffer orders:\n", numOrdersBufferMinVolumeFilter)
 	printBidsAndAsks(bids, asks)
 
 	// we modify the bids and ask to represent the new orders to place so we reduce unnecessary memory allocations
@@ -444,7 +444,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 			asks = asks[:s.orderbookDepth]
 		}
 	}
-	log.Printf("new orders (orderbook after transformations):\n")
+	log.Printf("new orders to be placed (after transforming and filtering orders from backing exchange):\n")
 	printBidsAndAsks(bids, asks)
 
 	deleteBuyOps, buyOps, e := s.updateLevels(
