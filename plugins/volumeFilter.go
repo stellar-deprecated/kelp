@@ -74,10 +74,14 @@ func makeFilterVolume(
 		return nil, fmt.Errorf("could not convert quote asset (%s) from trading pair via the passed in assetDisplayFn: %s", string(tradingPair.Quote), e)
 	}
 
-	dailyVolumeByDateQuery, e := makeDailyVolumeByDateQuery(db, exchangeName, baseAssetString, quoteAssetString, config.optionalAccountIDs, config.additionalMarketIDs)
+	marketID := MakeMarketID(exchangeName, baseAssetString, quoteAssetString)
+	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
+	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", config.optionalAccountIDs)
 	if e != nil {
-		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
+		return nil, fmt.Errorf("could not make daily volume by date action: %s", e)
 	}
+
+	// TODO DS Validate the config, to have exactly one asset cap defined; a valid mode; non-nil market IDs; and non-nil optional account IDs.
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
@@ -87,24 +91,6 @@ func makeFilterVolume(
 		config:                 config,
 		dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 	}, nil
-}
-
-func makeDailyVolumeByDateQuery(
-	db *sql.DB,
-	exchangeName string,
-	baseAsset string,
-	quoteAsset string,
-	optionalAccountIDs []string,
-	additionalMarketIDs []string,
-) (*queries.DailyVolumeByDate, error) {
-	marketID := MakeMarketID(exchangeName, baseAsset, quoteAsset)
-	marketIDs := utils.Dedupe(append([]string{marketID}, additionalMarketIDs...))
-	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", optionalAccountIDs)
-	if e != nil {
-		return nil, fmt.Errorf("could not make daily volume by date action: %s", e)
-	}
-
-	return dailyVolumeByDateQuery, nil
 }
 
 var _ SubmitFilter = &volumeFilter{}

@@ -2,224 +2,293 @@ package plugins
 
 import (
 	"database/sql"
-	"fmt"
-	"os"
 	"testing"
+
+	"github.com/openlyinc/pointy"
+	"github.com/stellar/kelp/queries"
+	"github.com/stellar/kelp/support/utils"
 
 	"github.com/stellar/go/txnbuild"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
-	"github.com/stellar/kelp/support/postgresdb"
-	"github.com/stellar/kelp/support/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func connectTestDb() *sql.DB {
-	postgresDbConfig := &postgresdb.Config{
-		Host:      "localhost",
-		Port:      5432,
-		DbName:    "test_database",
-		User:      os.Getenv("POSTGRES_USER"),
-		SSLEnable: false,
-	}
-
-	_, e := postgresdb.CreateDatabaseIfNotExists(postgresDbConfig)
-	if e != nil {
-		panic(e)
-	}
-
-	db, e := sql.Open("postgres", postgresDbConfig.MakeConnectString())
-	if e != nil {
-		panic(e)
-	}
-	return db
-}
-
 var testNativeAsset hProtocol.Asset = hProtocol.Asset{Type: "native"}
 
+func mustMakeTestDailyVolumeQuery(optionalAccountIDs, additionalMarketIDs []string) *queries.DailyVolumeByDate {
+	marketID := MakeMarketID("", "native", "native")
+	marketIDs := utils.Dedupe(append([]string{marketID}, additionalMarketIDs...))
+
+	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, "sell", optionalAccountIDs)
+	if e != nil {
+		panic(e)
+	}
+
+	return query
+}
+
 func TestMakeFilterVolume(t *testing.T) {
-	testAssetDisplayFn := model.AssetDisplayFn(func(asset model.Asset) (string, error) {
-		sdexAssetMap := map[model.Asset]hProtocol.Asset{
-			model.Asset("XLM"): testNativeAsset,
-		}
-		assetString, ok := sdexAssetMap[asset]
-		if !ok {
-			return "", fmt.Errorf("cannot recognize the asset %s", string(asset))
-		}
-		return utils.Asset2String(assetString), nil
-	})
-
-	testEmptyVolumeConfig := &VolumeFilterConfig{}
-	db := connectTestDb()
-
-	emptyConfigVolumeQuery, e := makeDailyVolumeByDateQuery(db, "", "native", "native", []string{}, []string{})
-	if e != nil {
-		t.Log("could not make empty config volume query")
-		return
-	}
-
-	marketIDs := []string{"marketID"}
-	marketConfigVolumeQuery, e := makeDailyVolumeByDateQuery(db, "", "native", "native", []string{}, marketIDs)
-	if e != nil {
-		t.Log("could not make market config volume query")
-		return
-	}
-
-	accountIDs := []string{"accountID"}
-	accountConfigVolumeQuery, e := makeDailyVolumeByDateQuery(db, "", "native", "native", accountIDs, []string{})
-	if e != nil {
-		t.Log("could not make account config volume query")
-		return
-	}
-
-	accountMarketConfigVolumeQuery, e := makeDailyVolumeByDateQuery(db, "", "native", "native", accountIDs, marketIDs)
-	if e != nil {
-		t.Log("could not make account and market config volume query")
-		return
-	}
+	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): testNativeAsset})
 
 	testCases := []struct {
 		name           string
-		configValue    string
-		exchangeName   string
-		tradingPair    *model.TradingPair
 		assetDisplayFn model.AssetDisplayFn
-		baseAsset      hProtocol.Asset
-		quoteAsset     hProtocol.Asset
-		db             *sql.DB
 		config         *VolumeFilterConfig
 
 		wantError        error
 		wantSubmitFilter SubmitFilter
 	}{
-		// Note: config can be additional market IDs, make sure to test additionalMarketIds and optionalAccountIDs
+		// TODO DS Confirm the empty config fails once validation is added to the constructor
 		{
-			name:             "failure - display base",
-			configValue:      "",
-			exchangeName:     "",
-			tradingPair:      &model.TradingPair{Base: "FAIL", Quote: ""},
-			assetDisplayFn:   testAssetDisplayFn,
-			baseAsset:        hProtocol.Asset{},
-			quoteAsset:       hProtocol.Asset{},
-			db:               db,
-			config:           &VolumeFilterConfig{},
-			wantError:        fmt.Errorf("could not convert base asset (FAIL) from trading pair via the passed in assetDisplayFn: cannot recognize the asset FAIL"),
-			wantSubmitFilter: nil,
-		},
-		{
-			name:             "failure - display quote",
-			configValue:      "",
-			exchangeName:     "",
-			tradingPair:      &model.TradingPair{Base: "XLM", Quote: "FAIL"},
-			assetDisplayFn:   testAssetDisplayFn,
-			baseAsset:        testNativeAsset,
-			quoteAsset:       hProtocol.Asset{},
-			config:           &VolumeFilterConfig{},
-			wantError:        fmt.Errorf("could not convert quote asset (FAIL) from trading pair via the passed in assetDisplayFn: cannot recognize the asset FAIL"),
-			wantSubmitFilter: nil,
-		},
-		{
-			name:             "failure - query",
-			configValue:      "",
-			exchangeName:     "",
-			tradingPair:      &model.TradingPair{Base: "XLM", Quote: "XLM"},
-			assetDisplayFn:   testAssetDisplayFn,
-			baseAsset:        testNativeAsset,
-			quoteAsset:       testNativeAsset,
-			config:           &VolumeFilterConfig{},
-			db:               nil,
-			wantError:        fmt.Errorf("could not make daily volume by date Query: could not make daily volume by date action: the provided db should be non-nil"),
-			wantSubmitFilter: nil,
-		},
-		{
-			name:           "success - empty config",
-			configValue:    "",
-			exchangeName:   "",
-			tradingPair:    &model.TradingPair{Base: "XLM", Quote: "XLM"},
-			assetDisplayFn: testAssetDisplayFn,
-			baseAsset:      testNativeAsset,
-			quoteAsset:     testNativeAsset,
-			config:         testEmptyVolumeConfig,
-			db:             db,
-			wantError:      nil,
+			name:      "empty config",
+			config:    &VolumeFilterConfig{},
+			wantError: nil,
 			wantSubmitFilter: &volumeFilter{
 				name:                   "volumeFilter",
 				baseAsset:              testNativeAsset,
 				quoteAsset:             testNativeAsset,
-				config:                 testEmptyVolumeConfig,
-				dailyVolumeByDateQuery: emptyConfigVolumeQuery,
+				config:                 &VolumeFilterConfig{},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{}),
 			},
 		},
 		{
-			name:           "success - market ids",
-			configValue:    "",
-			exchangeName:   "",
-			tradingPair:    &model.TradingPair{Base: "XLM", Quote: "XLM"},
-			assetDisplayFn: testAssetDisplayFn,
-			baseAsset:      testNativeAsset,
-			quoteAsset:     testNativeAsset,
-			config:         &VolumeFilterConfig{additionalMarketIDs: marketIDs},
-			db:             db,
-			wantError:      nil,
+			name: "non nil cap in base, nil cap in quote",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeExact,
+				additionalMarketIDs:         []string{},
+				optionalAccountIDs:          []string{},
+			},
+			wantError: nil,
 			wantSubmitFilter: &volumeFilter{
-				name:                   "volumeFilter",
-				baseAsset:              testNativeAsset,
-				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{additionalMarketIDs: marketIDs},
-				dailyVolumeByDateQuery: marketConfigVolumeQuery,
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeExact,
+					additionalMarketIDs:         []string{},
+					optionalAccountIDs:          []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{}),
 			},
 		},
 		{
-			name:           "success - account ids",
-			configValue:    "",
-			exchangeName:   "",
-			tradingPair:    &model.TradingPair{Base: "XLM", Quote: "XLM"},
-			assetDisplayFn: testAssetDisplayFn,
-			baseAsset:      testNativeAsset,
-			quoteAsset:     testNativeAsset,
-			config:         &VolumeFilterConfig{optionalAccountIDs: accountIDs},
-			db:             db,
-			wantError:      nil,
+			name: "nil cap in base, non nil cap in quote",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInQuoteUnits: pointy.Float64(1.0),
+				mode:                         volumeFilterModeExact,
+				additionalMarketIDs:          []string{},
+				optionalAccountIDs:           []string{},
+			},
+			wantError: nil,
 			wantSubmitFilter: &volumeFilter{
-				name:                   "volumeFilter",
-				baseAsset:              testNativeAsset,
-				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{optionalAccountIDs: accountIDs},
-				dailyVolumeByDateQuery: accountConfigVolumeQuery,
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInQuoteUnits: pointy.Float64(1.0),
+					mode:                         volumeFilterModeExact,
+					additionalMarketIDs:          []string{},
+					optionalAccountIDs:           []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{}),
 			},
 		},
 		{
-			name:           "success - account and market ids",
-			configValue:    "",
-			exchangeName:   "",
-			tradingPair:    &model.TradingPair{Base: "XLM", Quote: "XLM"},
-			assetDisplayFn: testAssetDisplayFn,
-			baseAsset:      testNativeAsset,
-			quoteAsset:     testNativeAsset,
-			config:         &VolumeFilterConfig{optionalAccountIDs: accountIDs, additionalMarketIDs: marketIDs},
-			db:             db,
-			wantError:      nil,
+			name: "exact mode",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeExact,
+				additionalMarketIDs:         []string{},
+				optionalAccountIDs:          []string{},
+			},
+			wantError: nil,
 			wantSubmitFilter: &volumeFilter{
-				name:                   "volumeFilter",
-				baseAsset:              testNativeAsset,
-				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{optionalAccountIDs: accountIDs, additionalMarketIDs: marketIDs},
-				dailyVolumeByDateQuery: accountMarketConfigVolumeQuery,
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeExact,
+					additionalMarketIDs:         []string{},
+					optionalAccountIDs:          []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{}),
+			},
+		},
+		{
+			name: "ignore mode",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{},
+				optionalAccountIDs:          []string{},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{},
+					optionalAccountIDs:          []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{}),
+			},
+		},
+		{
+			name: "1 market id",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{"marketID"},
+				optionalAccountIDs:          []string{},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{"marketID"},
+					optionalAccountIDs:          []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{"marketID"}),
+			},
+		},
+		{
+			name: "2 market ids",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{"marketID1", "marketID2"},
+				optionalAccountIDs:          []string{},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{"marketID1", "marketID2"},
+					optionalAccountIDs:          []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{"marketID1", "marketID2"}),
+			},
+		},
+		{
+			name: "2 dupe market ids, 1 distinct",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{"marketID1", "marketID1", "marketID2"},
+				optionalAccountIDs:          []string{},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{"marketID1", "marketID1", "marketID2"},
+					optionalAccountIDs:          []string{},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{}, []string{"marketID1", "marketID1", "marketID2"}),
+			},
+		},
+		{
+			name: "1 account id",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{},
+				optionalAccountIDs:          []string{"accountID"},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{},
+					optionalAccountIDs:          []string{"accountID"},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{"accountID"}, []string{}),
+			},
+		},
+		{
+			name: "2 account ids",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{},
+				optionalAccountIDs:          []string{"accountID1", "accountID2"},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{},
+					optionalAccountIDs:          []string{"accountID1", "accountID2"},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{"accountID1", "accountID2"}, []string{}),
+			},
+		},
+		{
+			name: "account and market ids",
+			config: &VolumeFilterConfig{
+				SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+				mode:                        volumeFilterModeIgnore,
+				additionalMarketIDs:         []string{"marketID"},
+				optionalAccountIDs:          []string{"accountID"},
+			},
+			wantError: nil,
+			wantSubmitFilter: &volumeFilter{
+				name:       "volumeFilter",
+				baseAsset:  testNativeAsset,
+				quoteAsset: testNativeAsset,
+				config: &VolumeFilterConfig{
+					SellBaseAssetCapInBaseUnits: pointy.Float64(1.0),
+					mode:                        volumeFilterModeIgnore,
+					additionalMarketIDs:         []string{"marketID"},
+					optionalAccountIDs:          []string{"accountID"},
+				},
+				dailyVolumeByDateQuery: mustMakeTestDailyVolumeQuery([]string{"accountID"}, []string{"marketID"}),
 			},
 		},
 	}
 
+	configValue := ""
+	exchangeName := ""
+	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
+
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
 			actual, e := makeFilterVolume(
-				k.configValue,
-				k.exchangeName,
-				k.tradingPair,
-				k.assetDisplayFn,
-				k.baseAsset,
-				k.quoteAsset,
-				k.db,
+				configValue,
+				exchangeName,
+				tradingPair,
+				testAssetDisplayFn,
+				testNativeAsset,
+				testNativeAsset,
+				&sql.DB{},
 				k.config,
 			)
 
@@ -229,13 +298,31 @@ func TestMakeFilterVolume(t *testing.T) {
 	}
 }
 
-func TestVolumeFilterFn(t *testing.T) {
-	db := connectTestDb()
-	dailyVolumeByDateQuery, e := makeDailyVolumeByDateQuery(db, "", "native", "native", []string{}, []string{})
-	if e != nil {
-		t.Log("could not make empty config volume query")
-		return
+func makeManageSellOffer(price, amount string) *txnbuild.ManageSellOffer {
+	if amount == "" {
+		return nil
 	}
+
+	return &txnbuild.ManageSellOffer{
+		Buying:  txnbuild.NativeAsset{},
+		Selling: txnbuild.NativeAsset{},
+		Price:   price,
+		Amount:  amount,
+	}
+}
+
+func makeTestVolumeFilterConfig(baseCap, quoteCap float64) *VolumeFilterConfig {
+	return &VolumeFilterConfig{
+		SellBaseAssetCapInBaseUnits:  pointy.Float64(baseCap),
+		SellBaseAssetCapInQuoteUnits: pointy.Float64(quoteCap),
+		mode:                         volumeFilterModeExact,
+		additionalMarketIDs:          []string{},
+		optionalAccountIDs:           []string{},
+	}
+}
+
+func TestVolumeFilterFn(t *testing.T) {
+	dailyVolumeByDateQuery := mustMakeTestDailyVolumeQuery([]string{}, []string{})
 
 	emptyFilter := &volumeFilter{
 		name:                   "volumeFilter",
@@ -247,193 +334,152 @@ func TestVolumeFilterFn(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name      string
-		filter    *volumeFilter
-		dailyOTB  *VolumeFilterConfig
-		dailyTBB  *VolumeFilterConfig
-		op        *txnbuild.ManageSellOffer
-		wantOp    *txnbuild.ManageSellOffer
-		wantError error
-		wantTBB   *VolumeFilterConfig
+		name            string
+		filter          *volumeFilter
+		otbBaseCap      float64
+		otbQuoteCap     float64
+		tbbBaseCap      float64
+		tbbQuoteCap     float64
+		price           string
+		inputAmount     string
+		wantAmount      string
+		wantError       error
+		wantTbbBaseCap  float64
+		wantTbbQuoteCap float64
 	}{
 		{
-			name:      "failure - is selling",
-			filter:    emptyFilter,
-			dailyOTB:  nil,
-			dailyTBB:  nil,
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.CreditAsset{}},
-			wantOp:    nil,
-			wantError: fmt.Errorf("error when running the isSelling check for offer '{Selling:{Code: Issuer:} Buying:{} Amount: Price: OfferID:0 SourceAccount:<nil>}': invalid assets, there are more than 2 distinct assets: sdexBase={native  }, sdexQuote={native  }, selling={ }, buying={}"),
-			wantTBB:   nil,
+			name:            "selling, no filter sell caps",
+			filter:          emptyFilter,
+			otbBaseCap:      0.0,
+			otbQuoteCap:     0.0,
+			tbbBaseCap:      0.0,
+			tbbQuoteCap:     0.0,
+			price:           "2.0",
+			inputAmount:     "100.0",
+			wantAmount:      "100.0",
+			wantError:       nil,
+			wantTbbBaseCap:  100.0,
+			wantTbbQuoteCap: 200.0,
 		},
 		{
-			name:      "failure - invalid sell price in op",
-			filter:    emptyFilter,
-			dailyOTB:  nil,
-			dailyTBB:  nil,
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}},
-			wantOp:    nil,
-			wantError: fmt.Errorf("could not convert price () to float: strconv.ParseFloat: parsing \"\": invalid syntax"),
-			wantTBB:   nil,
-		},
-		{
-			name:      "failure - invalid amount in op",
-			filter:    emptyFilter,
-			dailyOTB:  nil,
-			dailyTBB:  nil,
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "0.0"},
-			wantOp:    nil,
-			wantError: fmt.Errorf("could not convert amount () to float: strconv.ParseFloat: parsing \"\": invalid syntax"),
-			wantTBB:   nil,
-		},
-		{
-			name:      "failure - invalid amount in op",
-			filter:    emptyFilter,
-			dailyOTB:  nil,
-			dailyTBB:  nil,
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "0.0"},
-			wantOp:    nil,
-			wantError: fmt.Errorf("could not convert amount () to float: strconv.ParseFloat: parsing \"\": invalid syntax"),
-			wantTBB:   nil,
-		},
-		{
-			name:      "success - selling, no filter sell caps",
-			filter:    emptyFilter,
-			dailyOTB:  &VolumeFilterConfig{},
-			dailyTBB:  &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(0.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0)},
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantError: nil,
-			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(100.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(100.0)},
-		},
-		{
-			name: "success - selling, base units sell cap, don't keep selling base",
+			name: "selling, base units sell cap, don't keep selling base",
 			filter: &volumeFilter{
 				name:                   "volumeFilter",
 				configValue:            "",
 				baseAsset:              testNativeAsset,
 				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(0.0)},
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: pointy.Float64(0.0)},
 				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 			},
-			dailyOTB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			dailyTBB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantOp:    nil,
-			wantError: nil,
-			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(0.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0)},
+			otbBaseCap:      0.0,
+			otbQuoteCap:     0.0,
+			tbbBaseCap:      0.0,
+			tbbQuoteCap:     0.0,
+			price:           "2.0",
+			inputAmount:     "100.0",
+			wantAmount:      "",
+			wantError:       nil,
+			wantTbbBaseCap:  0.0,
+			wantTbbQuoteCap: 0.0,
 		},
 		{
-			name: "success - selling, base units sell cap, keep selling base",
+			name: "selling, base units sell cap, keep selling base",
 			filter: &volumeFilter{
 				name:                   "volumeFilter",
 				configValue:            "",
 				baseAsset:              testNativeAsset,
 				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(1.0), mode: volumeFilterModeExact},
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: pointy.Float64(1.0), mode: volumeFilterModeExact},
 				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 			},
-			dailyOTB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			dailyTBB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "1.0000000"},
-			wantError: nil,
-			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(1.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(1.0)},
+			otbBaseCap:      0.0,
+			otbQuoteCap:     0.0,
+			tbbBaseCap:      0.0,
+			tbbQuoteCap:     0.0,
+			price:           "2.0",
+			inputAmount:     "100.0",
+			wantAmount:      "1.0000000",
+			wantError:       nil,
+			wantTbbBaseCap:  1.0,
+			wantTbbQuoteCap: 2.0,
 		},
 		{
-			name: "success - selling, quote units sell cap, don't keep selling quote",
+			name: "selling, quote units sell cap, don't keep selling quote",
 			filter: &volumeFilter{
 				name:                   "volumeFilter",
 				configValue:            "",
 				baseAsset:              testNativeAsset,
 				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0)},
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInQuoteUnits: pointy.Float64(0.0)},
 				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 			},
-			dailyOTB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			dailyTBB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantOp:    nil,
-			wantError: nil,
-			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(0.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0)},
+			otbBaseCap:      0.0,
+			otbQuoteCap:     0.0,
+			tbbBaseCap:      0.0,
+			tbbQuoteCap:     0.0,
+			price:           "2.0",
+			inputAmount:     "100.0",
+			wantAmount:      "",
+			wantError:       nil,
+			wantTbbBaseCap:  0.0,
+			wantTbbQuoteCap: 0.0,
 		},
 		{
-			name: "success - selling, quote units sell cap, keep selling quote",
+			name: "selling, quote units sell cap, keep selling quote",
 			filter: &volumeFilter{
 				name:                   "volumeFilter",
 				configValue:            "",
 				baseAsset:              testNativeAsset,
 				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{SellBaseAssetCapInQuoteUnits: createFloatPtr(1.0), mode: volumeFilterModeExact},
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInQuoteUnits: pointy.Float64(1.0), mode: volumeFilterModeExact},
 				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 			},
-			dailyOTB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			dailyTBB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "1.0000000"},
-			wantError: nil,
-			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(1.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(1.0)},
+			otbBaseCap:      0.0,
+			otbQuoteCap:     0.0,
+			tbbBaseCap:      0.0,
+			tbbQuoteCap:     0.0,
+			price:           "2.0",
+			inputAmount:     "100.0",
+			wantAmount:      "0.5000000",
+			wantError:       nil,
+			wantTbbBaseCap:  0.5,
+			wantTbbQuoteCap: 1.0,
 		},
 		{
-			name: "success - selling, base and quote units sell cap, keep selling base and quote",
+			name: "selling, base and quote units sell cap, keep selling base and quote",
 			filter: &volumeFilter{
 				name:                   "volumeFilter",
 				configValue:            "",
 				baseAsset:              testNativeAsset,
 				quoteAsset:             testNativeAsset,
-				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(1.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(1.0), mode: volumeFilterModeExact},
+				config:                 &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: pointy.Float64(1.0), SellBaseAssetCapInQuoteUnits: pointy.Float64(1.0), mode: volumeFilterModeExact},
 				dailyVolumeByDateQuery: dailyVolumeByDateQuery,
 			},
-			dailyOTB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			dailyTBB: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  createFloatPtr(0.0),
-				SellBaseAssetCapInQuoteUnits: createFloatPtr(0.0),
-			},
-			op:        &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "100.0"},
-			wantOp:    &txnbuild.ManageSellOffer{Buying: txnbuild.NativeAsset{}, Selling: txnbuild.NativeAsset{}, Price: "1.0", Amount: "1.0000000"},
-			wantError: nil,
-			wantTBB:   &VolumeFilterConfig{SellBaseAssetCapInBaseUnits: createFloatPtr(1.0), SellBaseAssetCapInQuoteUnits: createFloatPtr(1.0)},
+			otbBaseCap:      0.0,
+			otbQuoteCap:     0.0,
+			tbbBaseCap:      0.0,
+			tbbQuoteCap:     0.0,
+			price:           "2.0",
+			inputAmount:     "100.0",
+			wantAmount:      "0.5000000",
+			wantError:       nil,
+			wantTbbBaseCap:  0.5,
+			wantTbbQuoteCap: 1.0,
 		},
 	}
 
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
-			tbb := k.dailyTBB
-			actual, e := k.filter.volumeFilterFn(k.dailyOTB, tbb, k.op)
+			dailyOTB := makeTestVolumeFilterConfig(k.otbBaseCap, k.otbQuoteCap)
+			dailyTBB := makeTestVolumeFilterConfig(k.tbbBaseCap, k.tbbQuoteCap)
+			wantTBB := makeTestVolumeFilterConfig(k.wantTbbBaseCap, k.wantTbbQuoteCap)
+			op := makeManageSellOffer(k.price, k.inputAmount)
+			wantOp := makeManageSellOffer(k.price, k.wantAmount)
+
+			actual, e := k.filter.volumeFilterFn(dailyOTB, dailyTBB, op)
 			assert.Equal(t, k.wantError, e)
-			assert.Equal(t, k.wantOp, actual)
-			assert.Equal(t, k.wantTBB, tbb)
+			assert.Equal(t, wantOp, actual)
+			assert.Equal(t, wantTBB, dailyTBB)
 		})
 	}
-}
-
-func createFloatPtr(x float64) *float64 {
-	return &x
 }
