@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/openlyinc/pointy"
@@ -14,20 +15,6 @@ import (
 	"github.com/stellar/kelp/model"
 	"github.com/stretchr/testify/assert"
 )
-
-var testNativeAsset hProtocol.Asset = hProtocol.Asset{Type: "native"}
-
-func mustMakeTestDailyVolumeQuery(optionalAccountIDs, additionalMarketIDs []string) *queries.DailyVolumeByDate {
-	marketID := MakeMarketID("", "native", "native")
-	marketIDs := utils.Dedupe(append([]string{marketID}, additionalMarketIDs...))
-
-	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, "sell", optionalAccountIDs)
-	if e != nil {
-		panic(e)
-	}
-
-	return query
-}
 
 func makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote float64, additionalMarketIDs, optionalAccountIDs []string, mode volumeFilterMode) *VolumeFilterConfig {
 	var baseCapInBasePtr *float64
@@ -49,144 +36,101 @@ func makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote float64, additiona
 	}
 }
 
-func makeTestVolumeFilter(baseCapInBase, baseCapInQuote float64, additionalMarketIDs, optionalAccountIDs []string, mode volumeFilterMode) *volumeFilter {
-	config := makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote, additionalMarketIDs, optionalAccountIDs, mode)
-	query := mustMakeTestDailyVolumeQuery(optionalAccountIDs, additionalMarketIDs)
+func makeTestVolumeFilter(config *VolumeFilterConfig, additionalMarketIDs, optionalAccountIDs []string) *volumeFilter {
+	marketID := MakeMarketID("", "native", "native")
+	marketIDs := utils.Dedupe(append([]string{marketID}, additionalMarketIDs...))
+
+	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, "sell", optionalAccountIDs)
+	if e != nil {
+		panic(e)
+	}
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
-		baseAsset:              testNativeAsset,
-		quoteAsset:             testNativeAsset,
+		baseAsset:              utils.NativeAsset,
+		quoteAsset:             utils.NativeAsset,
 		config:                 config,
 		dailyVolumeByDateQuery: query,
 	}
 }
 
 func TestMakeFilterVolume(t *testing.T) {
-	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): testNativeAsset})
+	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
 
 	testCases := []struct {
-		name           string
-		config         *VolumeFilterConfig
-		baseCapInBase  float64
-		baseCapInQuote float64
-		marketIDs      []string
-		accountIDs     []string
-		mode           volumeFilterMode
+		name       string
+		marketIDs  []string
+		accountIDs []string
 	}{
 		// TODO DS Confirm the empty config fails once validation is added to the constructor
 		{
-			name:           "empty config",
-			baseCapInBase:  -1.,
-			baseCapInQuote: -1.,
-			marketIDs:      []string{},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
+			name:       "1 market id",
+			marketIDs:  []string{"marketID"},
+			accountIDs: []string{},
 		},
 		{
-			name:           "non nil cap in base, nil cap in quote",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
+			name:       "2 market ids",
+			marketIDs:  []string{"marketID1", "marketID2"},
+			accountIDs: []string{},
 		},
 		{
-			name:           "nil cap in base, non nil cap in quote",
-			baseCapInBase:  -1.0,
-			baseCapInQuote: 1.0,
-			marketIDs:      []string{},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
+			name:       "2 dupe market ids, 1 distinct",
+			marketIDs:  []string{"marketID1", "marketID1", "marketID2"},
+			accountIDs: []string{},
 		},
 		{
-			name:           "exact mode",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
+			name:       "1 account id",
+			marketIDs:  []string{},
+			accountIDs: []string{"accountID"},
 		},
 		{
-			name:           "ignore mode",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeIgnore,
+			name:       "2 account ids",
+			marketIDs:  []string{},
+			accountIDs: []string{"accountID1", "accountID2"},
 		},
 		{
-			name:           "1 market id",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{"marketID"},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
-		},
-		{
-			name:           "2 market ids",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{"marketID1", "marketID2"},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
-		},
-		{
-			name:           "2 dupe market ids, 1 distinct",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{"marketID1", "marketID1", "marketID2"},
-			accountIDs:     []string{},
-			mode:           volumeFilterModeExact,
-		},
-		{
-			name:           "1 account id",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{},
-			accountIDs:     []string{"accountID"},
-			mode:           volumeFilterModeExact,
-		},
-		{
-			name:           "2 account ids",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{},
-			accountIDs:     []string{"accountID1", "accountID2"},
-			mode:           volumeFilterModeExact,
-		},
-		{
-			name:           "account and market ids",
-			baseCapInBase:  1.0,
-			baseCapInQuote: -1.0,
-			marketIDs:      []string{"marketID"},
-			accountIDs:     []string{"accountID"},
-			mode:           volumeFilterModeExact,
+			name:       "account and market ids",
+			marketIDs:  []string{"marketID"},
+			accountIDs: []string{"accountID"},
 		},
 	}
 
 	configValue := ""
 	exchangeName := ""
 	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
+	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
 
 	for _, k := range testCases {
-		config := makeTestVolumeFilterConfig(k.baseCapInBase, k.baseCapInQuote, k.marketIDs, k.accountIDs, k.mode)
-		wantFilter := makeTestVolumeFilter(k.baseCapInBase, k.baseCapInQuote, k.marketIDs, k.accountIDs, k.mode)
-		t.Run(k.name, func(t *testing.T) {
-			actual, e := makeFilterVolume(
-				configValue,
-				exchangeName,
-				tradingPair,
-				testAssetDisplayFn,
-				testNativeAsset,
-				testNativeAsset,
-				&sql.DB{},
-				config,
-			)
+		for _, m := range modes {
+			baseCapInBaseConfig := makeTestVolumeFilterConfig(1.0, -1.0, k.marketIDs, k.accountIDs, m)
+			baseCapInQuoteConfig := makeTestVolumeFilterConfig(-1.0, 1.0, k.marketIDs, k.accountIDs, m)
 
-			assert.Nil(t, e)
-			assert.Equal(t, wantFilter, actual)
-		})
+			for _, c := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
+				var configType string
+				if c.SellBaseAssetCapInBaseUnits != nil {
+					configType = "base"
+				} else {
+					configType = "quote"
+				}
+
+				wantFilter := makeTestVolumeFilter(c, k.marketIDs, k.accountIDs)
+				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
+					actual, e := makeFilterVolume(
+						configValue,
+						exchangeName,
+						tradingPair,
+						testAssetDisplayFn,
+						utils.NativeAsset,
+						utils.NativeAsset,
+						&sql.DB{},
+						c,
+					)
+
+					assert.Nil(t, e)
+					assert.Equal(t, wantFilter, actual)
+				})
+			}
+		}
 	}
 }
 
@@ -302,7 +246,7 @@ func TestVolumeFilterFn(t *testing.T) {
 			op := makeManageSellOffer(k.price, k.inputAmount)
 			wantOp := makeManageSellOffer(k.price, k.wantAmount)
 
-			actual, e := volumeFilterFn(dailyOTB, dailyTBB, op, testNativeAsset, testNativeAsset, k.sellBaseCapInBase, k.sellBaseCapInQuote, volumeFilterModeExact)
+			actual, e := volumeFilterFn(dailyOTB, dailyTBB, op, utils.NativeAsset, utils.NativeAsset, k.sellBaseCapInBase, k.sellBaseCapInQuote, volumeFilterModeExact)
 
 			assert.Nil(t, e)
 			assert.Equal(t, wantOp, actual)

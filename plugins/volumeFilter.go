@@ -78,7 +78,7 @@ func makeFilterVolume(
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
 	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", config.optionalAccountIDs)
 	if e != nil {
-		return nil, fmt.Errorf("could not make daily volume by date action: %s", e)
+		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
 	}
 
 	// TODO DS Validate the config, to have exactly one asset cap defined; a valid mode; non-nil market IDs; and non-nil optional account IDs.
