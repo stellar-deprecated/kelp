@@ -38,7 +38,7 @@ type mirrorConfig struct {
 	VolumeDivideByDeprecated *float64 `valid:"-" toml:"VOLUME_DIVIDE_BY" deprecated:"true"`
 	BidVolumeDivideBy        *float64 `valid:"-" toml:"BID_VOLUME_DIVIDE_BY"`
 	AskVolumeDivideBy        *float64 `valid:"-" toml:"ASK_VOLUME_DIVIDE_BY"`
-	MaxOrderBaseCap          float64  `valid:"-" toml:"MAX_ORDER_BASE_CAP"`
+	MaxOrderBaseCap          *float64 `valid:"-" toml:"MAX_ORDER_BASE_CAP"` // use a pointer here so we don't need to special case 0.0 everywhere and a nil value is clearly not user-entered
 	PerLevelSpread           float64  `valid:"-" toml:"PER_LEVEL_SPREAD"`
 	PricePrecisionOverride   *int8    `valid:"-" toml:"PRICE_PRECISION_OVERRIDE"`
 	VolumePrecisionOverride  *int8    `valid:"-" toml:"VOLUME_PRECISION_OVERRIDE"`
@@ -95,7 +95,7 @@ type mirrorStrategy struct {
 	perLevelSpread                        float64
 	bidVolumeDivideBy                     float64
 	askVolumeDivideBy                     float64
-	maxOrderBaseCap                       float64
+	maybeMaxOrderBaseCap                  *float64 // using a nil value makes it clear whether this value exists or not
 	exchange                              api.Exchange
 	offsetTrades                          bool
 	mutex                                 *sync.Mutex
@@ -173,11 +173,6 @@ func makeMirrorStrategy(
 	if askVolumeDivideBy != -1.0 && askVolumeDivideBy <= 0 {
 		utils.PrintErrorHintf("need to set a valid value for ASK_VOLUME_DIVIDE_BY, needs to be -1.0 or > 0")
 		return nil, fmt.Errorf("invalid mirror strategy config file, ASK_VOLUME_DIVIDE_BY needs to be -1.0 or > 0")
-	}
-
-	if config.MaxOrderBaseCap < 0.0 {
-		utils.PrintErrorHintf("need to set a valid value for MAX_ORDER_BASE_CAP, needs to be >= 0.0")
-		return nil, fmt.Errorf("invalid mirror strategy config file, MAX_ORDER_BASE_CAP needs to be >= 0.0")
 	}
 
 	var exchange api.Exchange
@@ -287,8 +282,15 @@ func makeMirrorStrategy(
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
-	if config.MaxOrderBaseCap < backingConstraints.MinBaseVolume.AsFloat() {
-		return nil, fmt.Errorf("MAX_ORDER_BASE_CAP (%f) cannot be less than minBaseVolume allowed on backing exchange (%s)", config.MaxOrderBaseCap, backingConstraints.MinBaseVolume.AsString())
+	if config.MaxOrderBaseCap != nil {
+		if *config.MaxOrderBaseCap < backingConstraints.MinBaseVolume.AsFloat() {
+			utils.PrintErrorHintf("MAX_ORDER_BASE_CAP (%f) cannot be less than minBaseVolume allowed on backing exchange (%s)", *config.MaxOrderBaseCap, backingConstraints.MinBaseVolume.AsString())
+			return nil, fmt.Errorf("MAX_ORDER_BASE_CAP (%f) cannot be less than minBaseVolume allowed on backing exchange (%s)", *config.MaxOrderBaseCap, backingConstraints.MinBaseVolume.AsString())
+		}
+		if *config.MaxOrderBaseCap <= 0.0 {
+			utils.PrintErrorHintf("invalid mirror strategy config file, if you set a value for MAX_ORDER_BASE_CAP it needs to be > 0.0, leaving it unset does not constrain the order size")
+			return nil, fmt.Errorf("invalid mirror strategy config file, if you set a value for MAX_ORDER_BASE_CAP it needs to be > 0.0, leaving it unset does not constrain the order size")
+		}
 	}
 
 	// insert into database if needed
@@ -332,7 +334,7 @@ func makeMirrorStrategy(
 		perLevelSpread:                        config.PerLevelSpread,
 		bidVolumeDivideBy:                     bidVolumeDivideBy,
 		askVolumeDivideBy:                     askVolumeDivideBy,
-		maxOrderBaseCap:                       config.MaxOrderBaseCap,
+		maybeMaxOrderBaseCap:                  config.MaxOrderBaseCap,
 		exchange:                              exchange,
 		offsetTrades:                          config.OffsetTrades,
 		mutex:                                 &sync.Mutex{},
@@ -430,7 +432,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if s.bidVolumeDivideBy == -1.0 {
 		bids = []model.Order{}
 	} else {
-		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maxOrderBaseCap)
+		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maybeMaxOrderBaseCap)
 		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
 		bids = filterOrdersByVolume(bids, s.backingConstraints.MinBaseVolume.AsFloat())
 		if len(bids) > s.orderbookDepth {
@@ -440,7 +442,7 @@ func (s *mirrorStrategy) UpdateWithOps(
 	if s.askVolumeDivideBy == -1.0 {
 		asks = []model.Order{}
 	} else {
-		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maxOrderBaseCap)
+		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maybeMaxOrderBaseCap)
 		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
 		asks = filterOrdersByVolume(asks, s.backingConstraints.MinBaseVolume.AsFloat())
 		if len(asks) > s.orderbookDepth {
@@ -508,12 +510,12 @@ func (s *mirrorStrategy) UpdateWithOps(
 	return api.ConvertOperation2TM(ops), nil
 }
 
-func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64, maxVolumeCap float64) {
+func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultiplier float64, maxVolumeCap *float64) {
 	for _, o := range orders {
 		*o.Price = *o.Price.Scale(priceMultiplier)
 		*o.Volume = *o.Volume.Scale(volumeMultiplier)
-		if maxVolumeCap > 0.0 && o.Volume.AsFloat() > maxVolumeCap {
-			*o.Volume = *model.NumberFromFloat(maxVolumeCap, o.Volume.Precision())
+		if maxVolumeCap != nil && o.Volume.AsFloat() > *maxVolumeCap {
+			*o.Volume = *model.NumberFromFloat(*maxVolumeCap, o.Volume.Precision())
 		}
 	}
 }

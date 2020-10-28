@@ -3,6 +3,7 @@ package plugins
 import (
 	"testing"
 
+	"github.com/openlyinc/pointy"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stellar/kelp/model"
@@ -10,76 +11,76 @@ import (
 
 func TestTransformOrders(t *testing.T) {
 	testCases := []struct {
-		name             string
-		inputPrice       *model.Number
-		inputVolume      *model.Number
-		orderAction      model.OrderAction
-		priceMultiplier  float64
-		volumeMultiplier float64
-		maxVolumeBaseCap float64
-		wantPrice        *model.Number
-		wantVolume       *model.Number
+		name                  string
+		inputPrice            *model.Number
+		inputVolume           *model.Number
+		orderAction           model.OrderAction
+		priceMultiplier       float64
+		volumeMultiplier      float64
+		maybeMaxVolumeBaseCap *float64
+		wantPrice             *model.Number
+		wantVolume            *model.Number
 	}{
 		{
-			name:             "buy below capped",
-			inputPrice:       model.NumberFromFloat(0.15, 6),
-			inputVolume:      model.NumberFromFloat(51.5, 5),
-			orderAction:      model.OrderActionBuy,
-			priceMultiplier:  0.90,
-			volumeMultiplier: 0.25,
-			maxVolumeBaseCap: 15.0,
-			wantPrice:        model.NumberFromFloat(0.135, 6),
-			wantVolume:       model.NumberFromFloat(12.875, 5),
+			name:                  "buy below capped",
+			inputPrice:            model.NumberFromFloat(0.15, 6),
+			inputVolume:           model.NumberFromFloat(51.5, 5),
+			orderAction:           model.OrderActionBuy,
+			priceMultiplier:       0.90,
+			volumeMultiplier:      0.25,
+			maybeMaxVolumeBaseCap: pointy.Float64(15.0),
+			wantPrice:             model.NumberFromFloat(0.135, 6),
+			wantVolume:            model.NumberFromFloat(12.875, 5),
 		}, {
-			name:             "sell below capped",
-			inputPrice:       model.NumberFromFloat(1.15, 6),
-			inputVolume:      model.NumberFromFloat(1.5123, 5),
-			orderAction:      model.OrderActionSell,
-			priceMultiplier:  0.90,
-			volumeMultiplier: 0.25,
-			maxVolumeBaseCap: 15.0,
-			wantPrice:        model.NumberFromFloat(1.035, 6),
-			wantVolume:       model.NumberFromFloat(0.37808, 5), // round up
+			name:                  "sell below capped",
+			inputPrice:            model.NumberFromFloat(1.15, 6),
+			inputVolume:           model.NumberFromFloat(1.5123, 5),
+			orderAction:           model.OrderActionSell,
+			priceMultiplier:       0.90,
+			volumeMultiplier:      0.25,
+			maybeMaxVolumeBaseCap: pointy.Float64(15.0),
+			wantPrice:             model.NumberFromFloat(1.035, 6),
+			wantVolume:            model.NumberFromFloat(0.37808, 5), // round up
 		}, {
-			name:             "buy above capped",
-			inputPrice:       model.NumberFromFloat(0.15, 6),
-			inputVolume:      model.NumberFromFloat(80.0, 5),
-			orderAction:      model.OrderActionBuy,
-			priceMultiplier:  0.90,
-			volumeMultiplier: 0.25,
-			maxVolumeBaseCap: 15.0,
-			wantPrice:        model.NumberFromFloat(0.135, 6),
-			wantVolume:       model.NumberFromFloat(15.0, 5),
+			name:                  "buy above capped",
+			inputPrice:            model.NumberFromFloat(0.15, 6),
+			inputVolume:           model.NumberFromFloat(80.0, 5),
+			orderAction:           model.OrderActionBuy,
+			priceMultiplier:       0.90,
+			volumeMultiplier:      0.25,
+			maybeMaxVolumeBaseCap: pointy.Float64(15.0),
+			wantPrice:             model.NumberFromFloat(0.135, 6),
+			wantVolume:            model.NumberFromFloat(15.0, 5),
 		}, {
-			name:             "sell above capped",
-			inputPrice:       model.NumberFromFloat(1.15, 6),
-			inputVolume:      model.NumberFromFloat(151.23, 5),
-			orderAction:      model.OrderActionSell,
-			priceMultiplier:  0.90,
-			volumeMultiplier: 0.25,
-			maxVolumeBaseCap: 15.0,
-			wantPrice:        model.NumberFromFloat(1.035, 6),
-			wantVolume:       model.NumberFromFloat(15.0, 5),
+			name:                  "sell above capped",
+			inputPrice:            model.NumberFromFloat(1.15, 6),
+			inputVolume:           model.NumberFromFloat(151.23, 5),
+			orderAction:           model.OrderActionSell,
+			priceMultiplier:       0.90,
+			volumeMultiplier:      0.25,
+			maybeMaxVolumeBaseCap: pointy.Float64(15.0),
+			wantPrice:             model.NumberFromFloat(1.035, 6),
+			wantVolume:            model.NumberFromFloat(15.0, 5),
 		}, {
-			name:             "buy with 0 cap",
-			inputPrice:       model.NumberFromFloat(0.15, 6),
-			inputVolume:      model.NumberFromFloat(80.0, 5),
-			orderAction:      model.OrderActionBuy,
-			priceMultiplier:  0.90,
-			volumeMultiplier: 0.25,
-			maxVolumeBaseCap: 0.0,
-			wantPrice:        model.NumberFromFloat(0.135, 6),
-			wantVolume:       model.NumberFromFloat(20.0, 5),
+			name:                  "buy with 0 cap",
+			inputPrice:            model.NumberFromFloat(0.15, 6),
+			inputVolume:           model.NumberFromFloat(80.0, 5),
+			orderAction:           model.OrderActionBuy,
+			priceMultiplier:       0.90,
+			volumeMultiplier:      0.25,
+			maybeMaxVolumeBaseCap: nil,
+			wantPrice:             model.NumberFromFloat(0.135, 6),
+			wantVolume:            model.NumberFromFloat(20.0, 5),
 		}, {
-			name:             "sell with 0 cap",
-			inputPrice:       model.NumberFromFloat(1.15, 6),
-			inputVolume:      model.NumberFromFloat(151.23, 5),
-			orderAction:      model.OrderActionSell,
-			priceMultiplier:  0.90,
-			volumeMultiplier: 0.25,
-			maxVolumeBaseCap: 0.0,
-			wantPrice:        model.NumberFromFloat(1.035, 6),
-			wantVolume:       model.NumberFromFloat(37.8075, 5),
+			name:                  "sell with 0 cap",
+			inputPrice:            model.NumberFromFloat(1.15, 6),
+			inputVolume:           model.NumberFromFloat(151.23, 5),
+			orderAction:           model.OrderActionSell,
+			priceMultiplier:       0.90,
+			volumeMultiplier:      0.25,
+			maybeMaxVolumeBaseCap: nil,
+			wantPrice:             model.NumberFromFloat(1.035, 6),
+			wantVolume:            model.NumberFromFloat(37.8075, 5),
 		},
 	}
 
@@ -92,7 +93,7 @@ func TestTransformOrders(t *testing.T) {
 				Price:       k.inputPrice,
 				Volume:      k.inputVolume,
 			}
-			transformOrders([]model.Order{order}, k.priceMultiplier, k.volumeMultiplier, k.maxVolumeBaseCap)
+			transformOrders([]model.Order{order}, k.priceMultiplier, k.volumeMultiplier, k.maybeMaxVolumeBaseCap)
 
 			assert.Equal(t, &model.TradingPair{Base: model.XLM, Quote: model.USDT}, order.Pair)
 			assert.Equal(t, k.orderAction, order.OrderAction)
