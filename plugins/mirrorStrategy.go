@@ -423,11 +423,15 @@ func (s *mirrorStrategy) UpdateWithOps(
 		bids = []model.Order{}
 	} else {
 		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maxOrderBaseCap)
+		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
+		bids = filterOrdersByVolume(bids, s.backingConstraints.MinBaseVolume.AsFloat())
 	}
 	if s.askVolumeDivideBy == -1.0 {
 		asks = []model.Order{}
 	} else {
 		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maxOrderBaseCap)
+		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
+		asks = filterOrdersByVolume(asks, s.backingConstraints.MinBaseVolume.AsFloat())
 	}
 	log.Printf("new orders (orderbook after transformations):\n")
 	printBidsAndAsks(bids, asks)
@@ -498,6 +502,16 @@ func transformOrders(orders []model.Order, priceMultiplier float64, volumeMultip
 			*o.Volume = *model.NumberFromFloat(maxVolumeCap, o.Volume.Precision())
 		}
 	}
+}
+
+func filterOrdersByVolume(orders []model.Order, minBaseVolume float64) []model.Order {
+	ret := []model.Order{}
+	for _, o := range orders {
+		if o.Volume.AsFloat() >= minBaseVolume {
+			ret = append(ret, o)
+		}
+	}
+	return ret
 }
 
 func printBidsAndAsks(bids []model.Order, asks []model.Order) {

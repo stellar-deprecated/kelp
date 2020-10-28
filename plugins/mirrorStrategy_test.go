@@ -103,6 +103,91 @@ func TestTransformOrders(t *testing.T) {
 	}
 }
 
+func TestFilterOrdersByVolume(t *testing.T) {
+	type amtPrice struct {
+		a float64
+		p float64
+	}
+
+	testCases := []struct {
+		name             string
+		inputOrderValues []amtPrice
+		minBaseVolume    float64
+		wantOrderValues  []amtPrice
+	}{
+		{
+			name: "keep first",
+			inputOrderValues: []amtPrice{
+				{a: 1.0, p: 1.0},
+				{a: 0.5, p: 1.1},
+			},
+			minBaseVolume: 1.0,
+			wantOrderValues: []amtPrice{
+				{a: 1.0, p: 1.0},
+			},
+		}, {
+			name: "keep second",
+			inputOrderValues: []amtPrice{
+				{a: 1.0, p: 1.0},
+				{a: 2.5, p: 1.1},
+			},
+			minBaseVolume: 1.000001,
+			wantOrderValues: []amtPrice{
+				{a: 2.5, p: 1.1},
+			},
+		}, {
+			name: "keep none",
+			inputOrderValues: []amtPrice{
+				{a: 1.0, p: 1.0},
+				{a: 2.5, p: 1.1},
+			},
+			minBaseVolume:   2.500001,
+			wantOrderValues: []amtPrice{},
+		}, {
+			name: "keep all",
+			inputOrderValues: []amtPrice{
+				{a: 1.0, p: 1.0},
+				{a: 2.5, p: 1.1},
+				{a: 3.5, p: 2.1},
+			},
+			minBaseVolume: 1.0,
+			wantOrderValues: []amtPrice{
+				{a: 1.0, p: 1.0},
+				{a: 2.5, p: 1.1},
+				{a: 3.5, p: 2.1},
+			},
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			// convert input to Orders
+			inputOrders := []model.Order{}
+			for _, ap := range k.inputOrderValues {
+				inputOrders = append(inputOrders, model.Order{
+					Pair:        &model.TradingPair{Base: model.XLM, Quote: model.USDT},
+					OrderAction: model.OrderActionSell,
+					OrderType:   model.OrderTypeLimit,
+					Price:       model.NumberFromFloat(ap.p, 5),
+					Volume:      model.NumberFromFloat(ap.a, 5),
+				})
+			}
+
+			outputOrders := filterOrdersByVolume(inputOrders, k.minBaseVolume)
+
+			// convert output from Orders
+			output := []amtPrice{}
+			for _, o := range outputOrders {
+				output = append(output, amtPrice{
+					a: o.Volume.AsFloat(),
+					p: o.Price.AsFloat(),
+				})
+			}
+			assert.Equal(t, k.wantOrderValues, output)
+		})
+	}
+}
+
 func TestBalanceCoordinatorCheckBalance(t *testing.T) {
 	// imagine prices such that we are trading base asset as XLM and quote asset as USD
 	testCases := []struct {
