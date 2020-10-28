@@ -21,14 +21,19 @@ import (
 	"github.com/stellar/kelp/support/utils"
 )
 
+// numOrdersBufferMinVolumeFilter is the number of extra orders we want to fetch from the exchange in addition to the configured OrderbookDepth
+// to allow us to account for any skipped orders because of min base volume requirements
+const numOrdersBufferMinVolumeFilter = 3
 const debugLogOffersOrders = true
+
+const maxOrderbookDepth int32 = 50
 
 // mirrorConfig contains the configuration params for this strategy
 type mirrorConfig struct {
 	Exchange       string `valid:"-" toml:"EXCHANGE"`
 	ExchangeBase   string `valid:"-" toml:"EXCHANGE_BASE"`
 	ExchangeQuote  string `valid:"-" toml:"EXCHANGE_QUOTE"`
-	OrderbookDepth int32  `valid:"-" toml:"ORDERBOOK_DEPTH"`
+	OrderbookDepth int    `valid:"-" toml:"ORDERBOOK_DEPTH"`
 	// Deprecated: use BID_VOLUME_DIVIDE_BY and ASK_VOLUME_DIVIDE_BY instead
 	VolumeDivideByDeprecated *float64 `valid:"-" toml:"VOLUME_DIVIDE_BY" deprecated:"true"`
 	BidVolumeDivideBy        *float64 `valid:"-" toml:"BID_VOLUME_DIVIDE_BY"`
@@ -86,7 +91,7 @@ type mirrorStrategy struct {
 	backingMarketID                       string
 	backingFillTracker                    api.FillTracker
 	strategyMirrorTradeTriggerExistsQuery *queries.StrategyMirrorTradeTriggerExists
-	orderbookDepth                        int32
+	orderbookDepth                        int
 	perLevelSpread                        float64
 	bidVolumeDivideBy                     float64
 	askVolumeDivideBy                     float64
@@ -304,6 +309,10 @@ func makeMirrorStrategy(
 		log.Printf("backingFillTracker was nil so not loading trades at creation time\n")
 	}
 
+	if config.OrderbookDepth > int(maxOrderbookDepth) {
+		return nil, fmt.Errorf("cannot construct the mirrorStrategy, ORDERBOOK_DEPTH config param should not exceed %d", maxOrderbookDepth)
+	}
+
 	return &mirrorStrategy{
 		sdex:                                  sdex,
 		ieif:                                  ieif,
@@ -401,20 +410,16 @@ func (s *mirrorStrategy) UpdateWithOps(
 	buyingAOffers []hProtocol.Offer,
 	sellingAOffers []hProtocol.Offer,
 ) ([]build.TransactionMutator, error) {
-	ob, e := s.exchange.GetOrderBook(s.backingPair, s.orderbookDepth)
+	// we want to fetch a few extra orders to account for potentially filtering out orders that don't meet the min base volume requirements
+	ordersToFetch := int32(s.orderbookDepth + numOrdersBufferMinVolumeFilter)
+	ob, e := s.exchange.GetOrderBook(s.backingPair, ordersToFetch)
 	if e != nil {
 		return nil, e
 	}
 
 	// limit bids and asks to max 50 operations each because of Stellar's limit of 100 ops/tx
 	bids := ob.Bids()
-	if len(bids) > 50 {
-		bids = bids[:50]
-	}
 	asks := ob.Asks()
-	if len(asks) > 50 {
-		asks = asks[:50]
-	}
 	log.Printf("backing orderbook (before transformations):\n")
 	printBidsAndAsks(bids, asks)
 
@@ -425,6 +430,9 @@ func (s *mirrorStrategy) UpdateWithOps(
 		transformOrders(bids, (1 - s.perLevelSpread), (1.0 / s.bidVolumeDivideBy), s.maxOrderBaseCap)
 		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
 		bids = filterOrdersByVolume(bids, s.backingConstraints.MinBaseVolume.AsFloat())
+		if len(bids) > s.orderbookDepth {
+			bids = bids[:s.orderbookDepth]
+		}
 	}
 	if s.askVolumeDivideBy == -1.0 {
 		asks = []model.Order{}
@@ -432,6 +440,9 @@ func (s *mirrorStrategy) UpdateWithOps(
 		transformOrders(asks, (1 + s.perLevelSpread), (1.0 / s.askVolumeDivideBy), s.maxOrderBaseCap)
 		// only place orders that we can fulfill on the backing exchange, to reduce surpluses needing offsetting
 		asks = filterOrdersByVolume(asks, s.backingConstraints.MinBaseVolume.AsFloat())
+		if len(asks) > s.orderbookDepth {
+			asks = asks[:s.orderbookDepth]
+		}
 	}
 	log.Printf("new orders (orderbook after transformations):\n")
 	printBidsAndAsks(bids, asks)
