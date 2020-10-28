@@ -108,12 +108,13 @@ func TestMergeMaps(t *testing.T) {
 		"2": "two",
 	}
 	override := map[string]interface{}{
+		"2": 2,
 		"3": 3,
 		"4": "four",
 	}
 	wantMap := map[string]interface{}{
 		"1": 1,
-		"2": "two",
+		"2": 2,
 		"3": 3,
 		"4": "four",
 	}
