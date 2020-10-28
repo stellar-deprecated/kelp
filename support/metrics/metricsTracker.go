@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stellar/kelp/support/networking"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // we don't want this to be a custom event, custom events should only be added from the amplitude UI
@@ -18,7 +19,6 @@ const (
 	updateEventName      string = "update_offers"
 	deleteEventName      string = "delete_offers"
 	secondsSinceStartKey string = "seconds_since_start"
-	cliVersionKey        string = "cli_version"
 )
 
 // MetricsTracker wraps the properties for Amplitude events,
@@ -33,6 +33,7 @@ type MetricsTracker struct {
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
+	cliVersion          string
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -176,6 +177,7 @@ func MakeMetricsTrackerCli(
 		UpdateTimeIntervalSeconds:        updateTimeIntervalSeconds,
 		Exchange:                         exchange,
 		TradingPair:                      tradingPair,
+		SecondsSinceStart:                0,
 		IsTestnet:                        isTestnet,
 		MaxTickDelayMillis:               maxTickDelayMillis,
 		SubmitMode:                       submitMode,
@@ -196,7 +198,7 @@ func MakeMetricsTrackerCli(
 		FixedIterations:                  fixedIterations,
 	}
 
-	propsMap, e := toMapStringInterface(props)
+	propsMap, e := utils.ToMapStringInterface(props)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert props to map: %s", e)
 	}
@@ -210,6 +212,7 @@ func MakeMetricsTrackerCli(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		cliVersion:          version,
 	}, nil
 }
 
@@ -239,7 +242,7 @@ func MakeMetricsTrackerGui(
 		GuiVersion: guiVersion,
 	}
 
-	propsMap, e := toMapStringInterface(props)
+	propsMap, e := utils.ToMapStringInterface(props)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert props to map: %s", e)
 	}
@@ -268,11 +271,9 @@ func (mt *MetricsTracker) SendStartupEvent(now time.Time) error {
 
 // SendUpdateEvent sends the update Amplitude event.
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
-	secondsSinceStart := now.Sub(mt.botStartTime).Seconds()
-
 	var secondsSinceLastUpdateMetric float64
 	if mt.updateEventSentTime == nil {
-		secondsSinceLastUpdateMetric = secondsSinceStart
+		secondsSinceLastUpdateMetric = now.Sub(mt.botStartTime).Seconds()
 	} else {
 		secondsSinceLastUpdateMetric = now.Sub(*mt.updateEventSentTime).Seconds()
 	}
@@ -312,17 +313,12 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 	trackerProps := mt.props
 	trackerProps[secondsSinceStartKey] = now.Sub(mt.botStartTime).Seconds()
 
-	cliVersion, ok := trackerProps[cliVersionKey].(string)
-	if !ok {
-		return fmt.Errorf("could not cast cli version back to string")
-	}
-
-	eventProps, e := toMapStringInterface(eventPropsInterface)
+	eventProps, e := utils.ToMapStringInterface(eventPropsInterface)
 	if e != nil {
 		return fmt.Errorf("could not convert event props to map: %s", e)
 	}
 
-	mergedProps, e := mergeEventProps(trackerProps, eventProps)
+	mergedProps, e := utils.MergeMaps(trackerProps, eventProps)
 	if e != nil {
 		return fmt.Errorf("could not merge event properties: %s", e)
 	}
@@ -337,7 +333,7 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 			DeviceID:  mt.deviceID,
 			EventType: eventType,
 			Props:     mergedProps,
-			Version:   cliVersion,
+			Version:   mt.cliVersion,
 		}},
 	}
 	requestBody, e := json.Marshal(eventW)
@@ -367,37 +363,4 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 		}
 	}
 	return nil
-}
-
-func mergeEventProps(commonProps, eventProps map[string]interface{}) (map[string]interface{}, error) {
-	m := make(map[string]interface{})
-	for k, v := range commonProps {
-		m[k] = v
-	}
-
-	for k, v := range eventProps {
-		m[k] = v
-	}
-
-	return m, nil
-}
-
-func toMapStringInterface(v interface{}) (map[string]interface{}, error) {
-	b, e := json.Marshal(v)
-	if e != nil {
-		return nil, fmt.Errorf("could not marshal interface to json: %s", e)
-	}
-
-	var i interface{}
-	e = json.Unmarshal(b, &i)
-	if e != nil {
-		return nil, fmt.Errorf("could not unmarshal json to interface: %s", e)
-	}
-
-	m, ok := i.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("could not create map[string]interface{}")
-	}
-
-	return m, nil
 }
