@@ -287,6 +287,9 @@ func makeMirrorStrategy(
 	backingConstraints := exchange.GetOrderConstraints(backingPair)
 	log.Printf("primaryPair='%s', primaryConstraints=%s\n", pair, primaryConstraints)
 	log.Printf("backingPair='%s', backingConstraints=%s\n", backingPair, backingConstraints)
+	if config.MaxOrderBaseCap < backingConstraints.MinBaseVolume.AsFloat() {
+		return nil, fmt.Errorf("MAX_ORDER_BASE_CAP (%f) cannot be less than minBaseVolume allowed on backing exchange (%s)", config.MaxOrderBaseCap, backingConstraints.MinBaseVolume.AsString())
+	}
 
 	// insert into database if needed
 	var backingMarketID string
