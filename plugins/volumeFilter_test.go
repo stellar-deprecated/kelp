@@ -36,14 +36,13 @@ func makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote float64, additiona
 	}
 }
 
-func makeTestVolumeFilter(config *VolumeFilterConfig, additionalMarketIDs, optionalAccountIDs []string) *volumeFilter {
-	marketID := MakeMarketID("", "native", "native")
-	marketIDs := utils.Dedupe(append([]string{marketID}, additionalMarketIDs...))
-
+func makeTestVolumeFilter(config *VolumeFilterConfig, marketIDs []string, optionalAccountIDs []string) *volumeFilter {
 	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, "sell", optionalAccountIDs)
 	if e != nil {
 		panic(e)
 	}
+
+	fmt.Println(query)
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
@@ -99,21 +98,24 @@ func TestMakeFilterVolume(t *testing.T) {
 	exchangeName := ""
 	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
 	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
+	firstMarketID := MakeMarketID(exchangeName, "native", "native")
 
 	for _, k := range testCases {
+		queryMarketIDs := utils.Dedupe(append([]string{firstMarketID}, k.marketIDs...))
+
 		for _, m := range modes {
 			baseCapInBaseConfig := makeTestVolumeFilterConfig(1.0, -1.0, k.marketIDs, k.accountIDs, m)
 			baseCapInQuoteConfig := makeTestVolumeFilterConfig(-1.0, 1.0, k.marketIDs, k.accountIDs, m)
 
-			for _, c := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
+			for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
 				var configType string
-				if c.SellBaseAssetCapInBaseUnits != nil {
+				if config.SellBaseAssetCapInBaseUnits != nil {
 					configType = "base"
 				} else {
 					configType = "quote"
 				}
 
-				wantFilter := makeTestVolumeFilter(c, k.marketIDs, k.accountIDs)
+				wantFilter := makeTestVolumeFilter(config, queryMarketIDs, k.accountIDs)
 				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
 					actual, e := makeFilterVolume(
 						configValue,
@@ -123,10 +125,13 @@ func TestMakeFilterVolume(t *testing.T) {
 						utils.NativeAsset,
 						utils.NativeAsset,
 						&sql.DB{},
-						c,
+						config,
 					)
 
-					assert.Nil(t, e)
+					if !assert.Nil(t, e) {
+						return
+					}
+
 					assert.Equal(t, wantFilter, actual)
 				})
 			}
@@ -246,7 +251,13 @@ func TestVolumeFilterFn(t *testing.T) {
 			op := makeManageSellOffer(k.price, k.inputAmount)
 			wantOp := makeManageSellOffer(k.price, k.wantAmount)
 
-			actual, e := volumeFilterFn(dailyOTB, dailyTBB, op, utils.NativeAsset, utils.NativeAsset, k.sellBaseCapInBase, k.sellBaseCapInQuote, volumeFilterModeExact)
+			lp := limitParameters{
+				sellBaseAssetCapInBaseUnits:  k.sellBaseCapInBase,
+				sellBaseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
+				mode:                         volumeFilterModeExact,
+			}
+
+			actual, e := volumeFilterFn(dailyOTB, dailyTBB, op, utils.NativeAsset, utils.NativeAsset, lp)
 
 			assert.Nil(t, e)
 			assert.Equal(t, wantOp, actual)

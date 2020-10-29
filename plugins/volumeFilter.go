@@ -44,6 +44,12 @@ type VolumeFilterConfig struct {
 	// buyBaseAssetCapInQuoteUnits  *float64
 }
 
+type limitParameters struct {
+	sellBaseAssetCapInBaseUnits  *float64
+	sellBaseAssetCapInQuoteUnits *float64
+	mode                         volumeFilterMode
+}
+
 type volumeFilter struct {
 	name                   string
 	configValue            string
@@ -138,7 +144,12 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 	}
 
 	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
-		return volumeFilterFn(dailyOTB, dailyTBB, op, f.baseAsset, f.quoteAsset, f.config.SellBaseAssetCapInBaseUnits, f.config.SellBaseAssetCapInQuoteUnits, f.config.mode)
+		limitParameters := limitParameters{
+			sellBaseAssetCapInBaseUnits:  f.config.SellBaseAssetCapInBaseUnits,
+			sellBaseAssetCapInQuoteUnits: f.config.SellBaseAssetCapInQuoteUnits,
+			mode:                         f.config.mode,
+		}
+		return volumeFilterFn(dailyOTB, dailyTBB, op, f.baseAsset, f.quoteAsset, limitParameters)
 	}
 	ops, e = filterOps(f.name, f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {
@@ -147,7 +158,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 	return ops, nil
 }
 
-func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset, quoteAsset hProtocol.Asset, sellBaseAssetCapInBaseUnits, sellBaseAssetCapInQuoteUnits *float64, mode volumeFilterMode) (*txnbuild.ManageSellOffer, error) {
+func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, lp limitParameters) (*txnbuild.ManageSellOffer, error) {
 	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
 	if e != nil {
 		return nil, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
@@ -168,12 +179,12 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, 
 		newAmountBeingSold := amountValueUnitsBeingSold
 		var keepSellingBase bool
 		var keepSellingQuote bool
-		if sellBaseAssetCapInBaseUnits != nil {
+		if lp.sellBaseAssetCapInBaseUnits != nil {
 			projectedSoldInBaseUnits := *dailyOTB.SellBaseAssetCapInBaseUnits + *dailyTBB.SellBaseAssetCapInBaseUnits + amountValueUnitsBeingSold
-			keepSellingBase = projectedSoldInBaseUnits <= *sellBaseAssetCapInBaseUnits
+			keepSellingBase = projectedSoldInBaseUnits <= *lp.sellBaseAssetCapInBaseUnits
 			newAmountString := ""
-			if mode == volumeFilterModeExact && !keepSellingBase {
-				newAmount := *sellBaseAssetCapInBaseUnits - *dailyOTB.SellBaseAssetCapInBaseUnits - *dailyTBB.SellBaseAssetCapInBaseUnits
+			if lp.mode == volumeFilterModeExact && !keepSellingBase {
+				newAmount := *lp.sellBaseAssetCapInBaseUnits - *dailyOTB.SellBaseAssetCapInBaseUnits - *dailyTBB.SellBaseAssetCapInBaseUnits
 				if newAmount > 0 {
 					newAmountBeingSold = newAmount
 					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
@@ -181,17 +192,17 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, 
 					newAmountString = ", newAmountString = " + opToReturn.Amount
 				}
 			}
-			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *sellBaseAssetCapInBaseUnits, keepSellingBase, newAmountString)
+			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.SellBaseAssetCapInBaseUnits): keepSellingBase = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *lp.sellBaseAssetCapInBaseUnits, keepSellingBase, newAmountString)
 		} else {
 			keepSellingBase = true
 		}
 
-		if sellBaseAssetCapInQuoteUnits != nil {
+		if lp.sellBaseAssetCapInQuoteUnits != nil {
 			projectedSoldInQuoteUnits := *dailyOTB.SellBaseAssetCapInQuoteUnits + *dailyTBB.SellBaseAssetCapInQuoteUnits + (newAmountBeingSold * sellPrice)
-			keepSellingQuote = projectedSoldInQuoteUnits <= *sellBaseAssetCapInQuoteUnits
+			keepSellingQuote = projectedSoldInQuoteUnits <= *lp.sellBaseAssetCapInQuoteUnits
 			newAmountString := ""
-			if mode == volumeFilterModeExact && !keepSellingQuote {
-				newAmount := (*sellBaseAssetCapInQuoteUnits - *dailyOTB.SellBaseAssetCapInQuoteUnits - *dailyTBB.SellBaseAssetCapInQuoteUnits) / sellPrice
+			if lp.mode == volumeFilterModeExact && !keepSellingQuote {
+				newAmount := (*lp.sellBaseAssetCapInQuoteUnits - *dailyOTB.SellBaseAssetCapInQuoteUnits - *dailyTBB.SellBaseAssetCapInQuoteUnits) / sellPrice
 				if newAmount > 0 {
 					newAmountBeingSold = newAmount
 					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
@@ -199,7 +210,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, 
 					newAmountString = ", newAmountString = " + opToReturn.Amount
 				}
 			}
-			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *sellBaseAssetCapInQuoteUnits, keepSellingQuote, newAmountString)
+			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.SellBaseAssetCapInQuoteUnits): keepSellingQuote = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *lp.sellBaseAssetCapInQuoteUnits, keepSellingQuote, newAmountString)
 		} else {
 			keepSellingQuote = true
 		}
