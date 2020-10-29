@@ -42,8 +42,6 @@ func makeTestVolumeFilter(config *VolumeFilterConfig, marketIDs []string, option
 		panic(e)
 	}
 
-	fmt.Println(query)
-
 	return &volumeFilter{
 		name:                   "volumeFilter",
 		baseAsset:              utils.NativeAsset,
