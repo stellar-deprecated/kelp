@@ -36,8 +36,9 @@ func makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote float64, additiona
 	}
 }
 
-func makeTestVolumeFilter(config *VolumeFilterConfig, marketIDs []string, optionalAccountIDs []string, action string) *volumeFilter {
-	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, optionalAccountIDs)
+func makeWantVolumeFilter(config *VolumeFilterConfig, firstMarketID string, marketIDs []string, optionalAccountIDs []string, action string) *volumeFilter {
+	queryMarketIDs := utils.Dedupe(append([]string{firstMarketID}, marketIDs...))
+	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, queryMarketIDs, action, optionalAccountIDs)
 	if e != nil {
 		panic(e)
 	}
@@ -53,11 +54,17 @@ func makeTestVolumeFilter(config *VolumeFilterConfig, marketIDs []string, option
 
 func TestMakeFilterVolume(t *testing.T) {
 	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
+	configValue := ""
+	exchangeName := ""
+	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
+	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
+	firstMarketID := MakeMarketID(exchangeName, "native", "native")
 
 	testCases := []struct {
 		name       string
 		marketIDs  []string
 		accountIDs []string
+		wantFilter *volumeFilter
 	}{
 		// TODO DS Confirm the empty config fails once validation is added to the constructor
 		{
@@ -92,20 +99,15 @@ func TestMakeFilterVolume(t *testing.T) {
 		},
 	}
 
-	configValue := ""
-	exchangeName := ""
-	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
-	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
-	firstMarketID := MakeMarketID(exchangeName, "native", "native")
-
 	for _, k := range testCases {
-		queryMarketIDs := utils.Dedupe(append([]string{firstMarketID}, k.marketIDs...))
-
+		// this lets us test both types of modes when varying the market and account ids
 		for _, m := range modes {
+			// this lets us test both constraints within the config
 			baseCapInBaseConfig := makeTestVolumeFilterConfig(1.0, -1.0, k.marketIDs, k.accountIDs, m)
 			baseCapInQuoteConfig := makeTestVolumeFilterConfig(-1.0, 1.0, k.marketIDs, k.accountIDs, m)
 
 			for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
+				// configType is used to represent the type of config when printing test name
 				var configType string
 				if config.SellBaseAssetCapInBaseUnits != nil {
 					configType = "base"
@@ -114,7 +116,7 @@ func TestMakeFilterVolume(t *testing.T) {
 				}
 
 				// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
-				wantFilter := makeTestVolumeFilter(config, queryMarketIDs, k.accountIDs, "sell")
+				wantFilter := makeWantVolumeFilter(config, firstMarketID, k.marketIDs, k.accountIDs, "sell")
 				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
 					actual, e := makeFilterVolume(
 						configValue,
