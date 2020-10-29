@@ -36,8 +36,8 @@ func makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote float64, additiona
 	}
 }
 
-func makeTestVolumeFilter(config *VolumeFilterConfig, marketIDs []string, optionalAccountIDs []string) *volumeFilter {
-	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, "sell", optionalAccountIDs)
+func makeTestVolumeFilter(config *VolumeFilterConfig, marketIDs []string, optionalAccountIDs []string, action string) *volumeFilter {
+	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, optionalAccountIDs)
 	if e != nil {
 		panic(e)
 	}
@@ -113,7 +113,8 @@ func TestMakeFilterVolume(t *testing.T) {
 					configType = "quote"
 				}
 
-				wantFilter := makeTestVolumeFilter(config, queryMarketIDs, k.accountIDs)
+				// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
+				wantFilter := makeTestVolumeFilter(config, queryMarketIDs, k.accountIDs, "sell")
 				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
 					actual, e := makeFilterVolume(
 						configValue,
