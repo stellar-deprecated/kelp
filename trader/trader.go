@@ -453,7 +453,7 @@ func (t *Trader) update() bool {
 			return false
 		}
 
-		t.metricsTracker.AddUpdateOpsUpdate(len(ops))
+		t.metricsTracker.AddUpdatesOpsUpdate(len(ops))
 	}
 
 	e = t.strategy.PostUpdate()
