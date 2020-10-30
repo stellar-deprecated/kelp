@@ -401,6 +401,8 @@ func (t *Trader) update() bool {
 			return false
 		}
 
+		t.metricsTracker.AddPruneOps(len(pruneOps))
+
 		// TODO 2 streamline the request data instead of caching - may not need this since result of PruneOps is async
 		// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
 		t.sdex.IEIF().ResetCachedBalances()
@@ -450,6 +452,8 @@ func (t *Trader) update() bool {
 			t.deleteAllOffers(false)
 			return false
 		}
+
+		t.metricsTracker.AddUpdateOpsUpdate(len(ops))
 	}
 
 	e = t.strategy.PostUpdate()

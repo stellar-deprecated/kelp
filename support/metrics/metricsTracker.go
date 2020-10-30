@@ -31,6 +31,7 @@ type MetricsTracker struct {
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
+	numOps              numOps
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -89,6 +90,9 @@ type updateProps struct {
 	Success                      bool    `json:"success"`
 	MillisForUpdate              int64   `json:"millis_for_update"`
 	SecondsSinceLastUpdateMetric float64 `json:"seconds_since_last_update_metric"` // helps understand total runtime of bot when summing this field across events
+	NumPruneOps                  int     `json:"num_prune_ops"`
+	NumUpdatesOpsDelete          int     `json:"num_update_ops_delete"`
+	NumUpdatesOpsUpdate          int     `json:"num_update_ops_update"`
 }
 
 // deleteProps holds the properties for the delete Amplitude event.
@@ -103,6 +107,12 @@ type deleteProps struct {
 type eventWrapper struct {
 	ApiKey string  `json:"api_key"`
 	Events []event `json:"events"`
+}
+
+type numOps struct {
+	PruneOps         int `json:"num_prune_ops"`
+	UpdatesOpsDelete int `json:"num_update_ops_delete"`
+	UpdatesOpsUpdate int `json:"num_update_ops_update"`
 }
 
 // response structure taken from here: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#tocSsuccesssummary
@@ -205,7 +215,27 @@ func MakeMetricsTracker(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		numOps: numOps{
+			PruneOps:         0,
+			UpdatesOpsDelete: 0,
+			UpdatesOpsUpdate: 0,
+		},
 	}, nil
+}
+
+// AddPruneOps increments the total prune ops by the number of new ops.
+func (mt *MetricsTracker) AddPruneOps(numNewOps int) {
+	mt.numOps.PruneOps += numNewOps
+}
+
+// AddUpdatesOpsDelete increments the total update ops from deletion, by the number of new ops.
+func (mt *MetricsTracker) AddUpdatesOpsDelete(numNewOps int) {
+	mt.numOps.UpdatesOpsDelete += numNewOps
+}
+
+// AddUpdatesOpsUpdate increments the total update ops from updates, by the number of new ops.
+func (mt *MetricsTracker) AddUpdatesOpsUpdate(numNewOps int) {
+	mt.numOps.UpdatesOpsUpdate += numNewOps
 }
 
 // GetUpdateEventSentTime gets the last sent time of the update event.
@@ -234,6 +264,9 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 		Success:                      success,
 		MillisForUpdate:              millisForUpdate,
 		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
+		NumPruneOps:                  mt.numOps.PruneOps,
+		NumUpdatesOpsDelete:          mt.numOps.UpdatesOpsDelete,
+		NumUpdatesOpsUpdate:          mt.numOps.UpdatesOpsUpdate,
 	}
 	e := mt.sendEvent(updateEventName, updateProps)
 	if e != nil {
