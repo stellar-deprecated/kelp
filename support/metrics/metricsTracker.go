@@ -56,6 +56,7 @@ type commonProps struct {
 	Goos                             string  `json:"goos"`
 	Goarch                           string  `json:"goarch"`
 	Goarm                            string  `json:"goarm"`
+	GoVersion                        string  `json:"go_version"`
 	GuiVersion                       string  `json:"gui_version"`
 	Strategy                         string  `json:"strategy"`
 	UpdateTimeIntervalSeconds        int32   `json:"update_time_interval_seconds"`
@@ -75,6 +76,11 @@ type commonProps struct {
 	EnabledFeatureMonitoring         bool    `json:"enabled_feature_monitoring"`
 	EnabledFeatureFilters            bool    `json:"enabled_feature_filters"`
 	EnabledFeaturePostgres           bool    `json:"enabled_feature_postgres"`
+	EnabledFeatureLogging            bool    `json:"enabled_feature_logging"`
+	OperationalBuffer                float64 `json:"operational_buffer"`
+	OperationalBufferNonNativePct    float64 `json:"operational_buffer_non_native_pct"`
+	SimMode                          bool    `json:"sim_mode"`
+	FixedIterations                  uint64  `json:"fixed_iterations"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -131,6 +137,7 @@ func MakeMetricsTracker(
 	goos string,
 	goarch string,
 	goarm string,
+	goVersion string,
 	guiVersion string,
 	strategy string,
 	updateTimeIntervalSeconds int32,
@@ -150,6 +157,11 @@ func MakeMetricsTracker(
 	enabledFeatureMonitoring bool,
 	enabledFeatureFilters bool,
 	enabledFeaturePostgres bool,
+	enabledFeatureLogging bool,
+	operationalBuffer float64,
+	operationalBufferNonNativePct float64,
+	simMode bool,
+	fixedIterations uint64,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion:                       version,
@@ -158,6 +170,7 @@ func MakeMetricsTracker(
 		Goos:                             goos,
 		Goarch:                           goarch,
 		Goarm:                            goarm,
+		GoVersion:                        goVersion,
 		GuiVersion:                       guiVersion,
 		Strategy:                         strategy,
 		UpdateTimeIntervalSeconds:        updateTimeIntervalSeconds,
@@ -176,6 +189,11 @@ func MakeMetricsTracker(
 		EnabledFeatureMonitoring:         enabledFeatureMonitoring,
 		EnabledFeatureFilters:            enabledFeatureFilters,
 		EnabledFeaturePostgres:           enabledFeaturePostgres,
+		EnabledFeatureLogging:            enabledFeatureLogging,
+		OperationalBuffer:                operationalBuffer,
+		OperationalBufferNonNativePct:    operationalBufferNonNativePct,
+		SimMode:                          simMode,
+		FixedIterations:                  fixedIterations,
 	}
 
 	return &MetricsTracker{
