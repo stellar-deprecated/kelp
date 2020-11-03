@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/networking"
 )
 
@@ -31,6 +32,9 @@ type MetricsTracker struct {
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
+
+	// uninitialized
+	handlers []plugins.TradeMetricsHandler
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -303,4 +307,9 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		}
 	}
 	return nil
+}
+
+// RegisterHandler adds an internal handler.
+func (mt *MetricsTracker) RegisterHandler(handler plugins.TradeMetricsHandler) {
+	mt.handlers = append(mt.handlers, handler)
 }

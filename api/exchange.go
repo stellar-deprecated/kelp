@@ -237,6 +237,18 @@ type ExchangeShim interface {
 	FillTrackable
 }
 
+// TradeMetricsHandler is invoked by the MetricsTracker to process new trades
+type TradeMetricsHandler interface {
+	HandleTrade(trade model.Trade) error
+	Read(trades []model.Trade)
+	Reset()
+}
+
+// MetricsTracker knows how to track metrics, including trades
+type MetricsTracker interface {
+	RegisterHandler(handler TradeMetricsHandler)
+}
+
 // ConvertOperation2TM is a temporary adapter to support transitioning from the old Go SDK to the new SDK without having to bump the major version
 func ConvertOperation2TM(ops []txnbuild.Operation) []build.TransactionMutator {
 	muts := []build.TransactionMutator{}
