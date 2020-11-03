@@ -86,6 +86,8 @@ type commonProps struct {
 	OperationalBufferNonNativePct    float64 `json:"operational_buffer_non_native_pct"`
 	SimMode                          bool    `json:"sim_mode"`
 	FixedIterations                  uint64  `json:"fixed_iterations"`
+	NumTradesSinceLastUpdate         int     `json:"num_trades_since_last_update"`
+	BaseVolumeTradesSinceLastUpdate  float64 `json:"base_volume_trades_since_last_update"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
