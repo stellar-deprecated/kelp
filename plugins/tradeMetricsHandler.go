@@ -22,7 +22,7 @@ func (h *TradeMetricsHandler) Reset() {
 }
 
 // Read stores new trades internally.
-func (h *TradeMetricsHandler) Read(newTrades []model.Trade) error {
+func (h *TradeMetricsHandler) Read(newTrades []model.Trade) {
 	for _, nt := range newTrades {
 		h.trades = append(h.trades, nt)
 	}
