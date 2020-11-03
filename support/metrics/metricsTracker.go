@@ -8,7 +8,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/support/networking"
 )
 
@@ -34,7 +35,7 @@ type MetricsTracker struct {
 	updateEventSentTime *time.Time
 
 	// uninitialized
-	handlers []plugins.TradeMetricsHandler
+	handlers []api.TradeMetricsHandler
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -310,6 +311,39 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 }
 
 // RegisterHandler adds an internal handler.
-func (mt *MetricsTracker) RegisterHandler(handler plugins.TradeMetricsHandler) {
+func (mt *MetricsTracker) RegisterHandler(handler api.TradeMetricsHandler) {
 	mt.handlers = append(mt.handlers, handler)
+}
+
+// GetHandlers returns the handlers
+func (mt *MetricsTracker) GetHandlers() []api.TradeMetricsHandler {
+	return mt.handlers
+}
+
+// ResetHandlers resets all handlers
+func (mt *MetricsTracker) ResetHandlers() {
+	for _, h := range mt.handlers {
+		h.Reset()
+	}
+}
+
+// ReadIntoHandlers reads to all handlers
+func (mt *MetricsTracker) ReadIntoHandlers(trades []model.Trade) {
+	for _, h := range mt.handlers {
+		h.Read(trades)
+	}
+}
+
+func (mt *MetricsTracker) getTotalVolume() (total float64) {
+	for _, h := range mt.handlers {
+		total += h.TotalBaseVolume()
+	}
+	return
+}
+
+func (mt *MetricsTracker) getTotalNumTrades() (total int) {
+	for _, h := range mt.handlers {
+		total += h.NumTrades()
+	}
+	return
 }

@@ -28,14 +28,15 @@ func (h *TradeMetricsHandler) Read(newTrades []model.Trade) {
 	}
 }
 
-// Get returns the number of trades.
-func (h *TradeMetricsHandler) Get() int {
+// NumTrades returns the number of trades.
+func (h *TradeMetricsHandler) NumTrades() int {
 	return len(h.trades)
 }
 
-// HandleTrade impl
-func (h *TradeMetricsHandler) HandleTrade(trade model.Trade) error {
-	// TODO: Add more if needed.
-	h.trades = append(h.trades, trade)
-	return nil
+// TotalBaseVolume returns the total base volume.
+func (h *TradeMetricsHandler) TotalBaseVolume() (total float64) {
+	for _, t := range h.trades {
+		total += t.Volume.AsFloat()
+	}
+	return
 }

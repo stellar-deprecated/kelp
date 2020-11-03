@@ -239,9 +239,10 @@ type ExchangeShim interface {
 
 // TradeMetricsHandler is invoked by the MetricsTracker to process new trades
 type TradeMetricsHandler interface {
-	HandleTrade(trade model.Trade) error
 	Read(trades []model.Trade)
 	Reset()
+	TotalBaseVolume() float64
+	NumTrades() int
 }
 
 // MetricsTracker knows how to track metrics, including trades
