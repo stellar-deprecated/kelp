@@ -609,9 +609,6 @@ func runTradeCmd(options inputs) {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
 	}
 
-	tradeMetricsHandler := plugins.MakeTradeMetricsHandler()
-	metricsTracker.RegisterHandler(tradeMetricsHandler)
-
 	e = metricsTracker.SendStartupEvent()
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not send startup event metric: %s", e))

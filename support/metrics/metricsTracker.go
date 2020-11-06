@@ -8,8 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/stellar/kelp/api"
-	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/networking"
 )
 
@@ -33,9 +32,7 @@ type MetricsTracker struct {
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
-
-	// uninitialized
-	handlers []api.TradeMetricsHandler
+	handler             *plugins.TradeMetricsHandler
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -86,8 +83,6 @@ type commonProps struct {
 	OperationalBufferNonNativePct    float64 `json:"operational_buffer_non_native_pct"`
 	SimMode                          bool    `json:"sim_mode"`
 	FixedIterations                  uint64  `json:"fixed_iterations"`
-	NumTradesSinceLastUpdate         int     `json:"num_trades_since_last_update"`
-	BaseVolumeTradesSinceLastUpdate  float64 `json:"base_volume_trades_since_last_update"`
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -212,6 +207,7 @@ func MakeMetricsTracker(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		handler:             plugins.MakeTradeMetricsHandler(),
 	}, nil
 }
 
@@ -312,40 +308,52 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 	return nil
 }
 
-// RegisterHandler adds an internal handler.
-func (mt *MetricsTracker) RegisterHandler(handler api.TradeMetricsHandler) {
-	mt.handlers = append(mt.handlers, handler)
-}
+// ComputeTradeMetrics computes various trade metrics and outputs a map that can be combined with other metrics.
+func (mt *MetricsTracker) ComputeTradeMetrics() map[string]interface{} {
+	// TODO NS Ensure proper locking around trades on metrics handler
+	trades := mt.handler.GetTrades()
+	mt.handler.Reset()
 
-// GetHandlers returns the handlers
-func (mt *MetricsTracker) GetHandlers() []api.TradeMetricsHandler {
-	return mt.handlers
-}
+	totalBaseVolume := 0.0
+	totalQuoteVolume := 0.0
+	totalPrice := 0.0
+	netBaseVolume := 0.0
+	netQuoteVolume := 0.0
 
-// ResetHandlers resets all handlers
-func (mt *MetricsTracker) ResetHandlers() {
-	for _, h := range mt.handlers {
-		h.Reset()
+	numTrades := float64(len(trades))
+	for _, t := range trades {
+		base := t.Volume.AsFloat()
+		price := t.Price.AsFloat()
+		quote := base * price
+
+		totalBaseVolume += base
+		totalPrice += price
+		totalQuoteVolume += quote
+
+		if t.OrderAction.IsBuy() {
+			netBaseVolume += base
+			netQuoteVolume -= quote
+		} else {
+			netBaseVolume -= base
+			netQuoteVolume -= quote
+		}
 	}
-}
 
-// ReadIntoHandlers reads to all handlers
-func (mt *MetricsTracker) ReadIntoHandlers(trades []model.Trade) {
-	for _, h := range mt.handlers {
-		h.Read(trades)
-	}
-}
+	avgTradeSizeBase := totalBaseVolume / numTrades
+	avgTradeSizeQuote := totalQuoteVolume / numTrades
+	avgTradePrice := totalPrice / numTrades
 
-func (mt *MetricsTracker) getTotalVolume() (total float64) {
-	for _, h := range mt.handlers {
-		total += h.TotalBaseVolume()
+	tradeMetrics := map[string]interface{}{
+		"total_base_volume":    totalBaseVolume,
+		"total_quote_volume":   totalQuoteVolume,
+		"net_base_volume":      netBaseVolume,
+		"net_quote_volume":     netQuoteVolume,
+		"num_trades":           numTrades,
+		"avg_trade_size_base":  avgTradeSizeBase,
+		"avg_trade_size_quote": avgTradeSizeQuote,
+		"avg_trade_price":      avgTradePrice,
+		"vwap":                 totalQuoteVolume / totalBaseVolume,
 	}
-	return
-}
 
-func (mt *MetricsTracker) getTotalNumTrades() (total int) {
-	for _, h := range mt.handlers {
-		total += h.NumTrades()
-	}
-	return
+	return tradeMetrics
 }

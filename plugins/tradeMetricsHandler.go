@@ -16,27 +16,19 @@ func MakeTradeMetricsHandler() *TradeMetricsHandler {
 	}
 }
 
-// Reset sets the handler's trade counter to zero.
+// Reset sets the handler's trades to empty.
 func (h *TradeMetricsHandler) Reset() {
 	h.trades = []model.Trade{}
 }
 
-// Read stores new trades internally.
-func (h *TradeMetricsHandler) Read(newTrades []model.Trade) {
-	for _, nt := range newTrades {
-		h.trades = append(h.trades, nt)
-	}
+// GetTrades returns all stored trades.
+func (h *TradeMetricsHandler) GetTrades() []model.Trade {
+	return h.trades
 }
 
-// NumTrades returns the number of trades.
-func (h *TradeMetricsHandler) NumTrades() int {
-	return len(h.trades)
-}
-
-// TotalBaseVolume returns the total base volume.
-func (h *TradeMetricsHandler) TotalBaseVolume() (total float64) {
-	for _, t := range h.trades {
-		total += t.Volume.AsFloat()
-	}
-	return
+// HandleFill handles a new trade
+// Implements FillHandler interface
+func (h *TradeMetricsHandler) HandleFill(trade model.Trade) error {
+	h.trades = append(h.trades, trade)
+	return nil
 }
