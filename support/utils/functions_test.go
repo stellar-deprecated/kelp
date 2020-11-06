@@ -42,8 +42,11 @@ func TestToMapStringInterface_SuccessMap(t *testing.T) {
 		"test": true,
 	}
 	m, e := ToMapStringInterface(success)
+	if !assert.NoError(t, e) {
+		return
+	}
+
 	assert.Equal(t, success, m)
-	assert.NoError(t, e)
 }
 
 func TestToMapStringInterface_SuccessStruct(t *testing.T) {
@@ -64,6 +67,9 @@ func TestToMapStringInterface_SuccessStruct(t *testing.T) {
 		NonEmptyInts   []int
 	}
 
+	// Note that we lose type information in non-typed structs and arrays.
+	// This is because deserializing JSON collections will lose type information.
+	// (The exception is when JSON tags are used.)
 	success := SuccessStruct{
 		True:           true,
 		False:          false,
@@ -77,22 +83,28 @@ func TestToMapStringInterface_SuccessStruct(t *testing.T) {
 		NonEmptyInts:   []int{1, 2},
 	}
 
+	// Note that since the JSON standard only has number, and the package
+	// defaults to numbers as float64 absent marshaling into a specific struct, we expect
+	// that integers are transformed into floats.
 	want := map[string]interface{}{
-		"EmptyInts":      []interface{}{},
-		"EmptyString":    "",
-		"EmptyStruct":    map[string]interface{}{},
-		"False":          false,
-		"Float":          1.,
-		"Int":            1.,
-		"NonEmptyInts":   []interface{}{1., 2.},
-		"NonEmptyString": "hello world",
-		"NonEmptyStruct": map[string]interface{}{"value": 1.},
 		"True":           true,
+		"False":          false,
+		"EmptyString":    "",
+		"NonEmptyString": "hello world",
+		"Int":            1.0,
+		"Float":          1.0,
+		"EmptyStruct":    map[string]interface{}{},
+		"NonEmptyStruct": map[string]interface{}{"value": 1.0},
+		"EmptyInts":      []interface{}{},
+		"NonEmptyInts":   []interface{}{1.0, 2.0},
 	}
 
 	m, e := ToMapStringInterface(success)
+	if !assert.NoError(t, e) {
+		return
+	}
+
 	assert.Equal(t, want, m)
-	assert.NoError(t, e)
 }
 
 func TestToMapStringInterface_FailureFloat(t *testing.T) {
@@ -120,6 +132,9 @@ func TestMergeMaps(t *testing.T) {
 	}
 
 	gotMap, e := MergeMaps(original, override)
+	if !assert.NoError(t, e) {
+		return
+	}
+
 	assert.Equal(t, wantMap, gotMap)
-	assert.NoError(t, e)
 }

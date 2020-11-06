@@ -312,6 +312,7 @@ func init() {
 				runtime.GOOS,
 				runtime.GOARCH,
 				"unknown_todo", // TODO DS Determine how to get GOARM.
+				runtime.Version(),
 				guiVersion,
 				*options.noHeaders, // disable metrics if the CLI specified no headers
 

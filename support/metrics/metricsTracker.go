@@ -229,6 +229,7 @@ func MakeMetricsTrackerGui(
 	goos string,
 	goarch string,
 	goarm string,
+	goVersion string,
 	guiVersion string,
 	isDisabled bool,
 ) (*MetricsTracker, error) {
@@ -239,6 +240,7 @@ func MakeMetricsTrackerGui(
 		Goos:       goos,
 		Goarch:     goarch,
 		Goarm:      goarm,
+		GoVersion:  goVersion,
 		GuiVersion: guiVersion,
 	}
 
@@ -256,6 +258,7 @@ func MakeMetricsTrackerGui(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		cliVersion:          version,
 	}, nil
 }
 
