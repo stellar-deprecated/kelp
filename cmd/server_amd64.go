@@ -78,7 +78,7 @@ func init() {
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
-	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
+	options.noElectron = serverCmd.Flags().Bool("no-electron", true, "open in browser instead of using electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
