@@ -31,7 +31,6 @@ type MetricsTracker struct {
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
-	numOps              numOps
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -109,10 +108,12 @@ type eventWrapper struct {
 	Events []event `json:"events"`
 }
 
-type numOps struct {
-	PruneOps         int `json:"num_prune_ops"`
-	UpdatesOpsDelete int `json:"num_update_ops_delete"`
-	UpdatesOpsUpdate int `json:"num_update_ops_update"`
+// UpdateLoopResult contains the results of the orderbook update.
+type UpdateLoopResult struct {
+	Success            bool
+	NumPruneOps        int
+	NumUpdateOpsDelete int
+	NumUpdateOpsUpdate int
 }
 
 // response structure taken from here: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#tocSsuccesssummary
@@ -215,27 +216,7 @@ func MakeMetricsTracker(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
-		numOps: numOps{
-			PruneOps:         0,
-			UpdatesOpsDelete: 0,
-			UpdatesOpsUpdate: 0,
-		},
 	}, nil
-}
-
-// AddPruneOps increments the total prune ops by the number of new ops.
-func (mt *MetricsTracker) AddPruneOps(numNewOps int) {
-	mt.numOps.PruneOps += numNewOps
-}
-
-// AddUpdatesOpsDelete increments the total update ops from deletion, by the number of new ops.
-func (mt *MetricsTracker) AddUpdatesOpsDelete(numNewOps int) {
-	mt.numOps.UpdatesOpsDelete += numNewOps
-}
-
-// AddUpdatesOpsUpdate increments the total update ops from updates, by the number of new ops.
-func (mt *MetricsTracker) AddUpdatesOpsUpdate(numNewOps int) {
-	mt.numOps.UpdatesOpsUpdate += numNewOps
 }
 
 // GetUpdateEventSentTime gets the last sent time of the update event.
@@ -249,7 +230,7 @@ func (mt *MetricsTracker) SendStartupEvent() error {
 }
 
 // SendUpdateEvent sends the update Amplitude event.
-func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
+func (mt *MetricsTracker) SendUpdateEvent(now time.Time, updateResult UpdateLoopResult, millisForUpdate int64) error {
 	commonProps := mt.props
 	commonProps.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
 
@@ -261,12 +242,12 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 	}
 	updateProps := updateProps{
 		commonProps:                  commonProps,
-		Success:                      success,
+		Success:                      updateResult.Success,
 		MillisForUpdate:              millisForUpdate,
 		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
-		NumPruneOps:                  mt.numOps.PruneOps,
-		NumUpdatesOpsDelete:          mt.numOps.UpdatesOpsDelete,
-		NumUpdatesOpsUpdate:          mt.numOps.UpdatesOpsUpdate,
+		NumPruneOps:                  updateResult.NumPruneOps,
+		NumUpdatesOpsDelete:          updateResult.NumUpdateOpsDelete,
+		NumUpdatesOpsUpdate:          updateResult.NumUpdateOpsUpdate,
 	}
 	e := mt.sendEvent(updateEventName, updateProps)
 	if e != nil {

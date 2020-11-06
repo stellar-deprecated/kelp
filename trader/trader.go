@@ -123,12 +123,12 @@ func (t *Trader) Start() {
 	for {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
-			success := t.update()
+			updateResult := t.update()
 			millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 			log.Printf("time taken for update loop: %d millis\n", millisForUpdate)
 			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, t.metricsTracker.GetUpdateEventSentTime()) {
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
+					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, updateResult, millisForUpdate)
 					if e != nil {
 						log.Printf("failed to send update event metric: %s", e)
 					}
@@ -138,7 +138,7 @@ func (t *Trader) Start() {
 				}
 			}
 
-			if t.fixedIterations != nil && success {
+			if t.fixedIterations != nil && updateResult.Success {
 				*t.fixedIterations = *t.fixedIterations - 1
 				if *t.fixedIterations <= 0 {
 					log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
@@ -353,12 +353,22 @@ func isStateSynchronized(
 
 // time to update the order book and possibly readjust the offers
 // returns true if the update was successful, otherwise false
-func (t *Trader) update() bool {
+func (t *Trader) update() metrics.UpdateLoopResult {
+	// initialize counts of types of ops
+	numPruneOps := 0
+	numUpdateOpsDelete := 0
+	numUpdateOpsUpdate := 0
+
 	e := t.synchronizeFetchBalancesOffersTrades()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return metrics.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		}
 	}
 
 	pair := &model.TradingPair{
@@ -377,7 +387,12 @@ func (t *Trader) update() bool {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return metrics.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		}
 	}
 
 	// strategy has a chance to set any state it needs
@@ -385,23 +400,32 @@ func (t *Trader) update() bool {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return metrics.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		}
 	}
 
 	// delete excess offers
 	var pruneOps []build.TransactionMutator
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strategy.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
-	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
-	if len(pruneOps) > 0 {
+	numPruneOps = len(pruneOps)
+	log.Printf("created %d operations to prune excess offers\n", numPruneOps)
+	if numPruneOps > 0 {
 		// to prune/delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
 		e = t.exchangeShim.SubmitOps(pruneOps, api.SubmitModeBoth, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return false
+			return metrics.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			}
 		}
-
-		t.metricsTracker.AddPruneOps(len(pruneOps))
 
 		// TODO 2 streamline the request data instead of caching - may not need this since result of PruneOps is async
 		// reset cache of balances for this update cycle to reduce redundant requests to calculate asset balances
@@ -413,7 +437,12 @@ func (t *Trader) update() bool {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return false
+			return metrics.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			}
 		}
 	}
 
@@ -425,7 +454,12 @@ func (t *Trader) update() bool {
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
 		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers(false)
-		return false
+		return metrics.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		}
 	}
 
 	ops := api.ConvertTM2Operation(opsOld)
@@ -434,12 +468,18 @@ func (t *Trader) update() bool {
 		if e != nil {
 			log.Printf("error in filter index %d: %s\n", i, e)
 			t.deleteAllOffers(false)
-			return false
+			return metrics.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			}
 		}
 	}
 
-	log.Printf("created %d operations to update existing offers\n", len(ops))
-	if len(ops) > 0 {
+	numUpdateOpsUpdate = len(ops)
+	log.Printf("created %d operations to update existing offers\n", numUpdateOpsUpdate)
+	if numUpdateOpsUpdate > 0 {
 		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), t.submitMode, func(hash string, e error) {
 			// if there is an error we want it to count towards the delete cycles threshold, so run the check
 			if e != nil {
@@ -450,22 +490,37 @@ func (t *Trader) update() bool {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return false
+			return metrics.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			}
 		}
 
-		t.metricsTracker.AddUpdatesOpsUpdate(len(ops))
+		// t.metricsTracker.AddUpdatesOpsUpdate(len(ops))
 	}
 
 	e = t.strategy.PostUpdate()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return metrics.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		}
 	}
 
 	// reset deleteCycles on every successful run
 	t.deleteCycles = 0
-	return true
+	return metrics.UpdateLoopResult{
+		Success:            true,
+		NumPruneOps:        numPruneOps,
+		NumUpdateOpsDelete: numUpdateOpsDelete,
+		NumUpdateOpsUpdate: numUpdateOpsUpdate,
+	}
 }
 
 func (t *Trader) getBalances() (*api.Balance /*baseBalance*/, *api.Balance /*quoteBalance*/, error) {
