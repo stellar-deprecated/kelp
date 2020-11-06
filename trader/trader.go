@@ -311,8 +311,6 @@ func (t *Trader) synchronizeFetchBalancesOffersTrades() error {
 			buyingAOffers2,
 		) {
 			// this is the only success case
-			t.metricsTracker.ResetHandlers()
-			t.metricsTracker.ReadIntoHandlers(trades)
 			t.setBalances(baseBalance1, quoteBalance1)
 			t.setExistingOffers(sellingAOffers1, buyingAOffers1)
 			return nil
