@@ -9,14 +9,16 @@ import (
 	"time"
 
 	"github.com/stellar/kelp/support/networking"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // we don't want this to be a custom event, custom events should only be added from the amplitude UI
 const (
-	amplitudeAPIURL  string = "https://api2.amplitude.com/2/httpapi"
-	startupEventName string = "bot_startup"
-	updateEventName  string = "update_offers"
-	deleteEventName  string = "delete_offers"
+	amplitudeAPIURL      string = "https://api2.amplitude.com/2/httpapi"
+	startupEventName     string = "bot_startup"
+	updateEventName      string = "update_offers"
+	deleteEventName      string = "delete_offers"
+	secondsSinceStartKey string = "seconds_since_start"
 )
 
 // MetricsTracker wraps the properties for Amplitude events,
@@ -27,10 +29,11 @@ type MetricsTracker struct {
 	apiKey              string
 	userID              string
 	deviceID            string
-	props               commonProps
+	props               map[string]interface{}
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
+	cliVersion          string
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -85,7 +88,6 @@ type commonProps struct {
 
 // updateProps holds the properties for the update Amplitude event.
 type updateProps struct {
-	commonProps
 	Success                      bool    `json:"success"`
 	MillisForUpdate              int64   `json:"millis_for_update"`
 	SecondsSinceLastUpdateMetric float64 `json:"seconds_since_last_update_metric"` // helps understand total runtime of bot when summing this field across events
@@ -95,13 +97,12 @@ type updateProps struct {
 // TODO DS StackTrace may need to be a message instead of or in addition to a
 // stack trace. The goal is to get crash logs, Amplitude may not enable this.
 type deleteProps struct {
-	commonProps
 	Exit       bool   `json:"exit"`
 	StackTrace string `json:"stack_trace"`
 }
 
 type eventWrapper struct {
-	ApiKey string  `json:"api_key"`
+	APIKey string  `json:"api_key"`
 	Events []event `json:"events"`
 }
 
@@ -124,8 +125,8 @@ func (ar amplitudeResponse) String() string {
 	)
 }
 
-// MakeMetricsTracker is a factory method to create a `metrics.Tracker`.
-func MakeMetricsTracker(
+// MakeMetricsTrackerCli is a factory method to create a `metrics.Tracker` from the CLI.
+func MakeMetricsTrackerCli(
 	userID string,
 	deviceID string,
 	apiKey string,
@@ -176,6 +177,7 @@ func MakeMetricsTracker(
 		UpdateTimeIntervalSeconds:        updateTimeIntervalSeconds,
 		Exchange:                         exchange,
 		TradingPair:                      tradingPair,
+		SecondsSinceStart:                0,
 		IsTestnet:                        isTestnet,
 		MaxTickDelayMillis:               maxTickDelayMillis,
 		SubmitMode:                       submitMode,
@@ -196,15 +198,67 @@ func MakeMetricsTracker(
 		FixedIterations:                  fixedIterations,
 	}
 
+	propsMap, e := utils.ToMapStringInterface(props)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert props to map: %s", e)
+	}
+
 	return &MetricsTracker{
 		client:              client,
 		apiKey:              apiKey,
 		userID:              userID,
 		deviceID:            deviceID,
-		props:               props,
+		props:               propsMap,
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		cliVersion:          version,
+	}, nil
+}
+
+// MakeMetricsTrackerGui is a factory method to create a `metrics.Tracker` from the CLI.
+func MakeMetricsTrackerGui(
+	userID string,
+	deviceID string,
+	apiKey string,
+	client *http.Client,
+	botStartTime time.Time,
+	version string,
+	gitHash string,
+	env string,
+	goos string,
+	goarch string,
+	goarm string,
+	goVersion string,
+	guiVersion string,
+	isDisabled bool,
+) (*MetricsTracker, error) {
+	props := commonProps{
+		CliVersion: version,
+		GitHash:    gitHash,
+		Env:        env,
+		Goos:       goos,
+		Goarch:     goarch,
+		Goarm:      goarm,
+		GoVersion:  goVersion,
+		GuiVersion: guiVersion,
+	}
+
+	propsMap, e := utils.ToMapStringInterface(props)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert props to map: %s", e)
+	}
+
+	return &MetricsTracker{
+		client:              client,
+		apiKey:              apiKey,
+		userID:              userID,
+		deviceID:            deviceID,
+		props:               propsMap,
+		botStartTime:        botStartTime,
+		isDisabled:          isDisabled,
+		updateEventSentTime: nil,
+		cliVersion:          version,
 	}, nil
 }
 
@@ -214,28 +268,26 @@ func (mt *MetricsTracker) GetUpdateEventSentTime() *time.Time {
 }
 
 // SendStartupEvent sends the startup Amplitude event.
-func (mt *MetricsTracker) SendStartupEvent() error {
-	return mt.sendEvent(startupEventName, mt.props)
+func (mt *MetricsTracker) SendStartupEvent(now time.Time) error {
+	return mt.SendEvent(startupEventName, mt.props, now)
 }
 
 // SendUpdateEvent sends the update Amplitude event.
 func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
-	commonProps := mt.props
-	commonProps.SecondsSinceStart = now.Sub(mt.botStartTime).Seconds()
-
 	var secondsSinceLastUpdateMetric float64
 	if mt.updateEventSentTime == nil {
-		secondsSinceLastUpdateMetric = commonProps.SecondsSinceStart
+		secondsSinceLastUpdateMetric = now.Sub(mt.botStartTime).Seconds()
 	} else {
 		secondsSinceLastUpdateMetric = now.Sub(*mt.updateEventSentTime).Seconds()
 	}
+
 	updateProps := updateProps{
-		commonProps:                  commonProps,
 		Success:                      success,
 		MillisForUpdate:              millisForUpdate,
 		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
 	}
-	e := mt.sendEvent(updateEventName, updateProps)
+
+	e := mt.SendEvent(updateEventName, updateProps, now)
 	if e != nil {
 		return fmt.Errorf("could not send update event: %s", e)
 	}
@@ -246,34 +298,45 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 
 // SendDeleteEvent sends the delete Amplitude event.
 func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
-	commonProps := mt.props
-	commonProps.SecondsSinceStart = time.Now().Sub(mt.botStartTime).Seconds()
 	deleteProps := deleteProps{
-		commonProps: commonProps,
-		Exit:        exit,
-		StackTrace:  string(debug.Stack()),
+		Exit:       exit,
+		StackTrace: string(debug.Stack()),
 	}
 
-	return mt.sendEvent(deleteEventName, deleteProps)
+	return mt.SendEvent(deleteEventName, deleteProps, time.Now())
 }
 
-func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) error {
+// SendEvent sends an event with its type and properties to Amplitude.
+func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interface{}, now time.Time) error {
 	if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
 		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
 		return nil
 	}
 
+	trackerProps := mt.props
+	trackerProps[secondsSinceStartKey] = now.Sub(mt.botStartTime).Seconds()
+
+	eventProps, e := utils.ToMapStringInterface(eventPropsInterface)
+	if e != nil {
+		return fmt.Errorf("could not convert event props to map: %s", e)
+	}
+
+	mergedProps, e := utils.MergeMaps(trackerProps, eventProps)
+	if e != nil {
+		return fmt.Errorf("could not merge event properties: %s", e)
+	}
+
 	// session_id is the start time of the session in milliseconds since epoch (Unix Timestamp),
 	// necessary to associate events with a particular system (taken from amplitude docs)
 	eventW := eventWrapper{
-		ApiKey: mt.apiKey,
+		APIKey: mt.apiKey,
 		Events: []event{{
 			UserID:    mt.userID,
 			SessionID: mt.botStartTime.Unix() * 1000, // convert to millis based on docs
 			DeviceID:  mt.deviceID,
 			EventType: eventType,
-			Props:     eventProps,
-			Version:   mt.props.CliVersion,
+			Props:     mergedProps,
+			Version:   mt.cliVersion,
 		}},
 	}
 	requestBody, e := json.Marshal(eventW)
@@ -294,7 +357,7 @@ func (mt *MetricsTracker) sendEvent(eventType string, eventProps interface{}) er
 		// work on copy so we don't modify original (good hygiene)
 		eventWCensored := *(&eventW)
 		// we don't want to display the apiKey in the logs so censor it
-		eventWCensored.ApiKey = ""
+		eventWCensored.APIKey = ""
 		requestWCensored, e := json.Marshal(eventWCensored)
 		if e != nil {
 			log.Printf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
