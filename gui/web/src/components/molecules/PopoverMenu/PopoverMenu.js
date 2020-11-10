@@ -9,7 +9,7 @@ class PopoverMenu extends Component {
 
   defaultOnClick(actualOnClickFn) {	
       actualOnClickFn()
-      this.props.alwaysOnClickFn() // this is the onClose passed into the props	
+      this.props.alwaysOnClick() // this is the onClose passed into the props
   }	
 
   render() {
