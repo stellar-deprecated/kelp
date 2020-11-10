@@ -336,7 +336,6 @@ class BotCard extends Component {
           <div className={styles.optionsSpacer}/>
           <PopoverMenu
             className={styles.optionsMenu}
-            alwaysOnClick={this.closeOptions}
             enableOffers={true}
             onOffers={this.showOffers}
             enableMarket={true}
