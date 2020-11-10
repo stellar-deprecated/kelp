@@ -429,3 +429,34 @@ func HashString(s string) (uint32, error) {
 	}
 	return h.Sum32(), nil
 }
+
+// ToMapStringInterface converts an arbitrary struct to a map[string]interface{},
+// through serializing to and deserializing from JSON.
+func ToMapStringInterface(v interface{}) (map[string]interface{}, error) {
+	b, e := json.Marshal(v)
+	if e != nil {
+		return nil, fmt.Errorf("could not marshal interface to json: %s", e)
+	}
+
+	m := make(map[string]interface{})
+	e = json.Unmarshal(b, &m)
+	if e != nil {
+		return nil, fmt.Errorf("could not unmarshal json to interface: %s", e)
+	}
+
+	return m, nil
+}
+
+// MergeMaps combines two arbitrary maps. Note that values from the second would override the first.
+func MergeMaps(original map[string]interface{}, overrides map[string]interface{}) (map[string]interface{}, error) {
+	m := make(map[string]interface{})
+	for k, v := range original {
+		m[k] = v
+	}
+
+	for k, v := range overrides {
+		m[k] = v
+	}
+
+	return m, nil
+}

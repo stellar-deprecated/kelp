@@ -20,6 +20,7 @@ import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
+	"github.com/denisbrodbeck/machineid"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -33,6 +34,7 @@ import (
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/logger"
+	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
@@ -288,6 +290,38 @@ func init() {
 			}
 		}
 
+		var metricsTracker *metrics.MetricsTracker
+		if isLocalDevMode {
+			log.Printf("metric - not sending data metrics in dev mode")
+		} else {
+			deviceID, e := machineid.ID()
+			if e != nil {
+				panic(fmt.Errorf("could not generate machine id: %s", e))
+			}
+
+			httpClient := &http.Client{}
+			metricsTracker, e = metrics.MakeMetricsTrackerGui(
+				deviceID,
+				deviceID,
+				amplitudeAPIKey,
+				httpClient,
+				time.Now(), // TODO: Find proper time.
+				version,
+				gitHash,
+				env,
+				runtime.GOOS,
+				runtime.GOARCH,
+				"unknown_todo", // TODO DS Determine how to get GOARM.
+				runtime.Version(),
+				guiVersion,
+				*options.noHeaders, // disable metrics if the CLI specified no headers
+
+			)
+			if e != nil {
+				panic(e)
+			}
+		}
+
 		dataPath := kos.GetDotKelpWorkingDir().Join("bot_data")
 		botConfigsPath := dataPath.Join("configs")
 		botLogsPath := dataPath.Join("logs")
@@ -302,6 +336,7 @@ func init() {
 			*rootCcxtRestURL,
 			*options.noHeaders,
 			quit,
+			metricsTracker,
 		)
 		if e != nil {
 			panic(e)
