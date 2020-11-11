@@ -80,6 +80,14 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          0.0,
 			wantTomorrowQuote:         0.0,
 		}, {
+			queryByOptionalAccountIDs: []string{"accountID2", "accountID2"}, // duplicate accountIDs should return same as previous test case
+			wantYesterdayBase:         0.0,
+			wantYesterdayQuote:        0.0,
+			wantTodayBase:             100.0,
+			wantTodayQuote:            10.0,
+			wantTomorrowBase:          0.0,
+			wantTomorrowQuote:         0.0,
+		}, {
 			queryByOptionalAccountIDs: []string{"accountID3"}, //accountID3 does not exist
 			wantYesterdayBase:         0.0,
 			wantYesterdayQuote:        0.0,

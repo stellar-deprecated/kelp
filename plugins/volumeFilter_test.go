@@ -16,29 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeTestVolumeFilterConfig(baseCapInBase, baseCapInQuote float64, additionalMarketIDs, optionalAccountIDs []string, mode volumeFilterMode) *VolumeFilterConfig {
-	var baseCapInBasePtr *float64
-	if baseCapInBase >= 0 {
-		baseCapInBasePtr = pointy.Float64(baseCapInBase)
-	}
-
-	var baseCapInQuotePtr *float64
-	if baseCapInQuote >= 0 {
-		baseCapInQuotePtr = pointy.Float64(baseCapInQuote)
-	}
-
-	return &VolumeFilterConfig{
-		SellBaseAssetCapInBaseUnits:  baseCapInBasePtr,
-		SellBaseAssetCapInQuoteUnits: baseCapInQuotePtr,
-		mode:                         mode,
-		additionalMarketIDs:          additionalMarketIDs,
-		optionalAccountIDs:           optionalAccountIDs,
-	}
-}
-
-func makeWantVolumeFilter(config *VolumeFilterConfig, firstMarketID string, marketIDs []string, optionalAccountIDs []string, action string) *volumeFilter {
-	queryMarketIDs := utils.Dedupe(append([]string{firstMarketID}, marketIDs...))
-	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, queryMarketIDs, action, optionalAccountIDs)
+func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action string) *volumeFilter {
+	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, accountIDs)
 	if e != nil {
 		panic(e)
 	}
@@ -55,72 +34,100 @@ func makeWantVolumeFilter(config *VolumeFilterConfig, firstMarketID string, mark
 func TestMakeFilterVolume(t *testing.T) {
 	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
 	configValue := ""
-	exchangeName := ""
 	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
 	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
-	firstMarketID := MakeMarketID(exchangeName, "native", "native")
 
 	testCases := []struct {
-		name       string
-		marketIDs  []string
-		accountIDs []string
-		wantFilter *volumeFilter
+		name          string
+		exchangeName  string
+		marketIDs     []string
+		accountIDs    []string
+		wantMarketIDs []string
+		wantFilter    *volumeFilter
 	}{
 		// TODO DS Confirm the empty config fails once validation is added to the constructor
 		{
-			name:       "1 market id",
-			marketIDs:  []string{"marketID"},
-			accountIDs: []string{},
+			name:          "0 market id or account id",
+			exchangeName:  "exchange 2",
+			marketIDs:     []string{},
+			accountIDs:    []string{},
+			wantMarketIDs: []string{"9db20cdd56"},
 		},
 		{
-			name:       "2 market ids",
-			marketIDs:  []string{"marketID1", "marketID2"},
-			accountIDs: []string{},
+			name:          "1 market id",
+			exchangeName:  "exchange 1",
+			marketIDs:     []string{"marketID"},
+			accountIDs:    []string{},
+			wantMarketIDs: []string{"6d9862b0e2", "marketID"},
 		},
 		{
-			name:       "2 dupe market ids, 1 distinct",
-			marketIDs:  []string{"marketID1", "marketID1", "marketID2"},
-			accountIDs: []string{},
+			name:          "2 market ids",
+			exchangeName:  "exchange 2",
+			marketIDs:     []string{"marketID1", "marketID2"},
+			accountIDs:    []string{},
+			wantMarketIDs: []string{"9db20cdd56", "marketID1", "marketID2"},
 		},
 		{
-			name:       "1 account id",
-			marketIDs:  []string{},
-			accountIDs: []string{"accountID"},
+			name:          "2 dupe market ids, 1 distinct",
+			exchangeName:  "exchange 1",
+			marketIDs:     []string{"marketID1", "marketID1", "marketID2"},
+			accountIDs:    []string{},
+			wantMarketIDs: []string{"6d9862b0e2", "marketID1", "marketID2"},
 		},
 		{
-			name:       "2 account ids",
-			marketIDs:  []string{},
-			accountIDs: []string{"accountID1", "accountID2"},
+			name:          "1 account id",
+			exchangeName:  "exchange 2",
+			marketIDs:     []string{},
+			accountIDs:    []string{"accountID"},
+			wantMarketIDs: []string{"9db20cdd56"},
 		},
 		{
-			name:       "account and market ids",
-			marketIDs:  []string{"marketID"},
-			accountIDs: []string{"accountID"},
+			name:          "2 account ids",
+			exchangeName:  "exchange 1",
+			marketIDs:     []string{},
+			accountIDs:    []string{"accountID1", "accountID2"},
+			wantMarketIDs: []string{"6d9862b0e2"},
+		},
+		{
+			name:          "account and market ids",
+			exchangeName:  "exchange 2",
+			marketIDs:     []string{"marketID"},
+			accountIDs:    []string{"accountID"},
+			wantMarketIDs: []string{"9db20cdd56", "marketID"},
 		},
 	}
 
 	for _, k := range testCases {
 		// this lets us test both types of modes when varying the market and account ids
 		for _, m := range modes {
-			// this lets us test both constraints within the config
-			baseCapInBaseConfig := makeTestVolumeFilterConfig(1.0, -1.0, k.marketIDs, k.accountIDs, m)
-			baseCapInQuoteConfig := makeTestVolumeFilterConfig(-1.0, 1.0, k.marketIDs, k.accountIDs, m)
-
+			// this lets us run the for-loop below for both base and quote units within the config
+			baseCapInBaseConfig := makeRawVolumeFilterConfig(
+				pointy.Float64(1.0),
+				nil,
+				m,
+				k.marketIDs,
+				k.accountIDs,
+			)
+			baseCapInQuoteConfig := makeRawVolumeFilterConfig(
+				nil,
+				pointy.Float64(1.0),
+				m,
+				k.marketIDs,
+				k.accountIDs,
+			)
 			for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
 				// configType is used to represent the type of config when printing test name
-				var configType string
+				configType := "quote"
 				if config.SellBaseAssetCapInBaseUnits != nil {
 					configType = "base"
-				} else {
-					configType = "quote"
 				}
 
 				// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
-				wantFilter := makeWantVolumeFilter(config, firstMarketID, k.marketIDs, k.accountIDs, "sell")
+				wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, "sell")
 				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
 					actual, e := makeFilterVolume(
 						configValue,
-						exchangeName,
+						k.exchangeName,
 						tradingPair,
 						testAssetDisplayFn,
 						utils.NativeAsset,
