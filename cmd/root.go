@@ -20,6 +20,7 @@ var gitHash string
 var buildDate string
 var env string
 var amplitudeAPIKey string
+var goarm string
 
 const envRelease = "release"
 const envDev = "dev"
