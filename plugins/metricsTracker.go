@@ -1,4 +1,4 @@
-package metrics
+package plugins
 
 import (
 	"encoding/json"
