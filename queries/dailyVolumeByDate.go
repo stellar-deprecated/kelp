@@ -15,11 +15,35 @@ const sqlQueryDailyValuesTemplateAllAccounts = "SELECT SUM(base_volume) as total
 // sqlQueryDailyValuesTemplateSpecificAccounts queries the trades table to get the values for a given day filtered by specific accounts
 const sqlQueryDailyValuesTemplateSpecificAccounts = "SELECT SUM(base_volume) as total_base_volume, SUM(counter_cost) as total_counter_volume FROM trades WHERE market_id IN (%s) AND account_id IN (%s) AND DATE(date_utc) = $1 and action = $2 group by DATE(date_utc)"
 
+// DailyVolumeAction represents either a sell or a buy
+type DailyVolumeAction string
+
+// type of DailyVolumeAction
+const (
+	DailyVolumeActionBuy  DailyVolumeAction = "buy"
+	DailyVolumeActionSell DailyVolumeAction = "sell"
+)
+
+// String is the Stringer method impl
+func (a DailyVolumeAction) String() string {
+	return string(a)
+}
+
+// ParseDailyVolumeAction converts a string to a DailyVolumeAction
+func ParseDailyVolumeAction(action string) (DailyVolumeAction, error) {
+	if action == DailyVolumeActionBuy.String() {
+		return DailyVolumeActionBuy, nil
+	} else if action == DailyVolumeActionSell.String() {
+		return DailyVolumeActionSell, nil
+	}
+	return DailyVolumeActionSell, fmt.Errorf("invalid action value '%s'", action)
+}
+
 // DailyVolumeByDate is a query that fetches the daily volume of sales
 type DailyVolumeByDate struct {
 	db       *sql.DB
 	sqlQuery string
-	action   string
+	action   DailyVolumeAction
 }
 
 var _ api.Query = &DailyVolumeByDate{}
@@ -34,7 +58,7 @@ type DailyVolume struct {
 func MakeDailyVolumeByDateForMarketIdsAction(
 	db *sql.DB,
 	marketIDs []string,
-	action string,
+	action DailyVolumeAction,
 	optionalAccountIDs []string,
 ) (*DailyVolumeByDate, error) {
 	if db == nil {
@@ -63,7 +87,7 @@ func (q *DailyVolumeByDate) QueryRow(args ...interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("input arg needs to be of type 'string', but was of type '%T'", args[0])
 	}
 
-	row := q.db.QueryRow(q.sqlQuery, args[0], q.action)
+	row := q.db.QueryRow(q.sqlQuery, args[0], q.action.String())
 
 	var baseVol sql.NullFloat64
 	var quoteVol sql.NullFloat64
