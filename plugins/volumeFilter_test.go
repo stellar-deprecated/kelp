@@ -9,8 +9,6 @@ import (
 	"github.com/stellar/kelp/queries"
 	"github.com/stellar/kelp/support/utils"
 
-	"github.com/stellar/go/txnbuild"
-
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +22,7 @@ func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accoun
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
+		configValue:            "",
 		baseAsset:              utils.NativeAsset,
 		quoteAsset:             utils.NativeAsset,
 		config:                 config,
@@ -144,18 +143,5 @@ func TestMakeFilterVolume(t *testing.T) {
 				})
 			}
 		}
-	}
-}
-
-func makeManageSellOffer(price, amount string) *txnbuild.ManageSellOffer {
-	if amount == "" {
-		return nil
-	}
-
-	return &txnbuild.ManageSellOffer{
-		Buying:  txnbuild.NativeAsset{},
-		Selling: txnbuild.NativeAsset{},
-		Price:   price,
-		Amount:  amount,
 	}
 }
