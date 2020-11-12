@@ -577,7 +577,7 @@ func runTradeCmd(options inputs) {
 		env,
 		runtime.GOOS,
 		runtime.GOARCH,
-		"unknown_todo", // TODO DS Determine how to get GOARM.
+		goarm,
 		runtime.Version(),
 		guiVersionFlag,
 		*options.strategy,

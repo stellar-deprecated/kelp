@@ -284,6 +284,7 @@ then
     gen_bind_files
     echo ""
 
+    # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
     go build -ldflags "$LDFLAGS" -o $OUTFILE
     check_build_result $?
@@ -322,11 +323,17 @@ do
         BINARY="$OUTFILE.exe"
     fi
 
+    DYNAMIC_LDFLAGS=$LDFLAGS
+    if [[ "$GOARM" != "" ]]
+    then
+        DYNAMIC_LDFLAGS = "$DYNAMIC_LDFLAGS -X github.com/stellar/kelp/cmd.goarm=$GOARM"
+    fi
+
     gen_bundler_json -p $GOOS
     gen_bind_files
     # compile
     echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
-    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $BINARY
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$DYNAMIC_LDFLAGS" -o $BINARY
     check_build_result $?
     echo "successful"
 
