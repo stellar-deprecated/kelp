@@ -447,7 +447,7 @@ func (c *Ccxt) FetchBalance() (map[string]CcxtBalance, error) {
 
 	outputMap := output.(map[string]interface{})
 	if _, ok := outputMap["total"]; !ok {
-		return nil, fmt.Errorf("result from call to fetchBalance did not contain 'total' field")
+		return nil, fmt.Errorf("result from call to fetchBalance did not contain 'total' field: %v", output)
 	}
 	totals := outputMap["total"].(map[string]interface{})
 
