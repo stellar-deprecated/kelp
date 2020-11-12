@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stellar/go/clients/horizonclient"
+	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
 )
 
@@ -27,6 +28,7 @@ type APIServer struct {
 	apiPubNet         *horizonclient.Client
 	noHeaders         bool
 	quitFn            func()
+	metricsTracker    *plugins.MetricsTracker
 
 	cachedOptionsMetadata metadata
 }
@@ -43,6 +45,7 @@ func MakeAPIServer(
 	ccxtRestUrl string,
 	noHeaders bool,
 	quitFn func(),
+	metricsTracker *plugins.MetricsTracker,
 ) (*APIServer, error) {
 	kelpBinPath := kos.GetBinDir().Join(filepath.Base(os.Args[0]))
 
@@ -64,6 +67,7 @@ func MakeAPIServer(
 		noHeaders:             noHeaders,
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,
+		metricsTracker:        metricsTracker,
 	}, nil
 }
 
