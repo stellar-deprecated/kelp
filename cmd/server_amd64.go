@@ -32,9 +32,9 @@ import (
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
+	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/logger"
-	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
@@ -290,7 +290,7 @@ func init() {
 			}
 		}
 
-		var metricsTracker *metrics.MetricsTracker
+		var metricsTracker *plugins.MetricsTracker
 		if isLocalDevMode {
 			log.Printf("metric - not sending data metrics in dev mode")
 		} else {
@@ -300,7 +300,7 @@ func init() {
 			}
 
 			httpClient := &http.Client{}
-			metricsTracker, e = metrics.MakeMetricsTrackerGui(
+			metricsTracker, e = plugins.MakeMetricsTrackerGui(
 				deviceID,
 				deviceID,
 				amplitudeAPIKey,
