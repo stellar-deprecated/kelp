@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import styles from './Button.module.scss';
 import Icon from '../Icon/Icon';
 import LoadingAnimation from '../LoadingAnimation/LoadingAnimation';
+import sendMetricEvent from '../../../kelp-ops-api/sendMetricEvent';
 
 const iconSizes = {
   small:'10px',
@@ -18,6 +19,14 @@ const iconSizesRound = {
 }
 
 class Button extends Component {
+  constructor(props) {
+    super(props);
+    this.trackOnClick = this.trackOnClick.bind(this);
+    this.sendMetricEvent = this.sendMetricEvent.bind(this);
+    
+    this._asyncRequests = {};
+  }
+  
   static defaultProps = {
     icon: null,
     size: 'medium',
@@ -25,7 +34,9 @@ class Button extends Component {
     hsize: 'regular',
     loading: false,
     onClick: () => {},
-    disabled: false    
+    disabled: false,
+    trackEvent: (eventName, values) => {},
+    eventName: '',    
   }
 
   static propTypes = {
@@ -34,8 +45,34 @@ class Button extends Component {
     variant: PropTypes.string,
     onClick: PropTypes.func,
     loading: PropTypes.bool,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    trackEvent: PropTypes.func,
+    eventName: PropTypes.string,
   };
+  
+  sendMetricEvent() {
+    if (this._asyncRequests["sendMetricEvent"]) {
+      return
+    }
+    
+    var _this = this
+    // TODO DS populate the eventData.
+    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(this.props.baseUrl, this.props.eventName, {}).then(resp => {
+      if (!_this._asyncRequests["sendMetricEvent"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+      
+      delete _this._asyncRequests["sendMetricEvent"];
+      
+      // TODO DS Determine how to process resp
+    })
+  }
+  
+  trackOnClick() {
+    this.props.onClick()
+    this.sendMetricEvent()
+  }
 
   render() {
     const iconOnly = this.props.children ? null : styles.iconOnly;
@@ -57,7 +94,7 @@ class Button extends Component {
       <button 
         className={classNameList} 
         disabled={this.props.disabled || this.props.loading } 
-        onClick= {this.props.onClick}
+        onClick={this.trackOnClick}
       >
         {this.props.loading &&
           <span className={styles.loader}>
