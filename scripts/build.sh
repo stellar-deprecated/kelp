@@ -333,7 +333,7 @@ do
     gen_bind_files
     # compile
     echo -n "compiling for (GOOS=$GOOS, GOARCH=$GOARCH, GOARM=$GOARM) ... "
-    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$DYNAMICLDFLAGS" -o $BINARY
+    env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$DYNAMIC_LDFLAGS" -o $BINARY
     check_build_result $?
     echo "successful"
 
