@@ -7,6 +7,7 @@ import (
 	"github.com/stellar/kelp/api"
 )
 
+/****************************** COINBASE PRO ******************************/
 type ccxtExchangeSpecificParamFactoryCoinbasepro struct{}
 
 func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) getParamsForGetOrderBook() map[string]interface{} {
@@ -26,8 +27,13 @@ func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) getParamsForGetTradeHistor
 	return nil
 }
 
+func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) useSignToDenoteSideForTrades() bool {
+	return false
+}
+
 var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryCoinbasepro{}
 
+/****************************** BINANCE ******************************/
 type ccxtExchangeSpecificParamFactoryBinance struct {
 	validOrderBookLevels []int
 	lastValidLimit       int
@@ -92,4 +98,30 @@ func (f *ccxtExchangeSpecificParamFactoryBinance) getParamsForGetTradeHistory() 
 	}
 }
 
+func (f *ccxtExchangeSpecificParamFactoryBinance) useSignToDenoteSideForTrades() bool {
+	return false
+}
+
 var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryBinance{}
+
+/****************************** BITSTAMP ******************************/
+type ccxtExchangeSpecificParamFactoryBitstamp struct{}
+
+func (f *ccxtExchangeSpecificParamFactoryBitstamp) getParamsForGetOrderBook() map[string]interface{} {
+	return nil
+}
+
+func (f *ccxtExchangeSpecificParamFactoryBitstamp) getParamsForAddOrder(submitMode api.SubmitMode) interface{} {
+	return nil
+}
+
+func (f *ccxtExchangeSpecificParamFactoryBitstamp) getParamsForGetTradeHistory() interface{} {
+	return nil
+}
+
+// Bitstamp uses signs to denote which side the trade was on (buy/sell)
+func (f *ccxtExchangeSpecificParamFactoryBitstamp) useSignToDenoteSideForTrades() bool {
+	return true
+}
+
+var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryBitstamp{}

@@ -23,6 +23,7 @@ type ccxtExchangeSpecificParamFactory interface {
 	getParamsForGetOrderBook() map[string]interface{}
 	getParamsForAddOrder(submitMode api.SubmitMode) interface{}
 	getParamsForGetTradeHistory() interface{}
+	useSignToDenoteSideForTrades() bool
 }
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
@@ -372,12 +373,32 @@ func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawT
 		// OrderID read by calling function depending on override set for exchange params in "orderId" field of Info object
 	}
 
+	useSignToDenoteSide := false
+	if c.esParamFactory != nil {
+		useSignToDenoteSide = c.esParamFactory.useSignToDenoteSideForTrades()
+	}
+
 	if rawTrade.Side == "sell" {
 		trade.OrderAction = model.OrderActionSell
 	} else if rawTrade.Side == "buy" {
 		trade.OrderAction = model.OrderActionBuy
+	} else if useSignToDenoteSide {
+		if trade.Cost.AsFloat() < 0 {
+			trade.OrderAction = model.OrderActionSell
+			trade.Order.Volume = trade.Order.Volume.Scale(-1.0)
+			trade.Cost = trade.Cost.Scale(-1.0)
+		} else {
+			trade.OrderAction = model.OrderActionBuy
+		}
 	} else {
-		return nil, fmt.Errorf("unrecognized value for 'side' field: %s", rawTrade.Side)
+		return nil, fmt.Errorf("unrecognized value for 'side' field: %s (rawTrade = %+v)", rawTrade.Side, rawTrade)
+	}
+
+	if trade.Cost.AsFloat() < 0 {
+		return nil, fmt.Errorf("trade.Cost was < 0 (%f)", trade.Cost.AsFloat())
+	}
+	if trade.Order.Volume.AsFloat() < 0 {
+		return nil, fmt.Errorf("trade.Order.Volume was < 0 (%f)", trade.Order.Volume.AsFloat())
 	}
 
 	if rawTrade.Cost == 0.0 {
@@ -426,8 +447,9 @@ func (c ccxtExchange) GetOpenOrders(pairs []*model.TradingPair) (map[model.Tradi
 }
 
 func (c ccxtExchange) convertOpenOrderFromCcxt(pair *model.TradingPair, o sdk.CcxtOpenOrder) (*model.OpenOrder, error) {
-	if o.Type != "limit" {
-		return nil, fmt.Errorf("we currently only support limit order types")
+	// bitstamp does not use "limit" as the order type but has an empty string. this is reasonable general logic to support so added here instead of specifically for bitstamp
+	if o.Type != "limit" && o.Type != "" {
+		return nil, fmt.Errorf("we currently only support limit order types: %+v", o)
 	}
 
 	orderAction := model.OrderActionSell
