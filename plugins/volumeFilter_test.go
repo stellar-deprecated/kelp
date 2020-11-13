@@ -153,225 +153,182 @@ func TestVolumeFilterFn(t *testing.T) {
 		mode               volumeFilterMode
 		sellBaseCapInBase  *float64
 		sellBaseCapInQuote *float64
-		otbBaseCap         *float64
-		otbQuoteCap        *float64
-		tbbBaseCap         *float64
-		tbbQuoteCap        *float64
-		price              string
-		inputAmount        string
-		wantAmount         string
-		wantTbbBaseCap     *float64
-		wantTbbQuoteCap    *float64
+		otbBase            *float64
+		otbQuote           *float64
+		tbbBase            *float64
+		tbbQuote           *float64
+		inputOp            *txnbuild.ManageSellOffer
+		wantOp             *txnbuild.ManageSellOffer
+		wantTbbBase        *float64
+		wantTbbQuote       *float64
 	}{
 		{
-			name:               "selling, base units sell cap, don't keep selling base, exact mode",
+			name:               "1. selling, base units sell cap, don't keep selling base, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  pointy.Float64(0.0),
 			sellBaseCapInQuote: nil,
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, base units sell cap, don't keep selling base, ignore mode",
+			name:               "2. selling, base units sell cap, don't keep selling base, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  pointy.Float64(0.0),
 			sellBaseCapInQuote: nil,
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, base units sell cap, keep selling base, new amount, exact mode",
+			name:               "3. selling, base units sell cap, keep selling base, new amount, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  pointy.Float64(1.0),
 			sellBaseCapInQuote: nil,
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "1.0000000",
-			wantTbbBaseCap:     pointy.Float64(1.0),
-			wantTbbQuoteCap:    pointy.Float64(2.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             makeManageSellOffer("2.0", "1.0000000"),
+			wantTbbBase:        pointy.Float64(1.0),
+			wantTbbQuote:       pointy.Float64(2.0),
 		},
 		{
-			name:               "selling, base units sell cap, keep selling base, new amount, ignore mode",
+			name:               "4. selling, base units sell cap, keep selling base, new amount, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  pointy.Float64(1.0),
 			sellBaseCapInQuote: nil,
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, base units sell cap, keep selling base, exact mode",
+			name:               "5. selling, base units sell cap, keep selling base, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  pointy.Float64(1.0),
 			sellBaseCapInQuote: nil,
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "1.0000000",
-			wantTbbBaseCap:     pointy.Float64(1.0),
-			wantTbbQuoteCap:    pointy.Float64(2.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             makeManageSellOffer("2.0", "1.0000000"),
+			wantTbbBase:        pointy.Float64(1.0),
+			wantTbbQuote:       pointy.Float64(2.0),
 		},
 		{
-			name:               "selling, base units sell cap, keep selling base, ignore mode",
+			name:               "6. selling, base units sell cap, keep selling base, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  pointy.Float64(1.0),
 			sellBaseCapInQuote: nil,
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, quote units sell cap, don't keep selling quote, exact mode",
+			name:               "7. selling, quote units sell cap, don't keep selling quote, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, quote units sell cap, don't keep selling quote, ignore mode",
+			name:               "8. selling, quote units sell cap, don't keep selling quote, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, quote units sell cap, keep selling quote, new amount, exact mode",
+			name:               "9. selling, quote units sell cap, keep selling quote, new amount, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "0.5000000",
-			wantTbbBaseCap:     pointy.Float64(0.5),
-			wantTbbQuoteCap:    pointy.Float64(1.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             makeManageSellOffer("2.0", "0.5000000"),
+			wantTbbBase:        pointy.Float64(0.5),
+			wantTbbQuote:       pointy.Float64(1.0),
 		},
 		{
-			name:               "selling, quote units sell cap, keep selling quote, new amount, ignore mode",
+			name:               "10. selling, quote units sell cap, keep selling quote, new amount, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "selling, quote units sell cap, keep selling quote, exact mode",
+			name:               "11. selling, quote units sell cap, keep selling quote, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "0.5000000",
-			wantTbbBaseCap:     pointy.Float64(0.5),
-			wantTbbQuoteCap:    pointy.Float64(1.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             makeManageSellOffer("2.0", "0.5000000"),
+			wantTbbBase:        pointy.Float64(0.5),
+			wantTbbQuote:       pointy.Float64(1.0),
 		},
 		{
-			name:               "selling, quote units sell cap, keep selling quote, ignore mode",
+			name:               "12. selling, quote units sell cap, keep selling quote, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
-		},
-		{
-			name:               "selling, base and quote units sell cap, keep selling base and quote, exact mode",
-			mode:               volumeFilterModeExact,
-			sellBaseCapInBase:  pointy.Float64(1.0),
-			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "0.5000000",
-			wantTbbBaseCap:     pointy.Float64(0.5),
-			wantTbbQuoteCap:    pointy.Float64(1.0),
-		},
-		{
-			name:               "selling, base and quote units sell cap, keep selling base and quote, ignore mode",
-			mode:               volumeFilterModeIgnore,
-			sellBaseCapInBase:  pointy.Float64(1.0),
-			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBaseCap:         pointy.Float64(0.0),
-			otbQuoteCap:        pointy.Float64(0.0),
-			tbbBaseCap:         pointy.Float64(0.0),
-			tbbQuoteCap:        pointy.Float64(0.0),
-			price:              "2.0",
-			inputAmount:        "100.0",
-			wantAmount:         "",
-			wantTbbBaseCap:     pointy.Float64(0.0),
-			wantTbbQuoteCap:    pointy.Float64(0.0),
+			otbBase:            pointy.Float64(0.0),
+			otbQuote:           pointy.Float64(0.0),
+			tbbBase:            pointy.Float64(0.0),
+			tbbQuote:           pointy.Float64(0.0),
+			inputOp:            makeManageSellOffer("2.0", "100.0"),
+			wantOp:             nil,
+			wantTbbBase:        pointy.Float64(0.0),
+			wantTbbQuote:       pointy.Float64(0.0),
 		},
 	}
 
@@ -381,26 +338,26 @@ func TestVolumeFilterFn(t *testing.T) {
 
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
-			dailyOTB := makeRawVolumeFilterConfig(k.otbBaseCap, k.otbQuoteCap, k.mode, marketIDs, accountIDs)
-			dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBaseCap, k.tbbQuoteCap, k.mode, marketIDs, accountIDs)
-			wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBaseCap, k.wantTbbQuoteCap, k.mode, marketIDs, accountIDs)
+			// exactly one of the two cap values must be set
+			if assert.Nil(t, k.sellBaseCapInBase) == assert.Nil(t, k.sellBaseCapInQuote) {
+				return
+			}
 
-			op := makeManageSellOffer(k.price, k.inputAmount)
-			wantOp := makeManageSellOffer(k.price, k.wantAmount)
-
+			dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, k.mode, marketIDs, accountIDs)
+			dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, k.mode, marketIDs, accountIDs)
 			lp := limitParameters{
 				sellBaseAssetCapInBaseUnits:  k.sellBaseCapInBase,
 				sellBaseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
 				mode:                         k.mode,
 			}
 
-			actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, op, utils.NativeAsset, utils.NativeAsset, lp)
-
+			actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, k.inputOp, utils.NativeAsset, utils.NativeAsset, lp)
 			if !assert.Nil(t, e) {
 				return
 			}
+			assert.Equal(t, k.wantOp, actual)
 
-			assert.Equal(t, wantOp, actual)
+			wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBase, k.wantTbbQuote, k.mode, marketIDs, accountIDs)
 			assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
 		})
 
@@ -408,10 +365,6 @@ func TestVolumeFilterFn(t *testing.T) {
 }
 
 func makeManageSellOffer(price, amount string) *txnbuild.ManageSellOffer {
-	if amount == "" {
-		return nil
-	}
-
 	return &txnbuild.ManageSellOffer{
 		Buying:  txnbuild.NativeAsset{},
 		Selling: txnbuild.NativeAsset{},
