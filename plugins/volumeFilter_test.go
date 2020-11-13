@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action string) *volumeFilter {
+func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action queries.DailyVolumeAction) *volumeFilter {
 	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, accountIDs)
 	if e != nil {
 		panic(e)
@@ -117,12 +117,12 @@ func TestMakeFilterVolume(t *testing.T) {
 			for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
 				// configType is used to represent the type of config when printing test name
 				configType := "quote"
-				if config.SellBaseAssetCapInBaseUnits != nil {
+				if config.BaseAssetCapInBaseUnits != nil {
 					configType = "base"
 				}
 
 				// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
-				wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, "sell")
+				wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, queries.DailyVolumeActionSell)
 				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
 					actual, e := makeFilterVolume(
 						configValue,

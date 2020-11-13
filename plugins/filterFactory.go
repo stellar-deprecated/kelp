@@ -73,18 +73,18 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 }
 
 func makeRawVolumeFilterConfig(
-	sellBaseAssetCapInBaseUnits *float64,
-	sellBaseAssetCapInQuoteUnits *float64,
+	baseAssetCapInBaseUnits *float64,
+	baseAssetCapInQuoteUnits *float64,
 	mode volumeFilterMode,
 	additionalMarketIDs []string,
 	optionalAccountIDs []string,
 ) *VolumeFilterConfig {
 	return &VolumeFilterConfig{
-		SellBaseAssetCapInBaseUnits:  sellBaseAssetCapInBaseUnits,
-		SellBaseAssetCapInQuoteUnits: sellBaseAssetCapInQuoteUnits,
-		mode:                         mode,
-		additionalMarketIDs:          additionalMarketIDs,
-		optionalAccountIDs:           optionalAccountIDs,
+		BaseAssetCapInBaseUnits:  baseAssetCapInBaseUnits,
+		BaseAssetCapInQuoteUnits: baseAssetCapInQuoteUnits,
+		mode:                     mode,
+		additionalMarketIDs:      additionalMarketIDs,
+		optionalAccountIDs:       optionalAccountIDs,
 	}
 }
 
