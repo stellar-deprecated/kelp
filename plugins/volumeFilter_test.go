@@ -99,48 +99,54 @@ func TestMakeFilterVolume(t *testing.T) {
 	for _, k := range testCases {
 		// this lets us test both types of modes when varying the market and account ids
 		for _, m := range modes {
-			// this lets us run the for-loop below for both base and quote units within the config
-			baseCapInBaseConfig := makeRawVolumeFilterConfig(
-				pointy.Float64(1.0),
-				nil,
-				m,
-				k.marketIDs,
-				k.accountIDs,
-			)
-			baseCapInQuoteConfig := makeRawVolumeFilterConfig(
-				nil,
-				pointy.Float64(1.0),
-				m,
-				k.marketIDs,
-				k.accountIDs,
-			)
-			for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
-				// configType is used to represent the type of config when printing test name
-				configType := "quote"
-				if config.BaseAssetCapInBaseUnits != nil {
-					configType = "base"
-				}
-
-				// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
-				wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, queries.DailyVolumeActionSell)
-				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
-					actual, e := makeFilterVolume(
-						configValue,
-						k.exchangeName,
-						tradingPair,
-						testAssetDisplayFn,
-						utils.NativeAsset,
-						utils.NativeAsset,
-						&sql.DB{},
-						config,
-					)
-
-					if !assert.Nil(t, e) {
-						return
+			// this lets us test both buy and sell
+			// TODO DS Add buy action
+			for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
+				// this lets us run the for-loop below for both base and quote units within the config
+				baseCapInBaseConfig := makeRawVolumeFilterConfig(
+					pointy.Float64(1.0),
+					nil,
+					action,
+					m,
+					k.marketIDs,
+					k.accountIDs,
+				)
+				baseCapInQuoteConfig := makeRawVolumeFilterConfig(
+					nil,
+					pointy.Float64(1.0),
+					action,
+					m,
+					k.marketIDs,
+					k.accountIDs,
+				)
+				for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
+					// configType is used to represent the type of config when printing test name
+					configType := "quote"
+					if config.BaseAssetCapInBaseUnits != nil {
+						configType = "base"
 					}
 
-					assert.Equal(t, wantFilter, actual)
-				})
+					// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
+					wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, queries.DailyVolumeActionSell)
+					t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
+						actual, e := makeFilterVolume(
+							configValue,
+							k.exchangeName,
+							tradingPair,
+							testAssetDisplayFn,
+							utils.NativeAsset,
+							utils.NativeAsset,
+							&sql.DB{},
+							config,
+						)
+
+						if !assert.Nil(t, e) {
+							return
+						}
+
+						assert.Equal(t, wantFilter, actual)
+					})
+				}
 			}
 		}
 	}

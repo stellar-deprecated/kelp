@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -236,7 +237,7 @@ func (f *volumeFilter) String() string {
 
 // isBase returns true if the filter is on the amount of the base asset sold, false otherwise
 func (f *volumeFilter) isSellingBase() bool {
-	return f.config.action == queries.DailyVolumeActionSell && f.config.BaseAssetCapInBaseUnits != nil
+	return strings.Contains(f.configValue, "/sell/base/")
 }
 
 func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {
