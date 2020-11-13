@@ -16,7 +16,6 @@ import (
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
-	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/utils"
 )
 
@@ -45,7 +44,7 @@ type Trader struct {
 	fixedIterations                *uint64
 	dataKey                        *model.BotKey
 	alert                          api.Alert
-	metricsTracker                 *metrics.MetricsTracker
+	metricsTracker                 *plugins.MetricsTracker
 	startTime                      time.Time
 
 	// initialized runtime vars
@@ -83,7 +82,7 @@ func MakeTrader(
 	fixedIterations *uint64,
 	dataKey *model.BotKey,
 	alert api.Alert,
-	metricsTracker *metrics.MetricsTracker,
+	metricsTracker *plugins.MetricsTracker,
 	startTime time.Time,
 ) *Trader {
 	return &Trader{
