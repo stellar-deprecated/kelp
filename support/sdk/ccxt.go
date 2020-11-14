@@ -199,7 +199,8 @@ func (c *Ccxt) hasInstance(instanceList []string) bool {
 }
 
 func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam) error {
-	data := map[string]string{
+	// this is a map of string to interface{} becuase the param can be of type string, number, or bool
+	data := map[string]interface{}{
 		"id":     c.instanceName,
 		"apiKey": apiKey.Key,
 		"secret": apiKey.Secret,
