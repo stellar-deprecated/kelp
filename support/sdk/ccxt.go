@@ -71,7 +71,7 @@ func MakeInitializedCcxtExchange(exchangeName string, apiKey api.ExchangeAPIKey,
 		return nil, fmt.Errorf("invalid format for ccxtBaseURL: %s", ccxtBaseURL)
 	}
 
-	instanceName, e := makeInstanceName(exchangeName, apiKey)
+	instanceName, e := makeInstanceName(exchangeName, apiKey, params, headers)
 	if e != nil {
 		return nil, fmt.Errorf("cannot make instance name: %s", e)
 	}
@@ -177,16 +177,38 @@ func (c *Ccxt) initialize(apiKey api.ExchangeAPIKey, params []api.ExchangeParam,
 	return nil
 }
 
-func makeInstanceName(exchangeName string, apiKey api.ExchangeAPIKey) (string, error) {
-	if apiKey.Key == "" {
-		return exchangeName, nil
+// makeInstanceName takes all those inputs that create a distinctly initialized instance
+func makeInstanceName(exchangeName string, apiKey api.ExchangeAPIKey, params []api.ExchangeParam, headers []api.ExchangeHeader) (string, error) {
+	keyHash := ""
+	if apiKey.Key != "" {
+		keyHashNum, e := utils.HashString(apiKey.Key)
+		if e != nil {
+			return "", fmt.Errorf("could not hash apiKey.Key: %s", e)
+		}
+		keyHash = fmt.Sprintf("%d", keyHashNum)
 	}
 
-	number, e := utils.HashString(apiKey.Key)
-	if e != nil {
-		return "", fmt.Errorf("could not hash apiKey.Key: %s", e)
+	paramsHash := ""
+	if len(params) > 0 {
+		paramsHashNum, e := utils.ToJSONHash(params)
+		if e != nil {
+			s := fmt.Sprintf("%v", params)
+			return "", fmt.Errorf("could not hash params (%s): %s", s, e)
+		}
+		paramsHash = fmt.Sprintf("%d", paramsHashNum)
 	}
-	return fmt.Sprintf("%s%d", exchangeName, number), nil
+
+	headersHash := ""
+	if len(headers) > 0 {
+		headersHashNum, e := utils.ToJSONHash(headers)
+		if e != nil {
+			s := fmt.Sprintf("%v", headers)
+			return "", fmt.Errorf("could not hash headers (%s): %s", s, e)
+		}
+		headersHash = fmt.Sprintf("%d", headersHashNum)
+	}
+
+	return fmt.Sprintf("%s_%s_%s_%s", exchangeName, keyHash, paramsHash, headersHash), nil
 }
 
 func (c *Ccxt) hasInstance(instanceList []string) bool {

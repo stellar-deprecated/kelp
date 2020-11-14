@@ -7,6 +7,79 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHashString(t *testing.T) {
+	testCases := []struct {
+		s        string
+		wantHash uint32
+	}{
+		{
+			s:        "hello",
+			wantHash: 0x4f9f2cab,
+		}, {
+			s:        "world",
+			wantHash: 0x37a3e893,
+		}, {
+			s:        "1",
+			wantHash: 0x340ca71c, // same as test for ToJSONHash(int(1)) below
+		},
+	}
+
+	for _, kase := range testCases {
+		t.Run(kase.s, func(t *testing.T) {
+			result, e := HashString(kase.s)
+			if !assert.Nil(t, e) {
+				return
+			}
+
+			assert.Equal(t, kase.wantHash, result)
+		})
+	}
+}
+
+func TestToJSONHash(t *testing.T) {
+	testCases := []struct {
+		v        interface{}
+		wantHash uint32
+	}{
+		{
+			v:        "hello",
+			wantHash: 0xdf47ee8b, // different from HashString result in test above
+		}, {
+			v:        "world",
+			wantHash: 0x9a7c4703, // different from HashString result in test above
+		}, {
+			v:        "true",
+			wantHash: 0x4f9ddea5,
+		}, {
+			v:        true, // should be different from "true"
+			wantHash: 0x4db211e5,
+		}, {
+			v:        "1", // different from HashString result in test above
+			wantHash: 0x12a777a,
+		}, {
+			v:        int(1),     // should be different from "1"
+			wantHash: 0x340ca71c, // this is same as HashString result in test above for string 1
+		}, {
+			v:        1.0,
+			wantHash: 0x340ca71c, // JSON treats this as the same as int(1) so expected value is the same
+		}, {
+			v:        1.0000001,
+			wantHash: 0xddd9e8d5, // should be different from "1", and int(1) and 1.0
+		},
+	}
+
+	for _, kase := range testCases {
+		t.Run(fmt.Sprintf("%v", kase.v), func(t *testing.T) {
+			result, e := ToJSONHash(kase.v)
+			if !assert.Nil(t, e) {
+				return
+			}
+
+			assert.Equal(t, kase.wantHash, result)
+		})
+	}
+}
+
 func TestDedupe(t *testing.T) {
 	testCases := []struct {
 		input []string
