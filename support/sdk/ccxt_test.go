@@ -39,6 +39,51 @@ func TestHashString(t *testing.T) {
 	}
 }
 
+func TestMakeInstanceName(t *testing.T) {
+	testCases := []struct {
+		exchangeName string
+		apiKey       api.ExchangeAPIKey
+		wantName     string
+	}{
+		{
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: ""},
+			wantName:     "binance",
+		}, {
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: "secret"},
+			wantName:     "binance",
+		}, {
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			wantName:     "binance1746258028",
+		}, {
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key2", Secret: "secret"},
+			wantName:     "binance944401402",
+		}, {
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key2", Secret: "secret2"},
+			wantName:     "binance944401402",
+		}, {
+			exchangeName: "kraken",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			wantName:     "kraken1746258028",
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.wantName, func(t *testing.T) {
+			actualName, e := makeInstanceName(k.exchangeName, k.apiKey)
+			if !assert.Nil(t, e) {
+				return
+			}
+
+			assert.Equal(t, k.wantName, actualName)
+		})
+	}
+}
+
 func TestMakeValid(t *testing.T) {
 	if testing.Short() {
 		return
