@@ -325,10 +325,10 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 
 // SendEvent sends an event with its type and properties to Amplitude.
 func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interface{}, now time.Time) error {
-	// if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
-	// 	log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
-	// 	return nil
-	// }
+	if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
+		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
+		return nil
+	}
 
 	trackerProps := mt.props
 	trackerProps[secondsSinceStartKey] = now.Sub(mt.botStartTime).Seconds()
