@@ -94,6 +94,7 @@ type updateProps struct {
 	NumPruneOps                  int     `json:"num_prune_ops"`
 	NumUpdatesOpsDelete          int     `json:"num_update_ops_delete"`
 	NumUpdatesOpsUpdate          int     `json:"num_update_ops_update"`
+	NumUpdateOpsCreate           int     `json:"num_update_ops_create"`
 }
 
 // deleteProps holds the properties for the delete Amplitude event.
@@ -115,6 +116,7 @@ type UpdateLoopResult struct {
 	NumPruneOps        int
 	NumUpdateOpsDelete int
 	NumUpdateOpsUpdate int
+	NumUpdateOpsCreate int
 }
 
 // response structure taken from here: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#tocSsuccesssummary
@@ -299,6 +301,7 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, updateResult UpdateLoop
 		NumPruneOps:                  updateResult.NumPruneOps,
 		NumUpdatesOpsDelete:          updateResult.NumUpdateOpsDelete,
 		NumUpdatesOpsUpdate:          updateResult.NumUpdateOpsUpdate,
+		NumUpdateOpsCreate:           updateResult.NumUpdateOpsCreate,
 	}
 
 	e := mt.SendEvent(updateEventName, updateProps, now)
@@ -322,10 +325,10 @@ func (mt *MetricsTracker) SendDeleteEvent(exit bool) error {
 
 // SendEvent sends an event with its type and properties to Amplitude.
 func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interface{}, now time.Time) error {
-	if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
-		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
-		return nil
-	}
+	// if mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
+	// 	log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
+	// 	return nil
+	// }
 
 	trackerProps := mt.props
 	trackerProps[secondsSinceStartKey] = now.Sub(mt.botStartTime).Seconds()

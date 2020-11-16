@@ -13,6 +13,7 @@ import (
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
+	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -352,21 +353,23 @@ func isStateSynchronized(
 
 // time to update the order book and possibly readjust the offers
 // returns true if the update was successful, otherwise false
-func (t *Trader) update() metrics.UpdateLoopResult {
+func (t *Trader) update() plugins.UpdateLoopResult {
 	// initialize counts of types of ops
 	numPruneOps := 0
 	numUpdateOpsDelete := 0
 	numUpdateOpsUpdate := 0
+	numUpdateOpsCreate := 0
 
 	e := t.synchronizeFetchBalancesOffersTrades()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return metrics.UpdateLoopResult{
+		return plugins.UpdateLoopResult{
 			Success:            false,
 			NumPruneOps:        numPruneOps,
 			NumUpdateOpsDelete: numUpdateOpsDelete,
 			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
 		}
 	}
 
@@ -386,11 +389,12 @@ func (t *Trader) update() metrics.UpdateLoopResult {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return metrics.UpdateLoopResult{
+		return plugins.UpdateLoopResult{
 			Success:            false,
 			NumPruneOps:        numPruneOps,
 			NumUpdateOpsDelete: numUpdateOpsDelete,
 			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
 		}
 	}
 
@@ -399,11 +403,12 @@ func (t *Trader) update() metrics.UpdateLoopResult {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return metrics.UpdateLoopResult{
+		return plugins.UpdateLoopResult{
 			Success:            false,
 			NumPruneOps:        numPruneOps,
 			NumUpdateOpsDelete: numUpdateOpsDelete,
 			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
 		}
 	}
 
@@ -418,11 +423,12 @@ func (t *Trader) update() metrics.UpdateLoopResult {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return metrics.UpdateLoopResult{
+			return plugins.UpdateLoopResult{
 				Success:            false,
 				NumPruneOps:        numPruneOps,
 				NumUpdateOpsDelete: numUpdateOpsDelete,
 				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
 			}
 		}
 
@@ -436,11 +442,12 @@ func (t *Trader) update() metrics.UpdateLoopResult {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return metrics.UpdateLoopResult{
+			return plugins.UpdateLoopResult{
 				Success:            false,
 				NumPruneOps:        numPruneOps,
 				NumUpdateOpsDelete: numUpdateOpsDelete,
 				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
 			}
 		}
 	}
@@ -453,11 +460,12 @@ func (t *Trader) update() metrics.UpdateLoopResult {
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
 		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers(false)
-		return metrics.UpdateLoopResult{
+		return plugins.UpdateLoopResult{
 			Success:            false,
 			NumPruneOps:        numPruneOps,
 			NumUpdateOpsDelete: numUpdateOpsDelete,
 			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
 		}
 	}
 
@@ -467,58 +475,71 @@ func (t *Trader) update() metrics.UpdateLoopResult {
 		if e != nil {
 			log.Printf("error in filter index %d: %s\n", i, e)
 			t.deleteAllOffers(false)
-			return metrics.UpdateLoopResult{
+			return plugins.UpdateLoopResult{
 				Success:            false,
 				NumPruneOps:        numPruneOps,
 				NumUpdateOpsDelete: numUpdateOpsDelete,
 				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
 			}
 		}
 	}
 
-	numUpdateOpsUpdate = len(ops)
-	log.Printf("created %d operations to update existing offers\n", numUpdateOpsUpdate)
-	if numUpdateOpsUpdate > 0 {
+	log.Printf("created %d operations to update existing offers\n", len(ops))
+	if len(ops) > 0 {
 		e = t.exchangeShim.SubmitOps(api.ConvertOperation2TM(ops), t.submitMode, func(hash string, e error) {
 			// if there is an error we want it to count towards the delete cycles threshold, so run the check
 			if e != nil {
 				t.deleteAllOffers(true)
 			}
 		})
-
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return metrics.UpdateLoopResult{
+			return plugins.UpdateLoopResult{
 				Success:            false,
 				NumPruneOps:        numPruneOps,
 				NumUpdateOpsDelete: numUpdateOpsDelete,
 				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
 			}
 		}
 
-		// t.metricsTracker.AddUpdatesOpsUpdate(len(ops))
+		numUpdateOpsCreate, numUpdateOpsDelete, numUpdateOpsUpdate, e = t.countOfferChangeTypes(ops)
+		if e != nil {
+			log.Println(e)
+			t.deleteAllOffers(false)
+			return plugins.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
+			}
+		}
 	}
 
 	e = t.strategy.PostUpdate()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return metrics.UpdateLoopResult{
+		return plugins.UpdateLoopResult{
 			Success:            false,
 			NumPruneOps:        numPruneOps,
 			NumUpdateOpsDelete: numUpdateOpsDelete,
 			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
 		}
 	}
 
 	// reset deleteCycles on every successful run
 	t.deleteCycles = 0
-	return metrics.UpdateLoopResult{
+	return plugins.UpdateLoopResult{
 		Success:            true,
 		NumPruneOps:        numPruneOps,
 		NumUpdateOpsDelete: numUpdateOpsDelete,
 		NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		NumUpdateOpsCreate: numUpdateOpsCreate,
 	}
 }
 
@@ -592,4 +613,32 @@ func (t *Trader) getExistingOffers() ([]hProtocol.Offer /*sellingAOffers*/, []hP
 
 func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffers []hProtocol.Offer) {
 	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
+}
+
+func (t *Trader) countOfferChangeTypes(offers []txnbuild.Operation) (numCreate int, numUpdate int, numDelete int, e error) {
+	var offerXdr xdr.Operation
+	for _, o := range offers {
+		offerXdr, e = o.BuildXDR()
+		if e != nil {
+			return 0, 0, 0, fmt.Errorf("could not convert op to offer: %s", e)
+		}
+
+		manageSellOp := offerXdr.Body.ManageSellOfferOp
+		if manageSellOp == nil {
+			return 0, 0, 0, fmt.Errorf("offers were not of expected type ManageSellOffer")
+		}
+
+		// 0 amount represents deletion
+		// 0 offer id represents creating a new offer
+		// anything else represents updating an extiing offer
+		if manageSellOp.Amount == 0 {
+			numDelete++
+		} else if manageSellOp.OfferId == 0 {
+			numCreate++
+		} else {
+			numUpdate++
+		}
+	}
+
+	return
 }
