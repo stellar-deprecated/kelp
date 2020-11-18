@@ -191,7 +191,7 @@ func TestVolumeFilterFn(t *testing.T) {
 			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "3. selling, base units sell cap, keep selling base, new amount, exact mode",
+			name:               "3. selling, base units sell cap, keep selling base, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  pointy.Float64(1.0),
 			sellBaseCapInQuote: nil,
@@ -205,35 +205,7 @@ func TestVolumeFilterFn(t *testing.T) {
 			wantTbbQuote:       pointy.Float64(2.0),
 		},
 		{
-			name:               "4. selling, base units sell cap, keep selling base, new amount, ignore mode",
-			mode:               volumeFilterModeIgnore,
-			sellBaseCapInBase:  pointy.Float64(1.0),
-			sellBaseCapInQuote: nil,
-			otbBase:            pointy.Float64(0.0),
-			otbQuote:           pointy.Float64(0.0),
-			tbbBase:            pointy.Float64(0.0),
-			tbbQuote:           pointy.Float64(0.0),
-			inputOp:            makeManageSellOffer("2.0", "100.0"),
-			wantOp:             nil,
-			wantTbbBase:        pointy.Float64(0.0),
-			wantTbbQuote:       pointy.Float64(0.0),
-		},
-		{
-			name:               "5. selling, base units sell cap, keep selling base, exact mode",
-			mode:               volumeFilterModeExact,
-			sellBaseCapInBase:  pointy.Float64(1.0),
-			sellBaseCapInQuote: nil,
-			otbBase:            pointy.Float64(0.0),
-			otbQuote:           pointy.Float64(0.0),
-			tbbBase:            pointy.Float64(0.0),
-			tbbQuote:           pointy.Float64(0.0),
-			inputOp:            makeManageSellOffer("2.0", "100.0"),
-			wantOp:             makeManageSellOffer("2.0", "1.0000000"),
-			wantTbbBase:        pointy.Float64(1.0),
-			wantTbbQuote:       pointy.Float64(2.0),
-		},
-		{
-			name:               "6. selling, base units sell cap, keep selling base, ignore mode",
+			name:               "4. selling, base units sell cap, keep selling base, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  pointy.Float64(1.0),
 			sellBaseCapInQuote: nil,
@@ -275,7 +247,7 @@ func TestVolumeFilterFn(t *testing.T) {
 			wantTbbQuote:       pointy.Float64(0.0),
 		},
 		{
-			name:               "9. selling, quote units sell cap, keep selling quote, new amount, exact mode",
+			name:               "9. selling, quote units sell cap, keep selling quote, exact mode",
 			mode:               volumeFilterModeExact,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(1.0),
@@ -289,35 +261,7 @@ func TestVolumeFilterFn(t *testing.T) {
 			wantTbbQuote:       pointy.Float64(1.0),
 		},
 		{
-			name:               "10. selling, quote units sell cap, keep selling quote, new amount, ignore mode",
-			mode:               volumeFilterModeIgnore,
-			sellBaseCapInBase:  nil,
-			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBase:            pointy.Float64(0.0),
-			otbQuote:           pointy.Float64(0.0),
-			tbbBase:            pointy.Float64(0.0),
-			tbbQuote:           pointy.Float64(0.0),
-			inputOp:            makeManageSellOffer("2.0", "100.0"),
-			wantOp:             nil,
-			wantTbbBase:        pointy.Float64(0.0),
-			wantTbbQuote:       pointy.Float64(0.0),
-		},
-		{
-			name:               "11. selling, quote units sell cap, keep selling quote, exact mode",
-			mode:               volumeFilterModeExact,
-			sellBaseCapInBase:  nil,
-			sellBaseCapInQuote: pointy.Float64(1.0),
-			otbBase:            pointy.Float64(0.0),
-			otbQuote:           pointy.Float64(0.0),
-			tbbBase:            pointy.Float64(0.0),
-			tbbQuote:           pointy.Float64(0.0),
-			inputOp:            makeManageSellOffer("2.0", "100.0"),
-			wantOp:             makeManageSellOffer("2.0", "0.5000000"),
-			wantTbbBase:        pointy.Float64(0.5),
-			wantTbbQuote:       pointy.Float64(1.0),
-		},
-		{
-			name:               "12. selling, quote units sell cap, keep selling quote, ignore mode",
+			name:               "10. selling, quote units sell cap, keep selling quote, ignore mode",
 			mode:               volumeFilterModeIgnore,
 			sellBaseCapInBase:  nil,
 			sellBaseCapInQuote: pointy.Float64(1.0),
@@ -339,7 +283,13 @@ func TestVolumeFilterFn(t *testing.T) {
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
 			// exactly one of the two cap values must be set
-			if assert.Nil(t, k.sellBaseCapInBase) == assert.Nil(t, k.sellBaseCapInQuote) {
+			if k.sellBaseCapInBase == nil && k.sellBaseCapInQuote == nil {
+				assert.Fail(t, "either one of the two cap values must be set")
+				return
+			}
+
+			if k.sellBaseCapInBase != nil && k.sellBaseCapInQuote != nil {
+				assert.Fail(t, "both of the cap values cannot be set")
 				return
 			}
 
@@ -364,7 +314,7 @@ func TestVolumeFilterFn(t *testing.T) {
 	}
 }
 
-func makeManageSellOffer(price, amount string) *txnbuild.ManageSellOffer {
+func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer {
 	return &txnbuild.ManageSellOffer{
 		Buying:  txnbuild.NativeAsset{},
 		Selling: txnbuild.NativeAsset{},
