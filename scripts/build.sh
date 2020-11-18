@@ -323,10 +323,12 @@ do
         BINARY="$OUTFILE.exe"
     fi
 
-    DYNAMIC_LDFLAGS=$LDFLAGS
+    DYNAMIC_LDFLAGS="$LDFLAGS"
     if [[ "$GOARM" != "" ]]
     then
-        DYNAMIC_LDFLAGS = "$DYNAMIC_LDFLAGS -X github.com/stellar/kelp/cmd.goarm=$GOARM"
+        GOARM_FLAGS="-X github.com/stellar/kelp/cmd.goarm=$GOARM"
+        echo "adding GOARM_FLAGS to ldflags: $GOARM_FLAGS"
+        DYNAMIC_LDFLAGS="$DYNAMIC_LDFLAGS $GOARM_FLAGS"
     fi
 
     gen_bundler_json -p $GOOS
