@@ -111,6 +111,7 @@ type eventWrapper struct {
 }
 
 // UpdateLoopResult contains the results of the orderbook update.
+// Note that this is used in `trader/trader.go`, but it is defined here to avoid an import cycle.
 type UpdateLoopResult struct {
 	Success            bool
 	NumPruneOps        int

@@ -1,8 +1,11 @@
 package trader
 
 import (
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/stellar/go/txnbuild"
 
 	"github.com/stretchr/testify/assert"
 
@@ -246,4 +249,101 @@ func TestShouldSendUpdateMetric_NilLastMetricUpdate(t *testing.T) {
 	now := time.Now()
 	shouldUpdate := shouldSendUpdateMetric(now, now, nil)
 	assert.Equal(t, true, shouldUpdate)
+}
+
+func TestCountOfferChangeTypes(t *testing.T) {
+	testCases := []struct {
+		name          string
+		offers        []*txnbuild.ManageSellOffer
+		wantNumCreate int
+		wantNumDelete int
+		wantNumUpdate int
+	}{
+		// We shorten the types of ManageSellOffers for test readability.
+		// C = create a sell offer, U = update existing offer, D = delete offer
+		{
+			name: "C-C-C-U-D",
+			offers: []*txnbuild.ManageSellOffer{
+				createTestMSO("create"),
+				createTestMSO("create"),
+				createTestMSO("create"),
+				createTestMSO("update"),
+				createTestMSO("delete"),
+			},
+			wantNumCreate: 3,
+			wantNumDelete: 1,
+			wantNumUpdate: 1,
+		},
+		{
+			name: "D-C-U-C-U-D",
+			offers: []*txnbuild.ManageSellOffer{
+				createTestMSO("delete"),
+				createTestMSO("create"),
+				createTestMSO("update"),
+				createTestMSO("create"),
+				createTestMSO("update"),
+				createTestMSO("delete"),
+			},
+			wantNumCreate: 2,
+			wantNumDelete: 2,
+			wantNumUpdate: 2,
+		},
+		{
+			name: "U-U",
+			offers: []*txnbuild.ManageSellOffer{
+				createTestMSO("update"),
+				createTestMSO("update"),
+			},
+			wantNumCreate: 0,
+			wantNumDelete: 0,
+			wantNumUpdate: 2,
+		},
+		{
+			name: "C",
+			offers: []*txnbuild.ManageSellOffer{
+				createTestMSO("create"),
+			},
+			wantNumCreate: 1,
+			wantNumDelete: 0,
+			wantNumUpdate: 0,
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			gotNumCreate, gotNumDelete, gotNumUpdate, gotErr := countOfferChangeTypes(k.offers)
+			if !assert.Nil(t, gotErr) {
+				return
+			}
+
+			assert.Equal(t, k.wantNumCreate, gotNumCreate)
+			assert.Equal(t, k.wantNumDelete, gotNumDelete)
+			assert.Equal(t, k.wantNumUpdate, gotNumUpdate)
+		})
+	}
+
+}
+
+func createTestMSO(msoType string) *txnbuild.ManageSellOffer {
+	mso := txnbuild.ManageSellOffer{}
+	switch msoType {
+	case "create":
+		mso = txnbuild.ManageSellOffer{
+			Amount:  "1.0",
+			OfferID: 0,
+		}
+	case "update":
+		mso = txnbuild.ManageSellOffer{
+			Amount:  "1.0",
+			OfferID: 1,
+		}
+	case "delete":
+		mso = txnbuild.ManageSellOffer{
+			Amount:  "0.0",
+			OfferID: 1,
+		}
+	default:
+		panic(fmt.Sprintf("invalid manage sell offer type: %s", msoType))
+	}
+	return &mso
 }

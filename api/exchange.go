@@ -266,7 +266,13 @@ func ConvertOperation2TM(ops []txnbuild.Operation) []build.TransactionMutator {
 
 // ConvertTM2Operation is a temporary adapter to support transitioning from the old Go SDK to the new SDK without having to bump the major version
 func ConvertTM2Operation(muts []build.TransactionMutator) []txnbuild.Operation {
-	ops := []txnbuild.Operation{}
+	msos := ConvertTM2MSO(muts)
+	return ConvertMSO2Ops(msos)
+}
+
+// ConvertTM2MSO converts mutators from the old SDK to ManageSellOffer ops in the new one.
+func ConvertTM2MSO(muts []build.TransactionMutator) []*txnbuild.ManageSellOffer {
+	msos := []*txnbuild.ManageSellOffer{}
 	for _, m := range muts {
 		var mso *txnbuild.ManageSellOffer
 		if mob, ok := m.(build.ManageOfferBuilder); ok {
@@ -276,6 +282,15 @@ func ConvertTM2Operation(muts []build.TransactionMutator) []txnbuild.Operation {
 		} else {
 			panic(fmt.Sprintf("could not convert build.TransactionMutator to txnbuild.Operation: %v (type=%T)\n", m, m))
 		}
+		msos = append(msos, mso)
+	}
+	return msos
+}
+
+// ConvertMSO2Ops converts manage sell offers into Operations.
+func ConvertMSO2Ops(msos []*txnbuild.ManageSellOffer) []txnbuild.Operation {
+	ops := []txnbuild.Operation{}
+	for _, mso := range msos {
 		ops = append(ops, mso)
 	}
 	return ops

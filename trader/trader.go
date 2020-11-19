@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -13,7 +14,6 @@ import (
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
-	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
@@ -469,7 +469,21 @@ func (t *Trader) update() plugins.UpdateLoopResult {
 		}
 	}
 
-	ops := api.ConvertTM2Operation(opsOld)
+	msos := api.ConvertTM2MSO(opsOld)
+	numUpdateOpsCreate, numUpdateOpsDelete, numUpdateOpsUpdate, e = countOfferChangeTypes(msos)
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers(false)
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
+	}
+
+	ops := api.ConvertMSO2Ops(msos)
 	for i, filter := range t.submitFilters {
 		ops, e = filter.Apply(ops, t.sellingAOffers, t.buyingAOffers)
 		if e != nil {
@@ -493,19 +507,6 @@ func (t *Trader) update() plugins.UpdateLoopResult {
 				t.deleteAllOffers(true)
 			}
 		})
-		if e != nil {
-			log.Println(e)
-			t.deleteAllOffers(false)
-			return plugins.UpdateLoopResult{
-				Success:            false,
-				NumPruneOps:        numPruneOps,
-				NumUpdateOpsDelete: numUpdateOpsDelete,
-				NumUpdateOpsUpdate: numUpdateOpsUpdate,
-				NumUpdateOpsCreate: numUpdateOpsCreate,
-			}
-		}
-
-		numUpdateOpsCreate, numUpdateOpsDelete, numUpdateOpsUpdate, e = t.countOfferChangeTypes(ops)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
@@ -615,30 +616,29 @@ func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffe
 	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
 }
 
-func (t *Trader) countOfferChangeTypes(offers []txnbuild.Operation) (numCreate int, numUpdate int, numDelete int, e error) {
-	var offerXdr xdr.Operation
+func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) (int, int, int, error) {
+	numCreate, numDelete, numUpdate := 0, 0, 0
 	for _, o := range offers {
-		offerXdr, e = o.BuildXDR()
-		if e != nil {
-			return 0, 0, 0, fmt.Errorf("could not convert op to offer: %s", e)
+		if o == nil {
+			return 0, 0, 0, fmt.Errorf("offers were not of expected type ManageSellOffer")
 		}
 
-		manageSellOp := offerXdr.Body.ManageSellOfferOp
-		if manageSellOp == nil {
-			return 0, 0, 0, fmt.Errorf("offers were not of expected type ManageSellOffer")
+		opAmount, e := strconv.ParseFloat(o.Amount, 64)
+		if e != nil {
+			return 0, 0, 0, fmt.Errorf(" invalid operation amount (%s) could not be parsed as float", o.Amount)
 		}
 
 		// 0 amount represents deletion
 		// 0 offer id represents creating a new offer
 		// anything else represents updating an extiing offer
-		if manageSellOp.Amount == 0 {
+		if opAmount == 0 {
 			numDelete++
-		} else if manageSellOp.OfferId == 0 {
+		} else if o.OfferID == 0 {
 			numCreate++
 		} else {
 			numUpdate++
 		}
 	}
 
-	return
+	return numCreate, numDelete, numUpdate, nil
 }
