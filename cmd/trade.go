@@ -26,7 +26,6 @@ import (
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/database"
 	"github.com/stellar/kelp/support/logger"
-	"github.com/stellar/kelp/support/metrics"
 	"github.com/stellar/kelp/support/monitoring"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
@@ -374,7 +373,7 @@ func makeStrategy(
 	options inputs,
 	threadTracker *multithreading.ThreadTracker,
 	db *sql.DB,
-	metricsTracker *metrics.MetricsTracker,
+	metricsTracker *plugins.MetricsTracker,
 ) api.Strategy {
 	// setting the temp hack variables for the sdex price feeds
 	e := plugins.SetPrivateSdexHack(client, plugins.MakeIEIF(true), network)
@@ -423,7 +422,7 @@ func makeBot(
 	fillTracker api.FillTracker,
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
-	metricsTracker *metrics.MetricsTracker,
+	metricsTracker *plugins.MetricsTracker,
 	botStart time.Time,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
@@ -567,7 +566,7 @@ func runTradeCmd(options inputs) {
 
 	isTestnet := strings.Contains(botConfig.HorizonURL, "test") && botConfig.IsTradingSdex()
 
-	metricsTracker, e := metrics.MakeMetricsTracker(
+	metricsTracker, e := plugins.MakeMetricsTrackerCli(
 		userID,
 		deviceID,
 		amplitudeAPIKey,
@@ -578,7 +577,7 @@ func runTradeCmd(options inputs) {
 		env,
 		runtime.GOOS,
 		runtime.GOARCH,
-		"unknown_todo", // TODO DS Determine how to get GOARM.
+		goarm,
 		runtime.Version(),
 		guiVersionFlag,
 		*options.strategy,
@@ -609,7 +608,7 @@ func runTradeCmd(options inputs) {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
 	}
 
-	e = metricsTracker.SendStartupEvent()
+	e = metricsTracker.SendStartupEvent(time.Now())
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not send startup event metric: %s", e))
 	}
@@ -871,7 +870,7 @@ func makeFillTracker(
 	db *sql.DB,
 	threadTracker *multithreading.ThreadTracker,
 	accountID string,
-	metricsTracker *metrics.MetricsTracker,
+	metricsTracker *plugins.MetricsTracker,
 ) api.FillTracker {
 	strategyFillHandlers, e := strategy.GetFillHandlers()
 	if e != nil {
@@ -966,7 +965,7 @@ func deleteAllOffersAndExit(
 	sdex *plugins.SDEX,
 	exchangeShim api.ExchangeShim,
 	threadTracker *multithreading.ThreadTracker,
-	metricsTracker *metrics.MetricsTracker,
+	metricsTracker *plugins.MetricsTracker,
 ) {
 	// synchronous event to guarantee execution. we want to know whenever we enter the delete all offers logic. this function
 	// waits for all threads to be synchronous, which is equivalent to sending synchronously. we use
