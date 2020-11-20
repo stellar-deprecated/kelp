@@ -87,7 +87,10 @@ func makeFilterVolume(
 		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
 	}
 
-	// TODO DS Validate the config, to have exactly one asset cap defined; a valid mode; non-nil market IDs; and non-nil optional account IDs.
+	e = config.Validate()
+	if e != nil {
+		return nil, fmt.Errorf("invalid config: %s", e)
+	}
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
@@ -103,8 +106,25 @@ var _ SubmitFilter = &volumeFilter{}
 
 // Validate ensures validity
 func (c *VolumeFilterConfig) Validate() error {
-	if c.isEmpty() {
-		return fmt.Errorf("the volumeFilterConfig was empty")
+	if c.SellBaseAssetCapInBaseUnits != nil && c.SellBaseAssetCapInQuoteUnits != nil {
+		return fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil")
+	}
+
+	if c.SellBaseAssetCapInBaseUnits == nil && c.SellBaseAssetCapInQuoteUnits == nil {
+		return fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil")
+	}
+
+	// return the original error, as it is already well-formatted
+	if _, e := parseVolumeFilterMode(string(c.mode)); e != nil {
+		return e
+	}
+
+	if c.additionalMarketIDs == nil {
+		return fmt.Errorf("invalid market ids: must be non-nil")
+	}
+
+	if c.optionalAccountIDs == nil {
+		return fmt.Errorf("invalid optional account ids: must be non-nil")
 	}
 	return nil
 }
@@ -245,20 +265,4 @@ func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {
 		return 0.0, fmt.Errorf("SellBaseAssetCapInBaseUnits is nil, config = %v", f.config)
 	}
 	return *value, nil
-}
-
-func (c *VolumeFilterConfig) isEmpty() bool {
-	if c.SellBaseAssetCapInBaseUnits != nil {
-		return false
-	}
-	if c.SellBaseAssetCapInQuoteUnits != nil {
-		return false
-	}
-	// if buyBaseAssetCapInBaseUnits != nil {
-	// 	return false
-	// }
-	// if buyBaseAssetCapInQuoteUnits != nil {
-	// 	return false
-	// }
-	return true
 }
