@@ -616,16 +616,16 @@ func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffe
 	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
 }
 
-func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) (int, int, int, error) {
+func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) ( /*numCreate*/ int /*numDelete*/, int /*numUpdate*/, int, error) {
 	numCreate, numDelete, numUpdate := 0, 0, 0
-	for _, o := range offers {
+	for i, o := range offers {
 		if o == nil {
-			return 0, 0, 0, fmt.Errorf("offers were not of expected type ManageSellOffer")
+			return 0, 0, 0, fmt.Errorf("offer at index %d was not of expected type ManageSellOffer (actual type = %T): %+v", i, o, o)
 		}
 
 		opAmount, e := strconv.ParseFloat(o.Amount, 64)
 		if e != nil {
-			return 0, 0, 0, fmt.Errorf(" invalid operation amount (%s) could not be parsed as float", o.Amount)
+			return 0, 0, 0, fmt.Errorf("invalid operation amount (%s) could not be parsed as float for operation at index %d: %v", o.Amount, i, o)
 		}
 
 		// 0 amount represents deletion
