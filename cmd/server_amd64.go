@@ -300,6 +300,7 @@ func init() {
 			}
 
 			httpClient := &http.Client{}
+			metricsHandler := plugins.MakeTradeMetricsHandler()
 			metricsTracker, e = plugins.MakeMetricsTrackerGui(
 				deviceID,
 				deviceID,
@@ -315,7 +316,7 @@ func init() {
 				runtime.Version(),
 				guiVersion,
 				*options.noHeaders, // disable metrics if the CLI specified no headers
-
+				metricsHandler,
 			)
 			if e != nil {
 				panic(e)

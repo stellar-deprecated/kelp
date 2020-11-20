@@ -166,6 +166,7 @@ func MakeMetricsTrackerCli(
 	operationalBufferNonNativePct float64,
 	simMode bool,
 	fixedIterations uint64,
+	handler *plugins.TradeMetricsHandler,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion:                       version,
@@ -215,7 +216,7 @@ func MakeMetricsTrackerCli(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
-		handler:             plugins.MakeTradeMetricsHandler(),
+		handler:             handler,
 		cliVersion:          version,
 	}, nil
 }
@@ -236,6 +237,7 @@ func MakeMetricsTrackerGui(
 	goVersion string,
 	guiVersion string,
 	isDisabled bool,
+	handler *plugins.TradeMetricsHandler,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion: version,
@@ -262,6 +264,7 @@ func MakeMetricsTrackerGui(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		handler:             handler,
 		cliVersion:          version,
 	}, nil
 }
@@ -372,52 +375,7 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 	return nil
 }
 
-// ComputeTradeMetrics computes various trade metrics and outputs a map that can be combined with other metrics.
-func (mt *MetricsTracker) ComputeTradeMetrics() map[string]interface{} {
-	// TODO NS Ensure proper locking around trades on metrics handler
-	trades := mt.handler.GetTrades()
-	mt.handler.Reset()
-
-	totalBaseVolume := 0.0
-	totalQuoteVolume := 0.0
-	totalPrice := 0.0
-	netBaseVolume := 0.0
-	netQuoteVolume := 0.0
-
-	numTrades := float64(len(trades))
-	for _, t := range trades {
-		base := t.Volume.AsFloat()
-		price := t.Price.AsFloat()
-		quote := base * price
-
-		totalBaseVolume += base
-		totalPrice += price
-		totalQuoteVolume += quote
-
-		if t.OrderAction.IsBuy() {
-			netBaseVolume += base
-			netQuoteVolume -= quote
-		} else {
-			netBaseVolume -= base
-			netQuoteVolume -= quote
-		}
-	}
-
-	avgTradeSizeBase := totalBaseVolume / numTrades
-	avgTradeSizeQuote := totalQuoteVolume / numTrades
-	avgTradePrice := totalPrice / numTrades
-
-	tradeMetrics := map[string]interface{}{
-		"total_base_volume":    totalBaseVolume,
-		"total_quote_volume":   totalQuoteVolume,
-		"net_base_volume":      netBaseVolume,
-		"net_quote_volume":     netQuoteVolume,
-		"num_trades":           numTrades,
-		"avg_trade_size_base":  avgTradeSizeBase,
-		"avg_trade_size_quote": avgTradeSizeQuote,
-		"avg_trade_price":      avgTradePrice,
-		"vwap":                 totalQuoteVolume / totalBaseVolume,
-	}
-
-	return tradeMetrics
+// GetHandler returns the TradeMetricsHandler
+func (mt *MetricsTracker) GetHandler() *plugins.TradeMetricsHandler {
+	return mt.handler
 }
