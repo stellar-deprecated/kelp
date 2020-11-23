@@ -302,6 +302,7 @@ func assetEqualsExact(hAsset hProtocol.Asset, xAsset txnbuild.Asset) (bool, erro
 }
 
 // IsSelling helper method
+// TODO DS Add tests for the various possible errors.
 func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling txnbuild.Asset, buying txnbuild.Asset) (bool, error) {
 	sellingBase, e := assetEqualsExact(sdexBase, selling)
 	if e != nil {
