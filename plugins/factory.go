@@ -42,6 +42,7 @@ type StrategyContainer struct {
 var ccxtExchangeSpecificParamFactoryMap = map[string]ccxtExchangeSpecificParamFactory{
 	"ccxt-coinbasepro": &ccxtExchangeSpecificParamFactoryCoinbasepro{},
 	"ccxt-binance":     makeCcxtExchangeSpecificParamFactoryBinance(),
+	"ccxt-bitstamp":    &ccxtExchangeSpecificParamFactoryBitstamp{},
 }
 
 // strategies is a map of all the strategies available
