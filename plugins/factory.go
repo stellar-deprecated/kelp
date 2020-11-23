@@ -258,6 +258,7 @@ func loadExchanges() {
 		"binance":     true,
 		"poloniex":    true,
 		"coinbasepro": true,
+		"bitstamp":    true,
 	}
 
 	// marked as atomicPostOnly if key exists in this map (regardless of bool value)
