@@ -10,6 +10,10 @@ import (
 /****************************** COINBASE PRO ******************************/
 type ccxtExchangeSpecificParamFactoryCoinbasepro struct{}
 
+func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) getInitParams() map[string]interface{} {
+	return nil
+}
+
 func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) getParamsForGetOrderBook() map[string]interface{} {
 	return nil
 }
@@ -47,6 +51,10 @@ func makeCcxtExchangeSpecificParamFactoryBinance() *ccxtExchangeSpecificParamFac
 		lastValidLimit:       validOrderBookLevels[len(validOrderBookLevels)-1],
 		cachedResults:        map[int]int{},
 	}
+}
+
+func (f *ccxtExchangeSpecificParamFactoryBinance) getInitParams() map[string]interface{} {
+	return nil
 }
 
 func (f *ccxtExchangeSpecificParamFactoryBinance) getParamsForGetOrderBook() map[string]interface{} {
@@ -106,6 +114,12 @@ var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryBinanc
 
 /****************************** BITSTAMP ******************************/
 type ccxtExchangeSpecificParamFactoryBitstamp struct{}
+
+func (f *ccxtExchangeSpecificParamFactoryBitstamp) getInitParams() map[string]interface{} {
+	return map[string]interface{}{
+		"enableRateLimit": true,
+	}
+}
 
 func (f *ccxtExchangeSpecificParamFactoryBitstamp) getParamsForGetOrderBook() map[string]interface{} {
 	return nil

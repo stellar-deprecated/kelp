@@ -227,6 +227,7 @@ func (c *Ccxt) newInstance(apiKey api.ExchangeAPIKey, params []api.ExchangeParam
 		"apiKey": apiKey.Key,
 		"secret": apiKey.Secret,
 	}
+	// values that occur later in the list will override previous values (this is by design, so default values can be overriden by config values)
 	for _, param := range params {
 		data[param.Param] = param.Value
 	}

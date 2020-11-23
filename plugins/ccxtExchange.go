@@ -20,6 +20,7 @@ var _ api.Exchange = ccxtExchange{}
 
 // ccxtExchangeSpecificParamFactory knows how to create the exchange-specific params for each exchange
 type ccxtExchangeSpecificParamFactory interface {
+	getInitParams() map[string]interface{}
 	getParamsForGetOrderBook() map[string]interface{}
 	getParamsForAddOrder(submitMode api.SubmitMode) interface{}
 	getParamsForGetTradeHistory() interface{}
@@ -54,6 +55,22 @@ func makeCcxtExchange(
 		return nil, fmt.Errorf("need exactly 1 ExchangeAPIKey")
 	}
 
+	defaultExchangeParams := []api.ExchangeParam{}
+	if esParamFactory != nil {
+		initParamMap := esParamFactory.getInitParams()
+		if initParamMap != nil {
+			for k, v := range initParamMap {
+				defaultExchangeParams = append(defaultExchangeParams, api.ExchangeParam{
+					Param: k,
+					Value: v,
+				})
+			}
+		}
+	}
+	if len(defaultExchangeParams) > 0 {
+		// prepend default params so we can override from config if needed
+		exchangeParams = append(defaultExchangeParams, exchangeParams...)
+	}
 	c, e := sdk.MakeInitializedCcxtExchange(exchangeName, apiKeys[0], exchangeParams, headers)
 	if e != nil {
 		return nil, fmt.Errorf("error making a ccxt exchange: %s", e)
