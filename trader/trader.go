@@ -470,7 +470,7 @@ func (t *Trader) update() plugins.UpdateLoopResult {
 	}
 
 	msos := api.ConvertTM2MSO(opsOld)
-	numUpdateOpsCreate, numUpdateOpsDelete, numUpdateOpsUpdate, e = countOfferChangeTypes(msos)
+	numUpdateOpsDelete, numUpdateOpsUpdate, numUpdateOpsCreate, e = countOfferChangeTypes(msos)
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
@@ -616,8 +616,8 @@ func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffe
 	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
 }
 
-func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) ( /*numCreate*/ int /*numDelete*/, int /*numUpdate*/, int, error) {
-	numCreate, numDelete, numUpdate := 0, 0, 0
+func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) (int /*numDelete*/, int /*numUpdate*/, int /*numCreate*/, error) {
+	numDelete, numUpdate, numCreate := 0, 0, 0
 	for i, o := range offers {
 		if o == nil {
 			return 0, 0, 0, fmt.Errorf("offer at index %d was not of expected type ManageSellOffer (actual type = %T): %+v", i, o, o)
@@ -640,5 +640,5 @@ func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) ( /*numCreate*/ i
 		}
 	}
 
-	return numCreate, numDelete, numUpdate, nil
+	return numDelete, numUpdate, numCreate, nil
 }

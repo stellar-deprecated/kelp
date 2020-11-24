@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stellar/go/txnbuild"
-
 	"github.com/stretchr/testify/assert"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
@@ -311,14 +310,14 @@ func TestCountOfferChangeTypes(t *testing.T) {
 
 	for _, k := range testCases {
 		t.Run(k.name, func(t *testing.T) {
-			gotNumCreate, gotNumDelete, gotNumUpdate, gotErr := countOfferChangeTypes(k.offers)
+			gotNumDelete, gotNumUpdate, gotNumCreate, gotErr := countOfferChangeTypes(k.offers)
 			if !assert.Nil(t, gotErr) {
 				return
 			}
 
-			assert.Equal(t, k.wantNumCreate, gotNumCreate)
 			assert.Equal(t, k.wantNumDelete, gotNumDelete)
 			assert.Equal(t, k.wantNumUpdate, gotNumUpdate)
+			assert.Equal(t, k.wantNumCreate, gotNumCreate)
 		})
 	}
 
