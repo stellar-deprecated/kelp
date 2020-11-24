@@ -92,8 +92,8 @@ type updateProps struct {
 	MillisForUpdate              int64   `json:"millis_for_update"`
 	SecondsSinceLastUpdateMetric float64 `json:"seconds_since_last_update_metric"` // helps understand total runtime of bot when summing this field across events
 	NumPruneOps                  int     `json:"num_prune_ops"`
-	NumUpdatesOpsDelete          int     `json:"num_update_ops_delete"`
-	NumUpdatesOpsUpdate          int     `json:"num_update_ops_update"`
+	NumUpdateOpsDelete           int     `json:"num_update_ops_delete"`
+	NumUpdateOpsUpdate           int     `json:"num_update_ops_update"`
 	NumUpdateOpsCreate           int     `json:"num_update_ops_create"`
 }
 
@@ -300,8 +300,8 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, updateResult UpdateLoop
 		MillisForUpdate:              millisForUpdate,
 		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
 		NumPruneOps:                  updateResult.NumPruneOps,
-		NumUpdatesOpsDelete:          updateResult.NumUpdateOpsDelete,
-		NumUpdatesOpsUpdate:          updateResult.NumUpdateOpsUpdate,
+		NumUpdateOpsDelete:           updateResult.NumUpdateOpsDelete,
+		NumUpdateOpsUpdate:           updateResult.NumUpdateOpsUpdate,
 		NumUpdateOpsCreate:           updateResult.NumUpdateOpsCreate,
 	}
 
