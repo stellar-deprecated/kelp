@@ -42,6 +42,7 @@ type StrategyContainer struct {
 var ccxtExchangeSpecificParamFactoryMap = map[string]ccxtExchangeSpecificParamFactory{
 	"ccxt-coinbasepro": &ccxtExchangeSpecificParamFactoryCoinbasepro{},
 	"ccxt-binance":     makeCcxtExchangeSpecificParamFactoryBinance(),
+	"ccxt-bitstamp":    &ccxtExchangeSpecificParamFactoryBitstamp{},
 }
 
 // strategies is a map of all the strategies available
@@ -257,6 +258,7 @@ func loadExchanges() {
 		"binance":     true,
 		"poloniex":    true,
 		"coinbasepro": true,
+		"bitstamp":    true,
 	}
 
 	// marked as atomicPostOnly if key exists in this map (regardless of bool value)

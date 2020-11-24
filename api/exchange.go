@@ -20,7 +20,7 @@ type ExchangeAPIKey struct {
 // ExchangeParam specifies an additional parameter to be sent when initializing the exchange
 type ExchangeParam struct {
 	Param string
-	Value string
+	Value interface{}
 }
 
 // ExchangeHeader specifies additional HTTP headers
