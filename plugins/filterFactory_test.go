@@ -143,7 +143,6 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				action:                   queries.DailyVolumeActionBuy,
 				additionalMarketIDs:      nil,
 				optionalAccountIDs:       nil,
 			},
@@ -152,7 +151,6 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  nil,
 				BaseAssetCapInQuoteUnits: pointy.Float64(4000.0),
-				action:                   queries.DailyVolumeActionBuy,
 				additionalMarketIDs:      nil,
 				optionalAccountIDs:       nil,
 			},
@@ -162,7 +160,6 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				action:                   queries.DailyVolumeActionBuy,
 				additionalMarketIDs:      nil,
 				optionalAccountIDs:       nil,
 			},
@@ -171,7 +168,6 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  nil,
 				BaseAssetCapInQuoteUnits: pointy.Float64(1000.0),
-				action:                   queries.DailyVolumeActionBuy,
 				additionalMarketIDs:      nil,
 				optionalAccountIDs:       nil,
 			},
@@ -180,7 +176,6 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				action:                   queries.DailyVolumeActionBuy,
 				additionalMarketIDs:      []string{"4c19915f47", "db4531d586"},
 				optionalAccountIDs:       nil,
 			},
@@ -189,7 +184,6 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				action:                   queries.DailyVolumeActionBuy,
 				additionalMarketIDs:      nil,
 				optionalAccountIDs:       []string{"account1", "account2"},
 			},
@@ -222,7 +216,7 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 					if !assert.NoError(t, e) {
 						return
 					}
-					assertVolumeFilterConfigEqual(t, k.wantConfig, actual)
+					assertVolumeFilterConfigEqual(t, wantConfig, actual)
 				})
 			}
 		}
