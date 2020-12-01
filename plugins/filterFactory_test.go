@@ -231,6 +231,7 @@ func assertVolumeFilterConfigEqual(t *testing.T, want *VolumeFilterConfig, actua
 	} else {
 		assert.Equal(t, want.BaseAssetCapInBaseUnits, actual.BaseAssetCapInBaseUnits)
 		assert.Equal(t, want.BaseAssetCapInQuoteUnits, actual.BaseAssetCapInQuoteUnits)
+		assert.Equal(t, want.action, actual.action)
 		assert.Equal(t, want.mode, actual.mode)
 		assert.Equal(t, want.additionalMarketIDs, actual.additionalMarketIDs)
 		assert.Equal(t, want.optionalAccountIDs, actual.optionalAccountIDs)
