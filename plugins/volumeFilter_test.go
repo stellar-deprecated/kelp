@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action string) *volumeFilter {
+func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action queries.DailyVolumeAction) *volumeFilter {
 	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, accountIDs)
 	if e != nil {
 		panic(e)
@@ -100,48 +100,54 @@ func TestMakeFilterVolume(t *testing.T) {
 	for _, k := range testCases {
 		// this lets us test both types of modes when varying the market and account ids
 		for _, m := range modes {
-			// this lets us run the for-loop below for both base and quote units within the config
-			baseCapInBaseConfig := makeRawVolumeFilterConfig(
-				pointy.Float64(1.0),
-				nil,
-				m,
-				k.marketIDs,
-				k.accountIDs,
-			)
-			baseCapInQuoteConfig := makeRawVolumeFilterConfig(
-				nil,
-				pointy.Float64(1.0),
-				m,
-				k.marketIDs,
-				k.accountIDs,
-			)
-			for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
-				// configType is used to represent the type of config when printing test name
-				configType := "quote"
-				if config.SellBaseAssetCapInBaseUnits != nil {
-					configType = "base"
-				}
-
-				// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
-				wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, "sell")
-				t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
-					actual, e := makeFilterVolume(
-						configValue,
-						k.exchangeName,
-						tradingPair,
-						testAssetDisplayFn,
-						utils.NativeAsset,
-						utils.NativeAsset,
-						&sql.DB{},
-						config,
-					)
-
-					if !assert.Nil(t, e) {
-						return
+			// this lets us test both buy and sell
+			// TODO DS Add buy action
+			for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
+				// this lets us run the for-loop below for both base and quote units within the config
+				baseCapInBaseConfig := makeRawVolumeFilterConfig(
+					pointy.Float64(1.0),
+					nil,
+					action,
+					m,
+					k.marketIDs,
+					k.accountIDs,
+				)
+				baseCapInQuoteConfig := makeRawVolumeFilterConfig(
+					nil,
+					pointy.Float64(1.0),
+					action,
+					m,
+					k.marketIDs,
+					k.accountIDs,
+				)
+				for _, config := range []*VolumeFilterConfig{baseCapInBaseConfig, baseCapInQuoteConfig} {
+					// configType is used to represent the type of config when printing test name
+					configType := "quote"
+					if config.BaseAssetCapInBaseUnits != nil {
+						configType = "base"
 					}
 
-					assert.Equal(t, wantFilter, actual)
-				})
+					// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
+					wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, action)
+					t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
+						actual, e := makeFilterVolume(
+							configValue,
+							k.exchangeName,
+							tradingPair,
+							testAssetDisplayFn,
+							utils.NativeAsset,
+							utils.NativeAsset,
+							&sql.DB{},
+							config,
+						)
+
+						if !assert.Nil(t, e) {
+							return
+						}
+
+						assert.Equal(t, wantFilter, actual)
+					})
+				}
 			}
 		}
 	}
@@ -281,36 +287,37 @@ func TestVolumeFilterFn(t *testing.T) {
 	accountIDs := []string{}
 
 	for _, k := range testCases {
-		t.Run(k.name, func(t *testing.T) {
-			// exactly one of the two cap values must be set
-			if k.sellBaseCapInBase == nil && k.sellBaseCapInQuote == nil {
-				assert.Fail(t, "either one of the two cap values must be set")
-				return
-			}
+		for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
+			t.Run(k.name, func(t *testing.T) {
+				// exactly one of the two cap values must be set
+				if k.sellBaseCapInBase == nil && k.sellBaseCapInQuote == nil {
+					assert.Fail(t, "either one of the two cap values must be set")
+					return
+				}
 
-			if k.sellBaseCapInBase != nil && k.sellBaseCapInQuote != nil {
-				assert.Fail(t, "both of the cap values cannot be set")
-				return
-			}
+				if k.sellBaseCapInBase != nil && k.sellBaseCapInQuote != nil {
+					assert.Fail(t, "both of the cap values cannot be set")
+					return
+				}
 
-			dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, k.mode, marketIDs, accountIDs)
-			dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, k.mode, marketIDs, accountIDs)
-			lp := limitParameters{
-				sellBaseAssetCapInBaseUnits:  k.sellBaseCapInBase,
-				sellBaseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
-				mode:                         k.mode,
-			}
+				dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, action, k.mode, marketIDs, accountIDs)
+				dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, action, k.mode, marketIDs, accountIDs)
+				lp := limitParameters{
+					baseAssetCapInBaseUnits:  k.sellBaseCapInBase,
+					baseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
+					mode:                     k.mode,
+				}
 
-			actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, k.inputOp, utils.NativeAsset, utils.NativeAsset, lp)
-			if !assert.Nil(t, e) {
-				return
-			}
-			assert.Equal(t, k.wantOp, actual)
+				actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, k.inputOp, utils.NativeAsset, utils.NativeAsset, lp)
+				if !assert.Nil(t, e) {
+					return
+				}
+				assert.Equal(t, k.wantOp, actual)
 
-			wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBase, k.wantTbbQuote, k.mode, marketIDs, accountIDs)
-			assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
-		})
-
+				wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBase, k.wantTbbQuote, action, k.mode, marketIDs, accountIDs)
+				assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
+			})
+		}
 	}
 }
 

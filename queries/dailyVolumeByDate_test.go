@@ -39,6 +39,7 @@ func connectTestDb() *sql.DB {
 
 func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 	testCases := []struct {
+		action                    DailyVolumeAction
 		queryByOptionalAccountIDs []string
 		wantYesterdayBase         float64
 		wantYesterdayQuote        float64
@@ -47,7 +48,9 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 		wantTomorrowBase          float64
 		wantTomorrowQuote         float64
 	}{
+		// TODO DS add case for buy base/quote and add trade data in test below accordingly
 		{
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,
@@ -56,6 +59,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          102.0,
 			wantTomorrowQuote:         12.24,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID1", "accountID2"}, // accountID1 and accountID2 are the only ones that exists
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,
@@ -64,6 +68,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          102.0,
 			wantTomorrowQuote:         12.24,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID1"}, // accountID1 has most of the entries
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,
@@ -72,6 +77,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          102.0,
 			wantTomorrowQuote:         12.24,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID2"}, //accountID2 has only one entry, which is for today
 			wantYesterdayBase:         0.0,
 			wantYesterdayQuote:        0.0,
@@ -80,6 +86,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          0.0,
 			wantTomorrowQuote:         0.0,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID2", "accountID2"}, // duplicate accountIDs should return same as previous test case
 			wantYesterdayBase:         0.0,
 			wantYesterdayQuote:        0.0,
@@ -88,6 +95,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowBase:          0.0,
 			wantTomorrowQuote:         0.0,
 		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID3"}, //accountID3 does not exist
 			wantYesterdayBase:         0.0,
 			wantYesterdayQuote:        0.0,
@@ -98,113 +106,113 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 		},
 	}
 
-	for _, k := range testCases {
-		t.Run(strings.Replace(fmt.Sprintf("%v", k.queryByOptionalAccountIDs), " ", "_", -1), func(t *testing.T) {
-			// setup db
-			yesterday, _ := time.Parse(time.RFC3339, "2020-01-20T15:00:00Z")
-			today, _ := time.Parse(time.RFC3339, "2020-01-21T15:00:00Z")
-			tomorrow, _ := time.Parse(time.RFC3339, "2020-01-22T15:00:00Z")
-			setupStatements := []string{
-				kelpdb.SqlTradesTableCreate,
-				"ALTER TABLE trades DROP COLUMN IF EXISTS account_id",
-				"ALTER TABLE trades DROP COLUMN IF EXISTS order_id",
-				kelpdb.SqlTradesTableAlter1,
-				kelpdb.SqlTradesTableAlter2,
-				"DELETE FROM trades", // clear table
-				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
-					"market1",
-					"1",
-					yesterday.Format(postgresdb.TimestampFormatString),
-					model.OrderActionSell.String(),
-					model.OrderTypeLimit.String(),
-					0.10,  // price
-					100.0, // volume
-					10.0,  // cost
-					0.0,   // fee
-					"accountID1",
-					"",
-				),
-				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
-					"market1",
-					"2",
-					today.Format(postgresdb.TimestampFormatString),
-					model.OrderActionSell.String(),
-					model.OrderTypeLimit.String(),
-					0.11,  // price
-					101.0, // volume
-					11.11, // cost
-					0.0,   // fee
-					"accountID1",
-					"oid1",
-				),
-				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
-					"market1",
-					"3",
-					today.Add(time.Second*1).Format(postgresdb.TimestampFormatString),
-					model.OrderActionSell.String(),
-					model.OrderTypeLimit.String(),
-					0.12, // price
-					6.0,  // volume
-					0.72, // cost
-					0.10, // fee
-					"accountID1",
-					"",
-				),
-				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
-					"market1",
-					"4",
-					tomorrow.Format(postgresdb.TimestampFormatString),
-					model.OrderActionSell.String(),
-					model.OrderTypeLimit.String(),
-					0.12,  // price
-					102.0, // volume
-					12.24, // cost
-					0.0,   // fee
-					"accountID1",
-					"",
-				),
-				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
-					"market1",
-					"5",
-					tomorrow.Add(time.Second*1).Format(postgresdb.TimestampFormatString),
-					model.OrderActionBuy.String(),
-					model.OrderTypeLimit.String(),
-					0.12,  // price
-					102.0, // volume
-					12.24, // cost
-					0.0,   // fee
-					"accountID1",
-					"",
-				),
-				// add an extra one for accountID2
-				fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
-					"market1",
-					"6",
-					today.Format(postgresdb.TimestampFormatString),
-					model.OrderActionSell.String(),
-					model.OrderTypeLimit.String(),
-					0.10,  // price
-					100.0, // volume
-					10.0,  // cost
-					0.0,   // fee
-					"accountID2",
-					"",
-				),
-			}
-			db := connectTestDb()
-			defer db.Close()
-			for _, s := range setupStatements {
-				_, e := db.Exec(s)
-				if e != nil {
-					panic(e)
-				}
-			}
+	// setup db
+	yesterday, _ := time.Parse(time.RFC3339, "2020-01-20T15:00:00Z")
+	today, _ := time.Parse(time.RFC3339, "2020-01-21T15:00:00Z")
+	tomorrow, _ := time.Parse(time.RFC3339, "2020-01-22T15:00:00Z")
+	setupStatements := []string{
+		kelpdb.SqlTradesTableCreate,
+		"ALTER TABLE trades DROP COLUMN IF EXISTS account_id",
+		"ALTER TABLE trades DROP COLUMN IF EXISTS order_id",
+		kelpdb.SqlTradesTableAlter1,
+		kelpdb.SqlTradesTableAlter2,
+		"DELETE FROM trades", // clear table
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"1",
+			yesterday.Format(postgresdb.TimestampFormatString),
+			model.OrderActionSell.String(),
+			model.OrderTypeLimit.String(),
+			0.10,  // price
+			100.0, // volume
+			10.0,  // cost
+			0.0,   // fee
+			"accountID1",
+			"",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"2",
+			today.Format(postgresdb.TimestampFormatString),
+			model.OrderActionSell.String(),
+			model.OrderTypeLimit.String(),
+			0.11,  // price
+			101.0, // volume
+			11.11, // cost
+			0.0,   // fee
+			"accountID1",
+			"oid1",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"3",
+			today.Add(time.Second*1).Format(postgresdb.TimestampFormatString),
+			model.OrderActionSell.String(),
+			model.OrderTypeLimit.String(),
+			0.12, // price
+			6.0,  // volume
+			0.72, // cost
+			0.10, // fee
+			"accountID1",
+			"",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"4",
+			tomorrow.Format(postgresdb.TimestampFormatString),
+			model.OrderActionSell.String(),
+			model.OrderTypeLimit.String(),
+			0.12,  // price
+			102.0, // volume
+			12.24, // cost
+			0.0,   // fee
+			"accountID1",
+			"",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"5",
+			tomorrow.Add(time.Second*1).Format(postgresdb.TimestampFormatString),
+			model.OrderActionBuy.String(),
+			model.OrderTypeLimit.String(),
+			0.12,  // price
+			102.0, // volume
+			12.24, // cost
+			0.0,   // fee
+			"accountID1",
+			"",
+		),
+		// add an extra one for accountID2
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"6",
+			today.Format(postgresdb.TimestampFormatString),
+			model.OrderActionSell.String(),
+			model.OrderTypeLimit.String(),
+			0.10,  // price
+			100.0, // volume
+			10.0,  // cost
+			0.0,   // fee
+			"accountID2",
+			"",
+		),
+	}
+	db := connectTestDb()
+	defer db.Close()
+	for _, s := range setupStatements {
+		_, e := db.Exec(s)
+		if e != nil {
+			panic(e)
+		}
+	}
 
+	for _, k := range testCases {
+		t.Run(strings.Replace(fmt.Sprintf("%v/%s", k.queryByOptionalAccountIDs, k.action), " ", "_", -1), func(t *testing.T) {
 			// make query being tested
 			dailyVolumeByDateQuery, e := MakeDailyVolumeByDateForMarketIdsAction(
 				db,
 				[]string{"market1"},
-				"sell",
+				k.action,
 				k.queryByOptionalAccountIDs,
 			)
 			if !assert.NoError(t, e) {
