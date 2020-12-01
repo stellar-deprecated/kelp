@@ -270,7 +270,7 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	p.activeBucket = activeBucket
 	p.previousRoundID = &round.ID
 
-	if round.sizeBaseCapped <= 0.0 {
+	if round.sizeBaseCapped < p.orderConstraints.MinBaseVolume.AsFloat() {
 		return []api.Level{}, nil
 	}
 	return []api.Level{{

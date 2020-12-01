@@ -91,6 +91,10 @@ type updateProps struct {
 	Success                      bool    `json:"success"`
 	MillisForUpdate              int64   `json:"millis_for_update"`
 	SecondsSinceLastUpdateMetric float64 `json:"seconds_since_last_update_metric"` // helps understand total runtime of bot when summing this field across events
+	NumPruneOps                  int     `json:"num_prune_ops"`
+	NumUpdateOpsDelete           int     `json:"num_update_ops_delete"`
+	NumUpdateOpsUpdate           int     `json:"num_update_ops_update"`
+	NumUpdateOpsCreate           int     `json:"num_update_ops_create"`
 }
 
 // deleteProps holds the properties for the delete Amplitude event.
@@ -104,6 +108,16 @@ type deleteProps struct {
 type eventWrapper struct {
 	APIKey string  `json:"api_key"`
 	Events []event `json:"events"`
+}
+
+// UpdateLoopResult contains the results of the orderbook update.
+// Note that this is used in `trader/trader.go`, but it is defined here to avoid an import cycle.
+type UpdateLoopResult struct {
+	Success            bool
+	NumPruneOps        int
+	NumUpdateOpsDelete int
+	NumUpdateOpsUpdate int
+	NumUpdateOpsCreate int
 }
 
 // response structure taken from here: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#tocSsuccesssummary
@@ -273,7 +287,7 @@ func (mt *MetricsTracker) SendStartupEvent(now time.Time) error {
 }
 
 // SendUpdateEvent sends the update Amplitude event.
-func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisForUpdate int64) error {
+func (mt *MetricsTracker) SendUpdateEvent(now time.Time, updateResult UpdateLoopResult, millisForUpdate int64) error {
 	var secondsSinceLastUpdateMetric float64
 	if mt.updateEventSentTime == nil {
 		secondsSinceLastUpdateMetric = now.Sub(mt.botStartTime).Seconds()
@@ -282,9 +296,13 @@ func (mt *MetricsTracker) SendUpdateEvent(now time.Time, success bool, millisFor
 	}
 
 	updateProps := updateProps{
-		Success:                      success,
+		Success:                      updateResult.Success,
 		MillisForUpdate:              millisForUpdate,
 		SecondsSinceLastUpdateMetric: secondsSinceLastUpdateMetric,
+		NumPruneOps:                  updateResult.NumPruneOps,
+		NumUpdateOpsDelete:           updateResult.NumUpdateOpsDelete,
+		NumUpdateOpsUpdate:           updateResult.NumUpdateOpsUpdate,
+		NumUpdateOpsCreate:           updateResult.NumUpdateOpsCreate,
 	}
 
 	e := mt.SendEvent(updateEventName, updateProps, now)

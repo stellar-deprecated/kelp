@@ -10,31 +10,133 @@ import (
 
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
-	"github.com/stellar/kelp/support/utils"
 )
 
-func TestHashString(t *testing.T) {
+func TestMakeInstanceName(t *testing.T) {
 	testCases := []struct {
-		s        string
-		wantHash uint32
+		testName     string
+		exchangeName string
+		apiKey       api.ExchangeAPIKey
+		params       []api.ExchangeParam
+		headers      []api.ExchangeHeader
+		wantName     string
 	}{
+		// keys cases
 		{
-			s:        "hello",
-			wantHash: 1335831723,
+			testName:     "binance, no key or secret",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: ""},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "binance___",
 		}, {
-			s:        "world",
-			wantHash: 933488787,
+			testName:     "binance, no key but has secret",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: "secret"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "binance___",
+		}, {
+			testName:     "binance, has key and secret",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "binance_1746258028__",
+		}, {
+			testName:     "binance, different key with same secret",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key2", Secret: "secret"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "binance_944401402__",
+		}, {
+			testName:     "binance, different key and different secret",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key2", Secret: "secret2"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "binance_944401402__",
+		}, {
+			testName:     "kraken, has key and secret",
+			exchangeName: "kraken",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "kraken_1746258028__",
+		},
+		// params cases - value can be any type
+		{
+			testName:     "binance, no key or secret, has params",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: ""},
+			params:       []api.ExchangeParam{{Param: "p", Value: "v"}, {Param: "p2", Value: "true"}},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "binance__3356960995_",
+		}, {
+			testName:     "kraken, has key and secret, has params",
+			exchangeName: "kraken",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{{Param: "p", Value: "v"}, {Param: "p2", Value: "true"}},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "kraken_1746258028_3356960995_",
+		}, {
+			testName:     "kraken, has key and secret, has params with bool value",
+			exchangeName: "kraken",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{{Param: "p", Value: "v"}, {Param: "p2", Value: true}},
+			headers:      []api.ExchangeHeader{},
+			wantName:     "kraken_1746258028_3623553427_",
+		},
+		// headers cases - headers is only string values
+		{
+			testName:     "binance, no key or secret, has headers",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: ""},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{{Header: "h", Value: "v"}, {Header: "h", Value: "true"}},
+			wantName:     "binance___2734440189",
+		}, {
+			testName:     "kraken, has key and secret, has headers set 1",
+			exchangeName: "kraken",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{{Header: "h", Value: "v"}, {Header: "h", Value: "true"}},
+			wantName:     "kraken_1746258028__2734440189",
+		}, {
+			testName:     "kraken, has key and secret, has headers set 2",
+			exchangeName: "kraken",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{},
+			headers:      []api.ExchangeHeader{{Header: "h", Value: "v"}, {Header: "h2", Value: "true"}},
+			wantName:     "kraken_1746258028__2688111915",
+		},
+		// all parts included
+		{
+			testName:     "binance, no key or secret, has params, has headers",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "", Secret: ""},
+			params:       []api.ExchangeParam{{Param: "p", Value: "v"}, {Param: "p2", Value: "true"}},
+			headers:      []api.ExchangeHeader{{Header: "h", Value: "v"}, {Header: "h", Value: "true"}},
+			wantName:     "binance__3356960995_2734440189",
+		}, {
+			testName:     "binance, has key and secret, has params, has headers",
+			exchangeName: "binance",
+			apiKey:       api.ExchangeAPIKey{Key: "key", Secret: "secret"},
+			params:       []api.ExchangeParam{{Param: "p", Value: "v"}, {Param: "p2", Value: "true"}},
+			headers:      []api.ExchangeHeader{{Header: "h", Value: "v"}, {Header: "h", Value: "true"}},
+			wantName:     "binance_1746258028_3356960995_2734440189",
 		},
 	}
 
-	for _, kase := range testCases {
-		t.Run(kase.s, func(t *testing.T) {
-			result, e := utils.HashString(kase.s)
+	for _, k := range testCases {
+		t.Run(k.testName, func(t *testing.T) {
+			actualName, e := makeInstanceName(k.exchangeName, k.apiKey, k.params, k.headers)
 			if !assert.Nil(t, e) {
 				return
 			}
 
-			assert.Equal(t, kase.wantHash, result)
+			assert.Equal(t, k.wantName, actualName)
 		})
 	}
 }
