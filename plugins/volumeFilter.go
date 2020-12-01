@@ -41,8 +41,6 @@ type VolumeFilterConfig struct {
 	mode                     volumeFilterMode
 	additionalMarketIDs      []string
 	optionalAccountIDs       []string
-	// buyBaseAssetCapInBaseUnits   *float64
-	// buyBaseAssetCapInQuoteUnits  *float64
 }
 
 type limitParameters struct {

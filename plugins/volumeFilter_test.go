@@ -128,7 +128,7 @@ func TestMakeFilterVolume(t *testing.T) {
 					}
 
 					// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
-					wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, queries.DailyVolumeActionSell)
+					wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, action)
 					t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
 						actual, e := makeFilterVolume(
 							configValue,
@@ -287,36 +287,37 @@ func TestVolumeFilterFn(t *testing.T) {
 	accountIDs := []string{}
 
 	for _, k := range testCases {
-		t.Run(k.name, func(t *testing.T) {
-			// exactly one of the two cap values must be set
-			if k.sellBaseCapInBase == nil && k.sellBaseCapInQuote == nil {
-				assert.Fail(t, "either one of the two cap values must be set")
-				return
-			}
+		for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
+			t.Run(k.name, func(t *testing.T) {
+				// exactly one of the two cap values must be set
+				if k.sellBaseCapInBase == nil && k.sellBaseCapInQuote == nil {
+					assert.Fail(t, "either one of the two cap values must be set")
+					return
+				}
 
-			if k.sellBaseCapInBase != nil && k.sellBaseCapInQuote != nil {
-				assert.Fail(t, "both of the cap values cannot be set")
-				return
-			}
+				if k.sellBaseCapInBase != nil && k.sellBaseCapInQuote != nil {
+					assert.Fail(t, "both of the cap values cannot be set")
+					return
+				}
 
-			dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, k.mode, marketIDs, accountIDs)
-			dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, k.mode, marketIDs, accountIDs)
-			lp := limitParameters{
-				sellBaseAssetCapInBaseUnits:  k.sellBaseCapInBase,
-				sellBaseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
-				mode:                         k.mode,
-			}
+				dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, action, k.mode, marketIDs, accountIDs)
+				dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, action, k.mode, marketIDs, accountIDs)
+				lp := limitParameters{
+					baseAssetCapInBaseUnits:  k.sellBaseCapInBase,
+					baseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
+					mode:                     k.mode,
+				}
 
-			actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, k.inputOp, utils.NativeAsset, utils.NativeAsset, lp)
-			if !assert.Nil(t, e) {
-				return
-			}
-			assert.Equal(t, k.wantOp, actual)
+				actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, k.inputOp, utils.NativeAsset, utils.NativeAsset, lp)
+				if !assert.Nil(t, e) {
+					return
+				}
+				assert.Equal(t, k.wantOp, actual)
 
-			wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBase, k.wantTbbQuote, k.mode, marketIDs, accountIDs)
-			assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
-		})
-
+				wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBase, k.wantTbbQuote, action, k.mode, marketIDs, accountIDs)
+				assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
+			})
+		}
 	}
 }
 

@@ -48,16 +48,7 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 		wantTomorrowBase          float64
 		wantTomorrowQuote         float64
 	}{
-		// TODO add case for buy base/quote and add trade data in test below accordingly
-		// 	action:                    DailyVolumeActionBuy,
-		// 	queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
-		// 	wantYesterdayBase:         100.0,
-		// 	wantYesterdayQuote:        10.0,
-		// 	wantTodayBase:             207.0,
-		// 	wantTodayQuote:            21.83,
-		// 	wantTomorrowBase:          102.0,
-		// 	wantTomorrowQuote:         12.24,
-		// }, {
+		// TODO DS add case for buy base/quote and add trade data in test below accordingly
 		{
 			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
