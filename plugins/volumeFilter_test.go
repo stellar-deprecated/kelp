@@ -331,84 +331,90 @@ func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer 
 
 func TestValidateConfig(t *testing.T) {
 	testCases := []struct {
-		name             string
-		sellBaseCapBase  *float64
-		sellBaseCapQuote *float64
-		mode             volumeFilterMode
-		marketIDs        []string
-		accountIDs       []string
-		wantErr          error
+		name         string
+		baseCapBase  *float64
+		baseCapQuote *float64
+		marketIDs    []string
+		accountIDs   []string
+		wantErr      error
 	}{
 		{
-			name:             "success - base",
-			sellBaseCapBase:  pointy.Float64(1.0),
-			sellBaseCapQuote: nil,
-			mode:             volumeFilterModeExact,
-			marketIDs:        []string{},
-			accountIDs:       []string{},
-			wantErr:          nil,
+			name:         "success - base",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: nil,
+			marketIDs:    []string{},
+			accountIDs:   []string{},
+			wantErr:      nil,
 		},
 		{
-			name:             "success - quote",
-			sellBaseCapBase:  nil,
-			sellBaseCapQuote: pointy.Float64(1.0),
-			mode:             volumeFilterModeExact,
-			marketIDs:        []string{},
-			accountIDs:       []string{},
-			wantErr:          nil,
+			name:         "success - quote",
+			baseCapBase:  nil,
+			baseCapQuote: pointy.Float64(1.0),
+			marketIDs:    []string{},
+			accountIDs:   []string{},
+			wantErr:      nil,
 		},
 		{
-			name:             "failure - 2 nil caps",
-			sellBaseCapBase:  nil,
-			sellBaseCapQuote: nil,
-			mode:             volumeFilterModeExact,
-			marketIDs:        []string{},
-			accountIDs:       []string{},
-			wantErr:          fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil"),
+			name:         "failure - 2 nil caps",
+			baseCapBase:  nil,
+			baseCapQuote: nil,
+			marketIDs:    []string{},
+			accountIDs:   []string{},
+			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil"),
 		},
 		{
-			name:             "failure - 2 non-nil caps",
-			sellBaseCapBase:  pointy.Float64(1.0),
-			sellBaseCapQuote: pointy.Float64(1.0),
-			mode:             volumeFilterModeExact,
-			marketIDs:        []string{},
-			accountIDs:       []string{},
-			wantErr:          fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil"),
+			name:         "failure - 2 non-nil caps",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: pointy.Float64(1.0),
+			marketIDs:    []string{},
+			accountIDs:   []string{},
+			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil"),
+		},
+		// {
+		// 	name:         "failure - invalid mode",
+		// 	baseCapBase:  pointy.Float64(1.0),
+		// 	baseCapQuote: nil,
+		// 	mode:         volumeFilterMode("hello"),
+		// 	marketIDs:    []string{},
+		// 	accountIDs:   []string{},
+		// 	wantErr:      fmt.Errorf("invalid input mode 'hello'"),
+		// },
+		{
+			name:         "failure - nil market IDs",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: nil,
+			marketIDs:    nil,
+			accountIDs:   []string{},
+			wantErr:      fmt.Errorf("invalid market ids: must be non-nil"),
 		},
 		{
-			name:             "failure - invalid mode",
-			sellBaseCapBase:  pointy.Float64(1.0),
-			sellBaseCapQuote: nil,
-			mode:             volumeFilterMode("hello"),
-			marketIDs:        []string{},
-			accountIDs:       []string{},
-			wantErr:          fmt.Errorf("invalid input mode 'hello'"),
-		},
-		{
-			name:             "failure - nil market IDs",
-			sellBaseCapBase:  pointy.Float64(1.0),
-			sellBaseCapQuote: nil,
-			mode:             volumeFilterModeExact,
-			marketIDs:        nil,
-			accountIDs:       []string{},
-			wantErr:          fmt.Errorf("invalid market ids: must be non-nil"),
-		},
-		{
-			name:             "failure - nil account IDs",
-			sellBaseCapBase:  pointy.Float64(1.0),
-			sellBaseCapQuote: nil,
-			mode:             volumeFilterModeExact,
-			marketIDs:        []string{},
-			accountIDs:       nil,
-			wantErr:          fmt.Errorf("invalid optional account ids: must be non-nil"),
+			name:         "failure - nil account IDs",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: nil,
+			marketIDs:    []string{},
+			accountIDs:   nil,
+			wantErr:      fmt.Errorf("invalid optional account ids: must be non-nil"),
 		},
 	}
 
-	for _, k := range testCases {
-		t.Run(k.name, func(t *testing.T) {
-			c := makeRawVolumeFilterConfig(k.sellBaseCapBase, k.sellBaseCapQuote, k.mode, k.marketIDs, k.accountIDs)
-			gotErr := c.Validate()
-			assert.Equal(t, gotErr, k.wantErr)
-		})
+	for _, mode := range []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore} {
+		for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionBuy, queries.DailyVolumeActionSell} {
+			for _, k := range testCases {
+				t.Run(k.name, func(t *testing.T) {
+					c := makeRawVolumeFilterConfig(k.baseCapBase, k.baseCapQuote, action, mode, k.marketIDs, k.accountIDs)
+					gotErr := c.Validate()
+					assert.Equal(t, k.wantErr, gotErr)
+				})
+			}
+		}
 	}
+
+	// we separately check invalid mode and action, since we validate the configs over the full set of valid modes and actions
+	c := makeRawVolumeFilterConfig(pointy.Float64(1.0), nil, queries.DailyVolumeActionBuy, volumeFilterMode("hello"), []string{}, []string{})
+	gotErr := c.Validate()
+	assert.Equal(t, fmt.Errorf("could not parse mode: invalid input mode 'hello'"), gotErr)
+
+	c = makeRawVolumeFilterConfig(pointy.Float64(1.0), nil, queries.DailyVolumeAction("hello"), volumeFilterModeExact, []string{}, []string{})
+	gotErr = c.Validate()
+	assert.Equal(t, fmt.Errorf("could not parse action: invalid action value 'hello'"), gotErr)
 }

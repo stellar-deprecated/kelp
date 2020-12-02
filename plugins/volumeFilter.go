@@ -105,17 +105,20 @@ var _ SubmitFilter = &volumeFilter{}
 
 // Validate ensures validity
 func (c *VolumeFilterConfig) Validate() error {
-	if c.SellBaseAssetCapInBaseUnits != nil && c.SellBaseAssetCapInQuoteUnits != nil {
+	if c.BaseAssetCapInBaseUnits != nil && c.BaseAssetCapInQuoteUnits != nil {
 		return fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil")
 	}
 
-	if c.SellBaseAssetCapInBaseUnits == nil && c.SellBaseAssetCapInQuoteUnits == nil {
+	if c.BaseAssetCapInBaseUnits == nil && c.BaseAssetCapInQuoteUnits == nil {
 		return fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil")
 	}
 
-	// return the original error, as it is already well-formatted
 	if _, e := parseVolumeFilterMode(string(c.mode)); e != nil {
-		return e
+		return fmt.Errorf("could not parse mode: %s", e)
+	}
+
+	if _, e := queries.ParseDailyVolumeAction(string(c.action)); e != nil {
+		return fmt.Errorf("could not parse action: %s", e)
 	}
 
 	if c.additionalMarketIDs == nil {
