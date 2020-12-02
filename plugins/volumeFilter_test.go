@@ -370,15 +370,6 @@ func TestValidateConfig(t *testing.T) {
 			accountIDs:   []string{},
 			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil"),
 		},
-		// {
-		// 	name:         "failure - invalid mode",
-		// 	baseCapBase:  pointy.Float64(1.0),
-		// 	baseCapQuote: nil,
-		// 	mode:         volumeFilterMode("hello"),
-		// 	marketIDs:    []string{},
-		// 	accountIDs:   []string{},
-		// 	wantErr:      fmt.Errorf("invalid input mode 'hello'"),
-		// },
 		{
 			name:         "failure - nil market IDs",
 			baseCapBase:  pointy.Float64(1.0),
