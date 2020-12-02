@@ -75,6 +75,7 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 func makeRawVolumeFilterConfig(
 	baseAssetCapInBaseUnits *float64,
 	baseAssetCapInQuoteUnits *float64,
+	action queries.DailyVolumeAction,
 	mode volumeFilterMode,
 	additionalMarketIDs []string,
 	optionalAccountIDs []string,
