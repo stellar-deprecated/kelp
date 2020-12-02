@@ -302,6 +302,7 @@ func assetEqualsExact(hAsset hProtocol.Asset, xAsset txnbuild.Asset) (bool, erro
 }
 
 // IsSelling helper method
+// TODO DS Add tests for the various possible errors.
 func IsSelling(sdexBase hProtocol.Asset, sdexQuote hProtocol.Asset, selling txnbuild.Asset, buying txnbuild.Asset) (bool, error) {
 	sellingBase, e := assetEqualsExact(sdexBase, selling)
 	if e != nil {
@@ -420,12 +421,31 @@ func Offer2TxnBuildSellOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 	}
 }
 
+// ToJSONHash converts to json first and then takes the hash
+func ToJSONHash(v interface{}) (uint32, error) {
+	jsonBytes, e := json.Marshal(v)
+	if e != nil {
+		s := fmt.Sprintf("%v", v)
+		return 0, fmt.Errorf("could not marshall json (%s): %s", s, e)
+	}
+	return hashBytes(jsonBytes)
+}
+
 // HashString hashes a string using the FNV-1 hash function.
 func HashString(s string) (uint32, error) {
-	h := fnv.New32a()
-	_, e := h.Write([]byte(s))
+	hash, e := hashBytes([]byte(s))
 	if e != nil {
-		return 0, fmt.Errorf("error while hashing string: %s", e)
+		return 0, fmt.Errorf("error while hashing string ('%s'): %s", s, e)
+	}
+	return hash, nil
+}
+
+// hashBytes hashes bytes using the FNV-1 hash function.
+func hashBytes(b []byte) (uint32, error) {
+	h := fnv.New32a()
+	_, e := h.Write(b)
+	if e != nil {
+		return 0, fmt.Errorf("error while hashing bytes ('%s'): %s", string(b), e)
 	}
 	return h.Sum32(), nil
 }
