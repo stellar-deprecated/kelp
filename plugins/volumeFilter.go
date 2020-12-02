@@ -37,6 +37,7 @@ func parseVolumeFilterMode(mode string) (volumeFilterMode, error) {
 type VolumeFilterConfig struct {
 	BaseAssetCapInBaseUnits  *float64
 	BaseAssetCapInQuoteUnits *float64
+	action                   queries.DailyVolumeAction
 	mode                     volumeFilterMode
 	additionalMarketIDs      []string
 	optionalAccountIDs       []string
@@ -80,7 +81,7 @@ func makeFilterVolume(
 
 	marketID := MakeMarketID(exchangeName, baseAssetString, quoteAssetString)
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
-	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, "sell", config.optionalAccountIDs)
+	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, config.action, config.optionalAccountIDs)
 	if e != nil {
 		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
 	}
@@ -134,10 +135,10 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		BaseAssetCapInQuoteUnits: &dailyValuesBaseSold.QuoteVol,
 	}
 	// daily to-be-booked starts out as empty and accumulates the values of the operations
-	dailyTbbSellBase := 0.0
+	dailyTbbBase := 0.0
 	dailyTbbSellQuote := 0.0
 	dailyTBB := &VolumeFilterConfig{
-		BaseAssetCapInBaseUnits:  &dailyTbbSellBase,
+		BaseAssetCapInBaseUnits:  &dailyTbbBase,
 		BaseAssetCapInQuoteUnits: &dailyTbbSellQuote,
 	}
 
@@ -285,7 +286,7 @@ func (f *volumeFilter) isSellingBase() bool {
 func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {
 	value := f.config.BaseAssetCapInBaseUnits
 	if value == nil {
-		return 0.0, fmt.Errorf("baseAssetCapInBaseUnits is nil, config = %v", f.config)
+		return 0.0, fmt.Errorf("BaseAssetCapInBaseUnits is nil, config = %v", f.config)
 	}
 	return *value, nil
 }
