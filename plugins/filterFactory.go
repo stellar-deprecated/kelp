@@ -72,18 +72,18 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 }
 
 func makeRawVolumeFilterConfig(
-	sellBaseAssetCapInBaseUnits *float64,
-	sellBaseAssetCapInQuoteUnits *float64,
+	baseAssetCapInBaseUnits *float64,
+	baseAssetCapInQuoteUnits *float64,
 	mode volumeFilterMode,
 	additionalMarketIDs []string,
 	optionalAccountIDs []string,
 ) *VolumeFilterConfig {
 	return &VolumeFilterConfig{
-		SellBaseAssetCapInBaseUnits:  sellBaseAssetCapInBaseUnits,
-		SellBaseAssetCapInQuoteUnits: sellBaseAssetCapInQuoteUnits,
-		mode:                         mode,
-		additionalMarketIDs:          additionalMarketIDs,
-		optionalAccountIDs:           optionalAccountIDs,
+		BaseAssetCapInBaseUnits:  baseAssetCapInBaseUnits,
+		BaseAssetCapInQuoteUnits: baseAssetCapInQuoteUnits,
+		mode:                     mode,
+		additionalMarketIDs:      additionalMarketIDs,
+		optionalAccountIDs:       optionalAccountIDs,
 	}
 }
 
@@ -132,9 +132,9 @@ func makeVolumeFilterConfig(configInput string) (*VolumeFilterConfig, error) {
 		return nil, fmt.Errorf("could not parse the fourth part as a float value from config value (%s): %s", configInput, e)
 	}
 	if parts[3] == "base" {
-		config.SellBaseAssetCapInBaseUnits = &limit
+		config.BaseAssetCapInBaseUnits = &limit
 	} else if parts[3] == "quote" {
-		config.SellBaseAssetCapInQuoteUnits = &limit
+		config.BaseAssetCapInQuoteUnits = &limit
 	} else {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"base\" or \"quote\"", configInput)
 	}
