@@ -4,8 +4,8 @@ import "github.com/stellar/kelp/api"
 
 // ExchangeParamsToml is the toml representation of ExchangeParams
 type ExchangeParamsToml []struct {
-	Param string `valid:"-" toml:"PARAM"`
-	Value string `valid:"-" toml:"VALUE"`
+	Param string      `valid:"-" toml:"PARAM"`
+	Value interface{} `valid:"-" toml:"VALUE"`
 }
 
 // ToExchangeParams converts object
