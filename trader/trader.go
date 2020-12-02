@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -122,12 +123,12 @@ func (t *Trader) Start() {
 	for {
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
-			success := t.update()
+			updateResult := t.update()
 			millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 			log.Printf("time taken for update loop: %d millis\n", millisForUpdate)
 			if shouldSendUpdateMetric(t.startTime, currentUpdateTime, t.metricsTracker.GetUpdateEventSentTime()) {
 				e := t.threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, success, millisForUpdate)
+					e := t.metricsTracker.SendUpdateEvent(currentUpdateTime, updateResult, millisForUpdate)
 					if e != nil {
 						log.Printf("failed to send update event metric: %s", e)
 					}
@@ -137,7 +138,7 @@ func (t *Trader) Start() {
 				}
 			}
 
-			if t.fixedIterations != nil && success {
+			if t.fixedIterations != nil && updateResult.Success {
 				*t.fixedIterations = *t.fixedIterations - 1
 				if *t.fixedIterations <= 0 {
 					log.Printf("finished requested number of iterations, waiting for all threads to finish...\n")
@@ -352,12 +353,24 @@ func isStateSynchronized(
 
 // time to update the order book and possibly readjust the offers
 // returns true if the update was successful, otherwise false
-func (t *Trader) update() bool {
+func (t *Trader) update() plugins.UpdateLoopResult {
+	// initialize counts of types of ops
+	numPruneOps := 0
+	numUpdateOpsDelete := 0
+	numUpdateOpsUpdate := 0
+	numUpdateOpsCreate := 0
+
 	e := t.synchronizeFetchBalancesOffersTrades()
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
 	}
 
 	pair := &model.TradingPair{
@@ -376,7 +389,13 @@ func (t *Trader) update() bool {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
 	}
 
 	// strategy has a chance to set any state it needs
@@ -384,20 +403,33 @@ func (t *Trader) update() bool {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
 	}
 
 	// delete excess offers
 	var pruneOps []build.TransactionMutator
 	pruneOps, t.buyingAOffers, t.sellingAOffers = t.strategy.PruneExistingOffers(t.buyingAOffers, t.sellingAOffers)
-	log.Printf("created %d operations to prune excess offers\n", len(pruneOps))
-	if len(pruneOps) > 0 {
+	numPruneOps = len(pruneOps)
+	log.Printf("created %d operations to prune excess offers\n", numPruneOps)
+	if numPruneOps > 0 {
 		// to prune/delete offers the submitMode doesn't matter, so use api.SubmitModeBoth as the default
 		e = t.exchangeShim.SubmitOps(pruneOps, api.SubmitModeBoth, nil)
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return false
+			return plugins.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
+			}
 		}
 
 		// TODO 2 streamline the request data instead of caching - may not need this since result of PruneOps is async
@@ -410,7 +442,13 @@ func (t *Trader) update() bool {
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return false
+			return plugins.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
+			}
 		}
 	}
 
@@ -422,16 +460,42 @@ func (t *Trader) update() bool {
 		log.Printf("liabilities (force recomputed) after encountering an error after a call to UpdateWithOps\n")
 		t.sdex.IEIF().RecomputeAndLogCachedLiabilities(t.assetBase, t.assetQuote)
 		t.deleteAllOffers(false)
-		return false
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
 	}
 
-	ops := api.ConvertTM2Operation(opsOld)
+	msos := api.ConvertTM2MSO(opsOld)
+	numUpdateOpsDelete, numUpdateOpsUpdate, numUpdateOpsCreate, e = countOfferChangeTypes(msos)
+	if e != nil {
+		log.Println(e)
+		t.deleteAllOffers(false)
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
+	}
+
+	ops := api.ConvertMSO2Ops(msos)
 	for i, filter := range t.submitFilters {
 		ops, e = filter.Apply(ops, t.sellingAOffers, t.buyingAOffers)
 		if e != nil {
 			log.Printf("error in filter index %d: %s\n", i, e)
 			t.deleteAllOffers(false)
-			return false
+			return plugins.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
+			}
 		}
 	}
 
@@ -443,11 +507,16 @@ func (t *Trader) update() bool {
 				t.deleteAllOffers(true)
 			}
 		})
-
 		if e != nil {
 			log.Println(e)
 			t.deleteAllOffers(false)
-			return false
+			return plugins.UpdateLoopResult{
+				Success:            false,
+				NumPruneOps:        numPruneOps,
+				NumUpdateOpsDelete: numUpdateOpsDelete,
+				NumUpdateOpsUpdate: numUpdateOpsUpdate,
+				NumUpdateOpsCreate: numUpdateOpsCreate,
+			}
 		}
 	}
 
@@ -455,12 +524,24 @@ func (t *Trader) update() bool {
 	if e != nil {
 		log.Println(e)
 		t.deleteAllOffers(false)
-		return false
+		return plugins.UpdateLoopResult{
+			Success:            false,
+			NumPruneOps:        numPruneOps,
+			NumUpdateOpsDelete: numUpdateOpsDelete,
+			NumUpdateOpsUpdate: numUpdateOpsUpdate,
+			NumUpdateOpsCreate: numUpdateOpsCreate,
+		}
 	}
 
 	// reset deleteCycles on every successful run
 	t.deleteCycles = 0
-	return true
+	return plugins.UpdateLoopResult{
+		Success:            true,
+		NumPruneOps:        numPruneOps,
+		NumUpdateOpsDelete: numUpdateOpsDelete,
+		NumUpdateOpsUpdate: numUpdateOpsUpdate,
+		NumUpdateOpsCreate: numUpdateOpsCreate,
+	}
 }
 
 func (t *Trader) getBalances() (*api.Balance /*baseBalance*/, *api.Balance /*quoteBalance*/, error) {
@@ -533,4 +614,31 @@ func (t *Trader) getExistingOffers() ([]hProtocol.Offer /*sellingAOffers*/, []hP
 
 func (t *Trader) setExistingOffers(sellingAOffers []hProtocol.Offer, buyingAOffers []hProtocol.Offer) {
 	t.sellingAOffers, t.buyingAOffers = sellingAOffers, buyingAOffers
+}
+
+func countOfferChangeTypes(offers []*txnbuild.ManageSellOffer) (int /*numDelete*/, int /*numUpdate*/, int /*numCreate*/, error) {
+	numDelete, numUpdate, numCreate := 0, 0, 0
+	for i, o := range offers {
+		if o == nil {
+			return 0, 0, 0, fmt.Errorf("offer at index %d was not of expected type ManageSellOffer (actual type = %T): %+v", i, o, o)
+		}
+
+		opAmount, e := strconv.ParseFloat(o.Amount, 64)
+		if e != nil {
+			return 0, 0, 0, fmt.Errorf("invalid operation amount (%s) could not be parsed as float for operation at index %d: %v", o.Amount, i, o)
+		}
+
+		// 0 amount represents deletion
+		// 0 offer id represents creating a new offer
+		// anything else represents updating an extiing offer
+		if opAmount == 0 {
+			numDelete++
+		} else if o.OfferID == 0 {
+			numCreate++
+		} else {
+			numUpdate++
+		}
+	}
+
+	return numDelete, numUpdate, numCreate, nil
 }

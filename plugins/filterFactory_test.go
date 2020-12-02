@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/openlyinc/pointy"
+	"github.com/stellar/kelp/queries"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -135,62 +136,90 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 		wantError   error
 		wantConfig  *VolumeFilterConfig
 	}{
+		// the first %s represents the action (buy or sell), the second %s represents mode (exact or ignore)
+		// we loop over the actions and modes below and inject them into the input and wantConfig
 		{
-			configInput: "volume/daily/sell/base/3500.0/exact",
+			configInput: "volume/daily/%s/base/3500.0/%s",
 			wantConfig: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
-				SellBaseAssetCapInQuoteUnits: nil,
-				mode:                         volumeFilterModeExact,
-				additionalMarketIDs:          nil,
-				optionalAccountIDs:           nil,
+				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				BaseAssetCapInQuoteUnits: nil,
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		}, {
-			configInput: "volume/daily/sell/quote/1000.0/ignore",
+			configInput: "volume/daily/%s/quote/4000.0/%s",
 			wantConfig: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  nil,
-				SellBaseAssetCapInQuoteUnits: pointy.Float64(1000.0),
-				mode:                         volumeFilterModeIgnore,
-				additionalMarketIDs:          nil,
-				optionalAccountIDs:           nil,
+				BaseAssetCapInBaseUnits:  nil,
+				BaseAssetCapInQuoteUnits: pointy.Float64(4000.0),
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
+			},
+		},
+		{
+			configInput: "volume/daily/%s/base/3500.0/%s",
+			wantConfig: &VolumeFilterConfig{
+				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				BaseAssetCapInQuoteUnits: nil,
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		}, {
-			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]/sell/base/3500.0/exact",
+			configInput: "volume/daily/%s/quote/1000.0/%s",
 			wantConfig: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
-				SellBaseAssetCapInQuoteUnits: nil,
-				mode:                         volumeFilterModeExact,
-				additionalMarketIDs:          []string{"4c19915f47", "db4531d586"},
-				optionalAccountIDs:           nil,
+				BaseAssetCapInBaseUnits:  nil,
+				BaseAssetCapInQuoteUnits: pointy.Float64(1000.0),
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		}, {
-			configInput: "volume/daily:account_ids=[account1,account2]/sell/base/3500.0/exact",
+			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]/%s/base/3500.0/%s",
 			wantConfig: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
-				SellBaseAssetCapInQuoteUnits: nil,
-				mode:                         volumeFilterModeExact,
-				additionalMarketIDs:          nil,
-				optionalAccountIDs:           []string{"account1", "account2"},
+				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				BaseAssetCapInQuoteUnits: nil,
+				additionalMarketIDs:      []string{"4c19915f47", "db4531d586"},
+				optionalAccountIDs:       nil,
 			},
 		}, {
-			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]:account_ids=[account1,account2]/sell/base/3500.0/exact",
+			configInput: "volume/daily:account_ids=[account1,account2]/%s/base/3500.0/%s",
 			wantConfig: &VolumeFilterConfig{
-				SellBaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
-				SellBaseAssetCapInQuoteUnits: nil,
-				mode:                         volumeFilterModeExact,
-				additionalMarketIDs:          []string{"4c19915f47", "db4531d586"},
-				optionalAccountIDs:           []string{"account1", "account2"},
+				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				BaseAssetCapInQuoteUnits: nil,
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       []string{"account1", "account2"},
+			},
+		}, {
+			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]:account_ids=[account1,account2]/%s/base/3500.0/%s",
+			wantConfig: &VolumeFilterConfig{
+				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
+				BaseAssetCapInQuoteUnits: nil,
+				additionalMarketIDs:      []string{"4c19915f47", "db4531d586"},
+				optionalAccountIDs:       []string{"account1", "account2"},
 			},
 		},
 	}
 
+	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
+	actions := []queries.DailyVolumeAction{queries.DailyVolumeActionBuy, queries.DailyVolumeActionSell}
 	for _, k := range testCases {
-		t.Run(k.configInput, func(t *testing.T) {
-			actual, e := makeVolumeFilterConfig(k.configInput)
-			if !assert.NoError(t, e) {
-				return
+		// loop over both modes, and inject the desired mode in the config
+		for _, m := range modes {
+			wantConfig := k.wantConfig
+			wantConfig.mode = m
+
+			// loop over both actions, and inject the desired action in the config
+			for _, a := range actions {
+				wantConfig.action = a
+				configInput := fmt.Sprintf(k.configInput, a, m)
+
+				t.Run(configInput, func(t *testing.T) {
+					actual, e := makeVolumeFilterConfig(configInput)
+					if !assert.NoError(t, e) {
+						return
+					}
+					assertVolumeFilterConfigEqual(t, wantConfig, actual)
+				})
 			}
-			assertVolumeFilterConfigEqual(t, k.wantConfig, actual)
-		})
+		}
 	}
 }
 
@@ -200,8 +229,9 @@ func assertVolumeFilterConfigEqual(t *testing.T, want *VolumeFilterConfig, actua
 	} else if actual == nil {
 		assert.Fail(t, fmt.Sprintf("actual was nil but expected %v", *want))
 	} else {
-		assert.Equal(t, want.SellBaseAssetCapInBaseUnits, actual.SellBaseAssetCapInBaseUnits)
-		assert.Equal(t, want.SellBaseAssetCapInQuoteUnits, actual.SellBaseAssetCapInQuoteUnits)
+		assert.Equal(t, want.BaseAssetCapInBaseUnits, actual.BaseAssetCapInBaseUnits)
+		assert.Equal(t, want.BaseAssetCapInQuoteUnits, actual.BaseAssetCapInQuoteUnits)
+		assert.Equal(t, want.action, actual.action)
 		assert.Equal(t, want.mode, actual.mode)
 		assert.Equal(t, want.additionalMarketIDs, actual.additionalMarketIDs)
 		assert.Equal(t, want.optionalAccountIDs, actual.optionalAccountIDs)

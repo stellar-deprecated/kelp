@@ -9,6 +9,7 @@ import (
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/queries"
 )
 
 var filterIDRegex *regexp.Regexp
@@ -72,18 +73,20 @@ func filterVolume(f *FilterFactory, configInput string) (SubmitFilter, error) {
 }
 
 func makeRawVolumeFilterConfig(
-	sellBaseAssetCapInBaseUnits *float64,
-	sellBaseAssetCapInQuoteUnits *float64,
+	baseAssetCapInBaseUnits *float64,
+	baseAssetCapInQuoteUnits *float64,
+	action queries.DailyVolumeAction,
 	mode volumeFilterMode,
 	additionalMarketIDs []string,
 	optionalAccountIDs []string,
 ) *VolumeFilterConfig {
 	return &VolumeFilterConfig{
-		SellBaseAssetCapInBaseUnits:  sellBaseAssetCapInBaseUnits,
-		SellBaseAssetCapInQuoteUnits: sellBaseAssetCapInQuoteUnits,
-		mode:                         mode,
-		additionalMarketIDs:          additionalMarketIDs,
-		optionalAccountIDs:           optionalAccountIDs,
+		BaseAssetCapInBaseUnits:  baseAssetCapInBaseUnits,
+		BaseAssetCapInQuoteUnits: baseAssetCapInQuoteUnits,
+		action:                   action,
+		mode:                     mode,
+		additionalMarketIDs:      additionalMarketIDs,
+		optionalAccountIDs:       optionalAccountIDs,
 	}
 }
 
@@ -103,6 +106,12 @@ func makeVolumeFilterConfig(configInput string) (*VolumeFilterConfig, error) {
 	if limitWindowParts[0] != "daily" {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to equal or start with \"daily\"", configInput)
 	}
+
+	action, e := queries.ParseDailyVolumeAction(parts[2])
+	if e != nil {
+		return nil, fmt.Errorf("could not parse volume filter action from input (%s): %s", configInput, e)
+	}
+	config.action = action
 
 	errInvalid := fmt.Errorf("invalid input (%s), the modifier for \"daily\" can be either \"market_ids\" or \"account_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]' or 'daily:account_ids=[account1,account2]' or 'daily:market_ids=[4c19915f47,db4531d586]:account_ids=[account1,account2]'", configInput)
 	if len(limitWindowParts) == 2 {
@@ -124,17 +133,14 @@ func makeVolumeFilterConfig(configInput string) (*VolumeFilterConfig, error) {
 		return nil, fmt.Errorf("invalid input (%s), the second part needs to be \"daily\" and can have only one modifier \"market_ids\" like so 'daily:market_ids=[4c19915f47,db4531d586]'", configInput)
 	}
 
-	if parts[2] != "sell" {
-		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"sell\"", configInput)
-	}
 	limit, e := strconv.ParseFloat(parts[4], 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not parse the fourth part as a float value from config value (%s): %s", configInput, e)
 	}
 	if parts[3] == "base" {
-		config.SellBaseAssetCapInBaseUnits = &limit
+		config.BaseAssetCapInBaseUnits = &limit
 	} else if parts[3] == "quote" {
-		config.SellBaseAssetCapInQuoteUnits = &limit
+		config.BaseAssetCapInQuoteUnits = &limit
 	} else {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"base\" or \"quote\"", configInput)
 	}

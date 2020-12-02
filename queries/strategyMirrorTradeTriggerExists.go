@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/support/utils"
 )
 
 // sqlQueryStrategyMirrorTradeTriggerExists queries the strategy_mirror_trade_triggers table by market_id and txid (primary key) to see if the row exists
@@ -23,6 +24,7 @@ var _ api.Query = &StrategyMirrorTradeTriggerExists{}
 // MakeStrategyMirrorTradeTriggerExists makes the StrategyMirrorTradeTriggerExists query
 func MakeStrategyMirrorTradeTriggerExists(db *sql.DB, marketID string) (*StrategyMirrorTradeTriggerExists, error) {
 	if db == nil {
+		utils.PrintErrorHintf("the provided POSTGRES_DB config in the trader.cfg file should be non-nil")
 		return nil, fmt.Errorf("the provided db should be non-nil")
 	}
 
