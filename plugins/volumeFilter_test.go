@@ -290,21 +290,21 @@ func TestVolumeFilterFn(t *testing.T) {
 		for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
 			t.Run(k.name, func(t *testing.T) {
 				// exactly one of the two cap values must be set
-				if k.sellBaseCapInBase == nil && k.sellBaseCapInQuote == nil {
+				if k.baseCapInBase == nil && k.baseCapInQuote == nil {
 					assert.Fail(t, "either one of the two cap values must be set")
 					return
 				}
 
-				if k.sellBaseCapInBase != nil && k.sellBaseCapInQuote != nil {
+				if k.baseCapInBase != nil && k.baseCapInQuote != nil {
 					assert.Fail(t, "both of the cap values cannot be set")
 					return
-        }
+				}
 
 				dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, action, k.mode, marketIDs, accountIDs)
 				dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, action, k.mode, marketIDs, accountIDs)
 				lp := limitParameters{
-					baseAssetCapInBaseUnits:  k.sellBaseCapInBase,
-					baseAssetCapInQuoteUnits: k.sellBaseCapInQuote,
+					baseAssetCapInBaseUnits:  k.baseCapInBase,
+					baseAssetCapInQuoteUnits: k.baseCapInQuote,
 					mode:                     k.mode,
 				}
 
