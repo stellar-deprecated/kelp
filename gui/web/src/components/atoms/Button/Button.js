@@ -35,8 +35,6 @@ class Button extends Component {
     loading: false,
     onClick: () => {},
     disabled: false,
-    trackEvent: (eventName, values) => {},
-    eventName: '',    
   }
 
   static propTypes = {
@@ -46,7 +44,6 @@ class Button extends Component {
     onClick: PropTypes.func,
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
-    trackEvent: PropTypes.func,
     eventName: PropTypes.string,
   };
   
@@ -55,9 +52,17 @@ class Button extends Component {
       return
     }
     
+    if (this.props.eventName === "" || this.props.eventName === undefined) {
+      return
+    }
+    
     var _this = this
-    // TODO DS populate the eventData.
-    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(this.props.baseUrl, this.props.eventName, {}).then(resp => {
+    var eventData = {
+      'eventName': this.props.eventName,
+      'type': 'generic',
+      'component': 'button'
+    }
+    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(this.props.baseUrl, this.props.eventName, eventData).then(resp => {
       if (!_this._asyncRequests["sendMetricEvent"]) {
         // if it has been deleted it means we don't want to process the result
         return
@@ -65,7 +70,9 @@ class Button extends Component {
       
       delete _this._asyncRequests["sendMetricEvent"];
       
-      // TODO DS Determine how to process resp
+      if (resp["success"] === undefined) {
+        console.log(resp["error"])
+      }
     })
   }
   
