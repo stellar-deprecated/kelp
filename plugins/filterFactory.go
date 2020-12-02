@@ -145,6 +145,15 @@ func makeVolumeFilterConfig(configInput string) (*VolumeFilterConfig, error) {
 		return nil, fmt.Errorf("invalid input (%s), the third part needs to be \"base\" or \"quote\"", configInput)
 	}
 
+	// marketIDs and account IDs might not be present in the config string, but cannot be nil on the config
+	if config.additionalMarketIDs == nil {
+		config.additionalMarketIDs = []string{}
+	}
+
+	if config.optionalAccountIDs == nil {
+		config.optionalAccountIDs = []string{}
+	}
+
 	if e = config.Validate(); e != nil {
 		return nil, fmt.Errorf("invalid input (%s), did not pass validation: %s", configInput, e)
 	}
