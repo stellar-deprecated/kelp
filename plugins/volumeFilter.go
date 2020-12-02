@@ -221,52 +221,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 			return opToReturn, nil
 		}
 	} else {
-		opToReturn := op
-		newAmountBeingBought := offerAmountValueUnits
-		var keepBuyingBase bool
-		var keepBuyingQuote bool
-		if lp.baseAssetCapInBaseUnits != nil {
-			projectedBoughtInBaseUnits := *dailyOTB.BaseAssetCapInBaseUnits + *dailyTBBAccumulator.BaseAssetCapInBaseUnits + offerAmountValueUnits
-			keepBuyingBase = projectedBoughtInBaseUnits <= *lp.baseAssetCapInBaseUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepBuyingBase {
-				newAmount := *lp.baseAssetCapInBaseUnits - *dailyOTB.BaseAssetCapInBaseUnits - *dailyTBBAccumulator.BaseAssetCapInBaseUnits
-				if newAmount > 0 {
-					newAmountBeingBought = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingBought)
-					keepBuyingBase = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
-			}
-			log.Printf("volumeFilter:  buying (base units), price=%.8f amount=%.8f, keep = (projectedBoughtInBaseUnits) %.7f <= %.7f (config.baseAssetCapInBaseUnits): keepSellingBase = %v%s", offerPrice, offerAmountValueUnits, projectedBoughtInBaseUnits, *lp.baseAssetCapInBaseUnits, keepBuyingBase, newAmountString)
-		} else {
-			keepBuyingBase = true
-		}
-
-		if lp.baseAssetCapInQuoteUnits != nil {
-			projectedBoughtInQuoteUnits := *dailyOTB.BaseAssetCapInQuoteUnits + *dailyTBBAccumulator.BaseAssetCapInQuoteUnits + (newAmountBeingBought * offerPrice)
-			keepBuyingQuote = projectedBoughtInQuoteUnits <= *lp.baseAssetCapInQuoteUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepBuyingQuote {
-				newAmount := (*lp.baseAssetCapInQuoteUnits - *dailyOTB.BaseAssetCapInQuoteUnits - *dailyTBBAccumulator.BaseAssetCapInQuoteUnits) / offerPrice
-				if newAmount > 0 {
-					newAmountBeingBought = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingBought)
-					keepBuyingQuote = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
-			}
-			log.Printf("volumeFilter: buying (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.baseAssetCapInQuoteUnits): keepSellingQuote = %v%s", offerPrice, offerAmountValueUnits, projectedBoughtInQuoteUnits, *lp.baseAssetCapInQuoteUnits, keepBuyingQuote, newAmountString)
-		} else {
-			keepBuyingQuote = true
-		}
-
-		if keepBuyingBase && keepBuyingQuote {
-			// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
-			*dailyTBBAccumulator.BaseAssetCapInBaseUnits += newAmountBeingBought
-			*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += (newAmountBeingBought * offerPrice)
-			return opToReturn, nil
-		}
+		// TODO buying side - we need to implement this to support buy side filters; extract common logic from the above sell side case
 	}
 
 	// we don't want to keep it so return the dropped command
