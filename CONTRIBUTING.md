@@ -45,7 +45,7 @@ Of course, feel free to create a new issue if you think something needs to be ad
 
 * [Sign the Contributor License Agreement](https://docs.google.com/forms/d/e/1FAIpQLSc5eppq6GOu9-TnFuRMBh4qIP1ChmZx9lrA6zOTyYiowKiwpA/viewform?usp=sf_link) so we can accept your contributions.
 * All content, comments, and pull requests must follow the [Stellar Community Guidelines](https://www.stellar.org/community-guidelines/).
-* Follow the [Pull Request Guide for Kelp](.github/.pull_request_template.md).
+* Follow the [Pull Request Guide for Kelp](.github/pull_request_template.md).
 * Push your changes to a feature branch in your fork of the repository.
 * Submit a Pull Request.
   * Include a descriptive [commit message](https://github.com/erlang/otp/wiki/Writing-good-commit-messages).
