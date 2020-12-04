@@ -158,6 +158,11 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 }
 
 func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, lp limitParameters) (*txnbuild.ManageSellOffer, error) {
+	// if not in exact mode, return a nil op
+	if lp.mode != volumeFilterModeExact {
+		return nil, nil
+	}
+
 	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
 	if e != nil {
 		return nil, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
@@ -174,47 +179,55 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	}
 
 	if isSell {
-		opToReturn := op
-		newAmountBeingSold := amountValueUnitsBeingSold
-		var keepSellingBase bool
-		var keepSellingQuote bool
+		// initialize the string for new amounts and logging
+		newAmount := ""
+		newAmountLog := ""
+		var newAmountBeingSold float64
 		if lp.baseAssetCapInBaseUnits != nil {
-			projectedSoldInBaseUnits := *dailyOTB.BaseAssetCapInBaseUnits + *dailyTBBAccumulator.BaseAssetCapInBaseUnits + amountValueUnitsBeingSold
-			keepSellingBase = projectedSoldInBaseUnits <= *lp.baseAssetCapInBaseUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepSellingBase {
-				newAmount := *lp.baseAssetCapInBaseUnits - *dailyOTB.BaseAssetCapInBaseUnits - *dailyTBBAccumulator.BaseAssetCapInBaseUnits
-				if newAmount > 0 {
-					newAmountBeingSold = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
-					keepSellingBase = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
+			newAmountBeingSold = getRemainingCapacity(
+				*dailyOTB.BaseAssetCapInBaseUnits,
+				*dailyTBBAccumulator.BaseAssetCapInBaseUnits,
+				*lp.baseAssetCapInBaseUnits,
+				amountValueUnitsBeingSold,
+				1.0, // we don't want to apply the sell price to the base amount
+			)
+
+			// if the amount changed, update the amount and the log
+			if newAmountBeingSold != amountValueUnitsBeingSold {
+				newAmount = fmt.Sprintf("%.7f", newAmountBeingSold)
+				newAmountLog = fmt.Sprintf(", newAmountString = %s", newAmount)
 			}
-			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.BaseAssetCapInBaseUnits): keepSellingBase = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *lp.baseAssetCapInBaseUnits, keepSellingBase, newAmountString)
-		} else {
-			keepSellingBase = true
+
+			// TODO DS Confirm that this is the desired approach to logging.
+			projectedSoldInBaseUnits := *dailyOTB.BaseAssetCapInBaseUnits + *dailyTBBAccumulator.BaseAssetCapInBaseUnits + amountValueUnitsBeingSold
+			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *lp.baseAssetCapInBaseUnits, newAmountLog)
 		}
 
 		if lp.baseAssetCapInQuoteUnits != nil {
-			projectedSoldInQuoteUnits := *dailyOTB.BaseAssetCapInQuoteUnits + *dailyTBBAccumulator.BaseAssetCapInQuoteUnits + (newAmountBeingSold * sellPrice)
-			keepSellingQuote = projectedSoldInQuoteUnits <= *lp.baseAssetCapInQuoteUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepSellingQuote {
-				newAmount := (*lp.baseAssetCapInQuoteUnits - *dailyOTB.BaseAssetCapInQuoteUnits - *dailyTBBAccumulator.BaseAssetCapInQuoteUnits) / sellPrice
-				if newAmount > 0 {
-					newAmountBeingSold = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
-					keepSellingQuote = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
+			newAmountBeingSold = getRemainingCapacity(
+				*dailyOTB.BaseAssetCapInQuoteUnits,
+				*dailyTBBAccumulator.BaseAssetCapInQuoteUnits,
+				*lp.baseAssetCapInQuoteUnits,
+				amountValueUnitsBeingSold,
+				sellPrice,
+			)
+
+			// if the amount changed, update the amount and the log
+			if newAmountBeingSold != amountValueUnitsBeingSold {
+				newAmount = fmt.Sprintf("%.7f", newAmountBeingSold)
+				newAmountLog = fmt.Sprintf(", newAmountString = %s", newAmount)
 			}
-			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.BaseAssetCapInQuoteUnits): keepSellingQuote = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *lp.baseAssetCapInQuoteUnits, keepSellingQuote, newAmountString)
-		} else {
-			keepSellingQuote = true
+
+			// TODO DS Confirm that this is the desired approach to logging.
+			projectedSoldInQuoteUnits := *dailyOTB.BaseAssetCapInQuoteUnits + *dailyTBBAccumulator.BaseAssetCapInQuoteUnits + amountValueUnitsBeingSold
+			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f %s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *lp.baseAssetCapInQuoteUnits, newAmountLog)
 		}
 
-		if keepSellingBase && keepSellingQuote {
+		// if the amount changed, we update the op amount
+		if newAmount != "" {
+			opToReturn := op
+			opToReturn.Amount = newAmount
+
 			// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
 			*dailyTBBAccumulator.BaseAssetCapInBaseUnits += newAmountBeingSold
 			*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += (newAmountBeingSold * sellPrice)
@@ -226,6 +239,17 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 
 	// we don't want to keep it so return the dropped command
 	return nil, nil
+}
+
+func getRemainingCapacity(otbCap float64, tbbCap float64, limitCap float64, amount float64, price float64) float64 {
+	projectedSoldUnits := otbCap + tbbCap + amount*price
+	if projectedSoldUnits > limitCap {
+		newAmount := (limitCap - otbCap - tbbCap) / price
+		if newAmount > 0 {
+			return newAmount
+		}
+	}
+	return amount
 }
 
 // String is the Stringer method
