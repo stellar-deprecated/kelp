@@ -60,6 +60,15 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTomorrowQuote:         12.24,
 		}, {
 			action:                    DailyVolumeActionSell,
+			queryByOptionalAccountIDs: nil,
+			wantYesterdayBase:         100.0,
+			wantYesterdayQuote:        10.0,
+			wantTodayBase:             207.0,
+			wantTodayQuote:            21.83,
+			wantTomorrowBase:          102.0,
+			wantTomorrowQuote:         12.24,
+		}, {
+			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{"accountID1", "accountID2"}, // accountID1 and accountID2 are the only ones that exists
 			wantYesterdayBase:         100.0,
 			wantYesterdayQuote:        10.0,

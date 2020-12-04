@@ -39,8 +39,8 @@ type VolumeFilterConfig struct {
 	BaseAssetCapInQuoteUnits *float64
 	action                   queries.DailyVolumeAction
 	mode                     volumeFilterMode
-	additionalMarketIDs      []string
-	optionalAccountIDs       []string
+	additionalMarketIDs      []string // can be nil
+	optionalAccountIDs       []string // can be nil
 }
 
 type limitParameters struct {
@@ -80,6 +80,7 @@ func makeFilterVolume(
 	}
 
 	marketID := MakeMarketID(exchangeName, baseAssetString, quoteAssetString)
+	// note that append(s, nil) is valid
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
 	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, config.action, config.optionalAccountIDs)
 	if e != nil {
