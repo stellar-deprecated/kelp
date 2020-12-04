@@ -334,78 +334,77 @@ func TestValidateConfig(t *testing.T) {
 		name         string
 		baseCapBase  *float64
 		baseCapQuote *float64
+		mode         volumeFilterMode
+		action       queries.DailyVolumeAction
 		marketIDs    []string
 		accountIDs   []string
 		wantErr      error
 	}{
 		{
-			name:         "success - base",
+			name:         "success - base + sell",
 			baseCapBase:  pointy.Float64(1.0),
 			baseCapQuote: nil,
-			marketIDs:    []string{},
-			accountIDs:   []string{},
+			mode:         volumeFilterModeExact,
+			action:       queries.DailyVolumeActionSell,
+			marketIDs:    nil,
+			accountIDs:   nil,
 			wantErr:      nil,
 		},
 		{
-			name:         "success - quote",
+			name:         "success - quote + buy",
 			baseCapBase:  nil,
 			baseCapQuote: pointy.Float64(1.0),
-			marketIDs:    []string{},
-			accountIDs:   []string{},
+			mode:         volumeFilterModeExact,
+			action:       queries.DailyVolumeActionBuy,
+			marketIDs:    nil,
+			accountIDs:   nil,
 			wantErr:      nil,
 		},
 		{
 			name:         "failure - 2 nil caps",
 			baseCapBase:  nil,
 			baseCapQuote: nil,
-			marketIDs:    []string{},
-			accountIDs:   []string{},
+			mode:         volumeFilterModeExact,
+			marketIDs:    nil,
+			accountIDs:   nil,
 			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil"),
 		},
 		{
 			name:         "failure - 2 non-nil caps",
 			baseCapBase:  pointy.Float64(1.0),
 			baseCapQuote: pointy.Float64(1.0),
-			marketIDs:    []string{},
-			accountIDs:   []string{},
+			mode:         volumeFilterModeExact,
+			marketIDs:    nil,
+			accountIDs:   nil,
 			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil"),
 		},
 		{
-			name:         "failure - nil market IDs",
+			name:         "failure - invalid mode",
 			baseCapBase:  pointy.Float64(1.0),
 			baseCapQuote: nil,
+			mode:         volumeFilterMode("hello"),
+			action:       queries.DailyVolumeActionSell,
 			marketIDs:    nil,
-			accountIDs:   []string{},
-			wantErr:      fmt.Errorf("invalid market ids: must be non-nil"),
+			accountIDs:   nil,
+			wantErr:      fmt.Errorf("could not parse mode: invalid input mode 'hello'"),
 		},
 		{
-			name:         "failure - nil account IDs",
+			name:         "failure - invalid action",
 			baseCapBase:  pointy.Float64(1.0),
 			baseCapQuote: nil,
-			marketIDs:    []string{},
+			mode:         volumeFilterModeExact,
+			action:       queries.DailyVolumeAction("hello"),
+			marketIDs:    nil,
 			accountIDs:   nil,
-			wantErr:      fmt.Errorf("invalid optional account ids: must be non-nil"),
+			wantErr:      fmt.Errorf("could not parse action: invalid action value 'hello'"),
 		},
 	}
 
-	for _, mode := range []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore} {
-		for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionBuy, queries.DailyVolumeActionSell} {
-			for _, k := range testCases {
-				t.Run(k.name, func(t *testing.T) {
-					c := makeRawVolumeFilterConfig(k.baseCapBase, k.baseCapQuote, action, mode, k.marketIDs, k.accountIDs)
-					gotErr := c.Validate()
-					assert.Equal(t, k.wantErr, gotErr)
-				})
-			}
-		}
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			c := makeRawVolumeFilterConfig(k.baseCapBase, k.baseCapQuote, k.action, k.mode, k.marketIDs, k.accountIDs)
+			gotErr := c.Validate()
+			assert.Equal(t, k.wantErr, gotErr)
+		})
 	}
-
-	// we separately check invalid mode and action, since we validate the configs over the full set of valid modes and actions
-	c := makeRawVolumeFilterConfig(pointy.Float64(1.0), nil, queries.DailyVolumeActionBuy, volumeFilterMode("hello"), []string{}, []string{})
-	gotErr := c.Validate()
-	assert.Equal(t, fmt.Errorf("could not parse mode: invalid input mode 'hello'"), gotErr)
-
-	c = makeRawVolumeFilterConfig(pointy.Float64(1.0), nil, queries.DailyVolumeAction("hello"), volumeFilterModeExact, []string{}, []string{})
-	gotErr = c.Validate()
-	assert.Equal(t, fmt.Errorf("could not parse action: invalid action value 'hello'"), gotErr)
 }

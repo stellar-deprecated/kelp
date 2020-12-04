@@ -143,16 +143,16 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				additionalMarketIDs:      []string{},
-				optionalAccountIDs:       []string{},
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		}, {
 			configInput: "volume/daily/%s/quote/4000.0/%s",
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  nil,
 				BaseAssetCapInQuoteUnits: pointy.Float64(4000.0),
-				additionalMarketIDs:      []string{},
-				optionalAccountIDs:       []string{},
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		},
 		{
@@ -160,16 +160,16 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				additionalMarketIDs:      []string{},
-				optionalAccountIDs:       []string{},
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		}, {
 			configInput: "volume/daily/%s/quote/1000.0/%s",
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  nil,
 				BaseAssetCapInQuoteUnits: pointy.Float64(1000.0),
-				additionalMarketIDs:      []string{},
-				optionalAccountIDs:       []string{},
+				additionalMarketIDs:      nil,
+				optionalAccountIDs:       nil,
 			},
 		}, {
 			configInput: "volume/daily:market_ids=[4c19915f47,db4531d586]/%s/base/3500.0/%s",
@@ -177,14 +177,14 @@ func TestMakeVolumeFilterConfig(t *testing.T) {
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
 				additionalMarketIDs:      []string{"4c19915f47", "db4531d586"},
-				optionalAccountIDs:       []string{},
+				optionalAccountIDs:       nil,
 			},
 		}, {
 			configInput: "volume/daily:account_ids=[account1,account2]/%s/base/3500.0/%s",
 			wantConfig: &VolumeFilterConfig{
 				BaseAssetCapInBaseUnits:  pointy.Float64(3500.0),
 				BaseAssetCapInQuoteUnits: nil,
-				additionalMarketIDs:      []string{},
+				additionalMarketIDs:      nil,
 				optionalAccountIDs:       []string{"account1", "account2"},
 			},
 		}, {

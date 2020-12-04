@@ -121,13 +121,6 @@ func (c *VolumeFilterConfig) Validate() error {
 		return fmt.Errorf("could not parse action: %s", e)
 	}
 
-	if c.additionalMarketIDs == nil {
-		return fmt.Errorf("invalid market ids: must be non-nil")
-	}
-
-	if c.optionalAccountIDs == nil {
-		return fmt.Errorf("invalid optional account ids: must be non-nil")
-	}
 	return nil
 }
 
