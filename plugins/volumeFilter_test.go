@@ -168,6 +168,19 @@ func TestVolumeFilterFn(t *testing.T) {
 		wantTbbBase    *float64
 		wantTbbQuote   *float64
 	}{
+		// These are all the paths that can happen, assuming exactly one quote exists (a check before this function).
+		//
+		// no quote cap; base cap, projected sold < cap -> keep selling base w/ same amount
+		// no quote cap; base cap, projected sold = cap -> keep selling base w/ same amount
+		// no quote cap; base cap, projected sold > cap, not exact -> don't keep selling base
+		// no quote cap; base cap, projected sold > cap, exact, no capacity -> don't keep selling base
+		// no quote cap; base cap, projected sold > cap, exact, yes capacity -> keep selling base w/ updated amount
+
+		// no base cap; quote cap, projected sold < cap -> keep selling quote w/ same amount
+		// no base cap; quote cap, projected sold = cap -> keep selling quote w/ same amount
+		// no base cap; quote cap, projected sold > cap, not exact -> don't keep selling quote
+		// no base cap; quote cap, projected sold > cap, exact, no capacity -> don't keep selling quote
+		// no base cap; quote cap, projected sold > cap, exact, yes capacity -> keep selling quote w/ updated amount
 		{
 			name:           "1. selling, base units sell cap, don't keep selling base, exact mode",
 			mode:           volumeFilterModeExact,
