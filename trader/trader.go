@@ -35,6 +35,7 @@ type Trader struct {
 	exchangeShim                   api.ExchangeShim
 	strategy                       api.Strategy // the instance of this bot is bound to this strategy
 	timeController                 api.TimeController
+	sleepMode                      SleepMode
 	synchronizeStateLoadEnable     bool
 	synchronizeStateLoadMaxRetries int
 	fillTracker                    api.FillTracker
@@ -73,6 +74,7 @@ func MakeTrader(
 	exchangeShim api.ExchangeShim,
 	strategy api.Strategy,
 	timeController api.TimeController,
+	sleepMode SleepMode,
 	synchronizeStateLoadEnable bool,
 	synchronizeStateLoadMaxRetries int,
 	fillTracker api.FillTracker,
@@ -98,6 +100,7 @@ func MakeTrader(
 		exchangeShim:                   exchangeShim,
 		strategy:                       strategy,
 		timeController:                 timeController,
+		sleepMode:                      sleepMode,
 		synchronizeStateLoadEnable:     synchronizeStateLoadEnable,
 		synchronizeStateLoadMaxRetries: synchronizeStateLoadMaxRetries,
 		fillTracker:                    fillTracker,
@@ -121,6 +124,11 @@ func (t *Trader) Start() {
 	var lastUpdateTime time.Time
 
 	for {
+		// skip first sleep cycle if sleeping first so there is no delay when running the bot in the first iteration
+		if t.sleepMode.shouldSleepAtBeginning() && !lastUpdateTime.IsZero() {
+			t.doSleep(lastUpdateTime)
+		}
+
 		currentUpdateTime := time.Now()
 		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
 			updateResult := t.update()
@@ -154,10 +162,16 @@ func (t *Trader) Start() {
 			lastUpdateTime = currentUpdateTime
 		}
 
-		sleepTime := t.timeController.SleepTime(lastUpdateTime)
-		log.Printf("sleeping for %s...\n", sleepTime)
-		time.Sleep(sleepTime)
+		if !t.sleepMode.shouldSleepAtBeginning() {
+			t.doSleep(lastUpdateTime)
+		}
 	}
+}
+
+func (t *Trader) doSleep(lastUpdateTime time.Time) {
+	sleepTime := t.timeController.SleepTime(lastUpdateTime)
+	log.Printf("sleeping for %s...\n", sleepTime)
+	time.Sleep(sleepTime)
 }
 
 func shouldSendUpdateMetric(start time.Time, currentUpdate time.Time, lastMetricUpdate *time.Time) bool {

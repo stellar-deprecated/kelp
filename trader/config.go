@@ -29,6 +29,7 @@ type BotConfig struct {
 	IssuerB                            string     `valid:"-" toml:"ISSUER_B" json:"issuer_b"`
 	TickIntervalSeconds                int32      `valid:"-" toml:"TICK_INTERVAL_SECONDS" json:"tick_interval_seconds"`
 	MaxTickDelayMillis                 int64      `valid:"-" toml:"MAX_TICK_DELAY_MILLIS" json:"max_tick_delay_millis"`
+	SleepMode                          string     `valid:"-" toml:"SLEEP_MODE" json:"sleep_mode"`
 	DeleteCyclesThreshold              int64      `valid:"-" toml:"DELETE_CYCLES_THRESHOLD" json:"delete_cycles_threshold"`
 	SubmitMode                         string     `valid:"-" toml:"SUBMIT_MODE" json:"submit_mode"`
 	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS" json:"fill_tracker_sleep_millis"`
@@ -209,4 +210,35 @@ func (b *BotConfig) Init() error {
 
 	b.sourceAccount, e = utils.ParseSecret(b.SourceSecretSeed)
 	return e
+}
+
+// SleepMode defines when the bot sleeps, before (begin) or after (end) of update cycle
+type SleepMode string
+
+// The following are the two types of sleep modes
+const (
+	SleepModeBegin SleepMode = "begin"
+	SleepModeEnd   SleepMode = "end"
+)
+
+func (s SleepMode) shouldSleepAtBeginning() bool {
+	if s == SleepModeBegin {
+		return true
+	}
+	return false
+}
+
+// String is the Stringer impl.
+func (s SleepMode) String() string {
+	return string(s)
+}
+
+// ParseSleepMode factory, defaults to SleepModeEnd so it does not return any error
+func ParseSleepMode(sleepMode string) SleepMode {
+	if sleepMode == SleepModeBegin.String() {
+		return SleepModeBegin
+	}
+
+	// default to SleepModeEnd for things like an undefined or empty sleep mode
+	return SleepModeEnd
 }
