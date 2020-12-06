@@ -62,7 +62,7 @@ type commonProps struct {
 	GoVersion                        string  `json:"go_version"`
 	GuiVersion                       string  `json:"gui_version"`
 	Strategy                         string  `json:"strategy"`
-	UpdateTimeIntervalSeconds        int32   `json:"update_time_interval_seconds"`
+	UpdateTimeIntervalSeconds        float64 `json:"update_time_interval_seconds"`
 	Exchange                         string  `json:"exchange"`
 	TradingPair                      string  `json:"trading_pair"`
 	SecondsSinceStart                float64 `json:"seconds_since_start"`
@@ -155,7 +155,7 @@ func MakeMetricsTrackerCli(
 	goVersion string,
 	guiVersion string,
 	strategy string,
-	updateTimeIntervalSeconds int32,
+	updateTimeIntervalSeconds float64,
 	exchange string,
 	tradingPair string,
 	isDisabled bool,

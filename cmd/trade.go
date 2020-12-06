@@ -430,7 +430,7 @@ func makeBot(
 	botStart time.Time,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
-		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
+		time.Duration(botConfig.TickIntervalMillis)*time.Millisecond,
 		botConfig.MaxTickDelayMillis,
 	)
 	submitMode, e := api.ParseSubmitMode(botConfig.SubmitMode)
@@ -543,6 +543,16 @@ func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfi
 	if botConfig.CentralizedMinBaseVolumeOverride == nil {
 		botConfig.CentralizedMinBaseVolumeOverride = botConfig.MinCentralizedBaseVolumeDeprecated
 	}
+
+	if botConfig.TickIntervalMillis != 0 && botConfig.TickIntervalSecondsDeprecated == 0 {
+		l.Infof("deprecation warning: cannot set both '%s' (deprecated) and '%s' in the trader config, using value from '%s'\n", "TICK_INTERVAL_SECONDS", "TICK_INTERVAL_MILLIS", "TICK_INTERVAL_MILLIS")
+	} else if botConfig.TickIntervalSecondsDeprecated != 0 {
+		l.Infof("deprecation warning: '%s' is deprecated, use the field '%s' in the trader config instead, see sample_trader.cfg as an example\n", "TICK_INTERVAL_SECONDS", "TICK_INTERVAL_MILLIS")
+	}
+	if botConfig.TickIntervalMillis == 0 {
+		botConfig.TickIntervalMillis = botConfig.TickIntervalSecondsDeprecated * 1000
+	}
+
 	return botConfig
 }
 
@@ -586,7 +596,7 @@ func runTradeCmd(options inputs) {
 		runtime.Version(),
 		guiVersionFlag,
 		*options.strategy,
-		botConfig.TickIntervalSeconds,
+		float64(botConfig.TickIntervalMillis)/1000,
 		botConfig.TradingExchange,
 		botConfig.TradingPair(),
 		*options.noHeaders, // disable metrics if the CLI specified no headers
