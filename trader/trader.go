@@ -35,6 +35,7 @@ type Trader struct {
 	exchangeShim                   api.ExchangeShim
 	strategy                       api.Strategy // the instance of this bot is bound to this strategy
 	timeController                 api.TimeController
+	sleepMode                      SleepMode
 	synchronizeStateLoadEnable     bool
 	synchronizeStateLoadMaxRetries int
 	fillTracker                    api.FillTracker
@@ -73,6 +74,7 @@ func MakeTrader(
 	exchangeShim api.ExchangeShim,
 	strategy api.Strategy,
 	timeController api.TimeController,
+	sleepMode SleepMode,
 	synchronizeStateLoadEnable bool,
 	synchronizeStateLoadMaxRetries int,
 	fillTracker api.FillTracker,
@@ -98,6 +100,7 @@ func MakeTrader(
 		exchangeShim:                   exchangeShim,
 		strategy:                       strategy,
 		timeController:                 timeController,
+		sleepMode:                      sleepMode,
 		synchronizeStateLoadEnable:     synchronizeStateLoadEnable,
 		synchronizeStateLoadMaxRetries: synchronizeStateLoadMaxRetries,
 		fillTracker:                    fillTracker,
@@ -118,11 +121,26 @@ func MakeTrader(
 // Start starts the bot with the injected strategy
 func (t *Trader) Start() {
 	log.Println("----------------------------------------------------------------------------------------------------")
-	var lastUpdateTime time.Time
+	// lastUpdateStartTime is the start time of the last update
+	var lastUpdateStartTime time.Time
+	// lastUpdateEndTime is the end time of the last update
+	var lastUpdateEndTime time.Time
 
 	for {
+		// ref time for shouldUpdate depends on the sleepMode
+		updateRefTime := lastUpdateStartTime
+		if t.sleepMode.shouldSleepAtBeginning() {
+			// use lastUpdateEndTime here because we want to sleep starting for the time after the last cycle ended (i.e. we want to sleep in the beginning)
+			updateRefTime = lastUpdateEndTime
+		}
+
+		// skip first sleep cycle if sleeping first so there is no delay when running the bot in the first iteration
+		if t.sleepMode.shouldSleepAtBeginning() && !updateRefTime.IsZero() {
+			t.doSleep(updateRefTime)
+		}
+
 		currentUpdateTime := time.Now()
-		if lastUpdateTime.IsZero() || t.timeController.ShouldUpdate(lastUpdateTime, currentUpdateTime) {
+		if updateRefTime.IsZero() || t.timeController.ShouldUpdate(updateRefTime, currentUpdateTime) {
 			updateResult := t.update()
 			millisForUpdate := time.Since(currentUpdateTime).Milliseconds()
 			log.Printf("time taken for update loop: %d millis\n", millisForUpdate)
@@ -151,13 +169,21 @@ func (t *Trader) Start() {
 			// wait for any goroutines from the current update to finish so we don't have inconsistent state reads
 			t.threadTracker.Wait()
 			log.Println("----------------------------------------------------------------------------------------------------")
-			lastUpdateTime = currentUpdateTime
+			lastUpdateStartTime = currentUpdateTime
+			// lastUpdateEndTime uses the real time.Now() because we want to capture the actual end time
+			lastUpdateEndTime = time.Now()
 		}
 
-		sleepTime := t.timeController.SleepTime(lastUpdateTime)
-		log.Printf("sleeping for %s...\n", sleepTime)
-		time.Sleep(sleepTime)
+		if !t.sleepMode.shouldSleepAtBeginning() {
+			t.doSleep(updateRefTime)
+		}
 	}
+}
+
+func (t *Trader) doSleep(lastUpdateTime time.Time) {
+	sleepTime := t.timeController.SleepTime(lastUpdateTime)
+	log.Printf("sleeping for %s...\n", sleepTime)
+	time.Sleep(sleepTime)
 }
 
 func shouldSendUpdateMetric(start time.Time, currentUpdate time.Time, lastMetricUpdate *time.Time) bool {

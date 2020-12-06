@@ -142,6 +142,10 @@ func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
 	}
 	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedVolumePrecisionOverride, "CENTRALIZED_VOLUME_PRECISION_OVERRIDE")
 	validatePrecisionConfig(l, botConfig.IsTradingSdex(), botConfig.CentralizedPricePrecisionOverride, "CENTRALIZED_PRICE_PRECISION_OVERRIDE")
+
+	if botConfig.SleepMode != "" && botConfig.SleepMode != trader.SleepModeBegin.String() && botConfig.SleepMode != trader.SleepModeEnd.String() {
+		logger.Fatal(l, fmt.Errorf("SLEEP_MODE needs to be set to either '%s' or '%s'", trader.SleepModeBegin, trader.SleepModeEnd))
+	}
 }
 
 func validatePrecisionConfig(l logger.Logger, isTradingSdex bool, precisionField *int8, name string) {
@@ -514,6 +518,7 @@ func makeBot(
 		exchangeShim,
 		strategy,
 		timeController,
+		trader.ParseSleepMode(botConfig.SleepMode),
 		botConfig.SynchronizeStateLoadEnable,
 		botConfig.SynchronizeStateLoadMaxRetries,
 		fillTracker,
