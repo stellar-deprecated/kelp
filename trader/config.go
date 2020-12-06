@@ -27,7 +27,7 @@ type BotConfig struct {
 	IssuerA                            string     `valid:"-" toml:"ISSUER_A" json:"issuer_a"`
 	AssetCodeB                         string     `valid:"-" toml:"ASSET_CODE_B" json:"asset_code_b"`
 	IssuerB                            string     `valid:"-" toml:"ISSUER_B" json:"issuer_b"`
-	TickIntervalSeconds                float64    `valid:"-" toml:"TICK_INTERVAL_SECONDS" json:"tick_interval_seconds"`
+	TickIntervalSeconds                int32      `valid:"-" toml:"TICK_INTERVAL_SECONDS" json:"tick_interval_seconds"`
 	MaxTickDelayMillis                 int64      `valid:"-" toml:"MAX_TICK_DELAY_MILLIS" json:"max_tick_delay_millis"`
 	SleepMode                          string     `valid:"-" toml:"SLEEP_MODE" json:"sleep_mode"`
 	DeleteCyclesThreshold              int64      `valid:"-" toml:"DELETE_CYCLES_THRESHOLD" json:"delete_cycles_threshold"`
@@ -80,7 +80,7 @@ func MakeBotConfig(
 	issuerA string,
 	assetCodeB string,
 	issuerB string,
-	tickIntervalSeconds float64,
+	tickIntervalSeconds int32,
 	maxTickDelayMillis int64,
 	deleteCyclesThreshold int64,
 	submitMode string,

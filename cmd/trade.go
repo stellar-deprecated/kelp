@@ -430,7 +430,7 @@ func makeBot(
 	botStart time.Time,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
-		time.Duration(botConfig.TickIntervalSeconds*1000000000)*time.Nanosecond,
+		time.Duration(botConfig.TickIntervalSeconds)*time.Second,
 		botConfig.MaxTickDelayMillis,
 	)
 	submitMode, e := api.ParseSubmitMode(botConfig.SubmitMode)
