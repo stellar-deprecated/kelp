@@ -550,7 +550,7 @@ func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfi
 		l.Infof("deprecation warning: '%s' is deprecated, use the field '%s' in the trader config instead, see sample_trader.cfg as an example\n", "TICK_INTERVAL_SECONDS", "TICK_INTERVAL_MILLIS")
 	}
 	if botConfig.TickIntervalMillis == 0 {
-		botConfig.TickIntervalMillis = botConfig.TickIntervalSecondsDeprecated
+		botConfig.TickIntervalMillis = botConfig.TickIntervalSecondsDeprecated * 1000
 	}
 
 	return botConfig
