@@ -135,8 +135,8 @@ func (t *Trader) Start() {
 		}
 
 		// skip first sleep cycle if sleeping first so there is no delay when running the bot in the first iteration
-		if t.sleepMode.shouldSleepAtBeginning() && !updateRefTime.IsZero() {
-			t.doSleep(updateRefTime)
+		if t.sleepMode.shouldSleepAtBeginning() && !lastUpdateEndTime.IsZero() {
+			t.doSleep(lastUpdateEndTime)
 		}
 
 		currentUpdateTime := time.Now()
@@ -175,7 +175,8 @@ func (t *Trader) Start() {
 		}
 
 		if !t.sleepMode.shouldSleepAtBeginning() {
-			t.doSleep(updateRefTime)
+			// this needs to synchronize with the time of the last run attempt
+			t.doSleep(lastUpdateStartTime)
 		}
 	}
 }
