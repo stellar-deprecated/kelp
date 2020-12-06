@@ -154,7 +154,7 @@ func (t *Trader) Start() {
 			lastUpdateTime = currentUpdateTime
 		}
 
-		sleepTime := t.timeController.SleepTime(lastUpdateTime, currentUpdateTime)
+		sleepTime := t.timeController.SleepTime(lastUpdateTime)
 		log.Printf("sleeping for %s...\n", sleepTime)
 		time.Sleep(sleepTime)
 	}
