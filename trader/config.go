@@ -21,14 +21,17 @@ type FeeConfig struct {
 
 // BotConfig represents the configuration params for the bot
 type BotConfig struct {
-	SourceSecretSeed                   string     `valid:"-" toml:"SOURCE_SECRET_SEED" json:"source_secret_seed"`
-	TradingSecretSeed                  string     `valid:"-" toml:"TRADING_SECRET_SEED" json:"trading_secret_seed"`
-	AssetCodeA                         string     `valid:"-" toml:"ASSET_CODE_A" json:"asset_code_a"`
-	IssuerA                            string     `valid:"-" toml:"ISSUER_A" json:"issuer_a"`
-	AssetCodeB                         string     `valid:"-" toml:"ASSET_CODE_B" json:"asset_code_b"`
-	IssuerB                            string     `valid:"-" toml:"ISSUER_B" json:"issuer_b"`
-	TickIntervalSeconds                int32      `valid:"-" toml:"TICK_INTERVAL_SECONDS" json:"tick_interval_seconds"`
+	SourceSecretSeed  string `valid:"-" toml:"SOURCE_SECRET_SEED" json:"source_secret_seed"`
+	TradingSecretSeed string `valid:"-" toml:"TRADING_SECRET_SEED" json:"trading_secret_seed"`
+	AssetCodeA        string `valid:"-" toml:"ASSET_CODE_A" json:"asset_code_a"`
+	IssuerA           string `valid:"-" toml:"ISSUER_A" json:"issuer_a"`
+	AssetCodeB        string `valid:"-" toml:"ASSET_CODE_B" json:"asset_code_b"`
+	IssuerB           string `valid:"-" toml:"ISSUER_B" json:"issuer_b"`
+	// Deprecated: use TICK_INTERVAL_MILLIS instead
+	TickIntervalSecondsDeprecated      int32      `valid:"-" toml:"TICK_INTERVAL_SECONDS" json:"tick_interval_seconds" deprecated:"true"`
+	TickIntervalMillis                 int32      `valid:"-" toml:"TICK_INTERVAL_MILLIS" json:"tick_interval_millis"`
 	MaxTickDelayMillis                 int64      `valid:"-" toml:"MAX_TICK_DELAY_MILLIS" json:"max_tick_delay_millis"`
+	SleepMode                          string     `valid:"-" toml:"SLEEP_MODE" json:"sleep_mode"`
 	DeleteCyclesThreshold              int64      `valid:"-" toml:"DELETE_CYCLES_THRESHOLD" json:"delete_cycles_threshold"`
 	SubmitMode                         string     `valid:"-" toml:"SUBMIT_MODE" json:"submit_mode"`
 	FillTrackerSleepMillis             uint32     `valid:"-" toml:"FILL_TRACKER_SLEEP_MILLIS" json:"fill_tracker_sleep_millis"`
@@ -79,7 +82,7 @@ func MakeBotConfig(
 	issuerA string,
 	assetCodeB string,
 	issuerB string,
-	tickIntervalSeconds int32,
+	tickIntervalMillis int32,
 	maxTickDelayMillis int64,
 	deleteCyclesThreshold int64,
 	submitMode string,
@@ -102,7 +105,7 @@ func MakeBotConfig(
 		IssuerA:                            issuerA,
 		AssetCodeB:                         assetCodeB,
 		IssuerB:                            issuerB,
-		TickIntervalSeconds:                tickIntervalSeconds,
+		TickIntervalMillis:                 tickIntervalMillis,
 		MaxTickDelayMillis:                 maxTickDelayMillis,
 		DeleteCyclesThreshold:              deleteCyclesThreshold,
 		SubmitMode:                         submitMode,
@@ -209,4 +212,35 @@ func (b *BotConfig) Init() error {
 
 	b.sourceAccount, e = utils.ParseSecret(b.SourceSecretSeed)
 	return e
+}
+
+// SleepMode defines when the bot sleeps, before (begin) or after (end) of update cycle
+type SleepMode string
+
+// The following are the two types of sleep modes
+const (
+	SleepModeBegin SleepMode = "begin"
+	SleepModeEnd   SleepMode = "end"
+)
+
+func (s SleepMode) shouldSleepAtBeginning() bool {
+	if s == SleepModeBegin {
+		return true
+	}
+	return false
+}
+
+// String is the Stringer impl.
+func (s SleepMode) String() string {
+	return string(s)
+}
+
+// ParseSleepMode factory, defaults to SleepModeEnd so it does not return any error
+func ParseSleepMode(sleepMode string) SleepMode {
+	if sleepMode == SleepModeBegin.String() {
+		return SleepModeBegin
+	}
+
+	// default to SleepModeEnd for things like an undefined or empty sleep mode
+	return SleepModeEnd
 }

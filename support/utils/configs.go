@@ -46,7 +46,8 @@ func StructString(s interface{}, indentLevel uint8, transforms map[string]func(i
 		}
 
 		if reflect.ValueOf(s).Field(i).CanInterface() {
-			if !isDeprecated || !reflect.ValueOf(s).Field(i).IsNil() {
+			// this is the case where we try to skip deprecated values that are not specified (nil or zero values)
+			if !isDeprecated || !reflect.ValueOf(s).Field(i).IsValid() {
 				deprecatedWarning := ""
 				if isDeprecated {
 					deprecatedWarning = " (deprecated)"
