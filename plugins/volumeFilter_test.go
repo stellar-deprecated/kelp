@@ -36,7 +36,6 @@ func TestMakeFilterVolume(t *testing.T) {
 	configValue := ""
 	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
 	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
-
 	testCases := []struct {
 		name          string
 		exchangeName  string
@@ -327,5 +326,85 @@ func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer 
 		Selling: txnbuild.NativeAsset{},
 		Price:   price,
 		Amount:  amount,
+	}
+}
+
+func TestValidateConfig(t *testing.T) {
+	testCases := []struct {
+		name         string
+		baseCapBase  *float64
+		baseCapQuote *float64
+		mode         volumeFilterMode
+		action       queries.DailyVolumeAction
+		marketIDs    []string
+		accountIDs   []string
+		wantErr      error
+	}{
+		{
+			name:         "success - base + sell",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: nil,
+			mode:         volumeFilterModeExact,
+			action:       queries.DailyVolumeActionSell,
+			marketIDs:    nil,
+			accountIDs:   nil,
+			wantErr:      nil,
+		},
+		{
+			name:         "success - quote + buy",
+			baseCapBase:  nil,
+			baseCapQuote: pointy.Float64(1.0),
+			mode:         volumeFilterModeExact,
+			action:       queries.DailyVolumeActionBuy,
+			marketIDs:    nil,
+			accountIDs:   nil,
+			wantErr:      nil,
+		},
+		{
+			name:         "failure - 2 nil caps",
+			baseCapBase:  nil,
+			baseCapQuote: nil,
+			mode:         volumeFilterModeExact,
+			marketIDs:    nil,
+			accountIDs:   nil,
+			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil"),
+		},
+		{
+			name:         "failure - 2 non-nil caps",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: pointy.Float64(1.0),
+			mode:         volumeFilterModeExact,
+			marketIDs:    nil,
+			accountIDs:   nil,
+			wantErr:      fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil"),
+		},
+		{
+			name:         "failure - invalid mode",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: nil,
+			mode:         volumeFilterMode("hello"),
+			action:       queries.DailyVolumeActionSell,
+			marketIDs:    nil,
+			accountIDs:   nil,
+			wantErr:      fmt.Errorf("could not parse mode: invalid input mode 'hello'"),
+		},
+		{
+			name:         "failure - invalid action",
+			baseCapBase:  pointy.Float64(1.0),
+			baseCapQuote: nil,
+			mode:         volumeFilterModeExact,
+			action:       queries.DailyVolumeAction("hello"),
+			marketIDs:    nil,
+			accountIDs:   nil,
+			wantErr:      fmt.Errorf("could not parse action: invalid action value 'hello'"),
+		},
+	}
+
+	for _, k := range testCases {
+		t.Run(k.name, func(t *testing.T) {
+			c := makeRawVolumeFilterConfig(k.baseCapBase, k.baseCapQuote, k.action, k.mode, k.marketIDs, k.accountIDs)
+			gotErr := c.Validate()
+			assert.Equal(t, k.wantErr, gotErr)
+		})
 	}
 }

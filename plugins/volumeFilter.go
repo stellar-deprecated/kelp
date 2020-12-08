@@ -39,8 +39,8 @@ type VolumeFilterConfig struct {
 	BaseAssetCapInQuoteUnits *float64
 	action                   queries.DailyVolumeAction
 	mode                     volumeFilterMode
-	additionalMarketIDs      []string
-	optionalAccountIDs       []string
+	additionalMarketIDs      []string // can be nil
+	optionalAccountIDs       []string // can be nil
 }
 
 type limitParameters struct {
@@ -80,13 +80,17 @@ func makeFilterVolume(
 	}
 
 	marketID := MakeMarketID(exchangeName, baseAssetString, quoteAssetString)
+	// note that append(s, nil) is valid
 	marketIDs := utils.Dedupe(append([]string{marketID}, config.additionalMarketIDs...))
 	dailyVolumeByDateQuery, e := queries.MakeDailyVolumeByDateForMarketIdsAction(db, marketIDs, config.action, config.optionalAccountIDs)
 	if e != nil {
 		return nil, fmt.Errorf("could not make daily volume by date Query: %s", e)
 	}
 
-	// TODO DS Validate the config, to have exactly one asset cap defined; a valid mode; non-nil market IDs; and non-nil optional account IDs.
+	e = config.Validate()
+	if e != nil {
+		return nil, fmt.Errorf("invalid config: %s", e)
+	}
 
 	return &volumeFilter{
 		name:                   "volumeFilter",
@@ -102,9 +106,22 @@ var _ SubmitFilter = &volumeFilter{}
 
 // Validate ensures validity
 func (c *VolumeFilterConfig) Validate() error {
-	if c.isEmpty() {
-		return fmt.Errorf("the volumeFilterConfig was empty")
+	if c.BaseAssetCapInBaseUnits != nil && c.BaseAssetCapInQuoteUnits != nil {
+		return fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are non-nil")
 	}
+
+	if c.BaseAssetCapInBaseUnits == nil && c.BaseAssetCapInQuoteUnits == nil {
+		return fmt.Errorf("invalid asset caps: only one asset cap can be non-nil, but both are nil")
+	}
+
+	if _, e := parseVolumeFilterMode(string(c.mode)); e != nil {
+		return fmt.Errorf("could not parse mode: %s", e)
+	}
+
+	if _, e := queries.ParseDailyVolumeAction(string(c.action)); e != nil {
+		return fmt.Errorf("could not parse action: %s", e)
+	}
+
 	return nil
 }
 
@@ -244,14 +261,4 @@ func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {
 		return 0.0, fmt.Errorf("BaseAssetCapInBaseUnits is nil, config = %v", f.config)
 	}
 	return *value, nil
-}
-
-func (c *VolumeFilterConfig) isEmpty() bool {
-	if c.BaseAssetCapInBaseUnits != nil {
-		return false
-	}
-	if c.BaseAssetCapInQuoteUnits != nil {
-		return false
-	}
-	return true
 }
