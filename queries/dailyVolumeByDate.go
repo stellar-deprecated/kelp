@@ -123,6 +123,8 @@ func makeSQLQueryDailyVolume(marketIDs []string, optionalAccountIDs []string) st
 		marketsInClauseParts = append(marketsInClauseParts, marketsInValue)
 	}
 	marketsInClause := strings.Join(marketsInClauseParts, ", ")
+
+	// len(a), where a is a nil array, is valid and returns 0
 	if len(optionalAccountIDs) == 0 {
 		return fmt.Sprintf(sqlQueryDailyValuesTemplateAllAccounts, marketsInClause)
 	}

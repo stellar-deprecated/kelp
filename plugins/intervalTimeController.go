@@ -10,18 +10,23 @@ import (
 
 // IntervalTimeController provides a standard time interval
 type IntervalTimeController struct {
-	tickInterval       time.Duration
-	maxTickDelayMillis int64
-	randGen            *rand.Rand
+	tickInterval time.Duration
+	tickDelayFn  func() time.Duration
 }
 
 // MakeIntervalTimeController is a factory method
 func MakeIntervalTimeController(tickInterval time.Duration, maxTickDelayMillis int64) api.TimeController {
-	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	tickDelayFn := func() time.Duration {
+		return time.Duration(0) * time.Millisecond
+	}
+	if maxTickDelayMillis > 0 {
+		randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+		tickDelayFn = makeRandomDelayMillisFn(maxTickDelayMillis, randGen)
+	}
+
 	return &IntervalTimeController{
-		tickInterval:       tickInterval,
-		maxTickDelayMillis: maxTickDelayMillis,
-		randGen:            randGen,
+		tickInterval: tickInterval,
+		tickDelayFn:  tickDelayFn,
 	}
 }
 
@@ -36,19 +41,23 @@ func (t *IntervalTimeController) ShouldUpdate(lastUpdateTime time.Time, currentU
 }
 
 // SleepTime impl
-func (t *IntervalTimeController) SleepTime(lastUpdateTime time.Time, currentUpdateTime time.Time) time.Duration {
-	// use time till now as opposed to currentUpdateTime because we want the start of the clock cycle to be synchronized
-	elapsedSinceUpdate := time.Since(lastUpdateTime)
-	fixedDurationCatchup := time.Duration(t.tickInterval.Nanoseconds() - elapsedSinceUpdate.Nanoseconds())
-	randomizedDelayMillis := t.makeRandomDelay()
-
-	// if fixedDurationCatchup < 0 then we already have a built-in randomized delay because of the variable processing time consumed
-	return fixedDurationCatchup + randomizedDelayMillis
+func (t *IntervalTimeController) SleepTime(lastUpdateTime time.Time) time.Duration {
+	// use real time now because we want the start of the clock cycle to be synchronized
+	return t.sleepTimeInternal(lastUpdateTime, time.Now())
 }
 
-func (t *IntervalTimeController) makeRandomDelay() time.Duration {
-	if t.maxTickDelayMillis > 0 {
-		return time.Duration(t.randGen.Int63n(t.maxTickDelayMillis)) * time.Millisecond
+// realNow is the actual current time and not the synchronized time since we want to check sleep from when this function is called
+func (t *IntervalTimeController) sleepTimeInternal(lastUpdateTime time.Time, realNow time.Time) time.Duration {
+	elapsedSinceUpdate := realNow.Sub(lastUpdateTime)
+	fixedDurationCatchup := time.Duration(t.tickInterval.Nanoseconds() - elapsedSinceUpdate.Nanoseconds())
+	randomDelayMillis := t.tickDelayFn()
+
+	// if fixedDurationCatchup < 0 then we already have a built-in randomized delay because of the variable processing time consumed
+	return fixedDurationCatchup + randomDelayMillis
+}
+
+func makeRandomDelayMillisFn(maxTickDelayMillis int64, randGen *rand.Rand) func() time.Duration {
+	return func() time.Duration {
+		return time.Duration(randGen.Int63n(maxTickDelayMillis)) * time.Millisecond
 	}
-	return time.Duration(0) * time.Millisecond
 }
