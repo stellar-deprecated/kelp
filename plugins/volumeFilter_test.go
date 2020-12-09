@@ -173,7 +173,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 	// otb > 0 && tbb > 0
 	// 12 cases here; 4 combinations of tbb/otb values from bullet points above x 3 combinations of cap relationship to projected (<, =, >)
 	testCases := []volumeFilterFnTestCase{
-		volumeFilterFnTestCase{
+		{
 			name:         "1. otb = 0; cap > projected",
 			cap:          10.0,
 			otb:          0,
@@ -184,7 +184,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  9.99,
 			wantTbbQuote: 9.98,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "2. otb = 0; cap = projected",
 			cap:          10.0,
 			otb:          0,
@@ -195,7 +195,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  10,
 			wantTbbQuote: 10,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "3. otb = 0; cap < projected",
 			cap:          10.0,
 			otb:          0,
@@ -206,7 +206,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  5,
 			wantTbbQuote: 0,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "4. tbb = 0; cap > projected",
 			cap:          10.0,
 			otb:          5,
@@ -217,7 +217,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  4.99,
 			wantTbbQuote: 9.98,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "5. tbb = 0; cap = projected",
 			cap:          10.0,
 			otb:          5,
@@ -228,7 +228,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  5,
 			wantTbbQuote: 10,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "6. tbb = 0; cap < projected",
 			cap:          10.0,
 			otb:          5,
@@ -239,7 +239,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  0,
 			wantTbbQuote: 0,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "7. otb = 0 && tbb = 0; cap > projected",
 			cap:          10.0,
 			otb:          0,
@@ -250,7 +250,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  5,
 			wantTbbQuote: 10,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "8. otb = 0 && tbb = 0; cap = projected",
 			cap:          10.0,
 			otb:          0,
@@ -261,7 +261,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  10,
 			wantTbbQuote: 20,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "9. otb = 0 && tbb = 0; cap < projected",
 			cap:          10.0,
 			otb:          0,
@@ -272,7 +272,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  0,
 			wantTbbQuote: 0,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "10. otb > 0 && tbb > 0; cap > projected",
 			cap:          10.0,
 			otb:          1,
@@ -283,7 +283,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  6,
 			wantTbbQuote: 10,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "11. otb > 0 && tbb > 0; cap = projected",
 			cap:          10.0,
 			otb:          2,
@@ -294,7 +294,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbBase:  8,
 			wantTbbQuote: 12,
 		},
-		volumeFilterFnTestCase{
+		{
 			name:         "12. otb > 0 && tbb > 0; cap < projected",
 			cap:          10.0,
 			otb:          2,
