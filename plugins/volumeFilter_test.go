@@ -348,7 +348,22 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 	}
 }
 
-func runTestVolumeFilterFn(t *testing.T, name string, mode volumeFilterMode, action queries.DailyVolumeAction, baseCap *float64, quoteCap *float64, baseOTB *float64, quoteOTB *float64, baseTBB *float64, quoteTBB *float64, inputOp *txnbuild.ManageSellOffer, wantOp *txnbuild.ManageSellOffer, wantBase *float64, wantQuote *float64) {
+func runTestVolumeFilterFn(
+	t *testing.T,
+	name string,
+	mode volumeFilterMode,
+	action queries.DailyVolumeAction,
+	baseCap *float64,
+	quoteCap *float64,
+	baseOTB *float64,
+	quoteOTB *float64,
+	baseTBB *float64,
+	quoteTBB *float64,
+	inputOp *txnbuild.ManageSellOffer,
+	wantOp *txnbuild.ManageSellOffer,
+	wantBase *float64,
+	wantQuote *float64,
+) {
 	t.Run(name, func(t *testing.T) {
 		// exactly one of the two cap values must be set
 		if baseCap == nil && quoteCap == nil {
@@ -374,7 +389,9 @@ func runTestVolumeFilterFn(t *testing.T, name string, mode volumeFilterMode, act
 		if !assert.Nil(t, e) {
 			return
 		}
-		assert.Equal(t, wantOp, actual)
+		if !assert.Equal(t, wantOp, actual) {
+			return
+		}
 
 		wantTBBAccumulator := makeRawVolumeFilterConfig(wantBase, wantQuote, action, mode, nil, nil)
 		assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
