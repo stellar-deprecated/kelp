@@ -172,7 +172,11 @@ func TestVolumeFilterFn_BaseCap_Exact(t *testing.T) {
 	// tbb = 0
 	// otb = 0 && tbb = 0
 	// otb > 0 && tbb > 0
-	// 12 cases here; 4 combinations of tbb/otb values from bullet points above x 3 combinations of cap relationship to projected (<, =, >)
+	// We also want to test 3 combinations of cap relationship to projected (<, =, >)
+	// Finally, if projected > cap, we want to test 3 possible values of newAmount (+, 0, -)
+	// The above gives 4 * (2 + 1*3) = 20.
+	// One generated case is impossible in the code: otb = 0 && tbb = 0, newAmount < 0
+	// so we have 19 cases
 	testCases := []volumeFilterFnTestCase{
 		{
 			name:         "1. otb = 0; projected < cap",
@@ -392,7 +396,7 @@ func TestVolumeFilterFn_BaseCap_Exact(t *testing.T) {
 			wantTbbQuote: 0,
 		},
 		{
-			name:         "18. otb > 0 && tbb > 0; projected > cap, newAmount < 0",
+			name:         "19. otb > 0 && tbb > 0; projected > cap, newAmount < 0",
 			cap:          10.0,
 			otb:          5,
 			tbb:          5.1,
