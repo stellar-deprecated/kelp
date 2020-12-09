@@ -185,7 +185,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 9.98,
 		},
 		volumeFilterFnTestCase{
-			name:         "2. otb = 0; cap > projected",
+			name:         "2. otb = 0; cap = projected",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      5,
@@ -196,7 +196,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 10,
 		},
 		volumeFilterFnTestCase{
-			name:         "3. otb = 0; cap > projected",
+			name:         "3. otb = 0; cap < projected",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      5,
@@ -538,14 +538,13 @@ func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer 
 	}
 }
 
-
 func makeSellOp(price float64, amount float64) *txnbuild.ManageSellOffer {
 	return &txnbuild.ManageSellOffer{
 		Buying:  txnbuild.NativeAsset{},
 		Selling: txnbuild.NativeAsset{},
 		Price:   fmt.Sprintf("%.7f", price),
 		Amount:  fmt.Sprintf("%.7f", amount),
-  }
+	}
 }
 
 func TestValidateConfig(t *testing.T) {
