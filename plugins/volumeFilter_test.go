@@ -161,7 +161,8 @@ type volumeFilterFnTestCase struct {
 	tbbQuote     float64
 	inputPrice   float64
 	inputAmount  float64
-	wantOp       *txnbuild.ManageSellOffer
+	wantPrice    *float64
+	wantAmount   *float64
 	wantTbbBase  float64
 	wantTbbQuote float64
 }
@@ -182,7 +183,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  4.99,
-			wantOp:       makeSellOp(2.0, 4.99),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(4.99),
 			wantTbbBase:  9.99,
 			wantTbbQuote: 9.98,
 		},
@@ -194,7 +196,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
-			wantOp:       makeSellOp(2.0, 5),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(5),
 			wantTbbBase:  10,
 			wantTbbQuote: 10,
 		},
@@ -206,8 +209,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  5.01,
-			inputOp:      makeSellOp(2.0, 5.01),
-			wantOp:       nil,
+			wantPrice:    nil,
+			wantAmount:   nil,
 			wantTbbBase:  5,
 			wantTbbQuote: 0,
 		},
@@ -219,7 +222,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  4.99,
-			wantOp:       makeSellOp(2.0, 4.99),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(4.99),
 			wantTbbBase:  4.99,
 			wantTbbQuote: 9.98,
 		},
@@ -231,7 +235,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
-			wantOp:       makeSellOp(2.0, 5.0),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(5.0),
 			wantTbbBase:  5,
 			wantTbbQuote: 10,
 		},
@@ -243,7 +248,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  6.0,
-			wantOp:       nil,
+			wantPrice:    nil,
+			wantAmount:   nil,
 			wantTbbBase:  0,
 			wantTbbQuote: 0,
 		},
@@ -255,7 +261,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
-			wantOp:       makeSellOp(2.0, 5.0),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(5.0),
 			wantTbbBase:  5,
 			wantTbbQuote: 10,
 		},
@@ -267,7 +274,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  10.0,
-			wantOp:       makeSellOp(2.0, 10.0),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(10.0),
 			wantTbbBase:  10,
 			wantTbbQuote: 20,
 		},
@@ -279,7 +287,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  15.0,
-			wantOp:       nil,
+			wantPrice:    nil,
+			wantAmount:   nil,
 			wantTbbBase:  0,
 			wantTbbQuote: 0,
 		},
@@ -291,7 +300,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
-			wantOp:       makeSellOp(2.0, 5.0),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(5.0),
 			wantTbbBase:  6,
 			wantTbbQuote: 10,
 		},
@@ -303,7 +313,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  6.0,
-			wantOp:       makeSellOp(2.0, 6.0),
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(6.0),
 			wantTbbBase:  8,
 			wantTbbQuote: 12,
 		},
@@ -315,7 +326,8 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			tbbQuote:     0,
 			inputPrice:   2.0,
 			inputAmount:  7.0,
-			wantOp:       nil,
+			wantPrice:    nil,
+			wantAmount:   nil,
 			wantTbbBase:  2,
 			wantTbbQuote: 0,
 		},
@@ -324,6 +336,12 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 		// convert to common format accepted by runTestVolumeFilterFn
 		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
 		inputOp := makeSellOp(k.inputPrice, k.inputAmount)
+
+		var wantOp *txnbuild.ManageSellOffer
+		if k.wantPrice != nil && k.wantAmount != nil {
+			wantOp = makeSellOp(*k.wantPrice, *k.wantAmount)
+		}
+
 		runTestVolumeFilterFn(
 			t,
 			k.name,
@@ -336,7 +354,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			pointy.Float64(k.tbbBase),  // baseTBB
 			pointy.Float64(k.tbbQuote), // quoteTBB (non-nil since it accumulates)
 			inputOp,
-			k.wantOp,
+			wantOp,
 			pointy.Float64(k.wantTbbBase),
 			pointy.Float64(k.wantTbbQuote),
 		)
