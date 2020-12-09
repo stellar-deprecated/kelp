@@ -157,8 +157,7 @@ type volumeFilterFnTestCase struct {
 	name         string
 	cap          float64
 	otb          float64
-	tbbBase      float64
-	tbbQuote     float64
+	tbb          float64
 	inputPrice   float64
 	inputAmount  float64
 	wantPrice    *float64
@@ -179,8 +178,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "1. otb = 0; projected < cap",
 			cap:          10.0,
 			otb:          0,
-			tbbBase:      5,
-			tbbQuote:     0,
+			tbb:          5,
 			inputPrice:   2.0,
 			inputAmount:  4.99,
 			wantPrice:    pointy.Float64(2.0),
@@ -192,8 +190,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "2. otb = 0; projected = cap",
 			cap:          10.0,
 			otb:          0,
-			tbbBase:      5,
-			tbbQuote:     0,
+			tbb:          5,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
 			wantPrice:    pointy.Float64(2.0),
@@ -205,8 +202,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "3. otb = 0; projected > cap",
 			cap:          10.0,
 			otb:          0,
-			tbbBase:      5,
-			tbbQuote:     0,
+			tbb:          5,
 			inputPrice:   2.0,
 			inputAmount:  5.01,
 			wantPrice:    nil,
@@ -218,8 +214,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "4. tbb = 0; projected < cap",
 			cap:          10.0,
 			otb:          5,
-			tbbBase:      0,
-			tbbQuote:     0,
+			tbb:          0,
 			inputPrice:   2.0,
 			inputAmount:  4.99,
 			wantPrice:    pointy.Float64(2.0),
@@ -231,8 +226,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "5. tbb = 0; projected = cap",
 			cap:          10.0,
 			otb:          5,
-			tbbBase:      0,
-			tbbQuote:     0,
+			tbb:          0,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
 			wantPrice:    pointy.Float64(2.0),
@@ -244,8 +238,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "6. tbb = 0; projected > cap",
 			cap:          10.0,
 			otb:          5,
-			tbbBase:      0,
-			tbbQuote:     0,
+			tbb:          0,
 			inputPrice:   2.0,
 			inputAmount:  6.0,
 			wantPrice:    nil,
@@ -257,8 +250,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "7. otb = 0 && tbb = 0; projected < cap",
 			cap:          10.0,
 			otb:          0,
-			tbbBase:      0,
-			tbbQuote:     0,
+			tbb:          0,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
 			wantPrice:    pointy.Float64(2.0),
@@ -270,8 +262,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "8. otb = 0 && tbb = 0; projected = cap",
 			cap:          10.0,
 			otb:          0,
-			tbbBase:      0,
-			tbbQuote:     0,
+			tbb:          0,
 			inputPrice:   2.0,
 			inputAmount:  10.0,
 			wantPrice:    pointy.Float64(2.0),
@@ -283,8 +274,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "9. otb = 0 && tbb = 0; projected > cap",
 			cap:          10.0,
 			otb:          0,
-			tbbBase:      0,
-			tbbQuote:     0,
+			tbb:          0,
 			inputPrice:   2.0,
 			inputAmount:  15.0,
 			wantPrice:    nil,
@@ -296,8 +286,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "10. otb > 0 && tbb > 0; projected < cap",
 			cap:          10.0,
 			otb:          1,
-			tbbBase:      1,
-			tbbQuote:     0,
+			tbb:          1,
 			inputPrice:   2.0,
 			inputAmount:  5.0,
 			wantPrice:    pointy.Float64(2.0),
@@ -309,8 +298,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "11. otb > 0 && tbb > 0; projected = cap",
 			cap:          10.0,
 			otb:          2,
-			tbbBase:      2,
-			tbbQuote:     0,
+			tbb:          2,
 			inputPrice:   2.0,
 			inputAmount:  6.0,
 			wantPrice:    pointy.Float64(2.0),
@@ -322,8 +310,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			name:         "12. otb > 0 && tbb > 0; projected > cap",
 			cap:          10.0,
 			otb:          2,
-			tbbBase:      2,
-			tbbQuote:     0,
+			tbb:          2,
 			inputPrice:   2.0,
 			inputAmount:  7.0,
 			wantPrice:    nil,
@@ -347,12 +334,12 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			k.name,
 			volumeFilterModeIgnore,
 			queries.DailyVolumeActionSell,
-			pointy.Float64(k.cap),      // base cap
-			nil,                        // quote cap nil because this test is for the BaseCap
-			pointy.Float64(k.otb),      // baseOTB
-			nil,                        // quoteOTB nil because this test is for the BaseCap
-			pointy.Float64(k.tbbBase),  // baseTBB
-			pointy.Float64(k.tbbQuote), // quoteTBB (non-nil since it accumulates)
+			pointy.Float64(k.cap), // base cap
+			nil,                   // quote cap nil because this test is for the BaseCap
+			pointy.Float64(k.otb), // baseOTB
+			nil,                   // quoteOTB nil because this test is for the BaseCap
+			pointy.Float64(k.tbb), // baseTBB
+			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
 			inputOp,
 			wantOp,
 			pointy.Float64(k.wantTbbBase),
