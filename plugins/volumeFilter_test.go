@@ -153,6 +153,215 @@ func TestMakeFilterVolume(t *testing.T) {
 	}
 }
 
+// volumeFilterFnTestCase is the input that will be reused across all tests of type TestVolumeFilterFn*
+type volumeFilterFnTestCase struct {
+	name         string
+	cap          float64
+	otb          float64
+	tbbBase      float64
+	tbbQuote     float64
+	inputOp      *txnbuild.ManageSellOffer
+	wantOp       *txnbuild.ManageSellOffer
+	wantTbbBase  float64
+	wantTbbQuote float64
+}
+
+func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
+	// We want to test the following 4 valid combinations of OTB and TBB values:
+	// otb = 0
+	// tbb = 0
+	// otb = 0 && tbb = 0
+	// otb > 0 && tbb > 0
+	// 12 cases here; 4 combinations of tbb/otb values from bullet points above x 3 combinations of cap relationship to projected (<, =, >)
+	testCases := []volumeFilterFnTestCase{
+		volumeFilterFnTestCase{
+			name:         "1. otb = 0; cap > projected",
+			cap:          10.0,
+			otb:          0,
+			tbbBase:      5,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 4.99),
+			wantOp:       makeSellOp(2.0, 4.99),
+			wantTbbBase:  9.99,
+			wantTbbQuote: 9.98,
+		},
+		volumeFilterFnTestCase{
+			name:         "2. otb = 0; cap > projected",
+			cap:          10.0,
+			otb:          0,
+			tbbBase:      5,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 5),
+			wantOp:       makeSellOp(2.0, 5),
+			wantTbbBase:  10,
+			wantTbbQuote: 10,
+		},
+		volumeFilterFnTestCase{
+			name:         "3. otb = 0; cap > projected",
+			cap:          10.0,
+			otb:          0,
+			tbbBase:      5,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 5.01),
+			wantOp:       nil,
+			wantTbbBase:  5,
+			wantTbbQuote: 0,
+		},
+		volumeFilterFnTestCase{
+			name:         "4. tbb = 0; cap > projected",
+			cap:          10.0,
+			otb:          5,
+			tbbBase:      0,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 4.99),
+			wantOp:       makeSellOp(2.0, 4.99),
+			wantTbbBase:  4.99,
+			wantTbbQuote: 9.98,
+		},
+		volumeFilterFnTestCase{
+			name:         "5. tbb = 0; cap = projected",
+			cap:          10.0,
+			otb:          5,
+			tbbBase:      0,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 5.0),
+			wantOp:       makeSellOp(2.0, 5.0),
+			wantTbbBase:  5,
+			wantTbbQuote: 10,
+		},
+		volumeFilterFnTestCase{
+			name:         "6. tbb = 0; cap < projected",
+			cap:          10.0,
+			otb:          5,
+			tbbBase:      0,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 6.0),
+			wantOp:       nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 0,
+		},
+		volumeFilterFnTestCase{
+			name:         "7. otb = 0 && tbb = 0; cap > projected",
+			cap:          10.0,
+			otb:          0,
+			tbbBase:      0,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 5.0),
+			wantOp:       makeSellOp(2.0, 5.0),
+			wantTbbBase:  5,
+			wantTbbQuote: 10,
+		},
+		volumeFilterFnTestCase{
+			name:         "8. otb = 0 && tbb = 0; cap = projected",
+			cap:          10.0,
+			otb:          0,
+			tbbBase:      0,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 10.0),
+			wantOp:       makeSellOp(2.0, 10.0),
+			wantTbbBase:  10,
+			wantTbbQuote: 20,
+		},
+		volumeFilterFnTestCase{
+			name:         "9. otb = 0 && tbb = 0; cap < projected",
+			cap:          10.0,
+			otb:          0,
+			tbbBase:      0,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 15.0),
+			wantOp:       nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 0,
+		},
+		volumeFilterFnTestCase{
+			name:         "10. otb > 0 && tbb > 0; cap > projected",
+			cap:          10.0,
+			otb:          1,
+			tbbBase:      1,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 5.0),
+			wantOp:       makeSellOp(2.0, 5.0),
+			wantTbbBase:  6,
+			wantTbbQuote: 10,
+		},
+		volumeFilterFnTestCase{
+			name:         "11. otb > 0 && tbb > 0; cap = projected",
+			cap:          10.0,
+			otb:          2,
+			tbbBase:      2,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 6.0),
+			wantOp:       makeSellOp(2.0, 6.0),
+			wantTbbBase:  8,
+			wantTbbQuote: 12,
+		},
+		volumeFilterFnTestCase{
+			name:         "12. otb > 0 && tbb > 0; cap < projected",
+			cap:          10.0,
+			otb:          2,
+			tbbBase:      2,
+			tbbQuote:     0,
+			inputOp:      makeSellOp(2.0, 7.0),
+			wantOp:       nil,
+			wantTbbBase:  2,
+			wantTbbQuote: 0,
+		},
+	}
+	for _, k := range testCases {
+		// convert to common format accepted by runTestVolumeFilterFn
+		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
+		runTestVolumeFilterFn(
+			t,
+			k.name,
+			volumeFilterModeIgnore,
+			queries.DailyVolumeActionSell,
+			pointy.Float64(k.cap),      // base cap
+			nil,                        // quote cap nil because this test is for the BaseCap
+			pointy.Float64(k.otb),      // baseOTB
+			nil,                        // quoteOTB nil because this test is for the BaseCap
+			pointy.Float64(k.tbbBase),  // baseTBB
+			pointy.Float64(k.tbbQuote), // quoteTBB (non-nil since it accumulates)
+			k.inputOp,
+			k.wantOp,
+			pointy.Float64(k.wantTbbBase),
+			pointy.Float64(k.wantTbbQuote),
+		)
+	}
+}
+
+func runTestVolumeFilterFn(t *testing.T, name string, mode volumeFilterMode, action queries.DailyVolumeAction, baseCap *float64, quoteCap *float64, baseOTB *float64, quoteOTB *float64, baseTBB *float64, quoteTBB *float64, inputOp *txnbuild.ManageSellOffer, wantOp *txnbuild.ManageSellOffer, wantBase *float64, wantQuote *float64) {
+	t.Run(name, func(t *testing.T) {
+		// exactly one of the two cap values must be set
+		if baseCap == nil && quoteCap == nil {
+			assert.Fail(t, "either one of the two cap values must be set")
+			return
+		}
+
+		if baseCap != nil && quoteCap != nil {
+			assert.Fail(t, "both of the cap values cannot be set")
+			return
+		}
+
+		// we pass in nil market IDs and account IDs, as they don't affect correctness
+		dailyOTB := makeRawVolumeFilterConfig(baseOTB, quoteOTB, action, mode, nil, nil)
+		dailyTBBAccumulator := makeRawVolumeFilterConfig(baseTBB, quoteTBB, action, mode, nil, nil)
+		lp := limitParameters{
+			baseAssetCapInBaseUnits:  baseCap,
+			baseAssetCapInQuoteUnits: quoteCap,
+			mode:                     mode,
+		}
+
+		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, utils.NativeAsset, utils.NativeAsset, lp)
+		if !assert.Nil(t, e) {
+			return
+		}
+		assert.Equal(t, wantOp, actual)
+
+		wantTBBAccumulator := makeRawVolumeFilterConfig(wantBase, wantQuote, action, mode, nil, nil)
+		assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
+	})
+}
+
 func TestVolumeFilterFn(t *testing.T) {
 	testCases := []struct {
 		name           string
@@ -327,5 +536,14 @@ func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer 
 		Selling: txnbuild.NativeAsset{},
 		Price:   price,
 		Amount:  amount,
+	}
+}
+
+func makeSellOp(price float64, amount float64) *txnbuild.ManageSellOffer {
+	return &txnbuild.ManageSellOffer{
+		Buying:  txnbuild.NativeAsset{},
+		Selling: txnbuild.NativeAsset{},
+		Price:   fmt.Sprintf("%.7f", price),
+		Amount:  fmt.Sprintf("%.7f", amount),
 	}
 }
