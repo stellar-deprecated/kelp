@@ -176,7 +176,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 	// 12 cases here; 4 combinations of tbb/otb values from bullet points above x 3 combinations of cap relationship to projected (<, =, >)
 	testCases := []volumeFilterFnTestCase{
 		{
-			name:         "1. otb = 0; cap > projected",
+			name:         "1. otb = 0; projected < cap",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      5,
@@ -189,7 +189,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 9.98,
 		},
 		{
-			name:         "2. otb = 0; cap = projected",
+			name:         "2. otb = 0; projected = cap",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      5,
@@ -202,7 +202,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 10,
 		},
 		{
-			name:         "3. otb = 0; cap < projected",
+			name:         "3. otb = 0; projected > cap",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      5,
@@ -215,7 +215,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 0,
 		},
 		{
-			name:         "4. tbb = 0; cap > projected",
+			name:         "4. tbb = 0; projected < cap",
 			cap:          10.0,
 			otb:          5,
 			tbbBase:      0,
@@ -228,7 +228,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 9.98,
 		},
 		{
-			name:         "5. tbb = 0; cap = projected",
+			name:         "5. tbb = 0; projected = cap",
 			cap:          10.0,
 			otb:          5,
 			tbbBase:      0,
@@ -241,7 +241,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 10,
 		},
 		{
-			name:         "6. tbb = 0; cap < projected",
+			name:         "6. tbb = 0; projected > cap",
 			cap:          10.0,
 			otb:          5,
 			tbbBase:      0,
@@ -254,7 +254,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 0,
 		},
 		{
-			name:         "7. otb = 0 && tbb = 0; cap > projected",
+			name:         "7. otb = 0 && tbb = 0; projected < cap",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      0,
@@ -267,7 +267,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 10,
 		},
 		{
-			name:         "8. otb = 0 && tbb = 0; cap = projected",
+			name:         "8. otb = 0 && tbb = 0; projected = cap",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      0,
@@ -280,7 +280,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 20,
 		},
 		{
-			name:         "9. otb = 0 && tbb = 0; cap < projected",
+			name:         "9. otb = 0 && tbb = 0; projected > cap",
 			cap:          10.0,
 			otb:          0,
 			tbbBase:      0,
@@ -293,7 +293,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 0,
 		},
 		{
-			name:         "10. otb > 0 && tbb > 0; cap > projected",
+			name:         "10. otb > 0 && tbb > 0; projected < cap",
 			cap:          10.0,
 			otb:          1,
 			tbbBase:      1,
@@ -306,7 +306,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 10,
 		},
 		{
-			name:         "11. otb > 0 && tbb > 0; cap = projected",
+			name:         "11. otb > 0 && tbb > 0; projected = cap",
 			cap:          10.0,
 			otb:          2,
 			tbbBase:      2,
@@ -319,7 +319,7 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			wantTbbQuote: 12,
 		},
 		{
-			name:         "12. otb > 0 && tbb > 0; cap < projected",
+			name:         "12. otb > 0 && tbb > 0; projected > cap",
 			cap:          10.0,
 			otb:          2,
 			tbbBase:      2,
@@ -335,11 +335,11 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 	for _, k := range testCases {
 		// convert to common format accepted by runTestVolumeFilterFn
 		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeSellOp(k.inputPrice, k.inputAmount)
+		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
 
 		var wantOp *txnbuild.ManageSellOffer
 		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeSellOp(*k.wantPrice, *k.wantAmount)
+			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
 		}
 
 		runTestVolumeFilterFn(
@@ -571,12 +571,12 @@ func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer 
 	}
 }
 
-func makeSellOp(price float64, amount float64) *txnbuild.ManageSellOffer {
+func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
 	return &txnbuild.ManageSellOffer{
 		Buying:  txnbuild.NativeAsset{},
 		Selling: txnbuild.NativeAsset{},
-		Price:   fmt.Sprintf("%.7f", price),
 		Amount:  fmt.Sprintf("%.7f", amount),
+		Price:   fmt.Sprintf("%.7f", price),
 	}
 }
 
