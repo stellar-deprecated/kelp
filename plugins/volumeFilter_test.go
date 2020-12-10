@@ -347,8 +347,9 @@ func TestVolumeFilterFn_BaseCap_Exact(t *testing.T) {
 			wantTbbBase:  0,
 			wantTbbQuote: 0,
 		},
+		// it is not possible for otb = 0 && tbb = 0 and newAmount < 0, so skipping that case
 		{
-			name:         "15. otb > 0 && tbb > 0; projected < cap, newAmount = 0",
+			name:         "15. otb > 0 && tbb > 0; projected > cap",
 			cap:          10.0,
 			otb:          1,
 			tbb:          1,
