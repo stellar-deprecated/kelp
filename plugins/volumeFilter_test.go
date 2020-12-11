@@ -304,11 +304,11 @@ func TestVolumeFilterFn_QuoteCap_Exact(t *testing.T) {
 			otb:          0,
 			tbb:          0,
 			inputPrice:   2.0,
-			inputAmount:  5.0,
+			inputAmount:  4.99,
 			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5.0),
-			wantTbbBase:  5,
-			wantTbbQuote: 10,
+			wantAmount:   pointy.Float64(4.99),
+			wantTbbBase:  4.99,
+			wantTbbQuote: 9.98,
 		},
 		{
 			name:         "12. otb = 0 && tbb = 0; projected = cap",
@@ -349,7 +349,7 @@ func TestVolumeFilterFn_QuoteCap_Exact(t *testing.T) {
 		},
 		// it is not possible for otb = 0 && tbb = 0 and newAmount < 0, so skipping that case
 		{
-			name:         "15. otb > 0 && tbb > 0; projected > cap",
+			name:         "15. otb > 0 && tbb > 0; projected < cap",
 			cap:          10.0,
 			otb:          1,
 			tbb:          1,
@@ -427,7 +427,7 @@ func TestVolumeFilterFn_QuoteCap_Exact(t *testing.T) {
 			nil,                   // base cap nil because this test is for the QuoteCap
 			pointy.Float64(k.cap), // quote
 			nil,                   // baseOTB nil because this test is for the QuoteCap
-			pointy.Float64(k.otb), // quoteOT
+			pointy.Float64(k.otb), // quoteOTB
 			pointy.Float64(0),     // baseTBB (non-nil since it accumulates)
 			pointy.Float64(k.tbb), // quoteTBB
 			inputOp,
