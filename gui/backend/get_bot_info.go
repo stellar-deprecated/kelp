@@ -232,18 +232,18 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		SpreadPercent:  model.NumberFromFloat(spreadPct, 8).AsFloat(),
 	}
 
-	marshalledJson, e := json.MarshalIndent(bi, "", "  ")
+	marshalledJSON, e := json.MarshalIndent(bi, "", "  ")
 	if e != nil {
 		log.Printf("cannot marshall to json response (error=%s), botInfo: %+v\n", e, bi)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("{}"))
 		return
 	}
-	marshalledJsonString := string(marshalledJson)
-	log.Printf("getBotInfo returned direct response for botName '%s': %s\n", botName, marshalledJsonString)
+	marshalledJSONString := string(marshalledJSON)
+	log.Printf("getBotInfo returned direct response for botName '%s': %s\n", botName, marshalledJSONString)
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(marshalledJson)
+	w.Write(marshalledJSON)
 }
 
 func getNativeBalance(account hProtocol.Account) (float64, error) {
