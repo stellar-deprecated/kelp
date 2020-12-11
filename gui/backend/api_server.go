@@ -129,7 +129,7 @@ func makeKelpErrorResponseWrapper(
 
 // String is the Stringer method
 func (kerw *KelpErrorResponseWrapper) String() string {
-	return fmt.Sprintf("KelpErrorResponseWrapper[kelp_error=%s]", kerw.KelpError)
+	return fmt.Sprintf("KelpErrorResponseWrapper[kelp_error=%s]", kerw.KelpError.String())
 }
 
 func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
@@ -147,7 +147,7 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 
 func (s *APIServer) writeKelpError(w http.ResponseWriter, kerw KelpErrorResponseWrapper) {
 	w.WriteHeader(http.StatusInternalServerError)
-	log.Printf("writing error: %s\n", kerw)
+	log.Printf("writing error: %s\n", kerw.String())
 
 	marshalledJSON, e := json.MarshalIndent(kerw, "", "    ")
 	if e != nil {
