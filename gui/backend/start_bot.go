@@ -16,7 +16,7 @@ import (
 func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 	botNameBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when reading request input: %s\n", e))
+		s.writeErrorJson(w, fmt.Sprintf("error when reading request input: %s\n", e))
 		return
 	}
 	botName := string(botNameBytes)
@@ -46,6 +46,7 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
