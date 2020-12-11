@@ -249,12 +249,12 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 func getNativeBalance(account hProtocol.Account) (float64, error) {
 	balanceString, e := account.GetNativeBalance()
 	if e != nil {
-		return 0.0, fmt.Errorf("cannot get native balance: %s\n", e)
+		return 0.0, fmt.Errorf("cannot get native balance: %s", e)
 	}
 
 	balance, e := strconv.ParseFloat(balanceString, 64)
 	if e != nil {
-		return 0.0, fmt.Errorf("cannot parse native balance: %s (string value = %s)\n", e, balanceString)
+		return 0.0, fmt.Errorf("cannot parse native balance: %s (string value = %s)", e, balanceString)
 	}
 
 	return balance, nil
@@ -264,7 +264,7 @@ func getCreditBalance(account hProtocol.Account, asset hProtocol.Asset) (float64
 	balanceString := account.GetCreditBalance(asset.Code, asset.Issuer)
 	balance, e := strconv.ParseFloat(balanceString, 64)
 	if e != nil {
-		return 0.0, fmt.Errorf("cannot parse credit asset balance (%s:%s): %s (string value = %s)\n", asset.Code, asset.Issuer, e, balanceString)
+		return 0.0, fmt.Errorf("cannot parse credit asset balance (%s:%s): %s (string value = %s)", asset.Code, asset.Issuer, e, balanceString)
 	}
 
 	return balance, nil
