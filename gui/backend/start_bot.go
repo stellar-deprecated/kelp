@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/support/kelpos"
@@ -18,17 +19,29 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, fmt.Sprintf("error when reading request input: %s\n", e))
 		return
 	}
-
 	botName := string(botNameBytes)
+
 	e = s.doStartBot(botName, "buysell", nil, nil)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error starting bot: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("error starting bot: %s\n", e),
+		))
 		return
 	}
 
 	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopped)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error advancing bot state: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("error advancing bot state: %s\n", e),
+		))
 		return
 	}
 
@@ -98,13 +111,12 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 		return fmt.Errorf("could not start bot %s: %s", botName, e)
 	}
 
+	if p.Cmd == nil {
+		return fmt.Errorf("kelpCommand (p.Cmd) was nil for bot '%s' with strategy '%s'", botName, strategy)
+	}
+
 	go func(kelpCommand *exec.Cmd, name string) {
 		defer s.kos.SafeUnregister(name)
-
-		if kelpCommand == nil {
-			log.Printf("kelpCommand was nil for bot '%s' with strategy '%s'\n", name, strategy)
-			return
-		}
 
 		e := kelpCommand.Wait()
 		if e != nil {
