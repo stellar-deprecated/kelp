@@ -44,6 +44,7 @@ class App extends Component {
   componentDidMount() {
     this.setVersion()
 
+    this.fetchKelpErrors();
     if (!this._fetchKelpErrorsTimer) {
       this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 5000);
     }
