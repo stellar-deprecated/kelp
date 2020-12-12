@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/stellar/go/clients/horizonclient"
@@ -30,6 +31,7 @@ type APIServer struct {
 	quitFn            func()
 	metricsTracker    *plugins.MetricsTracker
 	kelpErrorMap      map[string]KelpError
+	kelpErrorMapLock  *sync.Mutex
 
 	cachedOptionsMetadata metadata
 }
@@ -72,6 +74,7 @@ func MakeAPIServer(
 		quitFn:                quitFn,
 		metricsTracker:        metricsTracker,
 		kelpErrorMap:          kelpErrorMap,
+		kelpErrorMapLock:      &sync.Mutex{},
 	}, nil
 }
 
@@ -151,6 +154,11 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 
 func (s *APIServer) addKelpErrorToMap(ke KelpError) {
 	key := ke.String()
+
+	// need to use a lock because we could encounter a "concurrent map writes" error against the map which is being updated by multiple threads
+	s.kelpErrorMapLock.Lock()
+	defer s.kelpErrorMapLock.Unlock()
+
 	s.kelpErrorMap[key] = ke
 }
 
