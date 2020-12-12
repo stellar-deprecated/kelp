@@ -77,9 +77,20 @@ class App extends Component {
     });
   }
 
+  componentDidMount() {
+    if (!this._fetchKelpErrorsTimer) {
+      this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 5000);
+    }
+  }
+
   componentWillUnmount() {
     if (this._asyncRequests["version"]) {
       delete this._asyncRequests["version"];
+    }
+
+    if (this._fetchKelpErrorsTimer) {
+      clearTimeout(this._fetchKelpErrorsTimer);
+      this._fetchKelpErrorsTimer = null; 
     }
   }
 
