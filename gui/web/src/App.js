@@ -8,6 +8,7 @@ import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
+import fetchKelpErrors from './kelp-ops-api/fetchKelpErrors';
 import Welcome from './components/molecules/Welcome/Welcome';
 
 let baseUrl = function () {
@@ -31,7 +32,9 @@ class App extends Component {
     this.setVersion = this.setVersion.bind(this);
     this.quit = this.quit.bind(this);
     this.addError = this.addError.bind(this);
+    this.addErrorToObject = this.addErrorToObject.bind(this);
     this.removeError = this.removeError.bind(this);
+    this.fetchKelpErrors = this.fetchKelpErrors.bind(this);
     this.findErrors = this.findErrors.bind(this);
     this.setActiveBotError = this.setActiveBotError.bind(this);
     this.hideActiveError = this.hideActiveError.bind(this);
@@ -81,11 +84,32 @@ class App extends Component {
   }
 
   addError(backendError) {
+    const kelp_errors = this.addErrorToObject(backendError, this.state.kelp_errors);
+
+    // trigger state change
+    if (this.state.active_error === null) {
+      this.setState({ "kelp_errors": kelp_errors });
+    } else {
+      let newState = {
+        "kelp_errors": kelp_errors,
+        "active_error": this.state.active_error,
+      };
+      // TODO add support to handle active errors that are not bot type errors
+      if (
+        backendError.object_type === Constants.ErrorType.bot &&
+        backendError.object_name === this.state.active_error.botName &&
+        backendError.level === this.state.active_error.level
+      ) {
+        // update activeErrors when it is affected (either errors or occurrences)
+        newState.active_error.errorList = Object.values(levelErrors);
+      }
+      this.setState(newState);
+    }
+  }
+
+  addErrorToObject(backendError, kelp_errors) {
     // TODO convert to hashID
     const ID = backendError.message
-
-    // fetch object type from errors
-    let kelp_errors = this.state.kelp_errors;
 
     if (!kelp_errors.hasOwnProperty(backendError.object_type)) {
       kelp_errors[backendError.object_type] = {};
@@ -113,25 +137,32 @@ class App extends Component {
     // create new entry in list
     idError.occurrences.push(backendError.date);
 
-    // trigger state change
-    if (this.state.active_error === null) {
-      this.setState({ "kelp_errors": kelp_errors });
-    } else {
-      let newState = {
-        "kelp_errors": kelp_errors,
-        "active_error": this.state.active_error,
-      };
-      // TODO add support to handle active errors that are not bot type errors
-      if (
-        backendError.object_type === Constants.ErrorType.bot &&
-        backendError.object_name === this.state.active_error.botName &&
-        backendError.level === this.state.active_error.level
-      ) {
-        // update activeErrors when it is affected (either errors or occurrences)
-        newState.active_error.errorList = Object.values(levelErrors);
+    return kelp_errors;
+  }
+
+  fetchKelpErrors() {
+    var _this = this;
+    this._asyncRequests["fetchKelpErrors"] = fetchKelpErrors(baseUrl).then(resp => {
+      if (!_this._asyncRequests["fetchKelpErrors"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
       }
-      this.setState(newState);
-    }
+      delete _this._asyncRequests["fetchKelpErrors"];
+
+      if (resp.status !== 200) {
+        console.log(resp);
+        return
+      }
+
+      // parse each error into the kelp_errors object
+      let kelp_errors = {};
+      resp.kelp_error_list.forEach((ke, index) => {
+        // add to kelp_errors
+        kelp_errors = _this.addErrorToObject(ke, kelp_errors);
+      });
+      // update state with the new set of errors
+      this.setState({ "kelp_errors": kelp_errors });
+    });
   }
 
   findErrors(object_type, object_name, level) {

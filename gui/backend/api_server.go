@@ -29,6 +29,7 @@ type APIServer struct {
 	noHeaders         bool
 	quitFn            func()
 	metricsTracker    *plugins.MetricsTracker
+	kelpErrorMap      map[string]KelpError
 
 	cachedOptionsMetadata metadata
 }
@@ -54,6 +55,8 @@ func MakeAPIServer(
 		return nil, fmt.Errorf("error while loading options metadata when making APIServer: %s", e)
 	}
 
+	kelpErrorMap := map[string]KelpError{}
+
 	return &APIServer{
 		kelpBinPath:           kelpBinPath,
 		botConfigsPath:        botConfigsPath,
@@ -68,6 +71,7 @@ func MakeAPIServer(
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,
 		metricsTracker:        metricsTracker,
+		kelpErrorMap:          kelpErrorMap,
 	}, nil
 }
 
@@ -145,9 +149,15 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 	w.Write(marshalledJson)
 }
 
+func (s *APIServer) addKelpErrorToMap(ke KelpError) {
+	key := ke.String()
+	s.kelpErrorMap[key] = ke
+}
+
 func (s *APIServer) writeKelpError(w http.ResponseWriter, kerw KelpErrorResponseWrapper) {
 	w.WriteHeader(http.StatusInternalServerError)
 	log.Printf("writing error: %s\n", kerw.String())
+	s.addKelpErrorToMap(kerw.KelpError)
 
 	marshalledJSON, e := json.MarshalIndent(kerw, "", "    ")
 	if e != nil {
