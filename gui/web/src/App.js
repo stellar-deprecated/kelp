@@ -95,7 +95,9 @@ class App extends Component {
   }
 
   addError(backendError) {
-    const kelp_errors = this.addErrorToObject(backendError, this.state.kelp_errors);
+    const addResult = this.addErrorToObject(backendError, this.state.kelp_errors);
+    const kelp_errors = addResult.kelp_errors;
+    const levelErrors = addResult.levelErrors;
 
     // trigger state change
     if (this.state.active_error === null) {
@@ -148,7 +150,10 @@ class App extends Component {
     // create new entry in list
     idError.occurrences.push(backendError.date);
 
-    return kelp_errors;
+    return {
+      kelp_errors: kelp_errors,
+      levelErrors: levelErrors,
+    };
   }
 
   fetchKelpErrors() {
@@ -160,7 +165,7 @@ class App extends Component {
       }
       delete _this._asyncRequests["fetchKelpErrors"];
 
-      if (resp.status !== 200) {
+      if (!resp.kelp_error_list) {
         console.log(resp);
         return
       }
@@ -169,7 +174,9 @@ class App extends Component {
       let kelp_errors = {};
       resp.kelp_error_list.forEach((ke, index) => {
         // add to kelp_errors
-        kelp_errors = _this.addErrorToObject(ke, kelp_errors);
+        const addResult = _this.addErrorToObject(ke, kelp_errors);
+        kelp_errors = addResult.kelp_errors;
+        // we can ignore levelErrors here since we don't need it
       });
       // update state with the new set of errors
       this.setState({ "kelp_errors": kelp_errors });
