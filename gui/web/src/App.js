@@ -43,6 +43,10 @@ class App extends Component {
 
   componentDidMount() {
     this.setVersion()
+
+    if (!this._fetchKelpErrorsTimer) {
+      this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 5000);
+    }
   }
 
   setVersion() {
@@ -75,12 +79,6 @@ class App extends Component {
         window.close();
       }
     });
-  }
-
-  componentDidMount() {
-    if (!this._fetchKelpErrorsTimer) {
-      this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 5000);
-    }
   }
 
   componentWillUnmount() {
