@@ -32,7 +32,7 @@ class App extends Component {
     this.quit = this.quit.bind(this);
     this.addError = this.addError.bind(this);
     this.removeError = this.removeError.bind(this);
-    this.getErrors = this.getErrors.bind(this);
+    this.findErrors = this.findErrors.bind(this);
     this.setActiveBotError = this.setActiveBotError.bind(this);
     this.hideActiveError = this.hideActiveError.bind(this);
     this._asyncRequests = {};
@@ -134,7 +134,7 @@ class App extends Component {
     }
   }
 
-  getErrors(object_type, object_name, level) {
+  findErrors(object_type, object_name, level) {
     const kelp_errors = this.state.kelp_errors;
 
     if (!kelp_errors.hasOwnProperty(object_type)) {
@@ -226,7 +226,7 @@ class App extends Component {
     </div>);
 
     const removeBotError = this.removeError.bind(this, Constants.ErrorType.bot);
-    const getBotErrors = this.getErrors.bind(this, Constants.ErrorType.bot);
+    const findBotErrors = this.findErrors.bind(this, Constants.ErrorType.bot);
 
     return (
       <div>
@@ -234,7 +234,7 @@ class App extends Component {
         <Router>
           <Header version={this.state.version}/>
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} getErrors={getBotErrors}/>}
+            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
             />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}

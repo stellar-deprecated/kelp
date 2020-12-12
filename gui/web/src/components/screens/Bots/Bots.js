@@ -32,7 +32,7 @@ class Bots extends Component {
     addError: PropTypes.func.isRequired,  // (backendError)
     removeError: PropTypes.func.isRequired,  // (object_name, level, errorID)
     hideActiveError: PropTypes.func.isRequired, // ()
-    getErrors: PropTypes.func.isRequired, // (object_name, level)
+    findErrors: PropTypes.func.isRequired, // (object_name, level)
   };
 
   componentWillUnmount() {
@@ -113,9 +113,9 @@ class Bots extends Component {
       );
 
       let cards = this.state.bots.map((bot, index) => {
-        const errorLevelInfoForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.info);
-        const errorLevelWarningForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.warning);
-        const errorLevelErrorForBot = this.props.getErrors(bot.name, Constants.ErrorLevel.error);
+        const errorLevelInfoForBot = this.props.findErrors(bot.name, Constants.ErrorLevel.info);
+        const errorLevelWarningForBot = this.props.findErrors(bot.name, Constants.ErrorLevel.warning);
+        const errorLevelErrorForBot = this.props.findErrors(bot.name, Constants.ErrorLevel.error);
 
         return <BotCard
           key={index} 
