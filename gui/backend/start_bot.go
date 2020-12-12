@@ -122,10 +122,23 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 		e := kelpCommand.Wait()
 		if e != nil {
 			if strings.Contains(e.Error(), "signal: terminated") {
-				log.Printf("terminated start bot command for bot '%s' with strategy '%s'\n", name, strategy)
+				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+					errorTypeBot,
+					botName,
+					time.Now().UTC(),
+					errorLevelError,
+					fmt.Sprintf("terminated start bot command for bot '%s' with strategy '%s': %s", name, strategy, e),
+				).KelpError)
 				return
 			}
-			log.Printf("error when starting bot '%s' with strategy '%s': %s\n", name, strategy, e)
+
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("unknown error in start bot command for bot '%s' with strategy '%s': %s", name, strategy, e),
+			).KelpError)
 			return
 		}
 
