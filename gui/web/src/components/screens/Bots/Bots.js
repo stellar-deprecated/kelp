@@ -30,7 +30,7 @@ class Bots extends Component {
     activeError: PropTypes.object,  // can be null
     setActiveError: PropTypes.func.isRequired,  // (botName, level, errorList, index)
     addError: PropTypes.func.isRequired,  // (backendError)
-    removeError: PropTypes.func.isRequired,  // (object_name, level, errorID)
+    removeError: PropTypes.func.isRequired,  // (object_name, level, error)
     hideActiveError: PropTypes.func.isRequired, // ()
     findErrors: PropTypes.func.isRequired, // (object_name, level)
   };
@@ -165,9 +165,7 @@ class Bots extends Component {
         bullets={[indexedError.occurrences.length + " x occurrences"]}
         actionLabel={"Dismiss"}
         onAction={() => {
-          // TODO convert to hashID
-          const errorID = indexedError.message;
-          this.props.removeError(activeError.botName, activeError.level, errorID);
+          this.props.removeError(activeError.botName, activeError.level, error);
         }}
         onPrevious={onPrevious}
         onNext={onNext}

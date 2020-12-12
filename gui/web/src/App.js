@@ -9,6 +9,7 @@ import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
 import fetchKelpErrors from './kelp-ops-api/fetchKelpErrors';
+import removeKelpError from './kelp-ops-api/removeKelpError';
 import Welcome from './components/molecules/Welcome/Welcome';
 
 let baseUrl = function () {
@@ -34,6 +35,7 @@ class App extends Component {
     this.addError = this.addError.bind(this);
     this.addErrorToObject = this.addErrorToObject.bind(this);
     this.removeError = this.removeError.bind(this);
+    this.sendRemoveErrorNotice = this.sendRemoveErrorNotice.bind(this);
     this.fetchKelpErrors = this.fetchKelpErrors.bind(this);
     this.findErrors = this.findErrors.bind(this);
     this.setActiveBotError = this.setActiveBotError.bind(this);
@@ -182,6 +184,19 @@ class App extends Component {
     });
   }
 
+  sendRemoveErrorNotice(kelpError) {
+    const networkKey = "sendRemoveErrorNotice" + "_" + resp.message;
+    this._asyncRequests[networkKey] = removeKelpError(baseUrl, kelpError).then(resp => {
+      if (!_this._asyncRequests[networkKey]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+      delete _this._asyncRequests[networkKey];
+
+      console.log("removed error with message '" + kelpError.message + "': " + resp.removed);
+    });
+  }
+
   findErrors(object_type, object_name, level) {
     const kelp_errors = this.state.kelp_errors;
 
@@ -204,7 +219,8 @@ class App extends Component {
     return Object.values(levelErrors);
   }
 
-  removeError(object_type, object_name, level, errorID) {
+  removeError(object_type, object_name, level, error) {
+    const errorID = error.message;
     let kelp_errors = this.state.kelp_errors;
     let botErrors = kelp_errors[object_type];
     let namedError = botErrors[object_name];
@@ -239,6 +255,9 @@ class App extends Component {
       } 
       // else leave index as-is since we just deleted the index and the new item will now be at the old index (delete in place)
     }
+
+    // send message to backend to remove the error
+    this.sendRemoveErrorNotice(error);
     // trigger state change
     this.setState(newState);
   }
