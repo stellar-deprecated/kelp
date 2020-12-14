@@ -45,7 +45,16 @@ func (s *APIServer) doStopBot(botName string) error {
 	var numIterations uint8 = 1
 	e = s.doStartBot(botName, "delete", &numIterations, func() {
 		eInner := s.deleteFinishCallback(botName)
-		log.Printf("error running deleteFinishCallback: %s\n", eInner)
+		if eInner != nil {
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("error running deleteFinishCallback when stopping bot: %s", eInner),
+			).KelpError)
+			log.Printf("error running deleteFinishCallback when stopping bot: %s", eInner)
+		}
 	})
 	if e != nil {
 		return fmt.Errorf("error when deleting bot orders %s: %s", botName, e)
@@ -58,7 +67,7 @@ func (s *APIServer) deleteFinishCallback(botName string) error {
 
 	e := s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
 	if e != nil {
-		return fmt.Errorf("error advancing bot state: %s\n", e)
+		return fmt.Errorf("error advancing bot state: %s", e)
 	}
 	return nil
 }
