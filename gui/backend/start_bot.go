@@ -133,6 +133,11 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 				errorLevelError,
 				fmt.Sprintf("unknown error in start bot command for bot '%s' with strategy '%s': %s", name, strategy, e),
 			).KelpError)
+
+			// set state to stopped
+			s.abruptStoppedState(botName)
+
+			// we don't want to continue because the bot didn't finish correctly
 			return
 		}
 
@@ -143,4 +148,32 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	}(p.Cmd, botName)
 
 	return nil
+}
+
+func (s *APIServer) abruptStoppedState(botName string) {
+	// advance state from running to stopping
+	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
+	if e != nil {
+		s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelWarning,
+			fmt.Sprintf("could not advance state from running to stopping: %s", e),
+		).KelpError)
+		return
+	}
+
+	// advance state from stopping to stopped
+	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
+	if e != nil {
+		s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelWarning,
+			fmt.Sprintf("could not advance state from stopping to stopped: %s", e),
+		).KelpError)
+		return
+	}
 }

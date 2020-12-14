@@ -67,7 +67,7 @@ func (s *APIServer) deleteFinishCallback(botName string) error {
 
 	e := s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
 	if e != nil {
-		return fmt.Errorf("error advancing bot state: %s", e)
+		return fmt.Errorf("error advancing bot state when manually attempting to stop bot: %s", e)
 	}
 	return nil
 }
