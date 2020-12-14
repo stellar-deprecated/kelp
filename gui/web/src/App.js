@@ -48,7 +48,7 @@ class App extends Component {
 
     this.fetchKelpErrors();
     if (!this._fetchKelpErrorsTimer) {
-      this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 5000);
+      this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 500);
     }
   }
 
