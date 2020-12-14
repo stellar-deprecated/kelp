@@ -802,6 +802,278 @@ func TestVolumeFilterFn_QuoteCap_Ignore(t *testing.T) {
 	}
 }
 
+func TestVolumeFilterFn_QuoteCap_Exact(t *testing.T) {
+	// We want to test the following 4 valid combinations of OTB and TBB values:
+	// otb = 0
+	// tbb = 0
+	// otb = 0 && tbb = 0
+	// otb > 0 && tbb > 0
+	// We also want to test 3 combinations of cap relationship to projected (<, =, >)
+	// Finally, if projected > cap, we want to test 3 possible values of newAmount (+, 0, -)
+	// The above gives 4 * (2 + 1*3) = 20.
+	// One generated case is impossible in the code: otb = 0 && tbb = 0, newAmount < 0
+	// so we have 19 cases
+	testCases := []volumeFilterFnTestCase{
+		{
+			name:         "1. otb = 0; projected < cap",
+			cap:          10.0,
+			otb:          0,
+			tbb:          5,
+			inputPrice:   2.0,
+			inputAmount:  2.49,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.49),
+			wantTbbBase:  2.49,
+			wantTbbQuote: 9.98,
+		},
+		{
+			name:         "2. otb = 0; projected = cap",
+			cap:          10.0,
+			otb:          0,
+			tbb:          5,
+			inputPrice:   2.0,
+			inputAmount:  2.5,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.5),
+			wantTbbBase:  2.5,
+			wantTbbQuote: 10,
+		},
+		{
+			name:         "3. otb = 0; projected > cap, newAmount > 0",
+			cap:          10.0,
+			otb:          0,
+			tbb:          5,
+			inputPrice:   2.0,
+			inputAmount:  5.01,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.5),
+			wantTbbBase:  2.5,
+			wantTbbQuote: 10,
+		},
+		{
+			name:         "4. otb = 0; projected > cap, newAmount = 0",
+			cap:          10.0,
+			otb:          0,
+			tbb:          10,
+			inputPrice:   2.0,
+			inputAmount:  5.01,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 10,
+		},
+		{
+			name:         "5. otb = 0; projected > cap, newAmount < 0",
+			cap:          10.0,
+			otb:          0,
+			tbb:          11,
+			inputPrice:   2.0,
+			inputAmount:  5.01,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 11,
+		},
+		{
+			name:         "6. tbb = 0; projected < cap",
+			cap:          10.0,
+			otb:          5,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  2.49,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.49),
+			wantTbbBase:  2.49,
+			wantTbbQuote: 4.98,
+		},
+		{
+			name:         "7. tbb = 0; projected = cap",
+			cap:          10.0,
+			otb:          5,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  2.5,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.5),
+			wantTbbBase:  2.5,
+			wantTbbQuote: 5,
+		},
+		{
+			name:         "8. tbb = 0; projected > cap, newAmount > 0",
+			cap:          10.0,
+			otb:          5,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  3.0,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.5),
+			wantTbbBase:  2.5,
+			wantTbbQuote: 5,
+		},
+		{
+			name:         "9. tbb = 0; projected > cap, newAmount = 0",
+			cap:          10.0,
+			otb:          10,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  6.0,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 0,
+		},
+		{
+			name:         "10. tbb = 0; projected > cap, newAmount < 0",
+			cap:          10.0,
+			otb:          11,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  6.0,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 0,
+		},
+		{
+			name:         "11. otb = 0 && tbb = 0; projected < cap",
+			cap:          10.0,
+			otb:          0,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  4.99,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(4.99),
+			wantTbbBase:  4.99,
+			wantTbbQuote: 9.98,
+		},
+		{
+			name:         "12. otb = 0 && tbb = 0; projected = cap",
+			cap:          10.0,
+			otb:          0,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  5.0,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(5.0),
+			wantTbbBase:  5,
+			wantTbbQuote: 10,
+		},
+		{
+			// note that in this case, newAmount >= 0, since newAmount = cap - otb - tbb
+			name:         "13. otb = 0 && tbb = 0; projected > cap, newAmount > 0",
+			cap:          10.0,
+			otb:          0,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  7.5,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(5.0),
+			wantTbbBase:  5,
+			wantTbbQuote: 10,
+		},
+		{
+			name:         "14. otb = 0 && tbb = 0; projected > cap, newAmount = 0",
+			cap:          0.0,
+			otb:          0,
+			tbb:          0,
+			inputPrice:   2.0,
+			inputAmount:  15.0,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 0,
+		},
+		// it is not possible for otb = 0 && tbb = 0 and newAmount < 0, so skipping that case
+		{
+			name:         "15. otb > 0 && tbb > 0; projected < cap",
+			cap:          10.0,
+			otb:          1,
+			tbb:          1,
+			inputPrice:   2.0,
+			inputAmount:  2.5,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(2.5),
+			wantTbbBase:  2.5,
+			wantTbbQuote: 6,
+		},
+		{
+			name:         "16. otb > 0 && tbb > 0; projected = cap",
+			cap:          10.0,
+			otb:          2,
+			tbb:          2,
+			inputPrice:   2.0,
+			inputAmount:  3.0,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(3.0),
+			wantTbbBase:  3,
+			wantTbbQuote: 8,
+		},
+		{
+			name:         "17. otb > 0 && tbb > 0; projected > cap, newAmount > 0",
+			cap:          10.0,
+			otb:          2,
+			tbb:          2,
+			inputPrice:   2.0,
+			inputAmount:  3.5,
+			wantPrice:    pointy.Float64(2.0),
+			wantAmount:   pointy.Float64(3.0),
+			wantTbbBase:  3,
+			wantTbbQuote: 8,
+		},
+		{
+			name:         "18. otb > 0 && tbb > 0; projected > cap, newAmount = 0",
+			cap:          10.0,
+			otb:          5,
+			tbb:          5,
+			inputPrice:   2.0,
+			inputAmount:  7.0,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 5,
+		},
+		{
+			name:         "19. otb > 0 && tbb > 0; projected > cap, newAmount < 0",
+			cap:          10.0,
+			otb:          5,
+			tbb:          5.1,
+			inputPrice:   2.0,
+			inputAmount:  7.0,
+			wantPrice:    nil,
+			wantAmount:   nil,
+			wantTbbBase:  0,
+			wantTbbQuote: 5.1,
+		},
+	}
+	for _, k := range testCases {
+		// convert to common format accepted by runTestVolumeFilterFn
+		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
+		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
+
+		var wantOp *txnbuild.ManageSellOffer
+		if k.wantPrice != nil && k.wantAmount != nil {
+			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
+		}
+
+		runTestVolumeFilterFn(
+			t,
+			k.name,
+			volumeFilterModeExact,
+			queries.DailyVolumeActionSell,
+			nil,                   // base cap nil because this test is for the QuoteCap
+			pointy.Float64(k.cap), // quote
+			nil,                   // baseOTB nil because this test is for the QuoteCap
+			pointy.Float64(k.otb), // quoteOTB
+			pointy.Float64(0),     // baseTBB (non-nil since it accumulates)
+			pointy.Float64(k.tbb), // quoteTBB
+			inputOp,
+			wantOp,
+			pointy.Float64(k.wantTbbBase),
+			pointy.Float64(k.wantTbbQuote),
+		)
+	}
+}
+
 func runTestVolumeFilterFn(
 	t *testing.T,
 	name string,
@@ -850,183 +1122,6 @@ func runTestVolumeFilterFn(
 		wantTBBAccumulator := makeRawVolumeFilterConfig(wantBase, wantQuote, action, mode, nil, nil)
 		assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
 	})
-}
-
-func TestVolumeFilterFn(t *testing.T) {
-	testCases := []struct {
-		name           string
-		mode           volumeFilterMode
-		baseCapInBase  *float64
-		baseCapInQuote *float64
-		otbBase        *float64
-		otbQuote       *float64
-		tbbBase        *float64
-		tbbQuote       *float64
-		inputOp        *txnbuild.ManageSellOffer
-		wantOp         *txnbuild.ManageSellOffer
-		wantTbbBase    *float64
-		wantTbbQuote   *float64
-	}{
-		{
-			name:           "1. selling, base units sell cap, don't keep selling base, exact mode",
-			mode:           volumeFilterModeExact,
-			baseCapInBase:  pointy.Float64(0.0),
-			baseCapInQuote: nil,
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         nil,
-			wantTbbBase:    pointy.Float64(0.0),
-			wantTbbQuote:   pointy.Float64(0.0),
-		},
-		{
-			name:           "2. selling, base units sell cap, don't keep selling base, ignore mode",
-			mode:           volumeFilterModeIgnore,
-			baseCapInBase:  pointy.Float64(0.0),
-			baseCapInQuote: nil,
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         nil,
-			wantTbbBase:    pointy.Float64(0.0),
-			wantTbbQuote:   pointy.Float64(0.0),
-		},
-		{
-			name:           "3. selling, base units sell cap, keep selling base, exact mode",
-			mode:           volumeFilterModeExact,
-			baseCapInBase:  pointy.Float64(1.0),
-			baseCapInQuote: nil,
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         makeManageSellOffer("2.0", "1.0000000"),
-			wantTbbBase:    pointy.Float64(1.0),
-			wantTbbQuote:   pointy.Float64(2.0),
-		},
-		{
-			name:           "4. selling, base units sell cap, keep selling base, ignore mode",
-			mode:           volumeFilterModeIgnore,
-			baseCapInBase:  pointy.Float64(1.0),
-			baseCapInQuote: nil,
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         nil,
-			wantTbbBase:    pointy.Float64(0.0),
-			wantTbbQuote:   pointy.Float64(0.0),
-		},
-		{
-			name:           "7. selling, quote units sell cap, don't keep selling quote, exact mode",
-			mode:           volumeFilterModeExact,
-			baseCapInBase:  nil,
-			baseCapInQuote: pointy.Float64(0),
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         nil,
-			wantTbbBase:    pointy.Float64(0.0),
-			wantTbbQuote:   pointy.Float64(0.0),
-		},
-		{
-			name:           "8. selling, quote units sell cap, don't keep selling quote, ignore mode",
-			mode:           volumeFilterModeIgnore,
-			baseCapInBase:  nil,
-			baseCapInQuote: pointy.Float64(0),
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         nil,
-			wantTbbBase:    pointy.Float64(0.0),
-			wantTbbQuote:   pointy.Float64(0.0),
-		},
-		{
-			name:           "9. selling, quote units sell cap, keep selling quote, exact mode",
-			mode:           volumeFilterModeExact,
-			baseCapInBase:  nil,
-			baseCapInQuote: pointy.Float64(1.0),
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         makeManageSellOffer("2.0", "0.5000000"),
-			wantTbbBase:    pointy.Float64(0.5),
-			wantTbbQuote:   pointy.Float64(1.0),
-		},
-		{
-			name:           "10. selling, quote units sell cap, keep selling quote, ignore mode",
-			mode:           volumeFilterModeIgnore,
-			baseCapInBase:  nil,
-			baseCapInQuote: pointy.Float64(1.0),
-			otbBase:        pointy.Float64(0.0),
-			otbQuote:       pointy.Float64(0.0),
-			tbbBase:        pointy.Float64(0.0),
-			tbbQuote:       pointy.Float64(0.0),
-			inputOp:        makeManageSellOffer("2.0", "100.0"),
-			wantOp:         nil,
-			wantTbbBase:    pointy.Float64(0.0),
-			wantTbbQuote:   pointy.Float64(0.0),
-		},
-	}
-
-	// we fix the marketIDs and accountIDs, since volumeFilterFn output does not depend on them
-	marketIDs := []string{}
-	accountIDs := []string{}
-
-	for _, k := range testCases {
-		for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
-			t.Run(k.name, func(t *testing.T) {
-				// exactly one of the two cap values must be set
-				if k.baseCapInBase == nil && k.baseCapInQuote == nil {
-					assert.Fail(t, "either one of the two cap values must be set")
-					return
-				}
-
-				if k.baseCapInBase != nil && k.baseCapInQuote != nil {
-					assert.Fail(t, "both of the cap values cannot be set")
-					return
-				}
-
-				dailyOTB := makeRawVolumeFilterConfig(k.otbBase, k.otbQuote, action, k.mode, marketIDs, accountIDs)
-				dailyTBBAccumulator := makeRawVolumeFilterConfig(k.tbbBase, k.tbbQuote, action, k.mode, marketIDs, accountIDs)
-				lp := limitParameters{
-					baseAssetCapInBaseUnits:  k.baseCapInBase,
-					baseAssetCapInQuoteUnits: k.baseCapInQuote,
-					mode:                     k.mode,
-				}
-
-				actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, k.inputOp, utils.NativeAsset, utils.NativeAsset, lp)
-				if !assert.Nil(t, e) {
-					return
-				}
-				assert.Equal(t, k.wantOp, actual)
-
-				wantTBBAccumulator := makeRawVolumeFilterConfig(k.wantTbbBase, k.wantTbbQuote, action, k.mode, marketIDs, accountIDs)
-				assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
-			})
-		}
-	}
-}
-
-func makeManageSellOffer(price string, amount string) *txnbuild.ManageSellOffer {
-	return &txnbuild.ManageSellOffer{
-		Buying:  txnbuild.NativeAsset{},
-		Selling: txnbuild.NativeAsset{},
-		Price:   price,
-		Amount:  amount,
-	}
 }
 
 func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {

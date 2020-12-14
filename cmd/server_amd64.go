@@ -99,6 +99,11 @@ func init() {
 			}
 		}
 
+		e = backend.InitBotNameRegex()
+		if e != nil {
+			panic(errors.Wrap(e, "could not init BotNameRegex: "))
+		}
+
 		var logFilepath *kelpos.OSPath
 		if !isLocalDevMode {
 			l := logger.MakeBasicLogger()
@@ -115,11 +120,6 @@ func init() {
 			// don't use explicit unix filepath here since it uses os.Open directly and won't work on windows
 			logFilepath = uiLogsDirPath.Join(logFilename)
 			setLogFile(l, logFilepath.Native())
-
-			e = backend.InitBotNameRegex()
-			if e != nil {
-				panic(errors.Wrap(e, "could not init BotNameRegex: "))
-			}
 
 			if *options.verbose {
 				astilog.SetDefaultLogger()
