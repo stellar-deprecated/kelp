@@ -229,14 +229,18 @@ class BotCard extends Component {
 
       delete _this._asyncRequests["start"];
 
-      _this.setState({
-        timeStarted: new Date(),
-      }, () => {
-        _this.checkState();
-        _this.checkBotInfo();
-        _this.tick();
-        _this._tickTimer = setInterval(_this.tick, 1000);
-      });
+      if (resp.kelp_error) {
+        this.props.addError(resp.kelp_error);
+      } else {
+        _this.setState({
+          timeStarted: new Date(),
+        }, () => {
+          _this.checkState();
+          _this.checkBotInfo();
+          _this.tick();
+          _this._tickTimer = setInterval(_this.tick, 1000);
+        });
+      }
     });
   }
 

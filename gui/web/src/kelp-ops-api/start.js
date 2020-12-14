@@ -3,6 +3,6 @@ export default (baseUrl, botName) => {
         method: "POST",
         body: botName,
     }).then(resp => {
-        return resp.text();
+        return resp.json();
     });
 };

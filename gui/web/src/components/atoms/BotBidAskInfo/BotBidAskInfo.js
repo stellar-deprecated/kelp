@@ -11,7 +11,7 @@ class BotBidAskInfo extends Component {
 
     let spreadPct = this.props.spread_pct;
     if (spreadPct > 0) {
-      spreadPct = spreadPct.toFixed(4);
+      spreadPct = spreadPct.toFixed(2);
     }
 
     return (
