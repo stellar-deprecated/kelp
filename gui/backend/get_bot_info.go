@@ -213,7 +213,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 
 		spread = topAsk - topBid
 		midPrice := (topAsk + topBid) / 2
-		spreadPct = spread / midPrice
+		spreadPct = 100.0 * spread / midPrice
 	}
 
 	bi := botInfo{
