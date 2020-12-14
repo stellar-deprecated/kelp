@@ -229,7 +229,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		NumBids:        numBids,
 		NumAsks:        numAsks,
 		SpreadValue:    model.NumberFromFloat(spread, 8).AsFloat(),
-		SpreadPercent:  model.NumberFromFloat(spreadPct, 8).AsFloat(),
+		SpreadPercent:  model.NumberFromFloat(spreadPct*100.0, 8).AsFloat(),
 	}
 
 	marshalledJSON, e := json.MarshalIndent(bi, "", "  ")
