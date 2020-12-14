@@ -80,10 +80,21 @@ func MakeAPIServer(
 	}, nil
 }
 
+// InitBackend initializes anything required to get the backend ready to serve
+func (s *APIServer) InitBackend() error {
+	// initial load of bots into memory
+	_, e := s.doListBots()
+	if e != nil {
+		return fmt.Errorf("error listing/loading bots: %s", e)
+	}
+
+	return nil
+}
+
 func (s *APIServer) parseBotName(r *http.Request) (string, error) {
 	botNameBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		return "", fmt.Errorf("error when reading request input: %s\n", e)
+		return "", fmt.Errorf("error when reading request input: %s", e)
 	}
 	return string(botNameBytes), nil
 }

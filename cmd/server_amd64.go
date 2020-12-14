@@ -342,6 +342,11 @@ func init() {
 			panic(e)
 		}
 
+		e = s.InitBackend()
+		if e != nil {
+			panic(e)
+		}
+
 		guiWebPath := kos.GetBinDir().Join("../gui/web")
 		if isLocalDevMode {
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
