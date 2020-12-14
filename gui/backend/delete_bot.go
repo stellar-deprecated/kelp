@@ -20,14 +20,26 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	// only stop bot if current state is running
 	botState, e := s.doGetBotState(botName)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error in deleteBot unable to get botState: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelWarning,
+			fmt.Sprintf("unable to get botState: %s\n", e),
+		))
 		return
 	}
 	log.Printf("current botState: %s\n", botState)
 	if botState == kelpos.BotStateRunning {
 		e = s.doStopBot(botName)
 		if e != nil {
-			s.writeError(w, fmt.Sprintf("error stopping bot when trying to delete: %s\n", e))
+			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("could not stop bot when trying to delete: %s\n", e),
+			))
 			return
 		}
 	}
@@ -35,7 +47,13 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	for {
 		botState, e := s.doGetBotState(botName)
 		if e != nil {
-			s.writeError(w, fmt.Sprintf("error in deleteBot for loop, unable to get botState: %s\n", e))
+			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("unable to get botState: %s\n", e),
+			))
 			return
 		}
 		log.Printf("deleteBot for loop, current botState: %s\n", botState)
@@ -55,7 +73,13 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	botConfigPath := s.botConfigsPath.Join(botPrefix)
 	_, e = s.kos.Blocking("rm", fmt.Sprintf("rm %s*", botConfigPath.Unix()))
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error running rm command for bot configs: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("could not run rm command for bot configs: %s\n", e),
+		))
 		return
 	}
 	log.Printf("removed bot configs for prefix '%s'\n", botPrefix)

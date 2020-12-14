@@ -61,3 +61,5 @@ import:
   version: 945de578d11bbf43bd9729c2ea0837735a21d475
 - package: github.com/denisbrodbeck/machineid
   version: v1.0.1
+- package: github.com/google/uuid
+  version: v1.1.2

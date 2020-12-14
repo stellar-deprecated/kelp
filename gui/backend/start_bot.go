@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/support/kelpos"
@@ -15,24 +16,37 @@ import (
 func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 	botNameBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error when reading request input: %s\n", e))
+		s.writeErrorJson(w, fmt.Sprintf("error when reading request input: %s\n", e))
 		return
 	}
-
 	botName := string(botNameBytes)
+
 	e = s.doStartBot(botName, "buysell", nil, nil)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error starting bot: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("error starting bot: %s\n", e),
+		))
 		return
 	}
 
 	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopped)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error advancing bot state: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("error advancing bot state: %s\n", e),
+		))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
@@ -98,21 +112,32 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 		return fmt.Errorf("could not start bot %s: %s", botName, e)
 	}
 
+	if p.Cmd == nil {
+		return fmt.Errorf("kelpCommand (p.Cmd) was nil for bot '%s' with strategy '%s'", botName, strategy)
+	}
+
 	go func(kelpCommand *exec.Cmd, name string) {
 		defer s.kos.SafeUnregister(name)
 
-		if kelpCommand == nil {
-			log.Printf("kelpCommand was nil for bot '%s' with strategy '%s'\n", name, strategy)
-			return
-		}
-
 		e := kelpCommand.Wait()
 		if e != nil {
-			if strings.Contains(e.Error(), "signal: terminated") {
-				log.Printf("terminated start bot command for bot '%s' with strategy '%s'\n", name, strategy)
+			if strings.Contains(e.Error(), "signal: killed") {
+				log.Printf("bot '%s' with strategy '%s' was stopped (most likely from UI action)", name, strategy)
 				return
 			}
-			log.Printf("error when starting bot '%s' with strategy '%s': %s\n", name, strategy, e)
+
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelError,
+				fmt.Sprintf("unknown error in start bot command for bot '%s' with strategy '%s': %s", name, strategy, e),
+			).KelpError)
+
+			// set state to stopped
+			s.abruptStoppedState(botName)
+
+			// we don't want to continue because the bot didn't finish correctly
 			return
 		}
 
@@ -123,4 +148,32 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	}(p.Cmd, botName)
 
 	return nil
+}
+
+func (s *APIServer) abruptStoppedState(botName string) {
+	// advance state from running to stopping
+	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
+	if e != nil {
+		s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelWarning,
+			fmt.Sprintf("could not advance state from running to stopping: %s", e),
+		).KelpError)
+		return
+	}
+
+	// advance state from stopping to stopped
+	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
+	if e != nil {
+		s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelWarning,
+			fmt.Sprintf("could not advance state from stopping to stopped: %s", e),
+		).KelpError)
+		return
+	}
 }

@@ -8,7 +8,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/plugins"
@@ -29,6 +32,8 @@ type APIServer struct {
 	noHeaders         bool
 	quitFn            func()
 	metricsTracker    *plugins.MetricsTracker
+	kelpErrorMap      map[string]KelpError
+	kelpErrorMapLock  *sync.Mutex
 
 	cachedOptionsMetadata metadata
 }
@@ -54,6 +59,8 @@ func MakeAPIServer(
 		return nil, fmt.Errorf("error while loading options metadata when making APIServer: %s", e)
 	}
 
+	kelpErrorMap := map[string]KelpError{}
+
 	return &APIServer{
 		kelpBinPath:           kelpBinPath,
 		botConfigsPath:        botConfigsPath,
@@ -68,13 +75,26 @@ func MakeAPIServer(
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,
 		metricsTracker:        metricsTracker,
+		kelpErrorMap:          kelpErrorMap,
+		kelpErrorMapLock:      &sync.Mutex{},
 	}, nil
+}
+
+// InitBackend initializes anything required to get the backend ready to serve
+func (s *APIServer) InitBackend() error {
+	// initial load of bots into memory
+	_, e := s.doListBots()
+	if e != nil {
+		return fmt.Errorf("error listing/loading bots: %s", e)
+	}
+
+	return nil
 }
 
 func (s *APIServer) parseBotName(r *http.Request) (string, error) {
 	botNameBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		return "", fmt.Errorf("error when reading request input: %s\n", e)
+		return "", fmt.Errorf("error when reading request input: %s", e)
 	}
 	return string(botNameBytes), nil
 }
@@ -92,6 +112,7 @@ type ErrorResponse struct {
 
 // KelpError represents an error
 type KelpError struct {
+	UUID       string     `json:"uuid"`
 	ObjectType errorType  `json:"object_type"`
 	ObjectName string     `json:"object_name"`
 	Date       time.Time  `json:"date"`
@@ -101,7 +122,7 @@ type KelpError struct {
 
 // String is the Stringer method
 func (ke *KelpError) String() string {
-	return fmt.Sprintf("KelpError[objectType=%s, objectName=%s, date=%s, level=%s, message=%s]", ke.ObjectType, ke.ObjectName, ke.Date.Format("20060102T150405MST"), ke.Level, ke.Message)
+	return fmt.Sprintf("KelpError[UUID=%s, objectType=%s, objectName=%s, date=%s, level=%s, message=%s]", ke.UUID, ke.ObjectType, ke.ObjectName, ke.Date.Format("20060102T150405MST"), ke.Level, ke.Message)
 }
 
 // KelpErrorResponseWrapper is the outer object that contains the Kelp Error
@@ -116,8 +137,16 @@ func makeKelpErrorResponseWrapper(
 	level errorLevel,
 	message string,
 ) KelpErrorResponseWrapper {
+	uuid, e := uuid.NewRandom()
+	if e != nil {
+		// TODO NS - panic here instead of returning and handling smoothly because interface is a lot cleaner without returning error
+		// need to find a better solution that does not require a panic
+		panic(fmt.Errorf("unable to generate new uuid: %s", e))
+	}
+
 	return KelpErrorResponseWrapper{
 		KelpError: KelpError{
+			UUID:       uuid.String(),
 			ObjectType: objectType,
 			ObjectName: objectName,
 			Date:       date,
@@ -129,7 +158,7 @@ func makeKelpErrorResponseWrapper(
 
 // String is the Stringer method
 func (kerw *KelpErrorResponseWrapper) String() string {
-	return fmt.Sprintf("KelpErrorResponseWrapper[kelp_error=%s]", kerw.KelpError)
+	return fmt.Sprintf("KelpErrorResponseWrapper[kelp_error=%s]", kerw.KelpError.String())
 }
 
 func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
@@ -145,9 +174,20 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 	w.Write(marshalledJson)
 }
 
+func (s *APIServer) addKelpErrorToMap(ke KelpError) {
+	key := ke.UUID
+
+	// need to use a lock because we could encounter a "concurrent map writes" error against the map which is being updated by multiple threads
+	s.kelpErrorMapLock.Lock()
+	defer s.kelpErrorMapLock.Unlock()
+
+	s.kelpErrorMap[key] = ke
+}
+
 func (s *APIServer) writeKelpError(w http.ResponseWriter, kerw KelpErrorResponseWrapper) {
 	w.WriteHeader(http.StatusInternalServerError)
-	log.Printf("writing error: %s\n", kerw)
+	log.Printf("writing error: %s\n", kerw.String())
+	s.addKelpErrorToMap(kerw.KelpError)
 
 	marshalledJSON, e := json.MarshalIndent(kerw, "", "    ")
 	if e != nil {

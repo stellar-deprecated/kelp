@@ -104,7 +104,7 @@ func (kos *KelpOS) QueryBotState(botName string) (BotState, error) {
 
 	prefix := getBotNamePrefix(botName)
 	command := fmt.Sprintf("ps aux | grep trade | grep %s | grep -v grep", prefix)
-	outputBytes, e := kos.Blocking("query_bot_state", command)
+	outputBytes, e := kos.Blocking(fmt.Sprintf("query_bot_state: %s", botName), command)
 	if e != nil {
 		if strings.Contains(e.Error(), "exit status 1") {
 			return BotStateStopped, nil

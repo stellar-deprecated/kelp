@@ -232,29 +232,29 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 		SpreadPercent:  model.NumberFromFloat(spreadPct, 8).AsFloat(),
 	}
 
-	marshalledJson, e := json.MarshalIndent(bi, "", "  ")
+	marshalledJSON, e := json.MarshalIndent(bi, "", "  ")
 	if e != nil {
 		log.Printf("cannot marshall to json response (error=%s), botInfo: %+v\n", e, bi)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("{}"))
 		return
 	}
-	marshalledJsonString := string(marshalledJson)
-	log.Printf("getBotInfo returned direct response for botName '%s': %s\n", botName, marshalledJsonString)
+	marshalledJSONString := string(marshalledJSON)
+	log.Printf("getBotInfo returned direct response for botName '%s': %s\n", botName, marshalledJSONString)
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(marshalledJson)
+	w.Write(marshalledJSON)
 }
 
 func getNativeBalance(account hProtocol.Account) (float64, error) {
 	balanceString, e := account.GetNativeBalance()
 	if e != nil {
-		return 0.0, fmt.Errorf("cannot get native balance: %s\n", e)
+		return 0.0, fmt.Errorf("cannot get native balance: %s", e)
 	}
 
 	balance, e := strconv.ParseFloat(balanceString, 64)
 	if e != nil {
-		return 0.0, fmt.Errorf("cannot parse native balance: %s (string value = %s)\n", e, balanceString)
+		return 0.0, fmt.Errorf("cannot parse native balance: %s (string value = %s)", e, balanceString)
 	}
 
 	return balance, nil
@@ -264,7 +264,7 @@ func getCreditBalance(account hProtocol.Account, asset hProtocol.Asset) (float64
 	balanceString := account.GetCreditBalance(asset.Code, asset.Issuer)
 	balance, e := strconv.ParseFloat(balanceString, 64)
 	if e != nil {
-		return 0.0, fmt.Errorf("cannot parse credit asset balance (%s:%s): %s (string value = %s)\n", asset.Code, asset.Issuer, e, balanceString)
+		return 0.0, fmt.Errorf("cannot parse credit asset balance (%s:%s): %s (string value = %s)", asset.Code, asset.Issuer, e, balanceString)
 	}
 
 	return balance, nil

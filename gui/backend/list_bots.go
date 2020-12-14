@@ -13,15 +13,32 @@ import (
 
 func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	log.Printf("listing bots\n")
+
+	bots, e := s.doListBots()
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error encountered while listing bots: %s", e))
+		return
+	}
+
+	// serialize and return
+	botsJSON, e := json.Marshal(bots)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("unable to serialize bots: %s\n", e))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(botsJSON)
+}
+
+func (s *APIServer) doListBots() ([]model2.Bot, error) {
+	bots := []model2.Bot{}
 	resultBytes, e := s.kos.Blocking("ls", fmt.Sprintf("ls %s | sort", s.botConfigsPath.Unix()))
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error when listing bots: %s\n", e))
-		return
+		return bots, fmt.Errorf("error when listing bots: %s", e)
 	}
 	configFiles := string(resultBytes)
 	files := strings.Split(configFiles, "\n")
 
-	bots := []model2.Bot{}
 	// run till one less than length of files because the last name will end in a newline
 	for i := 0; i < len(files)-1; i += 2 {
 		bot := model2.FromFilenames(files[i+1], files[i])
@@ -32,8 +49,7 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 	for _, bot := range bots {
 		botState, e := s.kos.QueryBotState(bot.Name)
 		if e != nil {
-			s.writeErrorJson(w, fmt.Sprintf("unable to query bot state for bot '%s': %s\n", bot.Name, e))
-			return
+			return bots, fmt.Errorf("unable to query bot state for bot '%s': %s", bot.Name, e)
 		}
 
 		log.Printf("found bot '%s' with state '%s'\n", bot.Name, botState)
@@ -43,12 +59,5 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// serialize and return
-	botsJson, e := json.Marshal(bots)
-	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("unable to serialize bots: %s\n", e))
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(botsJson)
+	return bots, nil
 }

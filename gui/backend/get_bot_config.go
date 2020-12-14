@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/gui/model2"
@@ -31,14 +32,26 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath, e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot read bot config at path '%s': %s\n", traderFilePath, e),
+		))
 		return
 	}
 	strategyFilePath := s.botConfigsPath.Join(filenamePair.Strategy)
 	var buysellConfig plugins.BuySellConfig
 	e = config.Read(strategyFilePath.Native(), &buysellConfig)
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot read strategy config at path '%s': %s\n", strategyFilePath, e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot read strategy config at path '%s': %s\n", strategyFilePath, e),
+		))
 		return
 	}
 
@@ -50,7 +63,13 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonBytes, e := json.MarshalIndent(response, "", "  ")
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("cannot marshal botConfigResponse: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelError,
+			fmt.Sprintf("cannot marshal botConfigResponse: %s\n", e),
+		))
 		return
 	}
 	log.Printf("getBotConfig response for botName '%s': %s\n", botName, string(jsonBytes))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/stellar/kelp/support/kelpos"
 )
@@ -17,7 +18,13 @@ func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
 
 	e = s.doStopBot(botName)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error stopping bot: %s\n", e))
+		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			errorTypeBot,
+			botName,
+			time.Now().UTC(),
+			errorLevelWarning,
+			fmt.Sprintf("unable to stop bot: %s\n", e),
+		))
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -26,30 +33,41 @@ func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) doStopBot(botName string) error {
 	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
 	if e != nil {
-		return fmt.Errorf("error advancing bot state: %s\n", e)
+		return fmt.Errorf("error advancing bot state: %s", e)
 	}
 
 	e = s.kos.Stop(botName)
 	if e != nil {
-		return fmt.Errorf("error when killing bot %s: %s\n", botName, e)
+		return fmt.Errorf("error when killing bot %s: %s", botName, e)
 	}
 	log.Printf("stopped bot '%s'\n", botName)
 
 	var numIterations uint8 = 1
 	e = s.doStartBot(botName, "delete", &numIterations, func() {
-		s.deleteFinishCallback(botName)
+		eInner := s.deleteFinishCallback(botName)
+		if eInner != nil {
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				botName,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("error running deleteFinishCallback when stopping bot: %s", eInner),
+			).KelpError)
+			log.Printf("error running deleteFinishCallback when stopping bot: %s", eInner)
+		}
 	})
 	if e != nil {
-		return fmt.Errorf("error when deleting bot orders %s: %s\n", botName, e)
+		return fmt.Errorf("error when deleting bot orders %s: %s", botName, e)
 	}
 	return nil
 }
 
-func (s *APIServer) deleteFinishCallback(botName string) {
+func (s *APIServer) deleteFinishCallback(botName string) error {
 	log.Printf("deleted offers for bot '%s'\n", botName)
 
 	e := s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
 	if e != nil {
-		log.Printf("error advancing bot state: %s\n", e)
+		return fmt.Errorf("error advancing bot state when manually attempting to stop bot: %s", e)
 	}
+	return nil
 }
