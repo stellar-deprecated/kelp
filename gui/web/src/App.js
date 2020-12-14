@@ -9,7 +9,7 @@ import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
 import quit from './kelp-ops-api/quit';
 import fetchKelpErrors from './kelp-ops-api/fetchKelpErrors';
-import removeKelpError from './kelp-ops-api/removeKelpError';
+import removeKelpErrors from './kelp-ops-api/removeKelpErrors';
 import Welcome from './components/molecules/Welcome/Welcome';
 
 let baseUrl = function () {
@@ -35,7 +35,7 @@ class App extends Component {
     this.addError = this.addError.bind(this);
     this.addErrorToObject = this.addErrorToObject.bind(this);
     this.removeError = this.removeError.bind(this);
-    this.sendRemoveErrorNotice = this.sendRemoveErrorNotice.bind(this);
+    this.removeErrorsBackend = this.removeErrorsBackend.bind(this);
     this.fetchKelpErrors = this.fetchKelpErrors.bind(this);
     this.findErrors = this.findErrors.bind(this);
     this.setActiveBotError = this.setActiveBotError.bind(this);
@@ -184,16 +184,18 @@ class App extends Component {
     });
   }
 
-  sendRemoveErrorNotice(kelpError) {
-    const networkKey = "sendRemoveErrorNotice" + "_" + resp.message;
-    this._asyncRequests[networkKey] = removeKelpError(baseUrl, kelpError).then(resp => {
+  removeErrorsBackend(kelpErrorUUIDs) {
+    // use first entry as key to async requests
+    const networkKey = "removeErrorsBackend_" + kelpErrorUUIDs[0] + "...";
+    var _this = this;
+    this._asyncRequests[networkKey] = removeKelpErrors(baseUrl, kelpErrorUUIDs).then(resp => {
       if (!_this._asyncRequests[networkKey]) {
         // if it has been deleted it means we don't want to process the result
         return
       }
       delete _this._asyncRequests[networkKey];
 
-      console.log("removed error with message '" + kelpError.message + "': " + resp.removed);
+      console.log("removed errors: " + resp.removedMap);
     });
   }
 
@@ -225,6 +227,13 @@ class App extends Component {
     let botErrors = kelp_errors[object_type];
     let namedError = botErrors[object_name];
     let levelErrors = namedError[level];
+
+    // save errorUUIDs to be deleted on the backend
+    let errorUUIDs = [];
+    levelErrors[errorID].forEach((err, index) => {
+      // add to errorUUIDs
+      errorUUIDs.append(err.UUID);
+    });
     
     // delete entry for error
     delete levelErrors[errorID];
@@ -257,7 +266,7 @@ class App extends Component {
     }
 
     // send message to backend to remove the error
-    this.sendRemoveErrorNotice(error);
+    this.removeErrorsBackend(errorUUIDs);
     // trigger state change
     this.setState(newState);
   }

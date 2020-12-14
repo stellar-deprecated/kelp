@@ -19,7 +19,7 @@ func SetRoutes(r *chi.Mux, s *APIServer) {
 		r.Get("/optionsMetadata", http.HandlerFunc(s.optionsMetadata))
 		r.Get("/fetchKelpErrors", http.HandlerFunc(s.fetchKelpErrors))
 
-		r.Post("/removeKelpError", http.HandlerFunc(s.removeKelpError))
+		r.Post("/removeKelpErrors", http.HandlerFunc(s.removeKelpErrors))
 		r.Post("/start", http.HandlerFunc(s.startBot))
 		r.Post("/stop", http.HandlerFunc(s.stopBot))
 		r.Post("/deleteBot", http.HandlerFunc(s.deleteBot))

@@ -9,15 +9,15 @@ import (
 
 // RemoveKelpErrorRequest is the outer object that contains the Kelp Error
 type RemoveKelpErrorRequest struct {
-	KelpError KelpError `json:"kelp_error"`
+	KelpErrorIDs []string `json:"kelp_error_ids"`
 }
 
 // RemoveKelpErrorResponse is the outer object that contains the Kelp Error
 type RemoveKelpErrorResponse struct {
-	Removed bool `json:"removed"`
+	RemovedMap map[string]bool `json:"removed_map"`
 }
 
-func (s *APIServer) removeKelpError(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) removeKelpErrors(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error when reading request body input: %s", e))
@@ -32,9 +32,9 @@ func (s *APIServer) removeKelpError(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// perform the actual action of removing the error
-	removed := s.removeErrorFromMap(kelpErrorRequest.KelpError)
+	removedMap := s.removeErrorsFromMap(kelpErrorRequest.KelpErrorIDs)
 
-	resp := RemoveKelpErrorResponse{Removed: removed}
+	resp := RemoveKelpErrorResponse{RemovedMap: removedMap}
 	bytes, e := json.Marshal(resp)
 	if e != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -46,15 +46,17 @@ func (s *APIServer) removeKelpError(w http.ResponseWriter, r *http.Request) {
 	w.Write(bytes)
 }
 
-func (s *APIServer) removeErrorFromMap(ke KelpError) bool {
-	key := ke.String()
-
+func (s *APIServer) removeErrorsFromMap(keIDs []string) (removedMap map[string]bool) {
 	s.kelpErrorMapLock.Lock()
 	defer s.kelpErrorMapLock.Unlock()
 
-	if _, exists := s.kelpErrorMap[key]; exists {
-		delete(s.kelpErrorMap, key)
-		return true
+	for _, uuid := range keIDs {
+		if _, exists := s.kelpErrorMap[uuid]; exists {
+			delete(s.kelpErrorMap, uuid)
+			removedMap[uuid] = true
+		} else {
+			removedMap[uuid] = false
+		}
 	}
-	return false
+	return removedMap
 }

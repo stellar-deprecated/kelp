@@ -165,7 +165,7 @@ class Bots extends Component {
         bullets={[indexedError.occurrences.length + " x occurrences"]}
         actionLabel={"Dismiss"}
         onAction={() => {
-          this.props.removeError(activeError.botName, activeError.level, error);
+          this.props.removeError(activeError.botName, activeError.level, indexedError);
         }}
         onPrevious={onPrevious}
         onNext={onNext}

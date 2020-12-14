@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
@@ -99,6 +101,7 @@ type ErrorResponse struct {
 
 // KelpError represents an error
 type KelpError struct {
+	UUID       string     `json:"uuid"`
 	ObjectType errorType  `json:"object_type"`
 	ObjectName string     `json:"object_name"`
 	Date       time.Time  `json:"date"`
@@ -108,7 +111,7 @@ type KelpError struct {
 
 // String is the Stringer method
 func (ke *KelpError) String() string {
-	return fmt.Sprintf("KelpError[objectType=%s, objectName=%s, date=%s, level=%s, message=%s]", ke.ObjectType, ke.ObjectName, ke.Date.Format("20060102T150405MST"), ke.Level, ke.Message)
+	return fmt.Sprintf("KelpError[UUID=%s, objectType=%s, objectName=%s, date=%s, level=%s, message=%s]", ke.UUID, ke.ObjectType, ke.ObjectName, ke.Date.Format("20060102T150405MST"), ke.Level, ke.Message)
 }
 
 // KelpErrorResponseWrapper is the outer object that contains the Kelp Error
@@ -123,8 +126,16 @@ func makeKelpErrorResponseWrapper(
 	level errorLevel,
 	message string,
 ) KelpErrorResponseWrapper {
+	uuid, e := uuid.NewRandom()
+	if e != nil {
+		// TODO NS - panic here instead of returning and handling smoothly because interface is a lot cleaner without returning error
+		// need to find a better solution that does not require a panic
+		panic(fmt.Errorf("unable to generate new uuid: %s", e))
+	}
+
 	return KelpErrorResponseWrapper{
 		KelpError: KelpError{
+			UUID:       uuid.String(),
 			ObjectType: objectType,
 			ObjectName: objectName,
 			Date:       date,
@@ -153,7 +164,7 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 }
 
 func (s *APIServer) addKelpErrorToMap(ke KelpError) {
-	key := ke.String()
+	key := ke.UUID
 
 	// need to use a lock because we could encounter a "concurrent map writes" error against the map which is being updated by multiple threads
 	s.kelpErrorMapLock.Lock()
