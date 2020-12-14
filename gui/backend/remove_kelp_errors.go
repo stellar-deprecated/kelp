@@ -47,6 +47,8 @@ func (s *APIServer) removeKelpErrors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) removeErrorsFromMap(keIDs []string) (removedMap map[string]bool) {
+	removedMap = map[string]bool{}
+
 	s.kelpErrorMapLock.Lock()
 	defer s.kelpErrorMapLock.Unlock()
 

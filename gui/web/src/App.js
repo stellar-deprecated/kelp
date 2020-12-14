@@ -149,7 +149,10 @@ class App extends Component {
     let idError = levelErrors[ID];
 
     // create new entry in list
-    idError.occurrences.push(backendError.date);
+    idError.occurrences.push({
+      uuid: backendError.uuid,
+      date: backendError.date
+    });
 
     return {
       kelp_errors: kelp_errors,
@@ -195,7 +198,8 @@ class App extends Component {
       }
       delete _this._asyncRequests[networkKey];
 
-      console.log("removed errors: " + resp.removedMap);
+      // do nothing here
+      // console.log("removed errors: " + JSON.stringify(resp.removed_map));
     });
   }
 
@@ -230,9 +234,9 @@ class App extends Component {
 
     // save errorUUIDs to be deleted on the backend
     let errorUUIDs = [];
-    levelErrors[errorID].forEach((err, index) => {
+    levelErrors[errorID].occurrences.forEach((o, index) => {
       // add to errorUUIDs
-      errorUUIDs.append(err.UUID);
+      errorUUIDs.push(o.uuid);
     });
     
     // delete entry for error
