@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
@@ -232,7 +233,13 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 	go func() {
 		tradingKP, e := keypair.Parse(req.TraderConfig.TradingSecretSeed)
 		if e != nil {
-			log.Printf("error parsing trading secret seed for bot '%s': %s\n", bot.Name, e)
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				bot.Name,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("error parsing trading secret seed for bot '%s': %s\n", bot.Name, e),
+			).KelpError)
 			return
 		}
 		client := s.apiPubNet
@@ -242,7 +249,13 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 
 		traderAccount, e := s.checkFundAccount(client, tradingKP.Address(), bot.Name)
 		if e != nil {
-			log.Printf("error checking and funding trader account during upsert config: %s\n", e)
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				bot.Name,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("error checking and funding trader account during upsert config: %s\n", e),
+			).KelpError)
 			return
 		}
 
@@ -253,7 +266,13 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		}
 		e = s.checkAddTrustline(*traderAccount, tradingKP, req.TraderConfig.TradingSecretSeed, bot.Name, isTestnet, assets)
 		if e != nil {
-			log.Printf("error checking and adding trustline to trader account during upsert config: %s\n", e)
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				bot.Name,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("error checking and adding trustline to trader account during upsert config: %s\n", e),
+			).KelpError)
 			return
 		}
 
@@ -261,12 +280,24 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		if req.TraderConfig.SourceSecretSeed != "" {
 			sourceKP, e := keypair.Parse(req.TraderConfig.SourceSecretSeed)
 			if e != nil {
-				log.Printf("error parsing source secret seed for bot '%s': %s\n", bot.Name, e)
+				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+					errorTypeBot,
+					bot.Name,
+					time.Now().UTC(),
+					errorLevelWarning,
+					fmt.Sprintf("error parsing source secret seed for bot '%s': %s\n", bot.Name, e),
+				).KelpError)
 				return
 			}
 			_, e = s.checkFundAccount(client, sourceKP.Address(), bot.Name)
 			if e != nil {
-				fmt.Printf("error checking and funding source account during upsert config: %s\n", e)
+				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+					errorTypeBot,
+					bot.Name,
+					time.Now().UTC(),
+					errorLevelWarning,
+					fmt.Sprintf("error checking and funding source account during upsert config: %s\n", e),
+				).KelpError)
 				return
 			}
 		}
@@ -274,7 +305,13 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		// advance bot state
 		e = s.kos.AdvanceBotState(bot.Name, kelpos.InitState())
 		if e != nil {
-			log.Printf("error advancing bot state after reinitializing account for bot '%s': %s\n", bot.Name, e)
+			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				errorTypeBot,
+				bot.Name,
+				time.Now().UTC(),
+				errorLevelWarning,
+				fmt.Sprintf("error advancing bot state after reinitializing account for bot '%s': %s\n", bot.Name, e),
+			).KelpError)
 			return
 		}
 	}()
