@@ -195,12 +195,12 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		newAmount := opAmountValue
 		keepSellingBase := true
 		if lp.baseAssetCapInBaseUnits != nil {
-			newAmount, keepSellingBase = computeNewAmount(opAmountValue, *lp.baseAssetCapInBaseUnits, *dailyOTB.BaseAssetCapInBaseUnits, *dailyTBBAccumulator.BaseAssetCapInBaseUnits, lp.mode, 1.0, opToReturn)
+			newAmount, keepSellingBase = computeNewAmountAndKeep(opAmountValue, *lp.baseAssetCapInBaseUnits, *dailyOTB.BaseAssetCapInBaseUnits, *dailyTBBAccumulator.BaseAssetCapInBaseUnits, lp.mode, 1.0, opToReturn)
 		}
 
 		keepSellingQuote := true
 		if lp.baseAssetCapInQuoteUnits != nil {
-			newAmount, keepSellingQuote = computeNewAmount(opAmountValue, *lp.baseAssetCapInQuoteUnits, *dailyOTB.BaseAssetCapInQuoteUnits, *dailyTBBAccumulator.BaseAssetCapInQuoteUnits, lp.mode, sellPrice, opToReturn)
+			newAmount, keepSellingQuote = computeNewAmountAndKeep(opAmountValue, *lp.baseAssetCapInQuoteUnits, *dailyOTB.BaseAssetCapInQuoteUnits, *dailyTBBAccumulator.BaseAssetCapInQuoteUnits, lp.mode, sellPrice, opToReturn)
 		}
 
 		if keepSellingBase && keepSellingQuote {
@@ -217,20 +217,20 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	return nil, nil
 }
 
-func computeNewAmount(currOpAmount float64, lpCap float64, otbCap float64, tbb float64, mode volumeFilterMode, price float64, op *txnbuild.ManageSellOffer) (float64, bool) {
+func computeNewAmountAndKeep(currOpAmount float64, lpCap float64, otbCap float64, tbb float64, mode volumeFilterMode, price float64, op *txnbuild.ManageSellOffer) (float64, bool) {
 	newAmount := currOpAmount
-	projectedSold := otbCap + tbb + currOpAmount*price
-	keepSelling := projectedSold <= lpCap
-	if mode == volumeFilterModeExact && !keepSelling {
+	projected := otbCap + tbb + currOpAmount*price
+	keep := projected <= lpCap
+	if mode == volumeFilterModeExact && !keep {
 		exactNewAmount := (lpCap - otbCap - tbb) / price
 		if exactNewAmount > 0 {
 			newAmount = exactNewAmount
 			op.Amount = fmt.Sprintf("%.7f", newAmount)
-			keepSelling = true
+			keep = true
 		}
 	}
 
-	return newAmount, keepSelling
+	return newAmount, keep
 }
 
 // String is the Stringer method
