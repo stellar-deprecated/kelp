@@ -185,56 +185,28 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
-	amountValueUnitsBeingSold, e := strconv.ParseFloat(op.Amount, 64)
+	opAmountValue, e := strconv.ParseFloat(op.Amount, 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
 
 	if isSell {
 		opToReturn := op
-		newAmountBeingSold := amountValueUnitsBeingSold
-		var keepSellingBase bool
-		var keepSellingQuote bool
+		newAmount := opAmountValue
+		keepSellingBase := true
 		if lp.baseAssetCapInBaseUnits != nil {
-			projectedSoldInBaseUnits := *dailyOTB.BaseAssetCapInBaseUnits + *dailyTBBAccumulator.BaseAssetCapInBaseUnits + amountValueUnitsBeingSold
-			keepSellingBase = projectedSoldInBaseUnits <= *lp.baseAssetCapInBaseUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepSellingBase {
-				newAmount := *lp.baseAssetCapInBaseUnits - *dailyOTB.BaseAssetCapInBaseUnits - *dailyTBBAccumulator.BaseAssetCapInBaseUnits
-				if newAmount > 0 {
-					newAmountBeingSold = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
-					keepSellingBase = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
-			}
-			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.BaseAssetCapInBaseUnits): keepSellingBase = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *lp.baseAssetCapInBaseUnits, keepSellingBase, newAmountString)
-		} else {
-			keepSellingBase = true
+			newAmount, keepSellingBase = computeNewAmount(opAmountValue, *lp.baseAssetCapInBaseUnits, *dailyOTB.BaseAssetCapInBaseUnits, *dailyTBBAccumulator.BaseAssetCapInBaseUnits, lp.mode, 1.0, opToReturn)
 		}
 
+		keepSellingQuote := true
 		if lp.baseAssetCapInQuoteUnits != nil {
-			projectedSoldInQuoteUnits := *dailyOTB.BaseAssetCapInQuoteUnits + *dailyTBBAccumulator.BaseAssetCapInQuoteUnits + (newAmountBeingSold * sellPrice)
-			keepSellingQuote = projectedSoldInQuoteUnits <= *lp.baseAssetCapInQuoteUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepSellingQuote {
-				newAmount := (*lp.baseAssetCapInQuoteUnits - *dailyOTB.BaseAssetCapInQuoteUnits - *dailyTBBAccumulator.BaseAssetCapInQuoteUnits) / sellPrice
-				if newAmount > 0 {
-					newAmountBeingSold = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
-					keepSellingQuote = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
-			}
-			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.BaseAssetCapInQuoteUnits): keepSellingQuote = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *lp.baseAssetCapInQuoteUnits, keepSellingQuote, newAmountString)
-		} else {
-			keepSellingQuote = true
+			newAmount, keepSellingQuote = computeNewAmount(opAmountValue, *lp.baseAssetCapInQuoteUnits, *dailyOTB.BaseAssetCapInQuoteUnits, *dailyTBBAccumulator.BaseAssetCapInQuoteUnits, lp.mode, sellPrice, opToReturn)
 		}
 
 		if keepSellingBase && keepSellingQuote {
 			// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
-			*dailyTBBAccumulator.BaseAssetCapInBaseUnits += newAmountBeingSold
-			*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += (newAmountBeingSold * sellPrice)
+			*dailyTBBAccumulator.BaseAssetCapInBaseUnits += newAmount
+			*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += newAmount * sellPrice
 			return opToReturn, nil
 		}
 	} else {
@@ -243,6 +215,22 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 
 	// we don't want to keep it so return the dropped command
 	return nil, nil
+}
+
+func computeNewAmount(currOpAmount float64, lpCap float64, otbCap float64, tbb float64, mode volumeFilterMode, price float64, op *txnbuild.ManageSellOffer) (float64, bool) {
+	newAmount := currOpAmount
+	projectedSold := otbCap + tbb + currOpAmount*price
+	keepSelling := projectedSold <= lpCap
+	if mode == volumeFilterModeExact && !keepSelling {
+		exactNewAmount := (lpCap - otbCap - tbb) / price
+		if exactNewAmount > 0 {
+			newAmount = exactNewAmount
+			op.Amount = fmt.Sprintf("%.7f", newAmount)
+			keepSelling = true
+		}
+	}
+
+	return newAmount, keepSelling
 }
 
 // String is the Stringer method
