@@ -185,6 +185,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		return op, nil
 	}
 
+	// TODO DS Check if the price is inverted in a buy, due to implementation of ManageSellOffer
 	offerPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
@@ -203,7 +204,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	}
 
 	// extracts from base or quote side, depending on filter
-	otb, tbb, cap, e := extractFilterInputs(dailyOTB, dailyTBBAccumulator, lp)
+	otb, tbb, cap, e := extractAllCaps(dailyOTB, dailyTBBAccumulator, lp)
 	if e != nil {
 		return nil, fmt.Errorf("could not extract filter inputs from filter: %s", e)
 	}
@@ -211,8 +212,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	// if projected is under the cap, update the tbb and return the original op
 	projected := otb + tbb + offerAmount*capPrice
 	if projected <= cap {
-		*dailyTBBAccumulator.BaseAssetCapInBaseUnits += offerAmount
-		*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += offerAmount * offerPrice
+		dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, offerAmount, offerPrice)
 		return op, nil
 	}
 
@@ -222,15 +222,14 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 
 	// if exact mode and with remaining capacity, update the op amount and return the op
 	// else, return nil
-	remainingCapacity := (cap - otb - tbb) / capPrice
-	if remainingCapacity <= 0 {
+	// TODO DS Determine whether this calculation works for a buy offer.
+	offerAmount = (cap - otb - tbb) / capPrice
+	if offerAmount <= 0 {
 		return nil, nil
 	}
 
-	offerAmount = remainingCapacity
 	op.Amount = fmt.Sprintf("%.7f", offerAmount)
-	*dailyTBBAccumulator.BaseAssetCapInBaseUnits += offerAmount
-	*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += offerAmount * offerPrice
+	dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, offerAmount, offerPrice)
 	return op, nil
 }
 
@@ -239,11 +238,12 @@ func offerSameTypeAsFilter(filter *VolumeFilterConfig, op *txnbuild.ManageSellOf
 	if e != nil {
 		return false, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
 	}
-	filterIsSelling := filter.action == queries.DailyVolumeActionSell
-	return opIsSelling == filterIsSelling, nil
+	isSame := opIsSelling == filter.action.IsSell()
+	return isSame, nil
 }
 
-func extractFilterInputs(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, lp limitParameters) (float64, float64, float64, error) {
+// extractAllCaps will extract caps from both filters and the limit parameters
+func extractAllCaps(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, lp limitParameters) (float64 /* otbCap */, float64 /* tbbCap */, float64 /* lpCap */, error) {
 	if lp.baseAssetCapInBaseUnits != nil {
 		return *dailyOTB.BaseAssetCapInBaseUnits, *dailyTBB.BaseAssetCapInBaseUnits, *lp.baseAssetCapInBaseUnits, nil
 	}
@@ -256,14 +256,10 @@ func extractFilterInputs(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterCon
 	return -1, -1, -1, fmt.Errorf("found two nil filters")
 }
 
-func updateOpBasedOnCap(op *txnbuild.ManageSellOffer, otb float64, tbb float64, cap float64, price float64) (*txnbuild.ManageSellOffer, float64) {
-	opToReturn := op
-	newAmount := (cap - otb - tbb) / price
-	if newAmount > 0 {
-		opToReturn.Amount = fmt.Sprintf("%.7f", newAmount)
-		return opToReturn, newAmount
-	}
-	return nil, 0
+func updateTBB(tbb *VolumeFilterConfig, amount float64, price float64) *VolumeFilterConfig {
+	*tbb.BaseAssetCapInBaseUnits += amount
+	*tbb.BaseAssetCapInQuoteUnits += amount * price
+	return tbb
 }
 
 // String is the Stringer method

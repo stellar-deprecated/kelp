@@ -29,6 +29,16 @@ func (a DailyVolumeAction) String() string {
 	return string(a)
 }
 
+// IsSell returns whether the action is sell
+func (a DailyVolumeAction) IsSell() bool {
+	return a == DailyVolumeActionSell
+}
+
+// IsBuy returns whether the action is buy
+func (a DailyVolumeAction) IsBuy() bool {
+	return a == DailyVolumeActionBuy
+}
+
 // ParseDailyVolumeAction converts a string to a DailyVolumeAction
 func ParseDailyVolumeAction(action string) (DailyVolumeAction, error) {
 	if action == DailyVolumeActionBuy.String() {
