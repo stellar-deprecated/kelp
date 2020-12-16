@@ -175,74 +175,95 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 }
 
 func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, lp limitParameters) (*txnbuild.ManageSellOffer, error) {
-	isSell, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
+	isFilterApplicable, e := offerSameTypeAsFilter(dailyOTB, op, baseAsset, quoteAsset)
 	if e != nil {
-		return nil, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
+		return nil, fmt.Errorf("could not compare offer and filter: %s", e)
 	}
 
-	sellPrice, e := strconv.ParseFloat(op.Price, 64)
+	if !isFilterApplicable {
+		// ignore filter so return op directly
+		return op, nil
+	}
+
+	offerPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
-	amountValueUnitsBeingSold, e := strconv.ParseFloat(op.Amount, 64)
+	// capPrice is used when computing amounts to sell or buy
+	// it's the offer price when capping on quote, and 1.0 when capping on base
+	capPrice := offerPrice
+	if lp.baseAssetCapInBaseUnits != nil {
+		capPrice = 1.0
+	}
+
+	offerAmount, e := strconv.ParseFloat(op.Amount, 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
 
-	if isSell {
-		opToReturn := op
-		newAmountBeingSold := amountValueUnitsBeingSold
-		var keepSellingBase bool
-		var keepSellingQuote bool
-		if lp.baseAssetCapInBaseUnits != nil {
-			projectedSoldInBaseUnits := *dailyOTB.BaseAssetCapInBaseUnits + *dailyTBBAccumulator.BaseAssetCapInBaseUnits + amountValueUnitsBeingSold
-			keepSellingBase = projectedSoldInBaseUnits <= *lp.baseAssetCapInBaseUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepSellingBase {
-				newAmount := *lp.baseAssetCapInBaseUnits - *dailyOTB.BaseAssetCapInBaseUnits - *dailyTBBAccumulator.BaseAssetCapInBaseUnits
-				if newAmount > 0 {
-					newAmountBeingSold = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
-					keepSellingBase = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
-			}
-			log.Printf("volumeFilter:  selling (base units), price=%.8f amount=%.8f, keep = (projectedSoldInBaseUnits) %.7f <= %.7f (config.BaseAssetCapInBaseUnits): keepSellingBase = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInBaseUnits, *lp.baseAssetCapInBaseUnits, keepSellingBase, newAmountString)
-		} else {
-			keepSellingBase = true
-		}
-
-		if lp.baseAssetCapInQuoteUnits != nil {
-			projectedSoldInQuoteUnits := *dailyOTB.BaseAssetCapInQuoteUnits + *dailyTBBAccumulator.BaseAssetCapInQuoteUnits + (newAmountBeingSold * sellPrice)
-			keepSellingQuote = projectedSoldInQuoteUnits <= *lp.baseAssetCapInQuoteUnits
-			newAmountString := ""
-			if lp.mode == volumeFilterModeExact && !keepSellingQuote {
-				newAmount := (*lp.baseAssetCapInQuoteUnits - *dailyOTB.BaseAssetCapInQuoteUnits - *dailyTBBAccumulator.BaseAssetCapInQuoteUnits) / sellPrice
-				if newAmount > 0 {
-					newAmountBeingSold = newAmount
-					opToReturn.Amount = fmt.Sprintf("%.7f", newAmountBeingSold)
-					keepSellingQuote = true
-					newAmountString = ", newAmountString = " + opToReturn.Amount
-				}
-			}
-			log.Printf("volumeFilter: selling (quote units), price=%.8f amount=%.8f, keep = (projectedSoldInQuoteUnits) %.7f <= %.7f (config.BaseAssetCapInQuoteUnits): keepSellingQuote = %v%s", sellPrice, amountValueUnitsBeingSold, projectedSoldInQuoteUnits, *lp.baseAssetCapInQuoteUnits, keepSellingQuote, newAmountString)
-		} else {
-			keepSellingQuote = true
-		}
-
-		if keepSellingBase && keepSellingQuote {
-			// update the dailyTBB to include the additional amounts so they can be used in the calculation of the next operation
-			*dailyTBBAccumulator.BaseAssetCapInBaseUnits += newAmountBeingSold
-			*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += (newAmountBeingSold * sellPrice)
-			return opToReturn, nil
-		}
-	} else {
-		// TODO buying side - we need to implement this to support buy side filters; extract common logic from the above sell side case
+	// extracts from base or quote side, depending on filter
+	otb, tbb, cap, e := extractFilterInputs(dailyOTB, dailyTBBAccumulator, lp)
+	if e != nil {
+		return nil, fmt.Errorf("could not extract filter inputs from filter: %s", e)
 	}
 
-	// we don't want to keep it so return the dropped command
-	return nil, nil
+	// if projected is under the cap, update the tbb and return the original op
+	projected := otb + tbb + offerAmount*capPrice
+	if projected <= cap {
+		*dailyTBBAccumulator.BaseAssetCapInBaseUnits += offerAmount
+		*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += offerAmount * offerPrice
+		return op, nil
+	}
+
+	if lp.mode != volumeFilterModeExact {
+		return nil, nil
+	}
+
+	// if exact mode and with remaining capacity, update the op amount and return the op
+	// else, return nil
+	remainingCapacity := (cap - otb - tbb) / capPrice
+	if remainingCapacity <= 0 {
+		return nil, nil
+	}
+
+	offerAmount = remainingCapacity
+	op.Amount = fmt.Sprintf("%.7f", offerAmount)
+	*dailyTBBAccumulator.BaseAssetCapInBaseUnits += offerAmount
+	*dailyTBBAccumulator.BaseAssetCapInQuoteUnits += offerAmount * offerPrice
+	return op, nil
+}
+
+func offerSameTypeAsFilter(filter *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) (bool, error) {
+	opIsSelling, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
+	if e != nil {
+		return false, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
+	}
+	filterIsSelling := filter.action == queries.DailyVolumeActionSell
+	return opIsSelling == filterIsSelling, nil
+}
+
+func extractFilterInputs(dailyOTB *VolumeFilterConfig, dailyTBB *VolumeFilterConfig, lp limitParameters) (float64, float64, float64, error) {
+	if lp.baseAssetCapInBaseUnits != nil {
+		return *dailyOTB.BaseAssetCapInBaseUnits, *dailyTBB.BaseAssetCapInBaseUnits, *lp.baseAssetCapInBaseUnits, nil
+	}
+
+	if lp.baseAssetCapInQuoteUnits != nil {
+		return *dailyOTB.BaseAssetCapInQuoteUnits, *dailyTBB.BaseAssetCapInQuoteUnits, *lp.baseAssetCapInQuoteUnits, nil
+	}
+
+	// should never reach this code - means that the configs were not validated properly
+	return -1, -1, -1, fmt.Errorf("found two nil filters")
+}
+
+func updateOpBasedOnCap(op *txnbuild.ManageSellOffer, otb float64, tbb float64, cap float64, price float64) (*txnbuild.ManageSellOffer, float64) {
+	opToReturn := op
+	newAmount := (cap - otb - tbb) / price
+	if newAmount > 0 {
+		opToReturn.Amount = fmt.Sprintf("%7f", newAmount)
+		return opToReturn, newAmount
+	}
+	return nil, 0
 }
 
 // String is the Stringer method
