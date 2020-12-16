@@ -260,7 +260,7 @@ func updateOpBasedOnCap(op *txnbuild.ManageSellOffer, otb float64, tbb float64, 
 	opToReturn := op
 	newAmount := (cap - otb - tbb) / price
 	if newAmount > 0 {
-		opToReturn.Amount = fmt.Sprintf("%7f", newAmount)
+		opToReturn.Amount = fmt.Sprintf("%.7f", newAmount)
 		return opToReturn, newAmount
 	}
 	return nil, 0
