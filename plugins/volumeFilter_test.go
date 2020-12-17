@@ -168,7 +168,7 @@ type volumeFilterFnTestCase struct {
 	wantTbbQuote float64
 }
 
-func TestVolumeFilterFn_Buy_BaseCap_Exact(t *testing.T) {
+func TestVolumeFilterFn_BaseCap_Exact(t *testing.T) {
 	// We want to test the following 4 valid combinations of OTB and TBB values:
 	// otb = 0
 	// tbb = 0
@@ -411,304 +411,34 @@ func TestVolumeFilterFn_Buy_BaseCap_Exact(t *testing.T) {
 			wantTbbQuote: 0,
 		},
 	}
+	actions := []queries.DailyVolumeAction{queries.DailyVolumeActionSell, queries.DailyVolumeActionBuy}
 	for _, k := range testCases {
-		// convert to common format accepted by runTestVolumeFilterFn
-		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeBuyOpAmtPrice(k.inputAmount, k.inputPrice)
+		for _, action := range actions {
+			// convert to common format accepted by runTestVolumeFilterFn
+			// since we use the same test cases for both actions,
+			inputOp := makeActionOpAmtPrice(action, k.inputAmount, k.inputPrice)
+			var wantOp *txnbuild.ManageSellOffer
+			if k.wantPrice != nil && k.wantAmount != nil {
+				wantOp = makeActionOpAmtPrice(action, *k.wantAmount, *k.wantPrice)
+			}
 
-		var wantOp *txnbuild.ManageSellOffer
-		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeBuyOpAmtPrice(*k.wantAmount, *k.wantPrice)
+			runTestVolumeFilterFn(
+				t,
+				k.name,
+				volumeFilterModeExact,
+				action,
+				pointy.Float64(k.cap), // base cap
+				nil,                   // quote cap nil because this test is for the BaseCap
+				pointy.Float64(k.otb), // baseOTB
+				nil,                   // quoteOTB nil because this test is for the BaseCap
+				pointy.Float64(k.tbb), // baseTBB
+				pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
+				inputOp,
+				wantOp,
+				pointy.Float64(k.wantTbbBase),
+				pointy.Float64(k.wantTbbQuote),
+			)
 		}
-
-		runTestVolumeFilterFn(
-			t,
-			k.name,
-			volumeFilterModeExact,
-			queries.DailyVolumeActionBuy,
-			pointy.Float64(k.cap), // base cap
-			nil,                   // quote cap nil because this test is for the BaseCap
-			pointy.Float64(k.otb), // baseOTB
-			nil,                   // quoteOTB nil because this test is for the BaseCap
-			pointy.Float64(k.tbb), // baseTBB
-			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
-			inputOp,
-			wantOp,
-			pointy.Float64(k.wantTbbBase),
-			pointy.Float64(k.wantTbbQuote),
-		)
-	}
-}
-
-func TestVolumeFilterFn_Sell_BaseCap_Exact(t *testing.T) {
-	// We want to test the following 4 valid combinations of OTB and TBB values:
-	// otb = 0
-	// tbb = 0
-	// otb = 0 && tbb = 0
-	// otb > 0 && tbb > 0
-	// We also want to test 3 combinations of cap relationship to projected (<, =, >)
-	// Finally, if projected > cap, we want to test 3 possible values of newAmount (+, 0, -)
-	// The above gives 4 * (2 + 1*3) = 20.
-	// One generated case is impossible in the code: otb = 0 && tbb = 0, newAmount < 0
-	// so we have 19 cases
-	testCases := []volumeFilterFnTestCase{
-		{
-			name:         "1. otb = 0; projected < cap",
-			cap:          10.0,
-			otb:          0,
-			tbb:          5,
-			inputPrice:   2.0,
-			inputAmount:  4.99,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(4.99),
-			wantTbbBase:  9.99,
-			wantTbbQuote: 9.98,
-		},
-		{
-			name:         "2. otb = 0; projected = cap",
-			cap:          10.0,
-			otb:          0,
-			tbb:          5,
-			inputPrice:   2.0,
-			inputAmount:  5.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5),
-			wantTbbBase:  10,
-			wantTbbQuote: 10,
-		},
-		{
-			name:         "3. otb = 0; projected > cap, newAmount > 0",
-			cap:          10.0,
-			otb:          0,
-			tbb:          5,
-			inputPrice:   2.0,
-			inputAmount:  5.01,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5.0),
-			wantTbbBase:  10,
-			wantTbbQuote: 10,
-		},
-		{
-			name:         "4. otb = 0; projected > cap, newAmount = 0",
-			cap:          10.0,
-			otb:          0,
-			tbb:          10,
-			inputPrice:   2.0,
-			inputAmount:  5.01,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  10,
-			wantTbbQuote: 0,
-		},
-		{
-			name:         "5. otb = 0; projected > cap, newAmount < 0",
-			cap:          10.0,
-			otb:          0,
-			tbb:          11,
-			inputPrice:   2.0,
-			inputAmount:  5.01,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  11,
-			wantTbbQuote: 0,
-		},
-		{
-			name:         "6. tbb = 0; projected < cap",
-			cap:          10.0,
-			otb:          5,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  4.99,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(4.99),
-			wantTbbBase:  4.99,
-			wantTbbQuote: 9.98,
-		},
-		{
-			name:         "7. tbb = 0; projected = cap",
-			cap:          10.0,
-			otb:          5,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  5.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5.0),
-			wantTbbBase:  5,
-			wantTbbQuote: 10,
-		},
-		{
-			name:         "8. tbb = 0; projected > cap, newAmount > 0",
-			cap:          10.0,
-			otb:          5,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  6.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5.0),
-			wantTbbBase:  5,
-			wantTbbQuote: 10,
-		},
-		{
-			name:         "9. tbb = 0; projected > cap, newAmount = 0",
-			cap:          10.0,
-			otb:          10,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  6.0,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  0,
-			wantTbbQuote: 0,
-		},
-		{
-			name:         "10. tbb = 0; projected > cap, newAmount < 0",
-			cap:          10.0,
-			otb:          11,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  6.0,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  0,
-			wantTbbQuote: 0,
-		},
-		{
-			name:         "11. otb = 0 && tbb = 0; projected < cap",
-			cap:          10.0,
-			otb:          0,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  5.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5.0),
-			wantTbbBase:  5,
-			wantTbbQuote: 10,
-		},
-		{
-			name:         "12. otb = 0 && tbb = 0; projected = cap",
-			cap:          10.0,
-			otb:          0,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  10.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(10.0),
-			wantTbbBase:  10,
-			wantTbbQuote: 20,
-		},
-		{
-			// note that in this case, newAmount >= 0, since newAmount = cap - otb - tbb
-			name:         "13. otb = 0 && tbb = 0; projected > cap, newAmount > 0",
-			cap:          10.0,
-			otb:          0,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  15.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(10.0),
-			wantTbbBase:  10,
-			wantTbbQuote: 20,
-		},
-		{
-			name:         "14. otb = 0 && tbb = 0; projected > cap, newAmount = 0",
-			cap:          0.0,
-			otb:          0,
-			tbb:          0,
-			inputPrice:   2.0,
-			inputAmount:  15.0,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  0,
-			wantTbbQuote: 0,
-		},
-		// it is not possible for otb = 0 && tbb = 0 and newAmount < 0, so skipping that case
-		{
-			name:         "15. otb > 0 && tbb > 0; projected < cap",
-			cap:          10.0,
-			otb:          1,
-			tbb:          1,
-			inputPrice:   2.0,
-			inputAmount:  5.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(5.0),
-			wantTbbBase:  6,
-			wantTbbQuote: 10,
-		},
-		{
-			name:         "16. otb > 0 && tbb > 0; projected = cap",
-			cap:          10.0,
-			otb:          2,
-			tbb:          2,
-			inputPrice:   2.0,
-			inputAmount:  6.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(6.0),
-			wantTbbBase:  8,
-			wantTbbQuote: 12,
-		},
-		{
-			name:         "17. otb > 0 && tbb > 0; projected > cap, newAmount > 0",
-			cap:          10.0,
-			otb:          2,
-			tbb:          2,
-			inputPrice:   2.0,
-			inputAmount:  7.0,
-			wantPrice:    pointy.Float64(2.0),
-			wantAmount:   pointy.Float64(6.0),
-			wantTbbBase:  8,
-			wantTbbQuote: 12,
-		},
-		{
-			name:         "18. otb > 0 && tbb > 0; projected > cap, newAmount = 0",
-			cap:          10.0,
-			otb:          5,
-			tbb:          5,
-			inputPrice:   2.0,
-			inputAmount:  7.0,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  5,
-			wantTbbQuote: 0,
-		},
-		{
-			name:         "19. otb > 0 && tbb > 0; projected > cap, newAmount < 0",
-			cap:          10.0,
-			otb:          5,
-			tbb:          5.1,
-			inputPrice:   2.0,
-			inputAmount:  7.0,
-			wantPrice:    nil,
-			wantAmount:   nil,
-			wantTbbBase:  5.1,
-			wantTbbQuote: 0,
-		},
-	}
-	for _, k := range testCases {
-		// convert to common format accepted by runTestVolumeFilterFn
-		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
-
-		var wantOp *txnbuild.ManageSellOffer
-		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
-		}
-
-		runTestVolumeFilterFn(
-			t,
-			k.name,
-			volumeFilterModeExact,
-			queries.DailyVolumeActionSell,
-			pointy.Float64(k.cap), // base cap
-			nil,                   // quote cap nil because this test is for the BaseCap
-			pointy.Float64(k.otb), // baseOTB
-			nil,                   // quoteOTB nil because this test is for the BaseCap
-			pointy.Float64(k.tbb), // baseTBB
-			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
-			inputOp,
-			wantOp,
-			pointy.Float64(k.wantTbbBase),
-			pointy.Float64(k.wantTbbQuote),
-		)
 	}
 }
 
@@ -1404,6 +1134,13 @@ func runTestVolumeFilterFn(
 		wantTBBAccumulator := makeRawVolumeFilterConfig(wantBase, wantQuote, action, mode, nil, nil)
 		assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
 	})
+}
+
+func makeActionOpAmtPrice(action queries.DailyVolumeAction, amount float64, price float64) *txnbuild.ManageSellOffer {
+	if action.IsSell() {
+		return makeSellOpAmtPrice(amount, price)
+	}
+	return makeBuyOpAmtPrice(amount, price)
 }
 
 func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
