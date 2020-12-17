@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var buyOpAsset txnbuild.CreditAsset = txnbuild.CreditAsset{Code: "COUPON", Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"}
-
 func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action queries.DailyVolumeAction) *volumeFilter {
 	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, accountIDs)
 	if e != nil {
@@ -415,7 +413,7 @@ func TestVolumeFilterFn_BaseCap_Exact(t *testing.T) {
 	for _, k := range testCases {
 		for _, action := range actions {
 			// convert to common format accepted by runTestVolumeFilterFn
-			// since we use the same test cases for both actions,
+			// since we use the same test cases for both actions, we construct the appropriate op for the action
 			inputOp := makeActionOpAmtPrice(action, k.inputAmount, k.inputPrice)
 			var wantOp *txnbuild.ManageSellOffer
 			if k.wantPrice != nil && k.wantAmount != nil {
@@ -1147,6 +1145,8 @@ func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer
 		Price:   fmt.Sprintf("%.7f", price),
 	}
 }
+
+var buyOpAsset txnbuild.CreditAsset = txnbuild.CreditAsset{Code: "COUPON", Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"}
 
 func makeBuyOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
 	// the test buy ops are a ManageSellOffer with the COUPON asset as buying and XLM as selling
