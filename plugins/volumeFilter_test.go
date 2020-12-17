@@ -166,7 +166,7 @@ type volumeFilterFnTestCase struct {
 	wantTbbQuote float64
 }
 
-func TestVolumeFilterFn_BaseCap_Exact(t *testing.T) {
+func TestVolumeFilterFn_Sell_BaseCap_Exact(t *testing.T) {
 	// We want to test the following 4 valid combinations of OTB and TBB values:
 	// otb = 0
 	// tbb = 0
