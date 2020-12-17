@@ -1115,14 +1115,10 @@ func runTestVolumeFilterFn(
 			mode:                     mode,
 		}
 
-		// if we are testing sell, we make the base and quote assets both native (XLM)
-		// if we are testing buy, we make the base the COUPON asset
-		baseAsset := utils.NativeAsset
+		// if we are testing sell, both the base and quote assets are native (XLM)
+		// but if we are testing buy, the base is the COUPON asset
+		baseAsset := utils.Asset2Asset2(inputOp.Buying)
 		quoteAsset := utils.NativeAsset
-		if dailyOTB.action.IsBuy() {
-			baseAsset = utils.Asset2Asset2(buyOpAsset)
-		}
-
 		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, baseAsset, quoteAsset, lp)
 		if !assert.Nil(t, e) {
 			return
