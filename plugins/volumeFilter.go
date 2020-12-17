@@ -223,13 +223,13 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	// if exact mode and with remaining capacity, update the op amount and return the op
 	// else, return nil
 	// TODO DS Determine whether this calculation works for a buy offer.
-	offerAmount = (cap - otb - tbb) / capPrice
-	if offerAmount <= 0 {
+	newOfferAmount := (cap - otb - tbb) / capPrice
+	if newOfferAmount <= 0 {
 		return nil, nil
 	}
 
-	op.Amount = fmt.Sprintf("%.7f", offerAmount)
-	dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, offerAmount, offerPrice)
+	op.Amount = fmt.Sprintf("%.7f", newOfferAmount)
+	dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, newOfferAmount, offerPrice)
 	return op, nil
 }
 
