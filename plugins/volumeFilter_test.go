@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testQuoteAsset txnbuild.CreditAsset = txnbuild.CreditAsset{Code: "QUOTE", Issuer: "GBGQAGAMK6W6FH6AGGZ2BI2MY5TA5VJEHU2DQRFXACMAZHNRD3SXEV6Z"}
+
 func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action queries.DailyVolumeAction) *volumeFilter {
 	query, e := queries.MakeDailyVolumeByDateForMarketIdsAction(&sql.DB{}, marketIDs, action, accountIDs)
 	if e != nil {
@@ -1137,11 +1139,12 @@ func runTestVolumeFilterFn(
 			mode:                     mode,
 		}
 
-		// if we are testing sell, both the base and quote assets are native (XLM)
-		// but if we are testing buy, the base is the COUPON asset
-		baseAsset := utils.Asset2Asset2(inputOp.Buying)
-		quoteAsset := utils.NativeAsset
-		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, baseAsset, quoteAsset, lp)
+		// For our tests, the selling asset is QUOTE, and the buying asset is XLM
+		// To identify a sell op, we check if the base is the selling asset and the quote is buying
+		// We define and pass the selling and buying assets in accordingly
+		selling := utils.Asset2Asset2(testQuoteAsset)
+		buying := utils.NativeAsset
+		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, selling, buying, lp)
 		if !assert.Nil(t, e) {
 			return
 		}
@@ -1157,18 +1160,16 @@ func runTestVolumeFilterFn(
 func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
 	return &txnbuild.ManageSellOffer{
 		Buying:  txnbuild.NativeAsset{},
-		Selling: txnbuild.NativeAsset{},
+		Selling: testQuoteAsset,
 		Amount:  fmt.Sprintf("%.7f", amount),
 		Price:   fmt.Sprintf("%.7f", price),
 	}
 }
 
-var buyOpAsset txnbuild.CreditAsset = txnbuild.CreditAsset{Code: "COUPON", Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"}
-
 func makeBuyOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
-	// the test buy ops are a ManageSellOffer with the COUPON asset as buying and XLM as selling
+	// Since a buy op buys the base and sells the quote, we reverse the assets and create a sell op.
 	return &txnbuild.ManageSellOffer{
-		Buying:  buyOpAsset,
+		Buying:  testQuoteAsset,
 		Selling: txnbuild.NativeAsset{},
 		Amount:  fmt.Sprintf("%.7f", amount),
 		Price:   fmt.Sprintf("%.7f", price),
