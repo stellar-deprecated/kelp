@@ -240,6 +240,13 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 
 	// if we have a buy operation, we want to make sure buy ops have the same relationship between price and amount
 	// to do this, we apply the same amount adjustment as `makeBuyOpAmtPrice`
+	// The following conversion is done above on input:
+	// sellOfferAmount = buyOfferAmount * buyOfferPrice
+	// sellOfferPrice = 1 / buyOfferPrice
+	//
+	// Therefore we need to undo it using the following:
+	// newOpAmount = newOpAmount * sellOfferPrice
+	// newOpAmount => newOpAmount * 1 / buyOfferPrice
 	newOpAmount := newOfferAmount
 	if dailyOTB.action.IsBuy() {
 		newOpAmount = newOpAmount * offerPrice
