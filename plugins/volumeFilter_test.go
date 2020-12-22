@@ -1167,11 +1167,20 @@ func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer
 func makeBuyOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
 	// in Kelp, all actions are performed in context of the base asset
 	// a sell op sells base, and a buy op buys base/sells quote
+	// I ran this using the buysell strategy with the amount set to 1000.0 units (of base on either side), with the buy op being displayed first:
+	// 2020/12/23 02:35:59 submitting the following ops
+	// 2020/12/23 02:35:59 &{Selling:{Code:COUPON Issuer:GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI} Buying:{} Amount:163.4735274 Price:6.1171984 OfferID:0 SourceAccount:0xc00047e5e0}
+	// 2020/12/23 02:35:59 &{Selling:{} Buying:{Code:COUPON Issuer:GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI} Amount:1000.0000000 Price:0.1638006 OfferID:0 SourceAccount:0xc00047e6a0}
+	// above, we can see that the selling operation (second op) has amount = 1000.0 and price = 0.16 which is correct
+	// the buying op (first op) has amount set to 163.xx and price set to 6.xx, and we need to replicate this.
+	// To do so, we need to:
+	// set our Amount field on the manageSellOffer here equal to amount * price (so we get 1000 * 0.16 ~= 163.xx like displayed above)
+	// set the Price field to 1/price (so we get 1/0.16 ~= 6.xx like displayed above)
 	return &txnbuild.ManageSellOffer{
 		Buying:  testBaseAsset,
 		Selling: testQuoteAsset,
-		Amount:  fmt.Sprintf("%.7f", amount),
-		Price:   fmt.Sprintf("%.7f", price),
+		Amount:  fmt.Sprintf("%.7f", amount*price),
+		Price:   fmt.Sprintf("%.7f", 1/price),
 	}
 }
 
