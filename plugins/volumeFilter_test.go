@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testBaseAsset = txnbuild.NativeAsset{}
 var testQuoteAsset txnbuild.CreditAsset = txnbuild.CreditAsset{Code: "QUOTE", Issuer: "GBGQAGAMK6W6FH6AGGZ2BI2MY5TA5VJEHU2DQRFXACMAZHNRD3SXEV6Z"}
 
 func makeWantVolumeFilter(config *VolumeFilterConfig, marketIDs []string, accountIDs []string, action queries.DailyVolumeAction) *volumeFilter {
@@ -1139,12 +1140,9 @@ func runTestVolumeFilterFn(
 			mode:                     mode,
 		}
 
-		// For our tests, the selling asset is QUOTE, and the buying asset is XLM
-		// To identify a sell op, we check if the base is the selling asset and the quote is buying
-		// We define and pass the selling and buying assets in accordingly
-		selling := utils.Asset2Asset2(testQuoteAsset)
-		buying := utils.NativeAsset
-		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, selling, buying, lp)
+		base := utils.Asset2Asset2(testBaseAsset)
+		quote := utils.Asset2Asset2(testQuoteAsset)
+		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, base, quote, lp)
 		if !assert.Nil(t, e) {
 			return
 		}
@@ -1159,18 +1157,19 @@ func runTestVolumeFilterFn(
 
 func makeSellOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
 	return &txnbuild.ManageSellOffer{
-		Buying:  txnbuild.NativeAsset{},
-		Selling: testQuoteAsset,
+		Buying:  testQuoteAsset,
+		Selling: testBaseAsset,
 		Amount:  fmt.Sprintf("%.7f", amount),
 		Price:   fmt.Sprintf("%.7f", price),
 	}
 }
 
 func makeBuyOpAmtPrice(amount float64, price float64) *txnbuild.ManageSellOffer {
-	// Since a buy op buys the base and sells the quote, we reverse the assets and create a sell op.
+	// in Kelp, all actions are performed in context of the base asset
+	// a sell op sells base, and a buy op buys base/sells quote
 	return &txnbuild.ManageSellOffer{
-		Buying:  testQuoteAsset,
-		Selling: txnbuild.NativeAsset{},
+		Buying:  testBaseAsset,
+		Selling: testQuoteAsset,
 		Amount:  fmt.Sprintf("%.7f", amount),
 		Price:   fmt.Sprintf("%.7f", price),
 	}
