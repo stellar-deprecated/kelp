@@ -3,16 +3,17 @@ package plugins
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/openlyinc/pointy"
-	"github.com/stellar/kelp/queries"
-	"github.com/stellar/kelp/support/utils"
+	"github.com/stretchr/testify/assert"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/stellar/kelp/queries"
+	"github.com/stellar/kelp/support/utils"
 )
 
 var testBaseAsset = txnbuild.NativeAsset{}
@@ -38,7 +39,6 @@ func TestMakeFilterVolume(t *testing.T) {
 	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
 	configValue := ""
 	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
-	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
 	testCases := []struct {
 		name          string
 		exchangeName  string
@@ -47,7 +47,6 @@ func TestMakeFilterVolume(t *testing.T) {
 		wantMarketIDs []string
 		wantFilter    *volumeFilter
 	}{
-		// TODO DS Confirm the empty config fails once validation is added to the constructor
 		{
 			name:          "0 market id or account id",
 			exchangeName:  "exchange 2",
@@ -99,12 +98,12 @@ func TestMakeFilterVolume(t *testing.T) {
 		},
 	}
 
+	caseNo := 1
 	for _, k := range testCases {
 		// this lets us test both types of modes when varying the market and account ids
-		for _, m := range modes {
+		for _, m := range []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore} {
 			// this lets us test both buy and sell
-			// TODO DS Add buy action
-			for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
+			for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell, queries.DailyVolumeActionBuy} {
 				// this lets us run the for-loop below for both base and quote units within the config
 				baseCapInBaseConfig := makeRawVolumeFilterConfig(
 					pointy.Float64(1.0),
@@ -129,9 +128,10 @@ func TestMakeFilterVolume(t *testing.T) {
 						configType = "base"
 					}
 
-					// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
 					wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, action)
-					t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
+					testCaseInstanceName := fmt.Sprintf("%d. %s,%s,%s,%s", caseNo, k.name, configType, m, action.String())
+					caseNo++
+					t.Run(testCaseInstanceName, func(t *testing.T) {
 						actual, e := makeFilterVolume(
 							configValue,
 							k.exchangeName,
@@ -153,6 +153,28 @@ func TestMakeFilterVolume(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestMakeFilterVolume_FailsOnEmptyConfig(t *testing.T) {
+	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
+	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
+
+	configUnderTest := &VolumeFilterConfig{}
+	_, e := makeFilterVolume(
+		"someConfigValue",
+		"someExchangeName",
+		tradingPair,
+		testAssetDisplayFn,
+		utils.NativeAsset,
+		utils.NativeAsset,
+		&sql.DB{},
+		configUnderTest,
+	)
+	if !assert.Error(t, e) {
+		return
+	}
+
+	assert.True(t, strings.HasPrefix(e.Error(), "invalid config"), e.Error())
 }
 
 // volumeFilterFnTestCase is the input that will be reused across all tests of type TestVolumeFilterFn*
