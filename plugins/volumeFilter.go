@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -287,11 +286,6 @@ func updateTBB(tbb *VolumeFilterConfig, amount float64, price float64) *VolumeFi
 // String is the Stringer method
 func (f *volumeFilter) String() string {
 	return f.configValue
-}
-
-// isBase returns true if the filter is on the amount of the base asset sold, false otherwise
-func (f *volumeFilter) isSellingBase() bool {
-	return strings.Contains(f.configValue, "/sell/base/")
 }
 
 func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {

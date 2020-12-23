@@ -76,12 +76,6 @@ func makeSellTwapLevelProvider(
 		return nil, fmt.Errorf("minChildOrderSizePercentOfParent is invalid, expected 0.0 <= minChildOrderSizePercentOfParent <= 1.0; was %.f", exponentialSmoothingFactor)
 	}
 
-	for i, f := range dowFilter {
-		if !f.isSellingBase() {
-			return nil, fmt.Errorf("volume filter at index %d was not selling the base asset as expected: %s", i, f.configValue)
-		}
-	}
-
 	random := rand.New(rand.NewSource(randSeed))
 	return &sellTwapLevelProvider{
 		startPf:                 startPf,
