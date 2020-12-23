@@ -3,16 +3,17 @@ package plugins
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/openlyinc/pointy"
-	"github.com/stellar/kelp/queries"
-	"github.com/stellar/kelp/support/utils"
+	"github.com/stretchr/testify/assert"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/stellar/kelp/queries"
+	"github.com/stellar/kelp/support/utils"
 )
 
 var testBaseAsset = txnbuild.NativeAsset{}
@@ -38,7 +39,6 @@ func TestMakeFilterVolume(t *testing.T) {
 	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
 	configValue := ""
 	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
-	modes := []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore}
 	testCases := []struct {
 		name          string
 		exchangeName  string
@@ -47,7 +47,6 @@ func TestMakeFilterVolume(t *testing.T) {
 		wantMarketIDs []string
 		wantFilter    *volumeFilter
 	}{
-		// TODO DS Confirm the empty config fails once validation is added to the constructor
 		{
 			name:          "0 market id or account id",
 			exchangeName:  "exchange 2",
@@ -99,12 +98,12 @@ func TestMakeFilterVolume(t *testing.T) {
 		},
 	}
 
+	caseNo := 1
 	for _, k := range testCases {
 		// this lets us test both types of modes when varying the market and account ids
-		for _, m := range modes {
+		for _, m := range []volumeFilterMode{volumeFilterModeExact, volumeFilterModeIgnore} {
 			// this lets us test both buy and sell
-			// TODO DS Add buy action
-			for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell} {
+			for _, action := range []queries.DailyVolumeAction{queries.DailyVolumeActionSell, queries.DailyVolumeActionBuy} {
 				// this lets us run the for-loop below for both base and quote units within the config
 				baseCapInBaseConfig := makeRawVolumeFilterConfig(
 					pointy.Float64(1.0),
@@ -129,9 +128,10 @@ func TestMakeFilterVolume(t *testing.T) {
 						configType = "base"
 					}
 
-					// TODO DS Vary filter action between buy and sell, once buy logic is implemented.
 					wantFilter := makeWantVolumeFilter(config, k.wantMarketIDs, k.accountIDs, action)
-					t.Run(fmt.Sprintf("%s/%s/%s", k.name, configType, m), func(t *testing.T) {
+					testCaseInstanceName := fmt.Sprintf("%d. %s,%s,%s,%s", caseNo, k.name, configType, m, action.String())
+					caseNo++
+					t.Run(testCaseInstanceName, func(t *testing.T) {
 						actual, e := makeFilterVolume(
 							configValue,
 							k.exchangeName,
@@ -153,6 +153,28 @@ func TestMakeFilterVolume(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestMakeFilterVolume_FailsOnEmptyConfig(t *testing.T) {
+	testAssetDisplayFn := model.MakeSdexMappedAssetDisplayFn(map[model.Asset]hProtocol.Asset{model.Asset("XLM"): utils.NativeAsset})
+	tradingPair := &model.TradingPair{Base: "XLM", Quote: "XLM"}
+
+	configUnderTest := &VolumeFilterConfig{}
+	_, e := makeFilterVolume(
+		"someConfigValue",
+		"someExchangeName",
+		tradingPair,
+		testAssetDisplayFn,
+		utils.NativeAsset,
+		utils.NativeAsset,
+		&sql.DB{},
+		configUnderTest,
+	)
+	if !assert.Error(t, e) {
+		return
+	}
+
+	assert.True(t, strings.HasPrefix(e.Error(), "invalid config"), e.Error())
 }
 
 // volumeFilterFnTestCase is the input that will be reused across all tests of type TestVolumeFilterFn*
@@ -622,17 +644,17 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 	}
 	for _, k := range testCases {
 		// convert to common format accepted by runTestVolumeFilterFn
-		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
-
-		var wantOp *txnbuild.ManageSellOffer
+		// test sell action
+		sellName := fmt.Sprintf("%s, sell", k.name)
+		inputSellOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantSellOp *txnbuild.ManageSellOffer
 		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
+			wantSellOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
 		}
 
 		runTestVolumeFilterFn(
 			t,
-			k.name,
+			sellName,
 			volumeFilterModeIgnore,
 			queries.DailyVolumeActionSell,
 			pointy.Float64(k.cap), // base cap
@@ -641,8 +663,33 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			nil,                   // quoteOTB nil because this test is for the BaseCap
 			pointy.Float64(k.tbb), // baseTBB
 			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
-			inputOp,
-			wantOp,
+			inputSellOp,
+			wantSellOp,
+			pointy.Float64(k.wantTbbBase),
+			pointy.Float64(k.wantTbbQuote),
+		)
+
+		// test buy action
+		buyName := fmt.Sprintf("%s, buy", k.name)
+		inputBuyOp := makeBuyOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantBuyOp *txnbuild.ManageSellOffer
+		if k.wantPrice != nil && k.wantAmount != nil {
+			wantBuyOp = makeBuyOpAmtPrice(*k.wantAmount, *k.wantPrice)
+		}
+
+		runTestVolumeFilterFn(
+			t,
+			buyName,
+			volumeFilterModeIgnore,
+			queries.DailyVolumeActionBuy,
+			pointy.Float64(k.cap), // base cap
+			nil,                   // quote cap nil because this test is for the BaseCap
+			pointy.Float64(k.otb), // baseOTB
+			nil,                   // quoteOTB nil because this test is for the BaseCap
+			pointy.Float64(k.tbb), // baseTBB
+			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
+			inputBuyOp,
+			wantBuyOp,
 			pointy.Float64(k.wantTbbBase),
 			pointy.Float64(k.wantTbbQuote),
 		)
@@ -804,27 +851,52 @@ func TestVolumeFilterFn_QuoteCap_Ignore(t *testing.T) {
 	}
 	for _, k := range testCases {
 		// convert to common format accepted by runTestVolumeFilterFn
-		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
-
-		var wantOp *txnbuild.ManageSellOffer
+		// test sell action
+		sellName := fmt.Sprintf("%s, sell", k.name)
+		inputSellOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantSellOp *txnbuild.ManageSellOffer
 		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
+			wantSellOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
 		}
 
 		runTestVolumeFilterFn(
 			t,
-			k.name,
+			sellName,
 			volumeFilterModeIgnore,
 			queries.DailyVolumeActionSell,
 			nil,                   // base cap nil because this test is for the QuoteCap
 			pointy.Float64(k.cap), // quote cap
-			nil,                   // baseOTB nil because this test is for the BaseCap
+			nil,                   // baseOTB nil because this test is for the QuoteCap
 			pointy.Float64(k.otb), // quoteOTB
 			pointy.Float64(0),     // baseTBB (non-nil since it accumulates)
 			pointy.Float64(k.tbb), // quoteTBB
-			inputOp,
-			wantOp,
+			inputSellOp,
+			wantSellOp,
+			pointy.Float64(k.wantTbbBase),
+			pointy.Float64(k.wantTbbQuote),
+		)
+
+		// test buy action
+		buyName := fmt.Sprintf("%s, buy", k.name)
+		inputBuyOp := makeBuyOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantBuyOp *txnbuild.ManageSellOffer
+		if k.wantPrice != nil && k.wantAmount != nil {
+			wantBuyOp = makeBuyOpAmtPrice(*k.wantAmount, *k.wantPrice)
+		}
+
+		runTestVolumeFilterFn(
+			t,
+			buyName,
+			volumeFilterModeIgnore,
+			queries.DailyVolumeActionBuy,
+			nil,                   // base cap nil because this test is for the QuoteCap
+			pointy.Float64(k.cap), // quote cap
+			nil,                   // baseOTB nil because this test is for the QuoteCap
+			pointy.Float64(k.otb), // quoteOTB
+			pointy.Float64(0),     // baseTBB (non-nil since it accumulates)
+			pointy.Float64(k.tbb), // quoteTBB
+			inputBuyOp,
+			wantBuyOp,
 			pointy.Float64(k.wantTbbBase),
 			pointy.Float64(k.wantTbbQuote),
 		)
@@ -1076,27 +1148,52 @@ func TestVolumeFilterFn_QuoteCap_Exact(t *testing.T) {
 	}
 	for _, k := range testCases {
 		// convert to common format accepted by runTestVolumeFilterFn
-		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
-
-		var wantOp *txnbuild.ManageSellOffer
+		// test sell action
+		sellName := fmt.Sprintf("%s, sell", k.name)
+		inputSellOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantSellOp *txnbuild.ManageSellOffer
 		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
+			wantSellOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
 		}
 
 		runTestVolumeFilterFn(
 			t,
-			k.name,
+			sellName,
 			volumeFilterModeExact,
 			queries.DailyVolumeActionSell,
 			nil,                   // base cap nil because this test is for the QuoteCap
-			pointy.Float64(k.cap), // quote
+			pointy.Float64(k.cap), // quote cap
 			nil,                   // baseOTB nil because this test is for the QuoteCap
 			pointy.Float64(k.otb), // quoteOTB
 			pointy.Float64(0),     // baseTBB (non-nil since it accumulates)
 			pointy.Float64(k.tbb), // quoteTBB
-			inputOp,
-			wantOp,
+			inputSellOp,
+			wantSellOp,
+			pointy.Float64(k.wantTbbBase),
+			pointy.Float64(k.wantTbbQuote),
+		)
+
+		// test buy action
+		buyName := fmt.Sprintf("%s, buy", k.name)
+		inputBuyOp := makeBuyOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantBuyOp *txnbuild.ManageSellOffer
+		if k.wantPrice != nil && k.wantAmount != nil {
+			wantBuyOp = makeBuyOpAmtPrice(*k.wantAmount, *k.wantPrice)
+		}
+
+		runTestVolumeFilterFn(
+			t,
+			buyName,
+			volumeFilterModeExact,
+			queries.DailyVolumeActionBuy,
+			nil,                   // base cap nil because this test is for the QuoteCap
+			pointy.Float64(k.cap), // quote cap
+			nil,                   // baseOTB nil because this test is for the QuoteCap
+			pointy.Float64(k.otb), // quoteOTB
+			pointy.Float64(0),     // baseTBB (non-nil since it accumulates)
+			pointy.Float64(k.tbb), // quoteTBB
+			inputBuyOp,
+			wantBuyOp,
 			pointy.Float64(k.wantTbbBase),
 			pointy.Float64(k.wantTbbQuote),
 		)
