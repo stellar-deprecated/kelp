@@ -622,17 +622,17 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 	}
 	for _, k := range testCases {
 		// convert to common format accepted by runTestVolumeFilterFn
-		// doing this explicitly here is easier to read rather than if we were to add "logic" to convert it to a standard format
-		inputOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
-
-		var wantOp *txnbuild.ManageSellOffer
+		// test sell action
+		sellName := fmt.Sprintf("%s, sell", k.name)
+		inputSellOp := makeSellOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantSellOp *txnbuild.ManageSellOffer
 		if k.wantPrice != nil && k.wantAmount != nil {
-			wantOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
+			wantSellOp = makeSellOpAmtPrice(*k.wantAmount, *k.wantPrice)
 		}
 
 		runTestVolumeFilterFn(
 			t,
-			k.name,
+			sellName,
 			volumeFilterModeIgnore,
 			queries.DailyVolumeActionSell,
 			pointy.Float64(k.cap), // base cap
@@ -641,8 +641,33 @@ func TestVolumeFilterFn_BaseCap_Ignore(t *testing.T) {
 			nil,                   // quoteOTB nil because this test is for the BaseCap
 			pointy.Float64(k.tbb), // baseTBB
 			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
-			inputOp,
-			wantOp,
+			inputSellOp,
+			wantSellOp,
+			pointy.Float64(k.wantTbbBase),
+			pointy.Float64(k.wantTbbQuote),
+		)
+
+		// test buy action
+		buyName := fmt.Sprintf("%s, buy", k.name)
+		inputBuyOp := makeBuyOpAmtPrice(k.inputAmount, k.inputPrice)
+		var wantBuyOp *txnbuild.ManageSellOffer
+		if k.wantPrice != nil && k.wantAmount != nil {
+			wantBuyOp = makeBuyOpAmtPrice(*k.wantAmount, *k.wantPrice)
+		}
+
+		runTestVolumeFilterFn(
+			t,
+			buyName,
+			volumeFilterModeIgnore,
+			queries.DailyVolumeActionBuy,
+			pointy.Float64(k.cap), // base cap
+			nil,                   // quote cap nil because this test is for the BaseCap
+			pointy.Float64(k.otb), // baseOTB
+			nil,                   // quoteOTB nil because this test is for the BaseCap
+			pointy.Float64(k.tbb), // baseTBB
+			pointy.Float64(0),     // quoteTBB (non-nil since it accumulates)
+			inputBuyOp,
+			wantBuyOp,
 			pointy.Float64(k.wantTbbBase),
 			pointy.Float64(k.wantTbbQuote),
 		)
