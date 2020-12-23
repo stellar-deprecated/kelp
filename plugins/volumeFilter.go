@@ -191,16 +191,24 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
+	offerAmount, e := strconv.ParseFloat(op.Amount, 64)
+	if e != nil {
+		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
+	}
+
+	// A "buy" op has amount = sellAmount * sellPrice, and price = 1/sellPrice
+	// So, we adjust the offer variables by "undoing" those adjustments
+	// We can then use the same computations as sell orders on buy orders
+	if dailyOTB.action.IsBuy() {
+		offerAmount = offerAmount * offerPrice
+		offerPrice = 1 / offerPrice
+	}
+
 	// capPrice is used when computing amounts to sell or buy
 	// it's the offer price when capping on quote, and 1.0 when capping on base
 	capPrice := offerPrice
 	if lp.baseAssetCapInBaseUnits != nil {
 		capPrice = 1.0
-	}
-
-	offerAmount, e := strconv.ParseFloat(op.Amount, 64)
-	if e != nil {
-		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
 
 	// extracts from base or quote side, depending on filter
@@ -228,8 +236,22 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		return nil, nil
 	}
 
-	op.Amount = fmt.Sprintf("%.7f", newOfferAmount)
 	dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, newOfferAmount, offerPrice)
+
+	// if we have a buy operation, we want to make sure buy ops have the same relationship between price and amount
+	// to do this, we apply the same amount adjustment as `makeBuyOpAmtPrice`
+	// The following conversion is done above on input:
+	// sellOfferAmount = buyOfferAmount * buyOfferPrice
+	// sellOfferPrice = 1 / buyOfferPrice
+	//
+	// Therefore we need to undo it using the following:
+	// newOpAmount = newOpAmount * sellOfferPrice
+	// newOpAmount => newOpAmount * 1 / buyOfferPrice
+	newOpAmount := newOfferAmount
+	if dailyOTB.action.IsBuy() {
+		newOpAmount = newOpAmount * offerPrice
+	}
+	op.Amount = fmt.Sprintf("%.7f", newOpAmount)
 	return op, nil
 }
 
