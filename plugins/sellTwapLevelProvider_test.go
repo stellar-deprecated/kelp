@@ -92,6 +92,7 @@ func makeTestSellTwapLevelProvider2(
 		0.5,
 		minChildOrderSizePercentOfParent,
 		seed,
+		false,
 	)
 	if e != nil {
 		panic(e)

@@ -45,6 +45,7 @@ func makeBuyTwapStrategy(
 		config.ExponentialSmoothingFactor,
 		config.MinChildOrderSizePercentOfParent,
 		time.Now().UnixNano(),
+		true,
 	)
 	if e != nil {
 		return nil, fmt.Errorf("error when making a sellTwapLevelProvider: %s", e)

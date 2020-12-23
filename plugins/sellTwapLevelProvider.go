@@ -30,6 +30,7 @@ type sellTwapLevelProvider struct {
 	exponentialSmoothingFactor                            float64
 	minChildOrderSizePercentOfParent                      float64
 	random                                                *rand.Rand
+	isBuySide                                             bool
 
 	// uninitialized
 	activeBucket    *bucketInfo
@@ -51,6 +52,7 @@ func makeSellTwapLevelProvider(
 	exponentialSmoothingFactor float64,
 	minChildOrderSizePercentOfParent float64,
 	randSeed int64,
+	isBuySide bool,
 ) (api.LevelProvider, error) {
 	if numHoursToSell <= 0 || numHoursToSell > 24 {
 		return nil, fmt.Errorf("invalid number of hours to sell, expected 0 < numHoursToSell <= 24; was %d", numHoursToSell)
@@ -88,6 +90,7 @@ func makeSellTwapLevelProvider(
 		exponentialSmoothingFactor:                            exponentialSmoothingFactor,
 		minChildOrderSizePercentOfParent:                      minChildOrderSizePercentOfParent,
 		random:                                                random,
+		isBuySide:                                             isBuySide,
 	}, nil
 }
 
@@ -267,8 +270,15 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	if round.sizeBaseCapped < p.orderConstraints.MinBaseVolume.AsFloat() {
 		return []api.Level{}, nil
 	}
+
+	// we invert the price for buy side
+	price := round.price
+	if p.isBuySide {
+		price = 1 / price
+	}
+
 	return []api.Level{{
-		Price:  *model.NumberFromFloat(round.price, p.orderConstraints.PricePrecision),
+		Price:  *model.NumberFromFloat(price, p.orderConstraints.PricePrecision),
 		Amount: *model.NumberFromFloat(round.sizeBaseCapped, p.orderConstraints.VolumePrecision),
 	}}, nil
 }
