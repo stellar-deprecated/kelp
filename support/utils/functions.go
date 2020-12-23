@@ -260,7 +260,16 @@ func CheckedFloatPtr(v *float64) string {
 	return fmt.Sprintf("%.10f", *v)
 }
 
-// ParseAsset returns a horizon asset a string
+// MustParseAsset returns a horizon asset or panics
+func MustParseAsset(code string, issuer string) *hProtocol.Asset {
+	a, e := ParseAsset(code, issuer)
+	if e != nil {
+		panic(e)
+	}
+	return a
+}
+
+// ParseAsset returns a horizon asset
 func ParseAsset(code string, issuer string) (*hProtocol.Asset, error) {
 	if code != "XLM" && issuer == "" {
 		return nil, fmt.Errorf("error: issuer can only be empty if asset is XLM")
