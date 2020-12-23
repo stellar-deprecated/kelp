@@ -185,17 +185,15 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		return op, nil
 	}
 
-	// TODO DS Check if the price is inverted in a buy, due to implementation of ManageSellOffer
+	// extract offer price and amount and adjust for buy offers
 	offerPrice, e := strconv.ParseFloat(op.Price, 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
-
 	offerAmount, e := strconv.ParseFloat(op.Amount, 64)
 	if e != nil {
 		return nil, fmt.Errorf("could not convert amount (%s) to float: %s", op.Amount, e)
 	}
-
 	// A "buy" op has amount = sellAmount * sellPrice, and price = 1/sellPrice
 	// So, we adjust the offer variables by "undoing" those adjustments
 	// We can then use the same computations as sell orders on buy orders
@@ -224,20 +222,17 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		return op, nil
 	}
 
-	if lp.mode != volumeFilterModeExact {
+	// for ignore type of filters we want to drop the operations when the cap is exceeded
+	if lp.mode == volumeFilterModeIgnore {
 		return nil, nil
 	}
 
-	// if exact mode and with remaining capacity, update the op amount and return the op
-	// else, return nil
-	// TODO DS Determine whether this calculation works for a buy offer.
+	// if exact mode and with remaining capacity, update the op amount and return the op otherwise return nil
 	newOfferAmount := (cap - otb - tbb) / capPrice
 	if newOfferAmount <= 0 {
 		return nil, nil
 	}
-
 	dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, newOfferAmount, offerPrice)
-
 	// if we have a buy operation, we want to make sure buy ops have the same relationship between price and amount
 	// to do this, we apply the same amount adjustment as `makeBuyOpAmtPrice`
 	// The following conversion is done above on input:
@@ -252,6 +247,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 		newOpAmount = newOpAmount * offerPrice
 	}
 	op.Amount = fmt.Sprintf("%.7f", newOpAmount)
+
 	return op, nil
 }
 

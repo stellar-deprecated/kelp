@@ -281,8 +281,8 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			model.OrderActionBuy.String(),
 			model.OrderTypeLimit.String(),
 			0.20,  // price
-			105.0, //volume
-			9.9,   //cost
+			105.0, // volume
+			9.9,   // cost
 			0.0,   // fee
 			"accountID2",
 			"",
@@ -294,8 +294,8 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			model.OrderActionBuy.String(),
 			model.OrderTypeLimit.String(),
 			0.44, // price
-			92.0, //volume
-			4.2,  //cost
+			92.0, // volume
+			4.2,  // cost
 			0.5,  // fee
 			"accountID2",
 			"",
@@ -307,8 +307,8 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			model.OrderActionBuy.String(),
 			model.OrderTypeLimit.String(),
 			0.82,  // price
-			201.0, //volume
-			8.4,   //cost
+			201.0, // volume
+			8.4,   // cost
 			0.7,   // fee
 			"accountID2",
 			"",
