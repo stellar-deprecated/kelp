@@ -48,7 +48,6 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 		wantTomorrowBase          float64
 		wantTomorrowQuote         float64
 	}{
-		// TODO DS add case for buy base/quote and add trade data in test below accordingly
 		{
 			action:                    DailyVolumeActionSell,
 			queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
@@ -112,6 +111,76 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			wantTodayQuote:            0.0,
 			wantTomorrowBase:          0.0,
 			wantTomorrowQuote:         0.0,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: []string{}, // accountID1 and accountID2 are the only ones that exists
+			wantYesterdayBase:         105,
+			wantYesterdayQuote:        9.9,
+			wantTodayBase:             92,
+			wantTodayQuote:            4.2,
+			wantTomorrowBase:          303.0,
+			wantTomorrowQuote:         20.64,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: nil,
+			wantYesterdayBase:         105,
+			wantYesterdayQuote:        9.9,
+			wantTodayBase:             92,
+			wantTodayQuote:            4.2,
+			wantTomorrowBase:          303.0,
+			wantTomorrowQuote:         20.64,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: []string{"accountID1", "accountID2"}, // accountID1 and accountID2 are the only ones that exists
+			wantYesterdayBase:         105,
+			wantYesterdayQuote:        9.9,
+			wantTodayBase:             92,
+			wantTodayQuote:            4.2,
+			wantTomorrowBase:          303.0,
+			wantTomorrowQuote:         20.64,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: []string{"accountID1"}, //accountID1 has only one entry for tomorrow
+			wantYesterdayBase:         0,
+			wantYesterdayQuote:        0,
+			wantTodayBase:             0,
+			wantTodayQuote:            0,
+			wantTomorrowBase:          102,
+			wantTomorrowQuote:         12.24,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: []string{"accountID2"}, // accountID2 has most of the entries
+			wantYesterdayBase:         105,
+			wantYesterdayQuote:        9.9,
+			wantTodayBase:             92,
+			wantTodayQuote:            4.2,
+			wantTomorrowBase:          201,
+			wantTomorrowQuote:         8.4,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: []string{"accountID2", "accountID2"}, // duplicates should be the same as above
+			wantYesterdayBase:         105,
+			wantYesterdayQuote:        9.9,
+			wantTodayBase:             92,
+			wantTodayQuote:            4.2,
+			wantTomorrowBase:          201,
+			wantTomorrowQuote:         8.4,
+		},
+		{
+			action:                    DailyVolumeActionBuy,
+			queryByOptionalAccountIDs: []string{"accountID3"}, // accountID3 does not exist
+			wantYesterdayBase:         0,
+			wantYesterdayQuote:        0,
+			wantTodayBase:             0,
+			wantTodayQuote:            0,
+			wantTomorrowBase:          0,
+			wantTomorrowQuote:         0,
 		},
 	}
 
@@ -202,6 +271,45 @@ func TestDailyVolumeByDate_QueryRow(t *testing.T) {
 			100.0, // volume
 			10.0,  // cost
 			0.0,   // fee
+			"accountID2",
+			"",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"7",
+			yesterday.Format(postgresdb.TimestampFormatString),
+			model.OrderActionBuy.String(),
+			model.OrderTypeLimit.String(),
+			0.20,  // price
+			105.0, //volume
+			9.9,   //cost
+			0.0,   // fee
+			"accountID2",
+			"",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"8",
+			today.Format(postgresdb.TimestampFormatString),
+			model.OrderActionBuy.String(),
+			model.OrderTypeLimit.String(),
+			0.44, // price
+			92.0, //volume
+			4.2,  //cost
+			0.5,  // fee
+			"accountID2",
+			"",
+		),
+		fmt.Sprintf(kelpdb.SqlTradesInsertTemplate,
+			"market1",
+			"9",
+			tomorrow.Add(time.Second*1).Format(postgresdb.TimestampFormatString),
+			model.OrderActionBuy.String(),
+			model.OrderTypeLimit.String(),
+			0.82,  // price
+			201.0, //volume
+			8.4,   //cost
+			0.7,   // fee
 			"accountID2",
 			"",
 		),
