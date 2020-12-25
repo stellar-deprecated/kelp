@@ -78,6 +78,12 @@ func makeSellTwapLevelProvider(
 		return nil, fmt.Errorf("minChildOrderSizePercentOfParent is invalid, expected 0.0 <= minChildOrderSizePercentOfParent <= 1.0; was %.f", exponentialSmoothingFactor)
 	}
 
+	for i, f := range dowFilter {
+		if !f.isBase() {
+			return nil, fmt.Errorf("volume filter at index %d was not constrained on the base asset as expected: %s (we currently only allow buy and sell constraints in base units)", i, f.configValue)
+		}
+	}
+
 	random := rand.New(rand.NewSource(randSeed))
 	return &sellTwapLevelProvider{
 		startPf:                 startPf,
@@ -113,7 +119,9 @@ type bucketInfo struct {
 	totalBuckets       int64
 	totalBucketsToSell int64
 	dayBaseSoldStart   float64
-	dayBaseCapacity    float64
+	// currently we only allow dayBaseCapacity and not dayQuoteCapacity (or dayCapacity as a common field)
+	// TODO NS allow quote capacity to work for twap and adjust log lines accordingly
+	dayBaseCapacity float64
 	// surplus can be negative because offers are outstanding and can be consumed while we run these level calculations. i.e. it can never be atomic.
 	// the probability of this happening is small and as the execution speed of the update loop improves (with better code) the probability will go down.
 	// It can be made logically atomic (with more guarantees than the fix in #456) by deleting outstanding offers in the pre-update data synchronization.
