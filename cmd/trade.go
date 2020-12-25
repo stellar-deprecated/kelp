@@ -483,9 +483,9 @@ func makeBot(
 			plugins.MakeFilterMakerMode(exchangeShim, sdex, tradingPair),
 		)
 	}
-	if len(botConfig.Filters) > 0 && *options.strategy != "sell" && *options.strategy != "sell_twap" && *options.strategy != "delete" {
+	if len(botConfig.Filters) > 0 && *options.strategy != "sell" && *options.strategy != "sell_twap" && *options.strategy != "buy_twap" && *options.strategy != "delete" {
 		log.Println()
-		utils.PrintErrorHintf("FILTERS currently only supported on 'sell' and 'delete' strategies, remove FILTERS from the trader config file")
+		utils.PrintErrorHintf("FILTERS currently only supported on 'sell', 'sell_twap', 'buy_twap', 'delete' strategies, remove FILTERS from the trader config file")
 		// we want to delete all the offers and exit here since there is something wrong with our setup
 		deleteAllOffersAndExit(l, botConfig, client, sdex, exchangeShim, threadTracker, metricsTracker)
 	}

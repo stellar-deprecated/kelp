@@ -30,6 +30,7 @@ type sellTwapLevelProvider struct {
 	exponentialSmoothingFactor                            float64
 	minChildOrderSizePercentOfParent                      float64
 	random                                                *rand.Rand
+	isBuySide                                             bool
 
 	// uninitialized
 	activeBucket    *bucketInfo
@@ -51,6 +52,7 @@ func makeSellTwapLevelProvider(
 	exponentialSmoothingFactor float64,
 	minChildOrderSizePercentOfParent float64,
 	randSeed int64,
+	isBuySide bool,
 ) (api.LevelProvider, error) {
 	if numHoursToSell <= 0 || numHoursToSell > 24 {
 		return nil, fmt.Errorf("invalid number of hours to sell, expected 0 < numHoursToSell <= 24; was %d", numHoursToSell)
@@ -77,8 +79,8 @@ func makeSellTwapLevelProvider(
 	}
 
 	for i, f := range dowFilter {
-		if !f.isSellingBase() {
-			return nil, fmt.Errorf("volume filter at index %d was not selling the base asset as expected: %s", i, f.configValue)
+		if !f.isBase() {
+			return nil, fmt.Errorf("volume filter at index %d was not constrained on the base asset as expected: %s (we currently only allow buy and sell constraints in base units)", i, f.configValue)
 		}
 	}
 
@@ -94,6 +96,7 @@ func makeSellTwapLevelProvider(
 		exponentialSmoothingFactor:                            exponentialSmoothingFactor,
 		minChildOrderSizePercentOfParent:                      minChildOrderSizePercentOfParent,
 		random:                                                random,
+		isBuySide:                                             isBuySide,
 	}, nil
 }
 
@@ -116,7 +119,9 @@ type bucketInfo struct {
 	totalBuckets       int64
 	totalBucketsToSell int64
 	dayBaseSoldStart   float64
-	dayBaseCapacity    float64
+	// currently we only allow dayBaseCapacity and not dayQuoteCapacity (or dayCapacity as a common field)
+	// TODO NS allow quote capacity to work for twap and adjust log lines accordingly
+	dayBaseCapacity float64
 	// surplus can be negative because offers are outstanding and can be consumed while we run these level calculations. i.e. it can never be atomic.
 	// the probability of this happening is small and as the execution speed of the update loop improves (with better code) the probability will go down.
 	// It can be made logically atomic (with more guarantees than the fix in #456) by deleting outstanding offers in the pre-update data synchronization.
@@ -273,8 +278,15 @@ func (p *sellTwapLevelProvider) GetLevels(maxAssetBase float64, maxAssetQuote fl
 	if round.sizeBaseCapped < p.orderConstraints.MinBaseVolume.AsFloat() {
 		return []api.Level{}, nil
 	}
+
+	// we invert the price for buy side
+	price := round.price
+	if p.isBuySide {
+		price = 1 / price
+	}
+
 	return []api.Level{{
-		Price:  *model.NumberFromFloat(round.price, p.orderConstraints.PricePrecision),
+		Price:  *model.NumberFromFloat(price, p.orderConstraints.PricePrecision),
 		Amount: *model.NumberFromFloat(round.sizeBaseCapped, p.orderConstraints.VolumePrecision),
 	}}, nil
 }

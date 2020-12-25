@@ -6,6 +6,7 @@ vendor/
 coverage.txt
 build/
 bin/
+logs/
 .kelp/
 .idea
 gui/filesystem_vfsdata.go

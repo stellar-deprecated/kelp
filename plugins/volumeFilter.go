@@ -286,8 +286,8 @@ func (f *volumeFilter) String() string {
 }
 
 // isBase returns true if the filter is on the amount of the base asset sold, false otherwise
-func (f *volumeFilter) isSellingBase() bool {
-	return strings.Contains(f.configValue, "/sell/base/")
+func (f *volumeFilter) isBase() bool {
+	return strings.Contains(f.configValue, "/base/")
 }
 
 func (f *volumeFilter) mustGetBaseAssetCapInBaseUnits() (float64, error) {
