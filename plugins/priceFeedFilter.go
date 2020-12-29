@@ -83,19 +83,19 @@ func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnb
 		return nil, fmt.Errorf("could not get price from priceFeed: %s", e)
 	}
 
-	var opRet *txnbuild.ManageSellOffer
-	// for the sell side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
-	if isSell {
-		if f.cm.keepSellOp(thresholdFeedPrice, sellPrice) {
-			opRet = op
-		} else {
-			opRet = nil
-		}
-	} else {
-		// for the buy side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
-		// TODO for buy side (after considering whether sellPrice needs to be inverted or not)
-		return op, fmt.Errorf("priceFeedFilter is not implemented for the buy side yet (sellPrice = %f)", sellPrice)
+	// reorient price to be in the context of the bot's base and quote asset, in quote units
+	price := sellPrice
+	if !isSell {
+		// invert price for buy side
+		price = 1 / sellPrice
 	}
+
+	// keep only those ops that meet the comparison mode using the value from the price feed as the threshold
+	opRet := op
+	if !f.cm.keepSellOp(thresholdFeedPrice, price) {
+		opRet = nil
+	}
+
 	log.Printf("priceFeedFilter: isSell=%v, sellPrice=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, sellPrice, thresholdFeedPrice, opRet != nil)
 	return opRet, nil
 }

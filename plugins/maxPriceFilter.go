@@ -65,13 +65,16 @@ func (f *maxPriceFilter) maxPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbui
 		return nil, fmt.Errorf("could not convert price (%s) to float: %s", op.Price, e)
 	}
 
-	if isSell {
-		if sellPrice > *f.config.MaxPrice {
-			return nil, nil
-		}
-		return op, nil
+	// reorient price to be in the context of the bot's base and quote asset, in quote units
+	price := sellPrice
+	if !isSell {
+		// invert price for buy side
+		price = 1 / sellPrice
 	}
 
-	// TODO for buy side
-	return op, fmt.Errorf("maxPriceFilter is not implemented for the buy side yet (sellPrice = %f)", sellPrice)
+	// keep only those ops that meet the comparison mode using the value from the price feed as the threshold
+	if price > *f.config.MaxPrice {
+		return nil, nil
+	}
+	return op, nil
 }
