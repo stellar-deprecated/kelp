@@ -27,7 +27,14 @@ func (c comparisonMode) keepSellOp(threshold float64, price float64) bool {
 	panic("unidentified comparisonMode")
 }
 
-// TODO implement passesBuy() where we use < and <= operators
+func (c comparisonMode) keepBuyOp(threshold float64, price float64) bool {
+	if c == comparisonModeOutsideExclude {
+		return price < threshold
+	} else if c == comparisonModeOutsideInclude {
+		return price <= threshold
+	}
+	panic("unidentified comparisonMode")
+}
 
 type priceFeedFilter struct {
 	name       string
@@ -91,8 +98,11 @@ func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnb
 	}
 
 	// keep only those ops that meet the comparison mode using the value from the price feed as the threshold
+	// the "outside" comparison mode on the priceFeed means different things for bids and asks
 	opRet := op
-	if !f.cm.keepSellOp(thresholdFeedPrice, price) {
+	if isSell && !f.cm.keepSellOp(thresholdFeedPrice, price) {
+		opRet = nil
+	} else if !isSell && !f.cm.keepBuyOp(thresholdFeedPrice, price) {
 		opRet = nil
 	}
 
