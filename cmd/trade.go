@@ -581,6 +581,7 @@ func runTradeCmd(options inputs) {
 
 	isTestnet := strings.Contains(botConfig.HorizonURL, "test") && botConfig.IsTradingSdex()
 
+	metricsHandler := plugins.MakeTradeMetricsHandler()
 	metricsTracker, e := plugins.MakeMetricsTrackerCli(
 		userID,
 		deviceID,
@@ -618,6 +619,7 @@ func runTradeCmd(options inputs) {
 		*options.operationalBufferNonNativePct,
 		*options.simMode,
 		*options.fixedIterations,
+		metricsHandler,
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
@@ -936,6 +938,10 @@ func makeFillTracker(
 		}
 	}
 
+	metricsHandler := metricsTracker.GetHandler()
+	if metricsHandler != nil {
+		fillTracker.RegisterHandler(metricsHander)
+	}
 	return fillTracker
 }
 

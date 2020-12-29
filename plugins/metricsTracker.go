@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/utils"
 )
@@ -34,6 +35,8 @@ type MetricsTracker struct {
 	isDisabled          bool
 	updateEventSentTime *time.Time
 	cliVersion          string
+
+	handler *plugins.TradeMetricsHandler
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -177,6 +180,7 @@ func MakeMetricsTrackerCli(
 	operationalBufferNonNativePct float64,
 	simMode bool,
 	fixedIterations uint64,
+	handler *plugins.TradeMetricsHandler,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion:                       version,
@@ -226,6 +230,7 @@ func MakeMetricsTrackerCli(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		handler:             handler,
 		cliVersion:          version,
 	}, nil
 }
@@ -246,6 +251,7 @@ func MakeMetricsTrackerGui(
 	goVersion string,
 	guiVersion string,
 	isDisabled bool,
+	handler *plugins.TradeMetricsHandler,
 ) (*MetricsTracker, error) {
 	props := commonProps{
 		CliVersion: version,
@@ -272,6 +278,7 @@ func MakeMetricsTrackerGui(
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
+		handler:             handler,
 		cliVersion:          version,
 	}, nil
 }
@@ -384,4 +391,9 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 		}
 	}
 	return nil
+}
+
+// GetHandler returns the TradeMetricsHandler
+func (mt *MetricsTracker) GetHandler() *plugins.TradeMetricsHandler {
+	return mt.handler
 }
