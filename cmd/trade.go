@@ -544,7 +544,7 @@ func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfi
 		botConfig.CentralizedMinBaseVolumeOverride = botConfig.MinCentralizedBaseVolumeDeprecated
 	}
 
-	if botConfig.TickIntervalMillis != 0 && botConfig.TickIntervalSecondsDeprecated == 0 {
+	if botConfig.TickIntervalMillis != 0 && botConfig.TickIntervalSecondsDeprecated != 0 {
 		l.Infof("deprecation warning: cannot set both '%s' (deprecated) and '%s' in the trader config, using value from '%s'\n", "TICK_INTERVAL_SECONDS", "TICK_INTERVAL_MILLIS", "TICK_INTERVAL_MILLIS")
 	} else if botConfig.TickIntervalSecondsDeprecated != 0 {
 		l.Infof("deprecation warning: '%s' is deprecated, use the field '%s' in the trader config instead, see sample_trader.cfg as an example\n", "TICK_INTERVAL_SECONDS", "TICK_INTERVAL_MILLIS")
