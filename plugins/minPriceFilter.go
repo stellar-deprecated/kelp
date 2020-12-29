@@ -73,5 +73,5 @@ func (f *minPriceFilter) minPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbui
 	}
 
 	// TODO for buy side
-	return op, nil
+	return op, fmt.Errorf("minPriceFilter is not implemented for the buy side yet (sellPrice = %f)", sellPrice)
 }

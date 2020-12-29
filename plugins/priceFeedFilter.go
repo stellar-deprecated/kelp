@@ -94,7 +94,7 @@ func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnb
 	} else {
 		// for the buy side we keep only those ops that meet the comparison mode using the value from the price feed as the threshold
 		// TODO for buy side (after considering whether sellPrice needs to be inverted or not)
-		opRet = op
+		return op, fmt.Errorf("priceFeedFilter is not implemented for the buy side yet (sellPrice = %f)", sellPrice)
 	}
 	log.Printf("priceFeedFilter: isSell=%v, sellPrice=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, sellPrice, thresholdFeedPrice, opRet != nil)
 	return opRet, nil

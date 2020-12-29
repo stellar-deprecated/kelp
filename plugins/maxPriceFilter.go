@@ -73,5 +73,5 @@ func (f *maxPriceFilter) maxPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbui
 	}
 
 	// TODO for buy side
-	return op, nil
+	return op, fmt.Errorf("maxPriceFilter is not implemented for the buy side yet (sellPrice = %f)", sellPrice)
 }
