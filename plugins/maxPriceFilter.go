@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -73,8 +74,11 @@ func (f *maxPriceFilter) maxPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbui
 	}
 
 	// keep only those ops that meet the comparison mode using the value from the price feed as the threshold
+	opRet := op
 	if price > *f.config.MaxPrice {
-		return nil, nil
+		opRet = nil
 	}
-	return op, nil
+
+	log.Printf("maxPriceFilter: isSell=%v, price=%.10f, thresholdMaxPrice=%.10f, keep=%v", isSell, price, *f.config.MaxPrice, opRet != nil)
+	return opRet, nil
 }

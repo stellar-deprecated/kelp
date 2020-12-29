@@ -96,6 +96,6 @@ func (f *priceFeedFilter) priceFeedFilterFn(op *txnbuild.ManageSellOffer) (*txnb
 		opRet = nil
 	}
 
-	log.Printf("priceFeedFilter: isSell=%v, sellPrice=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, sellPrice, thresholdFeedPrice, opRet != nil)
+	log.Printf("priceFeedFilter: isSell=%v, price=%.10f, thresholdFeedPrice=%.10f, keep=%v", isSell, price, thresholdFeedPrice, opRet != nil)
 	return opRet, nil
 }

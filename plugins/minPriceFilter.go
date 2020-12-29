@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	hProtocol "github.com/stellar/go/protocols/horizon"
@@ -73,8 +74,11 @@ func (f *minPriceFilter) minPriceFilterFn(op *txnbuild.ManageSellOffer) (*txnbui
 	}
 
 	// keep only those ops that meet the comparison mode using the value from the price feed as the threshold
+	opRet := op
 	if price < *f.config.MinPrice {
-		return nil, nil
+		opRet = nil
 	}
-	return op, nil
+
+	log.Printf("minPriceFilter: isSell=%v, price=%.10f, thresholdMinPrice=%.10f, keep=%v", isSell, price, *f.config.MinPrice, opRet != nil)
+	return opRet, nil
 }
