@@ -133,7 +133,7 @@ func (c *VolumeFilterConfig) String() string {
 
 func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol.Offer, buyingOffers []hProtocol.Offer) ([]txnbuild.Operation, error) {
 	dateString := time.Now().UTC().Format(postgresdb.DateFormatString)
-	// TODO do for buying base and also for flipped marketIDs
+	// TODO for flipped marketIDs
 	queryResult, e := f.dailyVolumeByDateQuery.QueryRow(dateString)
 	if e != nil {
 		return nil, fmt.Errorf("could not load dailyValuesByDate for today (%s): %s", dateString, e)
