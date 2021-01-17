@@ -378,9 +378,9 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 		eventWCensored.APIKey = ""
 		requestWCensored, e := json.Marshal(eventWCensored)
 		if e != nil {
-			log.Printf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
+			return fmt.Errorf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
 		} else {
-			log.Printf("metric - failed to send event metric of type '%s' (requestWCensored=%s; response=%s)", eventType, string(requestWCensored), responseData.String())
+			return fmt.Errorf("metric - failed to send event metric of type '%s' (requestWCensored=%s; response=%s)", eventType, string(requestWCensored), responseData.String())
 		}
 	}
 	return nil
