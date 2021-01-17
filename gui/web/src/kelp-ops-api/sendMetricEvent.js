@@ -3,7 +3,7 @@ export default (baseUrl, name, eventData) => {
         method: "POST",
         body: JSON.stringify({
             event_name: name,
-            event_props: eventData,
+            event_data: eventData,
         }),
     }).then(resp => {
        return resp.json();
