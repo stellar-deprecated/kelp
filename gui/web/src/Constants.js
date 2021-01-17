@@ -1,4 +1,4 @@
-export default {
+const constants = {
     BotState: {
         initializing: "initializing",
         stopped: "stopped",
@@ -15,4 +15,12 @@ export default {
         error: "error",
         warning: "warning",
     },
-}
+
+    BaseURL: "",
+
+    setGlobalBaseURL: (baseUrl) => {
+        constants.BaseURL = baseUrl;
+    },
+};
+
+export default constants;

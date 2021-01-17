@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import Constants from '../../../Constants';
 import styles from './Button.module.scss';
 import Icon from '../Icon/Icon';
 import LoadingAnimation from '../LoadingAnimation/LoadingAnimation';
@@ -66,7 +67,7 @@ class Button extends Component {
       type: "generic",
       component: "button"
     };
-    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(this.props.baseUrl, this.props.eventName, eventData).then(resp => {
+    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(Constants.BaseURL, this.props.eventName, eventData).then(resp => {
       if (!_this._asyncRequests["sendMetricEvent"]) {
         // if it has been deleted it means we don't want to process the result
         return

@@ -13,13 +13,14 @@ import removeKelpErrors from './kelp-ops-api/removeKelpErrors';
 import Welcome from './components/molecules/Welcome/Welcome';
 
 let baseUrl = function () {
-  let origin = window.location.origin
+  let base_url = window.location.origin;
   if (process.env.REACT_APP_API_PORT) {
-    let parts = origin.split(":")
-    return parts[0] + ":" + parts[1] + ":" + process.env.REACT_APP_API_PORT;
+    let parts = origin.split(":");
+    base_url = parts[0] + ":" + parts[1] + ":" + process.env.REACT_APP_API_PORT;
   }
-  return origin;
-}()
+  Constants.setGlobalBaseURL(base_url);
+  return base_url;
+}();
 
 class App extends Component {
   constructor(props) {
