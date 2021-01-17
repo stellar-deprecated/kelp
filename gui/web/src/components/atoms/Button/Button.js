@@ -44,7 +44,11 @@ class Button extends Component {
     onClick: PropTypes.func,
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
-    eventName: PropTypes.string,
+    eventName: function(props, propName, componentName) {
+      if (!/^[a-zA-Z0-9]+$/.test(props[propName])) {
+        return new Error('Invalid prop `' + propName + '` supplied to `' + componentName + '`. Validation failed.');
+      }
+    },
   };
 
   sendMetricEvent() {
@@ -56,8 +60,8 @@ class Button extends Component {
       return
     }
 
-    var _this = this;
-    var eventData = {
+    const _this = this;
+    const eventData = {
       eventName: this.props.eventName,
       type: "generic",
       component: "button"
@@ -69,9 +73,10 @@ class Button extends Component {
       }
       delete _this._asyncRequests["sendMetricEvent"];
 
-      if (resp["success"] === undefined) {
-        console.log(resp["error"])
+      if (!resp.success) {
+        console.log(resp.error);
       }
+      // else do nothing on success
     });
   }
 
