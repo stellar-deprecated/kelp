@@ -60,7 +60,7 @@ class Button extends Component {
     }
 
     if (!this.props.eventName || this.props.eventName == "") {
-      console.warn("programmer error: no event name provided for this Button, not sending button click event!");
+      console.error("programmer error: no event name provided for this Button, not sending button click event!");
       return
     }
 
