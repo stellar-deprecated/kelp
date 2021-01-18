@@ -113,6 +113,8 @@ To compile Kelp from source:
 5. Install the dependencies:
     * `glide install`
 6. Install the [astilectron-bundler][astilectron-bundler] binary into `$GOBIN`
+    * `go get -u github.com/asticode/go-astilectron-bundler/...`
+    * `go install github.com/asticode/go-astilectron-bundler/astilectron-bundler`
 7. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
     * `./scripts/build.sh`
 8. Confirm one new binary file exists with version information. 
