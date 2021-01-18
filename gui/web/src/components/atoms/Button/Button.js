@@ -67,8 +67,8 @@ class Button extends Component {
     const _this = this;
     const eventData = {
       event_name: this.props.eventName,
-      category: "generic",
-      component: "button"
+      gui_category: "generic",
+      gui_component: "button"
     };
     this._asyncRequests["sendMetricEvent"] = sendMetricEvent(Constants.BaseURL, "gui-button", eventData).then(resp => {
       if (!_this._asyncRequests["sendMetricEvent"]) {
