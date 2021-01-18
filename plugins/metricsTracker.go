@@ -29,7 +29,7 @@ type MetricsTracker struct {
 	apiKey              string
 	userID              string
 	deviceID            string
-	props               map[string]interface{}
+	eventProps          map[string]interface{}
 	botStartTime        time.Time
 	isDisabled          bool
 	updateEventSentTime *time.Time
@@ -39,20 +39,20 @@ type MetricsTracker struct {
 // TODO DS Investigate other fields to add to this top-level event.
 // fields for the event object: https://help.amplitude.com/hc/en-us/articles/360032842391-HTTP-API-V2#http-api-v2-events
 type event struct {
-	UserID    string      `json:"user_id"`
-	SessionID int64       `json:"session_id"`
-	DeviceID  string      `json:"device_id"`
-	EventType string      `json:"event_type"`
-	Version   string      `json:"app_version"`
-	Props     interface{} `json:"event_properties"`
+	UserID          string      `json:"user_id"`
+	SessionID       int64       `json:"session_id"`
+	DeviceID        string      `json:"device_id"`
+	EventType       string      `json:"event_type"`
+	Version         string      `json:"app_version"`
+	EventProperties interface{} `json:"event_properties"`
 }
 
-// props holds the properties that we need for all Amplitude events.
+// commonPropsStruct holds the properties that are common to all our Amplitude events.
 // This lives on the `MetricsTracker` struct.
 // TODO DS Add geodata.
 // TODO DS Add cloud server information.
 // TODO DS Add time to run update function as `millisForUpdate`.
-type commonProps struct {
+type commonPropsStruct struct {
 	CliVersion                       string  `json:"cli_version"`
 	GitHash                          string  `json:"git_hash"`
 	Env                              string  `json:"env"`
@@ -178,7 +178,7 @@ func MakeMetricsTrackerCli(
 	simMode bool,
 	fixedIterations uint64,
 ) (*MetricsTracker, error) {
-	props := commonProps{
+	eventProps := commonPropsStruct{
 		CliVersion:                       version,
 		GitHash:                          gitHash,
 		Env:                              env,
@@ -212,9 +212,9 @@ func MakeMetricsTrackerCli(
 		FixedIterations:                  fixedIterations,
 	}
 
-	propsMap, e := utils.ToMapStringInterface(props)
+	propsMap, e := utils.ToMapStringInterface(eventProps)
 	if e != nil {
-		return nil, fmt.Errorf("could not convert props to map: %s", e)
+		return nil, fmt.Errorf("could not convert eventProps to map: %s", e)
 	}
 
 	return &MetricsTracker{
@@ -222,7 +222,7 @@ func MakeMetricsTrackerCli(
 		apiKey:              apiKey,
 		userID:              userID,
 		deviceID:            deviceID,
-		props:               propsMap,
+		eventProps:          propsMap,
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
@@ -247,7 +247,7 @@ func MakeMetricsTrackerGui(
 	guiVersion string,
 	isDisabled bool,
 ) (*MetricsTracker, error) {
-	props := commonProps{
+	eventProps := commonPropsStruct{
 		CliVersion: version,
 		GitHash:    gitHash,
 		Env:        env,
@@ -258,9 +258,9 @@ func MakeMetricsTrackerGui(
 		GuiVersion: guiVersion,
 	}
 
-	propsMap, e := utils.ToMapStringInterface(props)
+	propsMap, e := utils.ToMapStringInterface(eventProps)
 	if e != nil {
-		return nil, fmt.Errorf("could not convert props to map: %s", e)
+		return nil, fmt.Errorf("could not convert eventProps to map: %s", e)
 	}
 
 	return &MetricsTracker{
@@ -268,7 +268,7 @@ func MakeMetricsTrackerGui(
 		apiKey:              apiKey,
 		userID:              userID,
 		deviceID:            deviceID,
-		props:               propsMap,
+		eventProps:          propsMap,
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
@@ -283,7 +283,7 @@ func (mt *MetricsTracker) GetUpdateEventSentTime() *time.Time {
 
 // SendStartupEvent sends the startup Amplitude event.
 func (mt *MetricsTracker) SendStartupEvent(now time.Time) error {
-	return mt.SendEvent(startupEventName, mt.props, now)
+	return mt.SendEvent(startupEventName, mt.eventProps, now)
 }
 
 // SendUpdateEvent sends the update Amplitude event.
@@ -331,15 +331,15 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 		return nil
 	}
 
-	trackerProps := mt.props
+	trackerProps := mt.eventProps
 	trackerProps[secondsSinceStartKey] = now.Sub(mt.botStartTime).Seconds()
 
-	eventProps, e := utils.ToMapStringInterface(eventPropsInterface)
+	inputProps, e := utils.ToMapStringInterface(eventPropsInterface)
 	if e != nil {
-		return fmt.Errorf("could not convert event props to map: %s", e)
+		return fmt.Errorf("could not convert event inputProps to map: %s", e)
 	}
 
-	mergedProps, e := utils.MergeMaps(trackerProps, eventProps)
+	mergedProps, e := utils.MergeMaps(trackerProps, inputProps)
 	if e != nil {
 		return fmt.Errorf("could not merge event properties: %s", e)
 	}
@@ -349,12 +349,12 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 	eventW := eventWrapper{
 		APIKey: mt.apiKey,
 		Events: []event{{
-			UserID:    mt.userID,
-			SessionID: mt.botStartTime.Unix() * 1000, // convert to millis based on docs
-			DeviceID:  mt.deviceID,
-			EventType: eventType,
-			Props:     mergedProps,
-			Version:   mt.cliVersion,
+			UserID:          mt.userID,
+			SessionID:       mt.botStartTime.Unix() * 1000, // convert to millis based on docs
+			DeviceID:        mt.deviceID,
+			EventType:       eventType,
+			EventProperties: mergedProps,
+			Version:         mt.cliVersion,
 		}},
 	}
 	requestBody, e := json.Marshal(eventW)
@@ -379,9 +379,8 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 		requestWCensored, e := json.Marshal(eventWCensored)
 		if e != nil {
 			return fmt.Errorf("metric - failed to send event metric of type '%s' (response=%s), error while trying to marshall requestWCensored: %s", eventType, responseData.String(), e)
-		} else {
-			return fmt.Errorf("metric - failed to send event metric of type '%s' (requestWCensored=%s; response=%s)", eventType, string(requestWCensored), responseData.String())
 		}
+		return fmt.Errorf("metric - failed to send event metric of type '%s' (requestWCensored=%s; response=%s)", eventType, string(requestWCensored), responseData.String())
 	}
 	return nil
 }
