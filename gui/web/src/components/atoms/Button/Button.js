@@ -66,7 +66,7 @@ class Button extends Component {
 
     const _this = this;
     const eventData = {
-      event_name: this.props.eventName,
+      gui_event_name: this.props.eventName,
       gui_category: "generic",
       gui_component: "button"
     };
