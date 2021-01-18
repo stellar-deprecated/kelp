@@ -21,6 +21,7 @@ class Levels extends Component {
     addLevelError: PropTypes.func.isRequired,
     clearLevelError: PropTypes.func.isRequired,
     readOnly: PropTypes.bool,
+    eventPrefix: PropTypes.string.isRequired,
   }
 
   render() {
@@ -36,7 +37,8 @@ class Levels extends Component {
       }
 
       let removeButton = (
-        <Button 
+        <Button
+          eventName={this.props.eventPrefix + "-remove"}
           className={styles.button}
           icon="remove" 
           variant="danger" 
@@ -93,6 +95,7 @@ class Levels extends Component {
 
     let newLevelButton = (
       <Button
+        eventName={this.props.eventPrefix + "-new"}
         className={styles.add}
         icon="add"
         variant="faded"

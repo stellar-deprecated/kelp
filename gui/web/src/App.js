@@ -297,6 +297,7 @@ class App extends Component {
 
     let banner = (<div className={styles.banner}>
       <Button
+        eventName="main-quit"
         className={styles.quit}
         size="small"
         onClick={this.quit}

@@ -10,7 +10,8 @@ class PriceFeedDisplay extends Component {
   static propTypes = {
     loading: PropTypes.bool,
     price: PropTypes.number,
-    fetchPrice: PropTypes.func
+    fetchPrice: PropTypes.func,
+    eventPrefix: PropTypes.string.isRequired,
   };
 
   render() {
@@ -39,7 +40,8 @@ class PriceFeedDisplay extends Component {
           )}
         </div>
         
-        <Button 
+        <Button
+          eventName={this.props.eventPrefix + "-fetchPrice"}
           onClick={this.props.fetchPrice}
           icon="refresh"
           className={styles.button}

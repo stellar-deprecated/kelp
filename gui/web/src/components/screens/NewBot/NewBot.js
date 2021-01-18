@@ -195,6 +195,7 @@ class NewBot extends Component {
         saveFn={this.saveNew}
         saveText="Create Bot"
         errorResp={this.state.errorResp}
+        eventPrefix="config-new"
         />);
     }
     
@@ -239,6 +240,7 @@ class NewBot extends Component {
       saveText="Save Bot Updates"
       errorResp={this.state.errorResp}
       readOnly={isDetails}
+      eventPrefix="config-edit"
       />);
   }
 }
