@@ -243,7 +243,7 @@ func makeFeeFn(l logger.Logger, botConfig trader.BotConfig, newClient *horizoncl
 	return feeFn
 }
 
-func readBotConfig(l logger.Logger, options inputs, botStart time.Time) trader.BotConfig {
+func readBotConfig(l logger.Logger, options inputs, botStartTime time.Time) trader.BotConfig {
 	var botConfig trader.BotConfig
 	e := config.Read(*options.botConfigPath, &botConfig)
 	utils.CheckConfigError(botConfig, e, *options.botConfigPath)
@@ -253,7 +253,7 @@ func readBotConfig(l logger.Logger, options inputs, botStart time.Time) trader.B
 	}
 
 	if *options.logPrefix != "" {
-		logFilename := makeLogFilename(*options.logPrefix, botConfig, botStart)
+		logFilename := makeLogFilename(*options.logPrefix, botConfig, botStartTime)
 		setLogFile(l, logFilename)
 	}
 
@@ -427,7 +427,7 @@ func makeBot(
 	threadTracker *multithreading.ThreadTracker,
 	options inputs,
 	metricsTracker *plugins.MetricsTracker,
-	botStart time.Time,
+	botStartTime time.Time,
 ) *trader.Trader {
 	timeController := plugins.MakeIntervalTimeController(
 		time.Duration(botConfig.TickIntervalMillis)*time.Millisecond,
@@ -530,7 +530,7 @@ func makeBot(
 		dataKey,
 		alert,
 		metricsTracker,
-		botStart,
+		botStartTime,
 	)
 }
 
@@ -558,66 +558,67 @@ func convertDeprecatedBotConfigValues(l logger.Logger, botConfig trader.BotConfi
 
 func runTradeCmd(options inputs) {
 	l := logger.MakeBasicLogger()
-	botStart := time.Now()
-	botConfig := readBotConfig(l, options, botStart)
+	botStartTime := time.Now()
+	botConfig := readBotConfig(l, options, botStartTime)
 	botConfig = convertDeprecatedBotConfigValues(l, botConfig)
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
-	userID, e := getUserID(l, botConfig)
-	if e != nil {
-		logger.Fatal(l, fmt.Errorf("could not get user id: %s", e))
-	}
-
-	httpClient := &http.Client{}
 	var guiVersionFlag string
 	if *options.ui {
 		guiVersionFlag = guiVersion
 	}
 
+	userID, e := getUserID(l, botConfig)
+	if e != nil {
+		logger.Fatal(l, fmt.Errorf("could not get user id: %s", e))
+	}
 	deviceID, e := machineid.ID()
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate machine id: %s", e))
 	}
-
 	isTestnet := strings.Contains(botConfig.HorizonURL, "test") && botConfig.IsTradingSdex()
-
-	metricsTracker, e := plugins.MakeMetricsTrackerCli(
+	metricsTracker, e := plugins.MakeMetricsTracker(
+		http.DefaultClient,
+		amplitudeAPIKey,
 		userID,
 		deviceID,
-		amplitudeAPIKey,
-		httpClient,
-		botStart,
-		version,
-		gitHash,
-		env,
-		runtime.GOOS,
-		runtime.GOARCH,
-		goarm,
-		runtime.Version(),
-		guiVersionFlag,
-		*options.strategy,
-		float64(botConfig.TickIntervalMillis)/1000,
-		botConfig.TradingExchange,
-		botConfig.TradingPair(),
+		botStartTime,
 		*options.noHeaders, // disable metrics if the CLI specified no headers
-		isTestnet,
-		botConfig.MaxTickDelayMillis,
-		botConfig.SubmitMode,
-		botConfig.DeleteCyclesThreshold,
-		botConfig.FillTrackerSleepMillis,
-		botConfig.FillTrackerDeleteCyclesThreshold,
-		botConfig.SynchronizeStateLoadEnable,
-		botConfig.SynchronizeStateLoadMaxRetries,
-		botConfig.DollarValueFeedBaseAsset != "" && botConfig.DollarValueFeedQuoteAsset != "",
-		botConfig.AlertType,
-		int(botConfig.MonitoringPort) != 0,
-		len(botConfig.Filters) > 0,
-		botConfig.PostgresDbConfig != nil,
-		*options.logPrefix != "",
-		*options.operationalBuffer,
-		*options.operationalBufferNonNativePct,
-		*options.simMode,
-		*options.fixedIterations,
+		plugins.MakeCommonProps(
+			version,
+			gitHash,
+			env,
+			runtime.GOOS,
+			runtime.GOARCH,
+			goarm,
+			runtime.Version(),
+			0,
+			isTestnet,
+			guiVersionFlag,
+		),
+		plugins.MakeCliProps(
+			*options.strategy,
+			float64(botConfig.TickIntervalMillis)/1000,
+			botConfig.TradingExchange,
+			botConfig.TradingPair(),
+			botConfig.MaxTickDelayMillis,
+			botConfig.SubmitMode,
+			botConfig.DeleteCyclesThreshold,
+			botConfig.FillTrackerSleepMillis,
+			botConfig.FillTrackerDeleteCyclesThreshold,
+			botConfig.SynchronizeStateLoadEnable,
+			botConfig.SynchronizeStateLoadMaxRetries,
+			botConfig.DollarValueFeedBaseAsset != "" && botConfig.DollarValueFeedQuoteAsset != "",
+			botConfig.AlertType,
+			int(botConfig.MonitoringPort) != 0,
+			len(botConfig.Filters) > 0,
+			botConfig.PostgresDbConfig != nil,
+			*options.logPrefix != "",
+			*options.operationalBuffer,
+			*options.operationalBufferNonNativePct,
+			*options.simMode,
+			*options.fixedIterations,
+		),
 	)
 	if e != nil {
 		logger.Fatal(l, fmt.Errorf("could not generate metrics tracker: %s", e))
@@ -774,7 +775,7 @@ func runTradeCmd(options inputs) {
 		threadTracker,
 		options,
 		metricsTracker,
-		botStart,
+		botStartTime,
 	)
 	// --- end initialization of objects ---
 	// --- start initialization of services ---
@@ -1048,8 +1049,8 @@ func setLogFile(l logger.Logger, filename string) {
 	defer logPanic(l, false)
 }
 
-func makeLogFilename(logPrefix string, botConfig trader.BotConfig, botStart time.Time) string {
-	botStartStr := botStart.Format("20060102T150405MST")
+func makeLogFilename(logPrefix string, botConfig trader.BotConfig, botStartTime time.Time) string {
+	botStartStr := botStartTime.Format("20060102T150405MST")
 	if botConfig.IsTradingSdex() {
 		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.log", logPrefix, botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB, botStartStr)
 	}

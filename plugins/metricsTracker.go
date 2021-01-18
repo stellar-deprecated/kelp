@@ -47,26 +47,56 @@ type event struct {
 	EventProperties interface{} `json:"event_properties"`
 }
 
-// commonPropsStruct holds the properties that are common to all our Amplitude events.
-// This lives on the `MetricsTracker` struct.
+// CommonPropsStruct holds the properties that are common to all our Amplitude events.
 // TODO DS Add geodata.
 // TODO DS Add cloud server information.
 // TODO DS Add time to run update function as `millisForUpdate`.
-type commonPropsStruct struct {
-	CliVersion                       string  `json:"cli_version"`
-	GitHash                          string  `json:"git_hash"`
-	Env                              string  `json:"env"`
-	Goos                             string  `json:"goos"`
-	Goarch                           string  `json:"goarch"`
-	Goarm                            string  `json:"goarm"`
-	GoVersion                        string  `json:"go_version"`
-	GuiVersion                       string  `json:"gui_version"`
+type CommonPropsStruct struct {
+	CliVersion        string  `json:"cli_version"`
+	GitHash           string  `json:"git_hash"`
+	Env               string  `json:"env"`
+	Goos              string  `json:"goos"`
+	Goarch            string  `json:"goarch"`
+	Goarm             string  `json:"goarm"`
+	GoVersion         string  `json:"go_version"`
+	SecondsSinceStart float64 `json:"seconds_since_start"`
+	IsTestnet         bool    `json:"is_testnet"`
+	GuiVersion        string  `json:"gui_version"` // can be present for cli trackers if they are started from the GUI
+}
+
+// MakeCommonProps is a factory mmethod for CommonPropsStruct
+func MakeCommonProps(
+	cliVersion string,
+	gitHash string,
+	env string,
+	goos string,
+	goarch string,
+	goarm string,
+	goVersion string,
+	secondsSinceStart float64,
+	isTestnet bool,
+	guiVersion string,
+) *CommonPropsStruct {
+	return &CommonPropsStruct{
+		CliVersion:        cliVersion,
+		GitHash:           gitHash,
+		Env:               env,
+		Goos:              goos,
+		Goarch:            goarch,
+		Goarm:             goarm,
+		GoVersion:         goVersion,
+		SecondsSinceStart: secondsSinceStart,
+		IsTestnet:         isTestnet,
+		GuiVersion:        guiVersion,
+	}
+}
+
+// CliPropsStruct contains only those props that are needed for all CLI events
+type CliPropsStruct struct {
 	Strategy                         string  `json:"strategy"`
 	UpdateTimeIntervalSeconds        float64 `json:"update_time_interval_seconds"`
 	Exchange                         string  `json:"exchange"`
 	TradingPair                      string  `json:"trading_pair"`
-	SecondsSinceStart                float64 `json:"seconds_since_start"`
-	IsTestnet                        bool    `json:"is_testnet"`
 	MaxTickDelayMillis               int64   `json:"max_tick_delay_millis"`
 	SubmitMode                       string  `json:"submit_mode"`
 	DeleteCyclesThreshold            int64   `json:"delete_cycles_threshold"`
@@ -84,6 +114,55 @@ type commonPropsStruct struct {
 	OperationalBufferNonNativePct    float64 `json:"operational_buffer_non_native_pct"`
 	SimMode                          bool    `json:"sim_mode"`
 	FixedIterations                  uint64  `json:"fixed_iterations"`
+}
+
+// MakeCliProps is a factory mmethod for CommonPropsStruct
+func MakeCliProps(
+	strategy string,
+	updateTimeIntervalSeconds float64,
+	exchange string,
+	tradingPair string,
+	maxTickDelayMillis int64,
+	submitMode string,
+	deleteCyclesThreshold int64,
+	fillTrackerSleepMillis uint32,
+	fillTrackerDeleteCyclesThreshold int64,
+	synchronizeStateLoadEnable bool,
+	synchronizeStateLoadMaxRetries int,
+	enabledFeatureDollarValue bool,
+	alertType string,
+	enabledFeatureMonitoring bool,
+	enabledFeatureFilters bool,
+	enabledFeaturePostgres bool,
+	enabledFeatureLogging bool,
+	operationalBuffer float64,
+	operationalBufferNonNativePct float64,
+	simMode bool,
+	fixedIterations uint64,
+) *CliPropsStruct {
+	return &CliPropsStruct{
+		Strategy:                         strategy,
+		UpdateTimeIntervalSeconds:        updateTimeIntervalSeconds,
+		Exchange:                         exchange,
+		TradingPair:                      tradingPair,
+		MaxTickDelayMillis:               maxTickDelayMillis,
+		SubmitMode:                       submitMode,
+		DeleteCyclesThreshold:            deleteCyclesThreshold,
+		FillTrackerSleepMillis:           fillTrackerSleepMillis,
+		FillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
+		SynchronizeStateLoadEnable:       synchronizeStateLoadEnable,
+		SynchronizeStateLoadMaxRetries:   synchronizeStateLoadMaxRetries,
+		EnabledFeatureDollarValue:        enabledFeatureDollarValue,
+		AlertType:                        alertType,
+		EnabledFeatureMonitoring:         enabledFeatureMonitoring,
+		EnabledFeatureFilters:            enabledFeatureFilters,
+		EnabledFeaturePostgres:           enabledFeaturePostgres,
+		EnabledFeatureLogging:            enabledFeatureLogging,
+		OperationalBuffer:                operationalBuffer,
+		OperationalBufferNonNativePct:    operationalBufferNonNativePct,
+		SimMode:                          simMode,
+		FixedIterations:                  fixedIterations,
+	}
 }
 
 // updateProps holds the properties for the update Amplitude event.
@@ -139,82 +218,37 @@ func (ar amplitudeResponse) String() string {
 	)
 }
 
-// MakeMetricsTrackerCli is a factory method to create a `metrics.Tracker` from the CLI.
-func MakeMetricsTrackerCli(
+// MakeMetricsTracker is a factory method
+func MakeMetricsTracker(
+	client *http.Client,
+	apiKey string,
 	userID string,
 	deviceID string,
-	apiKey string,
-	client *http.Client,
 	botStartTime time.Time,
-	version string,
-	gitHash string,
-	env string,
-	goos string,
-	goarch string,
-	goarm string,
-	goVersion string,
-	guiVersion string,
-	strategy string,
-	updateTimeIntervalSeconds float64,
-	exchange string,
-	tradingPair string,
 	isDisabled bool,
-	isTestnet bool,
-	maxTickDelayMillis int64,
-	submitMode string,
-	deleteCyclesThreshold int64,
-	fillTrackerSleepMillis uint32,
-	fillTrackerDeleteCyclesThreshold int64,
-	synchronizeStateLoadEnable bool,
-	synchronizeStateLoadMaxRetries int,
-	enabledFeatureDollarValue bool,
-	alertType string,
-	enabledFeatureMonitoring bool,
-	enabledFeatureFilters bool,
-	enabledFeaturePostgres bool,
-	enabledFeatureLogging bool,
-	operationalBuffer float64,
-	operationalBufferNonNativePct float64,
-	simMode bool,
-	fixedIterations uint64,
+	commonProps *CommonPropsStruct,
+	cliProps *CliPropsStruct,
 ) (*MetricsTracker, error) {
-	eventProps := commonPropsStruct{
-		CliVersion:                       version,
-		GitHash:                          gitHash,
-		Env:                              env,
-		Goos:                             goos,
-		Goarch:                           goarch,
-		Goarm:                            goarm,
-		GoVersion:                        goVersion,
-		GuiVersion:                       guiVersion,
-		Strategy:                         strategy,
-		UpdateTimeIntervalSeconds:        updateTimeIntervalSeconds,
-		Exchange:                         exchange,
-		TradingPair:                      tradingPair,
-		SecondsSinceStart:                0,
-		IsTestnet:                        isTestnet,
-		MaxTickDelayMillis:               maxTickDelayMillis,
-		SubmitMode:                       submitMode,
-		DeleteCyclesThreshold:            deleteCyclesThreshold,
-		FillTrackerSleepMillis:           fillTrackerSleepMillis,
-		FillTrackerDeleteCyclesThreshold: fillTrackerDeleteCyclesThreshold,
-		SynchronizeStateLoadEnable:       synchronizeStateLoadEnable,
-		SynchronizeStateLoadMaxRetries:   synchronizeStateLoadMaxRetries,
-		EnabledFeatureDollarValue:        enabledFeatureDollarValue,
-		AlertType:                        alertType,
-		EnabledFeatureMonitoring:         enabledFeatureMonitoring,
-		EnabledFeatureFilters:            enabledFeatureFilters,
-		EnabledFeaturePostgres:           enabledFeaturePostgres,
-		EnabledFeatureLogging:            enabledFeatureLogging,
-		OperationalBuffer:                operationalBuffer,
-		OperationalBufferNonNativePct:    operationalBufferNonNativePct,
-		SimMode:                          simMode,
-		FixedIterations:                  fixedIterations,
+	if commonProps == nil {
+		return nil, fmt.Errorf("need a non-nil commonProps to make a metrics tracker")
 	}
 
-	propsMap, e := utils.ToMapStringInterface(eventProps)
+	commonPropsMap, e := utils.ToMapStringInterface(*commonProps)
 	if e != nil {
-		return nil, fmt.Errorf("could not convert eventProps to map: %s", e)
+		return nil, fmt.Errorf("could not convert commonProps to map: %s", e)
+	}
+
+	var cliPropsMap map[string]interface{}
+	if cliProps != nil {
+		cliPropsMap, e = utils.ToMapStringInterface(*cliProps)
+		if e != nil {
+			return nil, fmt.Errorf("could not convert cliProps to map: %s", e)
+		}
+	}
+
+	mergedProps, e := utils.MergeMaps(commonPropsMap, cliPropsMap)
+	if e != nil {
+		return nil, fmt.Errorf("could not merge commonPropsMap and cliPropsMap: %s", e)
 	}
 
 	return &MetricsTracker{
@@ -222,57 +256,11 @@ func MakeMetricsTrackerCli(
 		apiKey:              apiKey,
 		userID:              userID,
 		deviceID:            deviceID,
-		eventProps:          propsMap,
+		eventProps:          mergedProps,
 		botStartTime:        botStartTime,
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
-		cliVersion:          version,
-	}, nil
-}
-
-// MakeMetricsTrackerGui is a factory method to create a `metrics.Tracker` from the CLI.
-func MakeMetricsTrackerGui(
-	userID string,
-	deviceID string,
-	apiKey string,
-	client *http.Client,
-	botStartTime time.Time,
-	version string,
-	gitHash string,
-	env string,
-	goos string,
-	goarch string,
-	goarm string,
-	goVersion string,
-	guiVersion string,
-	isDisabled bool,
-) (*MetricsTracker, error) {
-	eventProps := commonPropsStruct{
-		CliVersion: version,
-		GitHash:    gitHash,
-		Env:        env,
-		Goos:       goos,
-		Goarch:     goarch,
-		Goarm:      goarm,
-		GoVersion:  goVersion,
-		GuiVersion: guiVersion,
-	}
-
-	propsMap, e := utils.ToMapStringInterface(eventProps)
-	if e != nil {
-		return nil, fmt.Errorf("could not convert eventProps to map: %s", e)
-	}
-
-	return &MetricsTracker{
-		client:              client,
-		apiKey:              apiKey,
-		userID:              userID,
-		deviceID:            deviceID,
-		eventProps:          propsMap,
-		botStartTime:        botStartTime,
-		isDisabled:          isDisabled,
-		updateEventSentTime: nil,
-		cliVersion:          version,
+		cliVersion:          commonProps.CliVersion,
 	}, nil
 }
 
