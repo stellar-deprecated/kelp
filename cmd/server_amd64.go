@@ -315,7 +315,7 @@ func init() {
 					"unknown_todo", // TODO DS Determine how to get GOARM.
 					runtime.Version(),
 					0,
-					false, // isTestnet hardcoded to false for now, but once we allow it on the GUI via enablePubnetBots then this should have that same value
+					true, // isTestnet hardcoded to true for now, but once we allow it on the GUI via enablePubnetBots then this should be set accordingly
 					guiVersion,
 				),
 				nil,
