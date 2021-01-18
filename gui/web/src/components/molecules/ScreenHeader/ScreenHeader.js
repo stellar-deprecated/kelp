@@ -11,6 +11,7 @@ class ScreenHeader extends Component {
       backButton = (
         <div className={styles.buttonWrapper}>
           <Button
+          eventName={this.props.eventPrefix + "-back"}
           icon="back"
           variant="transparent"
           hsize="round"

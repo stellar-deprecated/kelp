@@ -10,7 +10,7 @@ import (
 )
 
 type sendMetricEventRequest struct {
-	EventName string                 `json:"event_name"`
+	EventType string                 `json:"event_type"`
 	EventData map[string]interface{} `json:"event_data"`
 }
 
@@ -34,9 +34,9 @@ func (s *APIServer) sendMetricEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO DS Properly extract and compute time for SendEvent
-	e = s.metricsTracker.SendEvent(req.EventName, req.EventData, time.Now())
+	e = s.metricsTracker.SendEvent(req.EventType, req.EventData, time.Now())
 	if e != nil {
-		s.writeErrorJson(w, fmt.Sprintf("error sending gui event %s: %s", req.EventName, e))
+		s.writeErrorJson(w, fmt.Sprintf("error sending gui event %s: %s", string(bodyBytes), e))
 		return
 	}
 

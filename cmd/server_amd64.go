@@ -298,24 +298,27 @@ func init() {
 			if e != nil {
 				panic(fmt.Errorf("could not generate machine id: %s", e))
 			}
-
-			httpClient := &http.Client{}
-			metricsTracker, e = plugins.MakeMetricsTrackerGui(
-				deviceID,
-				deviceID,
+			userID := deviceID // reuse for now
+			metricsTracker, e = plugins.MakeMetricsTracker(
+				http.DefaultClient,
 				amplitudeAPIKey,
-				httpClient,
-				time.Now(), // TODO: Find proper time.
-				version,
-				gitHash,
-				env,
-				runtime.GOOS,
-				runtime.GOARCH,
-				"unknown_todo", // TODO DS Determine how to get GOARM.
-				runtime.Version(),
-				guiVersion,
+				userID,
+				deviceID,
+				time.Now(),         // TODO: Find proper time.
 				*options.noHeaders, // disable metrics if the CLI specified no headers
-
+				plugins.MakeCommonProps(
+					version,
+					gitHash,
+					env,
+					runtime.GOOS,
+					runtime.GOARCH,
+					"unknown_todo", // TODO DS Determine how to get GOARM.
+					runtime.Version(),
+					0,
+					true, // isTestnet hardcoded to true for now, but once we allow it on the GUI via enablePubnetBots then this should be set accordingly
+					guiVersion,
+				),
+				nil,
 			)
 			if e != nil {
 				panic(e)

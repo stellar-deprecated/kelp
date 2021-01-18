@@ -17,19 +17,22 @@ class StartStop extends Component {
   render() {
     let icon = "";
     let variant = "";
-    let text = ""
+    let text = "";
+    let eventName = "";
     if (this.props.state === Constants.BotState.running) {
       icon = "stop";
       variant = "stop";
       text = "Stop";
+      eventName = "bot-stop";
     } else {
       icon = "start";
       variant = "start";
       text = "Start";
+      eventName = "bot-start";
     }
     let disabled = this.props.state === Constants.BotState.initializing || this.props.state === Constants.BotState.stopping;
 
-    return (<Button icon={icon} size="small" variant={variant} onClick={this.props.onClick} disabled={disabled}>{text}</Button>);
+    return (<Button eventName={eventName} icon={icon} size="small" variant={variant} onClick={this.props.onClick} disabled={disabled}>{text}</Button>);
   }
 }
 

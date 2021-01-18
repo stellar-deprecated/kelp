@@ -102,6 +102,7 @@ class Bots extends Component {
       let screenHeader = (
         <ScreenHeader title={'My Bots'}>
           <Button 
+            eventName={"main-newbot"}
             variant="faded" 
             hsize="short"
             icon="add" 

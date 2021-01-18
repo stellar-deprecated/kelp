@@ -73,7 +73,7 @@ class Welcome extends Component {
           </p>
 
           <div className={styles.footer}>
-            <Button variant="faded" onClick={this.setPage.bind(this, 2)}>Next</Button>
+            <Button eventName="welcome-next" variant="faded" onClick={this.setPage.bind(this, 2)}>Next</Button>
           </div>
         </div>
       </div>
@@ -109,8 +109,8 @@ class Welcome extends Component {
           </ol>
 
           <div className={styles.footer}>
-            <Button variant="faded" onClick={this.accept}>Accept</Button>
-            <Button variant="faded" onClick={this.quit}>Quit</Button>
+            <Button eventName="welcome-accept" variant="faded" onClick={this.accept}>Accept</Button>
+            <Button eventName="welcome-quit" variant="faded" onClick={this.quit}>Quit</Button>
           </div>
         </div>
       </div>

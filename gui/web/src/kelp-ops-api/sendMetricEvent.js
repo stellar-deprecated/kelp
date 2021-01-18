@@ -1,10 +1,10 @@
-export default (baseUrl, name, eventData) => {
+export default (baseUrl, eventType, eventData) => {
     return fetch(baseUrl + "/api/v1/sendMetricEvent", {
         method: "POST",
-        body: {
-            event_name: name,
-            event_props: eventData,
-        },
+        body: JSON.stringify({
+            event_type: eventType,
+            event_data: eventData,
+        }),
     }).then(resp => {
        return resp.json();
     });

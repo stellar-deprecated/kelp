@@ -28,6 +28,7 @@ class PriceFeedAsset extends Component {
     onNewPrice: PropTypes.func,
     optionsMetadata: PropTypes.object,
     readOnly: PropTypes.bool,
+    eventPrefix: PropTypes.string.isRequired,
   };
 
   componentDidMount() {
@@ -97,11 +98,13 @@ class PriceFeedAsset extends Component {
       loading={false}
       price={this.state.price}
       fetchPrice={this.queryPrice}
+      eventPrefix={this.props.eventPrefix}
       />);
     if (this.state.isLoading || !this.props.optionsMetadata) {
       priceDisplay = (<PriceFeedDisplay
         loading={true}
         fetchPrice={this.queryPrice}
+        eventPrefix={this.props.eventPrefix}
         />);
     }
 

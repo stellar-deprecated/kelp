@@ -17,6 +17,7 @@ class SecretKey extends Component {
     onNewKeyClick: PropTypes.func,
     optional: PropTypes.bool,
     readOnly: PropTypes.bool,
+    eventPrefix: PropTypes.string.isRequired,
   };
 
   render() {
@@ -36,7 +37,8 @@ class SecretKey extends Component {
             {inputElem}
           </div>
           <div className={grid.col10p}>
-            <Button 
+            <Button
+              eventName={this.props.eventPrefix + "-new"}
               icon="refresh"
               size="small"
               hsize="round"

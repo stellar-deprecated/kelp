@@ -67,24 +67,26 @@ class Modal extends Component {
       );
     }
 
+    const eventPrefix = "modal-errors";
     let prevButton = null;
     if (this.props.onPrevious) {
-      prevButton = (<Button onClick={this.props.onPrevious} icon="caretLeft" size="medium" className={styles.arrowButton}/>);
+      prevButton = (<Button eventName={eventPrefix + "-previous"} onClick={this.props.onPrevious} icon="caretLeft" size="medium" className={styles.arrowButton}/>);
     }
     const actionButton = (
-      <Button onClick={this.props.onAction}>
+      <Button eventName={eventPrefix + "-action"} onClick={this.props.onAction}>
         {this.props.actionLabel}
       </Button>
     );
     let nextButton = null;
     if (this.props.onNext) {
-      nextButton = (<Button onClick={this.props.onNext} icon="caretRight" size="medium" className={styles.arrowButton}/>);
+      nextButton = (<Button eventName={eventPrefix + "-next"} onClick={this.props.onNext} icon="caretRight" size="medium" className={styles.arrowButton}/>);
     }
 
     return (
       <div className={wrapperClasses}>
         <div className={styles.window}>
-          <Button 
+          <Button
+            eventName={eventPrefix + "-close"}
             icon="close"
             size="small"
             variant="transparent"

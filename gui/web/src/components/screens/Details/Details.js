@@ -76,21 +76,26 @@ class Details extends Component {
     return (
       <div>
         <div className={grid.container}>
-          <ScreenHeader title="Harry the Green Plankton" backButtonFn={this.props.history.goBack}>
-            <PillGroup>
-              <Pill number="1" type={'warning'}/>
-              <Pill number="2" type={'error'}/>
-            </PillGroup>
-            <RunStatus />
-            <StartStop/>
-            <Button
-              icon="options"
-              size="large"
-              variant="transparent"
-              hsize="round"
-              className={styles.optionsWrapper}
-              onClick={this.close}
-            />
+          <ScreenHeader
+            title="Harry the Green Plankton"
+            backButtonFn={this.props.history.goBack}
+            eventPrefix="details"
+            >
+              <PillGroup>
+                <Pill number="1" type={'warning'}/>
+                <Pill number="2" type={'error'}/>
+              </PillGroup>
+              <RunStatus />
+              <StartStop/>
+              <Button
+                eventName={"details-close"}
+                icon="options"
+                size="large"
+                variant="transparent"
+                hsize="round"
+                className={styles.optionsWrapper}
+                onClick={this.close}
+              />
           </ScreenHeader>
 
           <div className={styles.mainInfo}>

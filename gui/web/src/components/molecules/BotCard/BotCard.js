@@ -361,6 +361,7 @@ class BotCard extends Component {
 
         <div className={styles.optionsWrapper} ref={node => this.optionsWrapperNode = node}>
           <Button
+              eventName="bot-menu"
               icon="options"
               size="large"
               variant="transparent"
@@ -373,11 +374,13 @@ class BotCard extends Component {
 
         {/* <div className={styles.sortingArrows}>
           <Button
+              eventName="bot-sortup"
               icon="chevronUp"
               variant="transparent"
               hsize="round"
           />
           <Button
+              eventName="bot-sortdown"
               icon="chevronDown"
               variant="transparent"
               hsize="round"

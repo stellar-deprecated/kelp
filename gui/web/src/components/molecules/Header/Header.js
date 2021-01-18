@@ -13,20 +13,6 @@ class Header extends Component {
               <img src={logo} className={styles.logo} alt="Kelp logo" />
               <span className={styles.version}>{this.props.version}</span>
             </div>
-            {/* <div className={styles.iconMenu}>
-              <Button
-                icon="day"
-                size="large"
-                variant="transparent"
-                hsize="round"
-              />
-              <Button
-                icon="help"
-                size="large"
-                variant="transparent"
-                hsize="round"
-              />
-            </div> */}
           </div>
         </div>
       </header>

@@ -425,7 +425,8 @@ class Form extends Component {
       <div className={grid.container}>
         {error}
         <div className={styles.formFooter}>
-          <Button 
+          <Button
+            eventName={this.props.eventPrefix + "-save"}
             icon="add" 
             size="large" 
             loading={this.state.isSaving}
@@ -449,10 +450,14 @@ class Form extends Component {
     return (
       <div>
         <div className={grid.container}>
-            <ScreenHeader title={this.props.title} backButtonFn={this.props.router.goBack}>
-              {/* <Switch/>
-              <Label>Helper Fields</Label> */}
-              {readOnlyMessage}
+            <ScreenHeader
+              title={this.props.title}
+              backButtonFn={this.props.router.goBack}
+              eventPrefix={this.props.eventPrefix}
+              >
+                {/* <Switch/>
+                <Label>Helper Fields</Label> */}
+                {readOnlyMessage}
             </ScreenHeader>
 
             {error}
@@ -524,6 +529,7 @@ class Form extends Component {
                   onError={() => this.getError("trader_config.trading_secret_seed")}
                   onNewKeyClick={() => this.newSecret("trader_config.trading_secret_seed")}
                   readOnly={this.props.readOnly}
+                  eventPrefix={this.props.eventPrefix + "-secretkey-trader"}
                 />
               </FieldItem>
             </FormSection>
@@ -624,6 +630,7 @@ class Form extends Component {
                   onNewKeyClick={() => this.newSecret("trader_config.source_secret_seed")}
                   optional={true}
                   readOnly={this.props.readOnly}
+                  eventPrefix={this.props.eventPrefix + "-secretkey-source"}
                 />
               </FieldItem>
 
@@ -896,6 +903,7 @@ class Form extends Component {
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("numerator", newPrice)}
                   readOnly={this.props.readOnly}
+                  eventPrefix={this.props.eventPrefix + "-pricefeed-numerator"}
                   />
               </FieldItem>
               <FieldItem>
@@ -914,6 +922,7 @@ class Form extends Component {
                   onLoadingPrice={() => this.setLoadingFormula()}
                   onNewPrice={(newPrice) => this.updateFormulaPrice("denominator", newPrice)}
                   readOnly={this.props.readOnly}
+                  eventPrefix={this.props.eventPrefix + "-pricefeed-denominator"}
                   />
               </FieldItem>
               <FieldItem>
@@ -950,6 +959,7 @@ class Form extends Component {
                     addLevelError={(levelIdx, subfield, message) => { this.addLevelError(levelIdx, subfield, message) }}
                     clearLevelError={(levelIdx, subfield) => { this.clearLevelError(levelIdx, subfield) }}
                     readOnly={this.props.readOnly}
+                    eventPrefix={this.props.eventPrefix + "-levels"}
                     />
                 </FieldGroup>
               </div>
