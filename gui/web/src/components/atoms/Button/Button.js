@@ -45,6 +45,8 @@ class Button extends Component {
     onClick: PropTypes.func,
     loading: PropTypes.bool,
     disabled: PropTypes.bool,
+    // we specify a custom validator. It should return an Error object if the validation fails
+    // don't `console.warn` or throw, as this won't work inside `oneOfType`.
     eventName: function(props, propName, componentName) {
       if (!/^[a-zA-Z0-9]+$/.test(props[propName])) {
         return new Error('Invalid prop `' + propName + '` supplied to `' + componentName + '`. Validation failed.');
@@ -57,7 +59,8 @@ class Button extends Component {
       return
     }
 
-    if (this.props.eventName === "" || this.props.eventName === undefined) {
+    if (!this.props.eventName || this.props.eventName == "") {
+      console.warn("programmer error: no event name provided for this Button, not sending button click event!");
       return
     }
 
