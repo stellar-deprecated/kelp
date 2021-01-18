@@ -48,7 +48,9 @@ class Button extends Component {
     // we specify a custom validator. It should return an Error object if the validation fails
     // don't `console.warn` or throw, as this won't work inside `oneOfType`.
     eventName: function(props, propName, componentName) {
-      if (!/^[a-zA-Z0-9]+$/.test(props[propName])) {
+      // "-" needs to be first or last character to be used literally
+      // source: https://stackoverflow.com/questions/8833963/allow-dash-in-regular-expression
+      if (!/^[-a-zA-Z0-9]+$/.test(props[propName])) {
         return new Error('Invalid prop `' + propName + '` supplied to `' + componentName + '`. Validation failed.');
       }
     },
@@ -59,7 +61,7 @@ class Button extends Component {
       return
     }
 
-    if (!this.props.eventName || this.props.eventName == "") {
+    if (!this.props.eventName || this.props.eventName === "") {
       console.error("programmer error: no event name provided for this Button, not sending button click event!");
       return
     }
