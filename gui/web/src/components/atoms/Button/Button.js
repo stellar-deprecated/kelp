@@ -66,11 +66,11 @@ class Button extends Component {
 
     const _this = this;
     const eventData = {
-      eventName: this.props.eventName,
-      type: "generic",
+      event_name: this.props.eventName,
+      category: "generic",
       component: "button"
     };
-    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(Constants.BaseURL, this.props.eventName, eventData).then(resp => {
+    this._asyncRequests["sendMetricEvent"] = sendMetricEvent(Constants.BaseURL, "gui-button", eventData).then(resp => {
       if (!_this._asyncRequests["sendMetricEvent"]) {
         // if it has been deleted it means we don't want to process the result
         return
