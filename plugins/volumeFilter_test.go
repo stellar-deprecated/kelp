@@ -1239,7 +1239,7 @@ func runTestVolumeFilterFn(
 
 		base := utils.Asset2Asset2(testBaseAsset)
 		quote := utils.Asset2Asset2(testQuoteAsset)
-		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, base, quote, lp)
+		actual, e := volumeFilterFn(action, dailyOTB, dailyTBBAccumulator, inputOp, base, quote, lp)
 		if !assert.Nil(t, e) {
 			return
 		}
