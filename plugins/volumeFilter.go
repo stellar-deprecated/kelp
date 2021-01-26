@@ -147,17 +147,11 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		dateString, dailyValuesBaseSold.BaseVol, utils.Asset2String(f.baseAsset), dailyValuesBaseSold.QuoteVol, utils.Asset2String(f.quoteAsset), f.config)
 
 	// daily on-the-books
-	dailyOTB := &VolumeFilterConfig{
-		BaseAssetCapInBaseUnits:  &dailyValuesBaseSold.BaseVol,
-		BaseAssetCapInQuoteUnits: &dailyValuesBaseSold.QuoteVol,
-	}
+	dailyOTB := makeIntermediateVolumeFilterConfig(&dailyValuesBaseSold.BaseVol, &dailyValuesBaseSold.QuoteVol)
 	// daily to-be-booked starts out as empty and accumulates the values of the operations
 	dailyTbbBase := 0.0
 	dailyTbbSellQuote := 0.0
-	dailyTBB := &VolumeFilterConfig{
-		BaseAssetCapInBaseUnits:  &dailyTbbBase,
-		BaseAssetCapInQuoteUnits: &dailyTbbSellQuote,
-	}
+	dailyTBB := makeIntermediateVolumeFilterConfig(&dailyTbbBase, &dailyTbbSellQuote)
 
 	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 		limitParameters := limitParameters{
@@ -172,6 +166,13 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		return nil, fmt.Errorf("could not apply filter: %s", e)
 	}
 	return ops, nil
+}
+
+func makeIntermediateVolumeFilterConfig(baseCapBaseUnits *float64, baseCapQuoteUnits *float64) *VolumeFilterConfig {
+	return &VolumeFilterConfig{
+		BaseAssetCapInBaseUnits:  baseCapBaseUnits,
+		BaseAssetCapInQuoteUnits: baseCapQuoteUnits,
+	}
 }
 
 func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, lp limitParameters) (*txnbuild.ManageSellOffer, error) {
