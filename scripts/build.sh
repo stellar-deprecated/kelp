@@ -213,13 +213,9 @@ then
     then
         if [ -z "$AMPLITUDE_API_KEY" ]
         then
-            if [[ FORCE_RELEASE -eq 0 ]]
-            then
-                echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
-                exit 1
-            else
-                echo "force release option set so ignoring missing AMPLITUDE_API_KEY"
-            fi
+            # we want this to throw even if doing a force release because the code checks for the key when in release mode
+            echo "error: define the AMPLITUDE_API_KEY environment variable before compiling"
+            exit 1
         fi
         if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9]+)?$ ]]
         then
