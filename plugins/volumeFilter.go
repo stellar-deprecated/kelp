@@ -24,6 +24,11 @@ const (
 	volumeFilterModeIgnore volumeFilterMode = "ignore"
 )
 
+// String is the Stringer method
+func (v volumeFilterMode) String() string {
+	return string(v)
+}
+
 func parseVolumeFilterMode(mode string) (volumeFilterMode, error) {
 	if mode == string(volumeFilterModeExact) {
 		return volumeFilterModeExact, nil
@@ -147,17 +152,11 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 		dateString, dailyValuesBaseSold.BaseVol, utils.Asset2String(f.baseAsset), dailyValuesBaseSold.QuoteVol, utils.Asset2String(f.quoteAsset), f.config)
 
 	// daily on-the-books
-	dailyOTB := &VolumeFilterConfig{
-		BaseAssetCapInBaseUnits:  &dailyValuesBaseSold.BaseVol,
-		BaseAssetCapInQuoteUnits: &dailyValuesBaseSold.QuoteVol,
-	}
+	dailyOTB := makeIntermediateVolumeFilterConfig(&dailyValuesBaseSold.BaseVol, &dailyValuesBaseSold.QuoteVol)
 	// daily to-be-booked starts out as empty and accumulates the values of the operations
 	dailyTbbBase := 0.0
 	dailyTbbSellQuote := 0.0
-	dailyTBB := &VolumeFilterConfig{
-		BaseAssetCapInBaseUnits:  &dailyTbbBase,
-		BaseAssetCapInQuoteUnits: &dailyTbbSellQuote,
-	}
+	dailyTBB := makeIntermediateVolumeFilterConfig(&dailyTbbBase, &dailyTbbSellQuote)
 
 	innerFn := func(op *txnbuild.ManageSellOffer) (*txnbuild.ManageSellOffer, error) {
 		limitParameters := limitParameters{
@@ -165,7 +164,7 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 			baseAssetCapInQuoteUnits: f.config.BaseAssetCapInQuoteUnits,
 			mode:                     f.config.mode,
 		}
-		return volumeFilterFn(dailyOTB, dailyTBB, op, f.baseAsset, f.quoteAsset, limitParameters)
+		return volumeFilterFn(f.config.action, dailyOTB, dailyTBB, op, f.baseAsset, f.quoteAsset, limitParameters)
 	}
 	ops, e = filterOps(f.name, f.baseAsset, f.quoteAsset, sellingOffers, buyingOffers, ops, innerFn)
 	if e != nil {
@@ -174,14 +173,22 @@ func (f *volumeFilter) Apply(ops []txnbuild.Operation, sellingOffers []hProtocol
 	return ops, nil
 }
 
-func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, lp limitParameters) (*txnbuild.ManageSellOffer, error) {
-	isFilterApplicable, e := offerSameTypeAsFilter(dailyOTB, op, baseAsset, quoteAsset)
+func makeIntermediateVolumeFilterConfig(baseCapBaseUnits *float64, baseCapQuoteUnits *float64) *VolumeFilterConfig {
+	return &VolumeFilterConfig{
+		BaseAssetCapInBaseUnits:  baseCapBaseUnits,
+		BaseAssetCapInQuoteUnits: baseCapQuoteUnits,
+	}
+}
+
+func volumeFilterFn(action queries.DailyVolumeAction, dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, lp limitParameters) (*txnbuild.ManageSellOffer, error) {
+	isFilterApplicable, e := offerSameTypeAsFilter(action, op, baseAsset, quoteAsset)
 	if e != nil {
 		return nil, fmt.Errorf("could not compare offer and filter: %s", e)
 	}
 
 	if !isFilterApplicable {
 		// ignore filter so return op directly
+		log.Printf("volumeFilter: isSell=%v, isFilterApplicable=false; keep=true", action.IsSell())
 		return op, nil
 	}
 
@@ -197,7 +204,7 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	// A "buy" op has amount = sellAmount * sellPrice, and price = 1/sellPrice
 	// So, we adjust the offer variables by "undoing" those adjustments
 	// We can then use the same computations as sell orders on buy orders
-	if dailyOTB.action.IsBuy() {
+	if action.IsBuy() {
 		offerAmount = offerAmount * offerPrice
 		offerPrice = 1 / offerPrice
 	}
@@ -219,17 +226,20 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	projected := otb + tbb + offerAmount*capPrice
 	if projected <= cap {
 		dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, offerAmount, offerPrice)
+		log.Printf("volumeFilter: isSell=%v, offerPrice=%.10f, projected (%.10f) <= cap (%.10f); keep=true", action.IsSell(), offerPrice, projected, cap)
 		return op, nil
 	}
 
 	// for ignore type of filters we want to drop the operations when the cap is exceeded
 	if lp.mode == volumeFilterModeIgnore {
+		log.Printf("volumeFilter: isSell=%v, offerPrice=%.10f; lp.mode=%s, keep=false", action.IsSell(), offerPrice, lp.mode.String())
 		return nil, nil
 	}
 
 	// if exact mode and with remaining capacity, update the op amount and return the op otherwise return nil
 	newOfferAmount := (cap - otb - tbb) / capPrice
 	if newOfferAmount <= 0 {
+		log.Printf("volumeFilter: isSell=%v, offerPrice=%.10f, newOfferAmount (%.10f) <= 0; keep=false", action.IsSell(), offerPrice, newOfferAmount)
 		return nil, nil
 	}
 	dailyTBBAccumulator = updateTBB(dailyTBBAccumulator, newOfferAmount, offerPrice)
@@ -243,20 +253,22 @@ func volumeFilterFn(dailyOTB *VolumeFilterConfig, dailyTBBAccumulator *VolumeFil
 	// newOpAmount = newOpAmount * sellOfferPrice
 	// newOpAmount => newOpAmount * 1 / buyOfferPrice
 	newOpAmount := newOfferAmount
-	if dailyOTB.action.IsBuy() {
+	if action.IsBuy() {
 		newOpAmount = newOpAmount * offerPrice
 	}
 	op.Amount = fmt.Sprintf("%.7f", newOpAmount)
 
+	log.Printf("volumeFilter: isSell=%v, offerPrice=%.10f, newOpAmount=%s; keep=true", action.IsSell(), offerPrice, op.Amount)
 	return op, nil
 }
 
-func offerSameTypeAsFilter(filter *VolumeFilterConfig, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) (bool, error) {
+func offerSameTypeAsFilter(action queries.DailyVolumeAction, op *txnbuild.ManageSellOffer, baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset) (bool, error) {
 	opIsSelling, e := utils.IsSelling(baseAsset, quoteAsset, op.Selling, op.Buying)
 	if e != nil {
 		return false, fmt.Errorf("error when running the isSelling check for offer '%+v': %s", *op, e)
 	}
-	isSame := opIsSelling == filter.action.IsSell()
+	isSame := opIsSelling == action.IsSell()
+	log.Printf("volumeFilter: opIsSelling (%v) == filter.action.IsSell() (%v); isSame = %v", opIsSelling, action.IsSell(), isSame)
 	return isSame, nil
 }
 

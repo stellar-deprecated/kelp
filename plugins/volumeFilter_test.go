@@ -1229,8 +1229,8 @@ func runTestVolumeFilterFn(
 		}
 
 		// we pass in nil market IDs and account IDs, as they don't affect correctness
-		dailyOTB := makeRawVolumeFilterConfig(baseOTB, quoteOTB, action, mode, nil, nil)
-		dailyTBBAccumulator := makeRawVolumeFilterConfig(baseTBB, quoteTBB, action, mode, nil, nil)
+		dailyOTB := makeIntermediateVolumeFilterConfig(baseOTB, quoteOTB)
+		dailyTBBAccumulator := makeIntermediateVolumeFilterConfig(baseTBB, quoteTBB)
 		lp := limitParameters{
 			baseAssetCapInBaseUnits:  baseCap,
 			baseAssetCapInQuoteUnits: quoteCap,
@@ -1239,7 +1239,7 @@ func runTestVolumeFilterFn(
 
 		base := utils.Asset2Asset2(testBaseAsset)
 		quote := utils.Asset2Asset2(testQuoteAsset)
-		actual, e := volumeFilterFn(dailyOTB, dailyTBBAccumulator, inputOp, base, quote, lp)
+		actual, e := volumeFilterFn(action, dailyOTB, dailyTBBAccumulator, inputOp, base, quote, lp)
 		if !assert.Nil(t, e) {
 			return
 		}
@@ -1247,7 +1247,7 @@ func runTestVolumeFilterFn(
 			return
 		}
 
-		wantTBBAccumulator := makeRawVolumeFilterConfig(wantBase, wantQuote, action, mode, nil, nil)
+		wantTBBAccumulator := makeIntermediateVolumeFilterConfig(wantBase, wantQuote)
 		assert.Equal(t, wantTBBAccumulator, dailyTBBAccumulator)
 	})
 }
