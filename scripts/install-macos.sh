@@ -25,10 +25,10 @@ function isGo() {
         echo "GOPATH is currently $GOPATH"
     else
         echo "Golang is not installed. Calling install script from git.io/vQhTU"
-        if curl; then
+        if curl --version; then
 			# macOS typically has curl installed
 			curl -L https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
-        elif wget; then
+        elif wget --version; then
 	       	# Linux typically has wget installed
 			wget -q -O - https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
         else
@@ -43,9 +43,9 @@ function isGlide() {
         echo "Glide is installed"
     else
         echo "Installing Glide."
-        if curl; then
+        if curl --version; then
         	curl https://glide.sh/get | sh
-        elif wget; then
+        elif wget --version; then
         	wget https://glide.sh/get | sh
         else
         	echo "curl and wget are not available, install glide manually https://github.com/Masterminds/glide"
