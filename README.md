@@ -99,7 +99,9 @@ To run the bot in simulation mode, try this command:
 
 _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
 
-To compile Kelp from source:
+_Note for MacOS Users: Running [install-macos.sh][install-macos-script] should automate steps 1-9 below. However, manual installation of PostgreSQL and Docker are additionally required._
+
+## Manual Installation Steps
 
 1. [Download][golang-download] and [setup][golang-setup] Golang _v1.13 or later_.
     * Confirm that `$GOPATH` is set, and that `GOBIN=$GOPATH/bin`
@@ -119,7 +121,9 @@ To compile Kelp from source:
     * `./scripts/build.sh`
 8. Confirm one new binary file exists with version information. 
     * `./bin/kelp version`
-9. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
+9. Run the GUI
+	* `./bin/kelp server`
+10. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
     * `sudo docker run -p 3000:3000 -d franzsee/ccxt-rest:v0.0.4`
 
 ## Running Kelp
@@ -404,3 +408,4 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [github-bug-report]: https://github.com/stellar/kelp/issues/new?template=bug_report.md
 [github-feature-request]: https://github.com/stellar/kelp/issues/new?template=feature_request.md
 [github-new-issue]: https://github.com/stellar/kelp/issues/new
+[install-macos-script]:https://github.com/stellar/kelp/blob/master/scripts/install-macos.sh
