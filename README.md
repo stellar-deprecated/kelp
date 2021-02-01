@@ -99,7 +99,7 @@ To run the bot in simulation mode, try this command:
 
 _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps below. This will give you a UNIX environment in which to run your commands and will enable the `./scripts/build.sh` bash script to work correctly._
 
-_Note for MacOS Users: Running [install-macos.sh][install-macos-script] should automate steps 1-9 below. However, manual installation of PostgreSQL and Docker are additionally required._
+_Note for MacOS Users: Running [install-macos.sh][install-macos-script] should automate the steps below. (including cloning the Kelp repo to the correct Go folder) Remember, manual installation of PostgreSQL and Docker are additionally required._
 
 ## Manual Installation Steps
 

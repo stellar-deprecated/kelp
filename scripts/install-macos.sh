@@ -35,7 +35,25 @@ function isGo() {
         	echo "curl and wget are not available, install Golang manually youtube.com/watch?v=MbS1wn0B-fk"
         fi
     fi
+
     isGlide
+}
+
+# Once we have Go working finish the install processes inside the development directory to avoid errors (Glide)
+function cloneAndBuild() {
+    if go version; then
+        # setup Kelp directory in the correct Golang working directory
+        mkdir $GOPATH/src/github.com/stellar/kelp/
+
+        git clone https://github.com/stellar/kelp.git $GOPATH/src/github.com/stellar/kelp
+
+        cd $GOPATH/src/github.com/stellar/kelp
+
+        isGlide
+    else 
+        echo "Golang not installed, try again."
+        exit
+    fi
 }
 
 function isGlide() {
@@ -49,27 +67,26 @@ function isGlide() {
         	wget https://glide.sh/get | sh
         else
         	echo "curl and wget are not available, install glide manually https://github.com/Masterminds/glide"
+            exit
         fi
     fi
-    glide install
+
     isAstilectron
 }
 
 function isAstilectron() {
-	go get -u github.com/asticode/go-astilectron-bundler/... 
-	go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
+    if go version; then
+        go get -u github.com/asticode/go-astilectron-bundler/... 
+        go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
+    else
+        echo "Golang cannot install Astilectron"
+        exit
+    fi
 
-    cloneAndBuild
+    buildAndRun
 }
 
-function cloneAndBuild() {
-	# setup Kelp directories in the correct location
-	mkdir $GOPATH/src/github.com/stellar/kelp/
-
-	git clone https://github.com/stellar/kelp.git $GOPATH/src/github.com/stellar/kelp
-
-	cd $GOPATH/src/github.com/stellar/kelp
-
+function buildAndRun() {
 	# Build the binaries using the provided build script (the go install command will produce a faulty binary):
 	./scripts/build.sh
 
