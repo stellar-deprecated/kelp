@@ -24,27 +24,21 @@ function isGo() {
         echo "Golang is installed"
         echo "GOPATH is currently $GOPATH"
     else
-        echo "Golang is not installed. Calling install script from git.io/vQhTU"
-        if curl --version; then
-			# macOS typically has curl installed
-			curl -L https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
-        elif wget --version; then
-	       	# Linux typically has wget installed
-			wget -q -O - https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
-        else
-        	echo "curl and wget are not available, install Golang manually youtube.com/watch?v=MbS1wn0B-fk"
-        fi
+        echo "Golang is not installed. Calling goinstaller-macos.sh"
+        chmod +x ./goinstaller-macos.sh
+        ./goinstaller-macos.sh
     fi
 
-    isGlide
+    cloneIntoDir
 }
 
 # Once we have Go working finish the install processes inside the development directory to avoid errors (Glide)
-function cloneAndBuild() {
+function cloneIntoDir() {
     if go version; then
-        # setup Kelp directory in the correct Golang working directory
+        echo "Setting up Kelp folders in the Golang working directory"
         mkdir $GOPATH/src/github.com/stellar/kelp/
 
+        echo "Cloning Kelp into $GOPATH/src/github.com/stellar/kelp"
         git clone https://github.com/stellar/kelp.git $GOPATH/src/github.com/stellar/kelp
 
         cd $GOPATH/src/github.com/stellar/kelp
@@ -87,13 +81,17 @@ function isAstilectron() {
 }
 
 function buildAndRun() {
-	# Build the binaries using the provided build script (the go install command will produce a faulty binary):
+	echo "Building Kelp binaries"
 	./scripts/build.sh
 
-	# Confirm one new binary file exists with version information.
-	./bin/kelp version
+    echo "Confirming the Kelp binary exists with version information."
+    if ./bin/kelp version; then
+        echo "Kelp has built successfully"
+    else 
+        echo "The Kelp build was not successful"
+    fi
 
-	# run the GUI
+	echo "run the GUI"
 	./bin/kelp server 
 }
 
