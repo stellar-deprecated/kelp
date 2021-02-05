@@ -25,6 +25,7 @@ function isGo() {
     if go version; then
         echo "Golang is installed at $GOPATH"
     else
+        # Go install script based on https://github.com/canha/golang-tools-install-script
         echo "Golang is not installed. Starting Golang install..."
 
         VERSION="1.15.7"
@@ -66,11 +67,11 @@ function isGo() {
             exit 1
         fi
 
-        if $ZSH_VERSION; then
+        if [ -n "$($SHELL -c 'echo $ZSH_VERSION')" ]; then
             shell_profile="$HOME/.zshrc"
-        elif $BASH_VERSION; then
-            shell_profile="$HOME/.bashrc"   
-        elif $FISH_VERSION; then
+        elif [ -n "$($SHELL -c 'echo $BASH_VERSION')" ]; then
+            shell_profile="$HOME/.bashrc"
+        elif [ -n "$($SHELL -c 'echo $FISH_VERSION')" ]; then
             shell="fish"
             if [ -d "$XDG_CONFIG_HOME" ]; then
                 shell_profile="$XDG_CONFIG_HOME/fish/config.fish"
