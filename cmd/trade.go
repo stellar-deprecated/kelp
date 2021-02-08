@@ -988,7 +988,7 @@ func deleteAllOffersAndExit(
 	e := metricsTracker.SendDeleteEvent(true)
 	if e != nil {
 		// We don't want to crash upon failure, so offers will be deleted regardless of metric send.
-		l.Infof("could not send delete event metric: %s", e)
+		l.Infof("metric - could not send delete event metric: %s", e)
 	}
 
 	l.Info("")
