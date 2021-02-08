@@ -626,7 +626,7 @@ func runTradeCmd(options inputs) {
 
 	e = metricsTracker.SendStartupEvent(time.Now())
 	if e != nil {
-		logger.Fatal(l, fmt.Errorf("could not send startup event metric: %s", e))
+		l.Infof("metric - could not send startup event metric: %s", e)
 	}
 
 	// --- start initialization of objects ----
