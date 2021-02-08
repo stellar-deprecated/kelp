@@ -34,6 +34,7 @@ type MetricsTracker struct {
 	isDisabled          bool
 	updateEventSentTime *time.Time
 	cliVersion          string
+	failedStartupSend   bool
 }
 
 // TODO DS Investigate other fields to add to this top-level event.
@@ -261,6 +262,7 @@ func MakeMetricsTracker(
 		isDisabled:          isDisabled,
 		updateEventSentTime: nil,
 		cliVersion:          commonProps.CliVersion,
+		failedStartupSend:   false,
 	}, nil
 }
 
@@ -271,7 +273,12 @@ func (mt *MetricsTracker) GetUpdateEventSentTime() *time.Time {
 
 // SendStartupEvent sends the startup Amplitude event.
 func (mt *MetricsTracker) SendStartupEvent(now time.Time) error {
-	return mt.SendEvent(startupEventName, mt.eventProps, now)
+	e := mt.SendEvent(startupEventName, mt.eventProps, now)
+	if e != nil {
+		mt.failedStartupSend = true
+		return fmt.Errorf("metric - failed to send startup event: %s", e)
+	}
+	return nil
 }
 
 // SendUpdateEvent sends the update Amplitude event.
@@ -317,6 +324,10 @@ func (mt *MetricsTracker) SendEvent(eventType string, eventPropsInterface interf
 	if mt == nil || mt.apiKey == "" || mt.userID == "-1" || mt.isDisabled {
 		log.Printf("metric - not sending event metric of type '%s' because metrics are disabled", eventType)
 		return nil
+	}
+
+	if mt.failedStartupSend {
+		return fmt.Errorf("metric - not sending event metric of type '%s' because we failed to send startup event", eventType)
 	}
 
 	trackerProps := mt.eventProps
