@@ -92,7 +92,7 @@ class Welcome extends Component {
 
           <ol className={styles.text}>
             <li>
-              Please note that this is a beta version of Kelp GUI offered by the Stellar Development Foundation (“SDF”) which is still undergoing testing and debugging before its GA release. Known issues are being tracked on github <a href="https://github.com/stellar/kelp/issues">here</a>. The Kelp GUI (beta) software, and all content therein, are provided strictly on an “as is” and “as available” basis as part of this beta trial.
+              Please note that this is a beta version of Kelp GUI offered by the Stellar Development Foundation (“SDF”) which is still undergoing testing and debugging before its GA release. Known issues are being tracked on github <a href="https://github.com/stellar/kelp/issues" target="_blank">here</a>. The Kelp GUI (beta) software, and all content therein, are provided strictly on an “as is” and “as available” basis as part of this beta trial.
             </li>
             <li>
               You are responsible for determining the legal and regulatory requirements and restrictions concerning your use of this software. Do not use the software if your usage violates any laws or regulations applicable to you.
@@ -101,10 +101,10 @@ class Welcome extends Component {
               SDF does not give any warranties, whether express or implied, as to the suitability, availability or usability of Kelp GUI (beta), it’s software or any of its content. Your use of Kelp GUI (beta) is solely at your own risk and SDF will not be liable for any loss, whether such loss is direct, indirect, special or consequential, suffered by any party as a result of their use of Kelp GUI (beta), its software or content.
             </li>
             <li>
-              This software is provided under Apache 2.0. Please review the <a href="https://github.com/stellar/kelp/blob/master/LICENSE">license</a> carefully.
+              This software is provided under Apache 2.0. Please review the <a href="https://github.com/stellar/kelp/blob/master/LICENSE" target="_blank">license</a> carefully.
             </li>
             <li>
-              Your use of Kelp GUI Beta is subject to the SDF <a href="https://stellar.org/terms-of-service">Terms</a> and <a href="https://stellar.org/privacy-policy">Privacy Policy</a>.
+              Your use of Kelp GUI Beta is subject to the SDF <a href="https://stellar.org/terms-of-service" target="_blank">Terms</a> and <a href="https://stellar.org/privacy-policy" target="_blank">Privacy Policy</a>.
             </li>
           </ol>
 
