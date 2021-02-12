@@ -8,15 +8,38 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- mirror max base volume cap ([#556](#556))
+- mirror max base volume cap ([#556](https://github.com/stellar/kelp/issues/556))
+- log time taken for update loop ([#558](https://github.com/stellar/kelp/issues/558))
+- add pprof experimental cli option ([12ac3ce9d4d27acd57da0f9d6edeecdf671e1f4f](https://github.com/stellar/kelp/commit/12ac3ce9d4d27acd57da0f9d6edeecdf671e1f4f))
+- Enable GUI metrics tracking (part of [#508](https://github.com/stellar/kelp/issues/508))
+- Add buy infrastructure to volume filter (part of [#522](https://github.com/stellar/kelp/issues/522))
+- Bitstamp Integration ([#489](https://github.com/stellar/kelp/issues/489))
+- Add metrics for operation counts (part of [#551](https://github.com/stellar/kelp/issues/551))
 
 ### Changed
+
+- network speedup: check markets cache for existing symbols in ccxt.go#symbolExists() ([#559](https://github.com/stellar/kelp/issues/559))
+- improve condition for placeSellOpsFirst in mirror strategy ([94a30d652f31d125f8b8424472e8c42e321fbe94](https://github.com/stellar/kelp/commit/94a30d652f31d125f8b8424472e8c42e321fbe94))
+- update circleci config to replace quote asset for test runs ([7a15ab6e1656d51cd7bdf7bc5c9654c439024bfe](https://github.com/stellar/kelp/commit/7a15ab6e1656d51cd7bdf7bc5c9654c439024bfe))
+- conditionally reset cached balances and liabilities to reduce network calls, closes [#561](https://github.com/stellar/kelp/issues/561)
+- use single call to load offers when resetting liabilities, closes [#563](https://github.com/stellar/kelp/issues/563)
+- Add missing CLI metrics from inputs (part of [#551](https://github.com/stellar/kelp/issues/551))
+- add GOARM versions in metrics, closes [#567](https://github.com/stellar/kelp/issues/567)
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- mirror strategy should ignore backing orders below min volume requirement, closes [#569](https://github.com/stellar/kelp/issues/569)
+- move metrics tracker to plugins package to prevent import cycles ([#583](https://github.com/stellar/kelp/issues/583))
+- fix DYNAMIC_LDFLAGS ([#587](https://github.com/stellar/kelp/issues/587))
+- sample_selltwap.cfg uses incorrect fields (DATA_TYPE_A and DATA_FEED_A_URL), replace them, closes [#598](https://github.com/stellar/kelp/issues/598)
+- Add tests for the volume filter (part of [#483](https://github.com/stellar/kelp/issues/483))
+- Add test for volume filter function (closes [#483](https://github.com/stellar/kelp/issues/483))
+- twap strategy throws error if round returns size near 0, closes [#588](https://github.com/stellar/kelp/issues/588)
+- TestMarketID, closes [#594](https://github.com/stellar/kelp/issues/594)
 
 ### Security
 
