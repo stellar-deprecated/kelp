@@ -293,7 +293,8 @@ class App extends Component {
   }
 
   render() {
-    const enablePubnetBots = false;
+    // construction of metricsTracker in server_amd64.go (isTestnet) needs to logically match this variable
+    const enablePubnetBots = true;
 
     let banner = (<div className={styles.banner}>
       <Button
