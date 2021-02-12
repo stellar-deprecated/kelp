@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
@@ -21,6 +22,7 @@ var buildDate string
 var env string
 var amplitudeAPIKey string
 var goarm string
+var buildType string // set from the build script, cli or gui
 
 const envRelease = "release"
 const envDev = "dev"
@@ -49,13 +51,17 @@ var RootCmd = &cobra.Command{
 `
 		fmt.Println(intro)
 
-		if hasUICapability {
+		if buildType == "gui" {
+			// if this is the GUI binary then we want to start off with the server command
 			serverCmd.Run(ccmd, args)
-		} else {
+		} else if buildType == "cli" {
+			// else start off with the help command
 			e := ccmd.Help()
 			if e != nil {
 				panic(e)
 			}
+		} else {
+			panic(fmt.Sprintf("unrecognized buildType: %s", buildType))
 		}
 	},
 }

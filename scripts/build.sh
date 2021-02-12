@@ -281,9 +281,12 @@ then
     gen_bind_files
     echo ""
 
+    # manually set buildType for CLI
+    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=cli"
+
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
-    go build -ldflags "$LDFLAGS" -o $OUTFILE
+    go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
     echo ""
@@ -320,11 +323,13 @@ do
         BINARY="$OUTFILE.exe"
     fi
 
-    DYNAMIC_LDFLAGS="$LDFLAGS"
+    # manually set buildType for CLI
+    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=cli"
+
     if [[ "$GOARM" != "" ]]
     then
         GOARM_FLAGS="-X github.com/stellar/kelp/cmd.goarm=$GOARM"
-        echo "adding GOARM_FLAGS to ldflags: $GOARM_FLAGS"
+        echo "adding GOARM_FLAGS to DYNAMIC_LDFLAGS: $GOARM_FLAGS"
         DYNAMIC_LDFLAGS="$DYNAMIC_LDFLAGS $GOARM_FLAGS"
     fi
 
@@ -406,20 +411,21 @@ do
     # generate bundler.json for platform
     gen_bundler_json -p $GOOS
 
+    # manually set buildType for GUI build
+    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=gui"
+    # manually set buildType for GUI build
+    DYNAMIC_LDFLAGS_UI="$LDFLAGS_UI -ldflags X:github.com/stellar/kelp/cmd.buildType=gui"
+     
     if [[ $GOOS == "windows" ]]
     then
         gen_bind_files
         # compile
         # need to use cli tool for windows because building a GUI version will trigger the command prompt to open every time we invoke a "bash -c" command which is too frequent
         echo -n "compiling UI for windows using cli tool instead of using astilectron-bundler (GOOS=$GOOS, GOARCH=$GOARCH) ... "
-        env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$LDFLAGS" -o $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/kelp.exe
+        env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$DYNAMIC_LDFLAGS" -o $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/kelp.exe
         check_build_result $?
         echo "successful"
         
-        echo -n "copying over kelp-start.bat file to the windows build ..."
-        cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
-        echo "done"
-
         # set paths needed for unzipping the vendor and ccxt files
         VENDOR_FILENAME=""
         CCXT_FILENAME="ccxt-rest_linux-x64.zip"
@@ -429,7 +435,7 @@ do
         # compile
         echo "no need to generate bind files separately since we build using astilectron bundler directly for GUI"
         echo -n "compiling UI for $GOOS via astilectron-bundler (GOOS=$GOOS, GOARCH=$GOARCH) ... "
-        astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $LDFLAGS_UI
+        astilectron-bundler $FLAG -o $ARCHIVE_DIR_SOURCE_UI $DYNAMIC_LDFLAGS_UI
         check_build_result $?
         echo "successful"
 

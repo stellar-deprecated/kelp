@@ -70,8 +70,6 @@ type serverInputs struct {
 }
 
 func init() {
-	hasUICapability = true
-
 	options := serverInputs{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
@@ -123,6 +121,13 @@ func init() {
 
 			if *options.verbose {
 				astilog.SetDefaultLogger()
+			}
+		}
+
+		if runtime.GOOS == "windows" {
+			if *options.noElectron {
+				log.Printf("input options had specified noElectron=true for winndows, but that is not supported on windows yet. force setting noElectron=false for windows.\n")
+				*options.noElectron = false
 			}
 		}
 

@@ -1,1 +1,0 @@
-Kelp.exe server --no-electron
