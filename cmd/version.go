@@ -16,6 +16,7 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("  git branch: %s\n", gitBranch)
 		fmt.Printf("  git hash: %s\n", gitHash)
 		fmt.Printf("  build date: %s\n", buildDate)
+		fmt.Printf("  build type: %s\n", buildType)
 		fmt.Printf("  env: %s\n", env)
 		fmt.Printf("  GOOS: %s\n", runtime.GOOS)
 		fmt.Printf("  GOARCH: %s\n", runtime.GOARCH)

@@ -22,7 +22,7 @@ var buildDate string
 var env string
 var amplitudeAPIKey string
 var goarm string
-var isGuiBinary bool // set from the build script
+var buildType string // set from the build script, cli or gui
 
 const envRelease = "release"
 const envDev = "dev"
@@ -51,15 +51,17 @@ var RootCmd = &cobra.Command{
 `
 		fmt.Println(intro)
 
-		if isGuiBinary {
+		if buildType == "gui" {
 			// if this is the GUI binary then we want to start off with the server command
 			serverCmd.Run(ccmd, args)
-		} else {
+		} else if buildType == "cli" {
 			// else start off with the help command
 			e := ccmd.Help()
 			if e != nil {
 				panic(e)
 			}
+		} else {
+			panic(fmt.Sprintf("unrecognized buildType: %s", buildType))
 		}
 	},
 }

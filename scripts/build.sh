@@ -281,8 +281,8 @@ then
     gen_bind_files
     echo ""
 
-    # manually set isGuiBinary to false
-    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.isGuiBinary=false"
+    # manually set buildType for CLI
+    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=cli"
 
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
@@ -323,8 +323,8 @@ do
         BINARY="$OUTFILE.exe"
     fi
 
-    # manually set isGuiBinary to false
-    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.isGuiBinary=false"
+    # manually set buildType for CLI
+    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=cli"
 
     if [[ "$GOARM" != "" ]]
     then
@@ -411,10 +411,10 @@ do
     # generate bundler.json for platform
     gen_bundler_json -p $GOOS
 
-    # manually set isGuiBinary to true for GUI build
-    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.isGuiBinary=true"
-    # manually set isGuiBinary to true for GUI build
-    DYNAMIC_LDFLAGS_UI="$LDFLAGS_UI -ldflags X:github.com/stellar/kelp/cmd.isGuiBinary=true"
+    # manually set buildType for GUI build
+    DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=gui"
+    # manually set buildType for GUI build
+    DYNAMIC_LDFLAGS_UI="$LDFLAGS_UI -ldflags X:github.com/stellar/kelp/cmd.buildType=gui"
      
     if [[ $GOOS == "windows" ]]
     then
