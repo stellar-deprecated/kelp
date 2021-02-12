@@ -124,6 +124,13 @@ func init() {
 			}
 		}
 
+		if runtime.GOOS == "windows" {
+			if *options.noElectron {
+				log.Printf("input options had specified noElectron=true for winndows, but that is not supported on windows yet. force setting noElectron=false for windows.\n")
+				*options.noElectron = false
+			}
+		}
+
 		// create a latch to trigger the browser opening once the backend server is loaded
 		openBrowserWg := &sync.WaitGroup{}
 		openBrowserWg.Add(1)
