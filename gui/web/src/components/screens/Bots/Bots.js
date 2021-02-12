@@ -33,6 +33,7 @@ class Bots extends Component {
     removeError: PropTypes.func.isRequired,  // (object_name, level, error)
     hideActiveError: PropTypes.func.isRequired, // ()
     findErrors: PropTypes.func.isRequired, // (object_name, level)
+    enablePubnetBots: PropTypes.bool.isRequired,
   };
 
   componentWillUnmount() {
@@ -121,6 +122,7 @@ class Bots extends Component {
         return <BotCard
           key={index} 
           name={bot.name}
+          enablePubnetBots={this.props.enablePubnetBots}
           history={this.props.history}
           running={bot.running}
           addError={(kelpError) => this.props.addError(kelpError)}

@@ -320,7 +320,7 @@ func init() {
 					"unknown_todo", // TODO DS Determine how to get GOARM.
 					runtime.Version(),
 					0,
-					true, // isTestnet hardcoded to true for now, but once we allow it on the GUI via enablePubnetBots then this should be set accordingly
+					false, // isTestnet hardcoded to false since we have enabled pubnet bots from the frontend. This needs to always logically match the frontend
 					guiVersion,
 				),
 				nil,
@@ -734,7 +734,7 @@ func startTailFileServer(tailFileHTML string) int {
 const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<title>Kelp GUI (beta) VERSION_PLACEHOLDER</title>
 		<script type="text/javascript">
 			if (typeof XMLHttpRequest == "undefined") {
 				// this is only for really ancient browsers
@@ -780,7 +780,7 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<title>Kelp GUI (beta) VERSION_PLACEHOLDER</title>
 
 		<style>
 			.button {

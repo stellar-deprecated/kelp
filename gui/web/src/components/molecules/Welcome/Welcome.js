@@ -57,11 +57,11 @@ class Welcome extends Component {
         {kelpLogo}
         <div className={styles.content}>
           <h3 className={styles.title}>
-            Welcome to Kelp
+            Welcome to Kelp GUI (beta)
           </h3>
 
           <p className={styles.text}>
-            Kelp is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges. Kelp is programmed to support multiple trading schemes. This GUI of Kelp is limited to the Stellar Decentralized Exchange with only the buysell scheme.
+            Kelp GUI (beta) is a free and open-source trading bot for the Stellar Decentralized Exchange and centralized exchanges. Kelp is programmed to support multiple trading schemes. This GUI of Kelp is limited to the Stellar Decentralized Exchange with only the buysell scheme.
           </p>
 
           <p className={styles.text}>
@@ -83,7 +83,7 @@ class Welcome extends Component {
         {kelpLogo}
         <div className={styles.content}>
           <h3 className={styles.title}>
-            Legal Disclaimer
+            Kelp GUI (beta) Legal Disclaimer
           </h3>
 
           <p className={styles.text}>
@@ -92,19 +92,19 @@ class Welcome extends Component {
 
           <ol className={styles.text}>
             <li>
-              We do not recommend using this software on mainnet. This is experimental software, has many known bugs, and is not yet ready for use on mainnet. You could lose significant value by using this software on mainnet.
-            </li>
-            <li>
-              If you do alter the code and use it on mainnet, you acknowledge and agree that you fully assume full risk of doing so, and SDF shall not be held liable under any legal theory for loss of funds for any reason.
-            </li>
-            <li>
-              The experience you have with this software may be very different from what you will have on the final software that is made public for use on the mainnet.
-            </li>
-            <li>
-              This software is provided under Apache 2.0. Please review the license carefully.
+              Please note that this is a beta version of Kelp GUI offered by the Stellar Development Foundation (“SDF”) which is still undergoing testing and debugging before its GA release. Known issues are being tracked on github <a href="https://github.com/stellar/kelp/issues" target="_blank">here</a>. The Kelp GUI (beta) software, and all content therein, are provided strictly on an “as is” and “as available” basis as part of this beta trial.
             </li>
             <li>
               You are responsible for determining the legal and regulatory requirements and restrictions concerning your use of this software. Do not use the software if your usage violates any laws or regulations applicable to you.
+            </li>
+            <li>
+              SDF does not give any warranties, whether express or implied, as to the suitability, availability or usability of Kelp GUI (beta), it’s software or any of its content. Your use of Kelp GUI (beta) is solely at your own risk and SDF will not be liable for any loss, whether such loss is direct, indirect, special or consequential, suffered by any party as a result of their use of Kelp GUI (beta), its software or content.
+            </li>
+            <li>
+              This software is provided under Apache 2.0. Please review the <a href="https://github.com/stellar/kelp/blob/master/LICENSE" target="_blank">license</a> carefully.
+            </li>
+            <li>
+              Your use of Kelp GUI Beta is subject to the SDF <a href="https://stellar.org/terms-of-service" target="_blank">Terms</a> and <a href="https://stellar.org/privacy-policy" target="_blank">Privacy Policy</a>.
             </li>
           </ol>
 

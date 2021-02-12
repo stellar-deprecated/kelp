@@ -92,3 +92,18 @@
     // flex-wrap: nowrap;
     justify-content: space-between;
 }
+
+a:link, a:visited {
+    color: $color-link;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:active {
+    color: yellow;
+    text-decoration: underline;
+}
