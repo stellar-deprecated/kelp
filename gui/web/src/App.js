@@ -316,7 +316,7 @@ class App extends Component {
         <Router>
           <Header version={this.state.version}/>
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
+            render={(props) => <Bots {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
             />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}

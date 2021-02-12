@@ -85,6 +85,7 @@ class BotCard extends Component {
 
   static propTypes = {
     name: PropTypes.string.isRequired,
+    enablePubnetBots: PropTypes.bool.isRequired,
     baseUrl: PropTypes.string.isRequired,
     addError: PropTypes.func.isRequired,
     errorLevelInfoForBot: PropTypes.array.isRequired,
@@ -332,6 +333,11 @@ class BotCard extends Component {
   }
 
   render() {
+    if (!this.props.enablePubnetBots && !this.state.botInfo.is_testnet) {
+      // don't show pubnet bots when running a testnet only version
+      return "";
+    }
+
     let popover = "";
     if (this.state.popoverVisible) {
       let enableEdit = this.state.state === Constants.BotState.stopped || this.state.state === Constants.BotState.stopping;
