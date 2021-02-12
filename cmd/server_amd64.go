@@ -734,7 +734,7 @@ func startTailFileServer(tailFileHTML string) int {
 const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<title>Kelp GUI (beta) VERSION_PLACEHOLDER</title>
 		<script type="text/javascript">
 			if (typeof XMLHttpRequest == "undefined") {
 				// this is only for really ancient browsers
@@ -780,7 +780,7 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<title>Kelp GUI (beta) VERSION_PLACEHOLDER</title>
 
 		<style>
 			.button {

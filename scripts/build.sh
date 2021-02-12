@@ -182,7 +182,7 @@ else
 fi
 
 # version is git tag if it's available, otherwise git hash
-GUI_VERSION=v1.0.0-rc1
+GUI_VERSION=v1.0.0-rc2
 VERSION=$(git describe --always --abbrev=8 --dirty --tags)
 GIT_BRANCH=$(git branch | grep \* | cut -d' ' -f2)
 VERSION_STRING="$GIT_BRANCH:$VERSION"

@@ -304,7 +304,7 @@ class App extends Component {
       >
         Quit
       </Button>
-      Kelp UI is only available on the Stellar Test Network
+      Kelp GUI (beta) v1.0.0-rc2
     </div>);
 
     const removeBotError = this.removeError.bind(this, Constants.ErrorType.bot);
