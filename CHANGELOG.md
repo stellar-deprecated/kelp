@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add buy infrastructure to volume filter (part of [#522](https://github.com/stellar/kelp/issues/522))
 - Bitstamp Integration ([#489](https://github.com/stellar/kelp/issues/489))
 - Add metrics for operation counts (part of [#551](https://github.com/stellar/kelp/issues/551))
+- Add Pull Request Guidelines ([#601](https://github.com/stellar/kelp/issues/601))
+- sleep mode type ([#606](https://github.com/stellar/kelp/issues/606))
+- significant reliability improvement in Kelp GUI with regards to errors from backend to frontend ([002a726c877555b277076e280cb32f32ba650af0](https://github.com/stellar/kelp/commit/002a726c877555b277076e280cb32f32ba650af0))
+- add utils.MustParseAsset helper function ([e65e14006d9c32e7349d4d7e23ffe68cede0a8e5](https://github.com/stellar/kelp/commit/e65e14006d9c32e7349d4d7e23ffe68cede0a8e5))
+- new buyTwap strategy ([#522](https://github.com/stellar/kelp/issues/522))
+- Implement missing filter logic related to buy side ([#636](https://github.com/stellar/kelp/issues/636))
 
 ### Changed
 
@@ -25,6 +31,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - use single call to load offers when resetting liabilities, closes [#563](https://github.com/stellar/kelp/issues/563)
 - Add missing CLI metrics from inputs (part of [#551](https://github.com/stellar/kelp/issues/551))
 - add GOARM versions in metrics, closes [#567](https://github.com/stellar/kelp/issues/567)
+- increase default spread in sample config file to avoid op_cross_self errors during submission ([ba35e72a18a793f3fb5241297a87100ff5b6e282](https://github.com/stellar/kelp/commit/ba35e72a18a793f3fb5241297a87100ff5b6e282))
+- deprecate TICK_INTERVAL_SECONDS in favor of TICK_INTERVAL_MILLIS ([#609](https://github.com/stellar/kelp/issues/609), [2e47abae6749840ef600edf2a0a6316ab66d1137](https://github.com/stellar/kelp/commit/2e47abae6749840ef600edf2a0a6316ab66d1137))
+- Refactor volume filter function ([#604](https://github.com/stellar/kelp/issues/604)
 
 ### Deprecated
 
@@ -40,6 +49,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add test for volume filter function (closes [#483](https://github.com/stellar/kelp/issues/483))
 - twap strategy throws error if round returns size near 0, closes [#588](https://github.com/stellar/kelp/issues/588)
 - TestMarketID, closes [#594](https://github.com/stellar/kelp/issues/594)
+- Rename caps in volume filter tests (part of [#522](https://github.com/stellar/kelp/issues/522))
+- add tests for interval time controller ([#605](https://github.com/stellar/kelp/issues/605))
+- Validate volume filter config ([#571](https://github.com/stellar/kelp/issues/571))
+- Modify tests for volume filter ([d811d406cfa8571aa24504ac85f277e03bb060b3](https://github.com/stellar/kelp/commit/d811d406cfa8571aa24504ac85f277e03bb060b3), [798f548e0845b8eb0272480fc3d314462471212d](https://github.com/stellar/kelp/commit/798f548e0845b8eb0272480fc3d314462471212d), [61e2303670de55d2515caea8a7cd6ae0abee23c3](https://github.com/stellar/kelp/commit/61e2303670de55d2515caea8a7cd6ae0abee23c3), [fa2fed9d7c3d78890c86f8103b5a43bfae2be1af](https://github.com/stellar/kelp/commit/fa2fed9d7c3d78890c86f8103b5a43bfae2be1af), [e41133f00ea26c05123bccc11cac395e23f4b1bc](https://github.com/stellar/kelp/commit/e41133f00ea26c05123bccc11cac395e23f4b1bc), [f909f50677ba1e3511024f1a163ecd7b74f02122](https://github.com/stellar/kelp/commit/f909f50677ba1e3511024f1a163ecd7b74f02122), [df4f2fac5c12bfaf566d9caa631993c430da0b12](https://github.com/stellar/kelp/commit/df4f2fac5c12bfaf566d9caa631993c430da0b12), [56c2d6db2655d38b9d65071eea5b0a7590e0b974](https://github.com/stellar/kelp/commit/56c2d6db2655d38b9d65071eea5b0a7590e0b974), [340d6f16469bd4c4ed8e135a9e3f56ad63a9a6e8](https://github.com/stellar/kelp/commit/340d6f16469bd4c4ed8e135a9e3f56ad63a9a6e8))
+- fix botName regex initialization ([554a36b5c22f6fe18d4e7732c92caa49e4ba0ca8](https://github.com/stellar/kelp/commit/554a36b5c22f6fe18d4e7732c92caa49e4ba0ca8))
+- spread value in GUI should be correct along with spread % ([#619](https://github.com/stellar/kelp/issues/619))
 
 ### Security
 
