@@ -32,10 +32,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add missing CLI metrics from inputs (part of [#551](https://github.com/stellar/kelp/issues/551))
 - add GOARM versions in metrics, closes [#567](https://github.com/stellar/kelp/issues/567)
 - increase default spread in sample config file to avoid op_cross_self errors during submission ([ba35e72a18a793f3fb5241297a87100ff5b6e282](https://github.com/stellar/kelp/commit/ba35e72a18a793f3fb5241297a87100ff5b6e282))
-- deprecate TICK_INTERVAL_SECONDS in favor of TICK_INTERVAL_MILLIS ([#609](https://github.com/stellar/kelp/issues/609), [2e47abae6749840ef600edf2a0a6316ab66d1137](https://github.com/stellar/kelp/commit/2e47abae6749840ef600edf2a0a6316ab66d1137))
 - Refactor volume filter function ([#604](https://github.com/stellar/kelp/issues/604)
 
 ### Deprecated
+
+- deprecate TICK_INTERVAL_SECONDS in favor of TICK_INTERVAL_MILLIS ([#609](https://github.com/stellar/kelp/issues/609), [2e47abae6749840ef600edf2a0a6316ab66d1137](https://github.com/stellar/kelp/commit/2e47abae6749840ef600edf2a0a6316ab66d1137))
 
 ### Removed
 
