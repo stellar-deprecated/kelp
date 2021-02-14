@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+
+## [v1.11.0] - 2020-02-14
+
+### Added
+
 - mirror max base volume cap ([#556](https://github.com/stellar/kelp/issues/556))
 - log time taken for update loop ([#558](https://github.com/stellar/kelp/issues/558))
 - add pprof experimental cli option ([12ac3ce9d4d27acd57da0f9d6edeecdf671e1f4f](https://github.com/stellar/kelp/commit/12ac3ce9d4d27acd57da0f9d6edeecdf671e1f4f))
@@ -42,8 +58,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - deprecate TICK_INTERVAL_SECONDS in favor of TICK_INTERVAL_MILLIS ([#609](https://github.com/stellar/kelp/issues/609), [2e47abae6749840ef600edf2a0a6316ab66d1137](https://github.com/stellar/kelp/commit/2e47abae6749840ef600edf2a0a6316ab66d1137))
 
-### Removed
-
 ### Fixed
 
 - mirror strategy should ignore backing orders below min volume requirement, closes [#569](https://github.com/stellar/kelp/issues/569)
@@ -64,10 +78,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - build script should return an error if amplitude key is missing for force releases ([047db942fd7abbfd4ca78fb74ff6d64acc3e2538](https://github.com/stellar/kelp/commit/047db942fd7abbfd4ca78fb74ff6d64acc3e2538))
 - build script should return an error if amplitude key is missing for test releases ([89f3d310da58b498689e7ab3faed5a7cc87a2294](https://github.com/stellar/kelp/commit/89f3d310da58b498689e7ab3faed5a7cc87a2294))
 - do not crash bot when we encounter a startup event error from Amplitude ([#651](https://github.com/stellar/kelp/issues/651))
-
-### Security
-
-
 
 ## [v1.10.0] - 2020-10-22
 
@@ -403,7 +413,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.11.0...HEAD
+[v1.11.0]: https://github.com/stellar/kelp/compare/v1.10.0...v1.11.0
 [v1.10.0]: https://github.com/stellar/kelp/compare/v1.9.0...v1.10.0
 [v1.9.0]: https://github.com/stellar/kelp/compare/v1.8.1...v1.9.0
 [v1.8.1]: https://github.com/stellar/kelp/compare/v1.8.0...v1.8.1
