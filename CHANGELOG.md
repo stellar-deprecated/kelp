@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Refactor volume filter function ([#604](https://github.com/stellar/kelp/issues/604)
 - Update README to include steps to install astilectron-bundler ([ccf2bcabc417242dfe3936869f2d8b15853b5cbd](https://github.com/stellar/kelp/commit/ccf2bcabc417242dfe3936869f2d8b15853b5cbd))
 - clearly document / revise description of behavior of volume filter in config file and revise tests in dailyVolumeByDate ([#623](https://github.com/stellar/kelp/issues/623))
-- clean up root.go basic kelp binary invocation logic ([#568](https://github.com/stellar/kelp/issues/568))
+- clean up root.go basic kelp binary invocation logic ([#568](https://github.com/stellar/kelp/issues/568), [219a557ee5b6b56490cd0aee30d06573e796cc24](https://github.com/stellar/kelp/commit/219a557ee5b6b56490cd0aee30d06573e796cc24))
 
 ### Deprecated
 
