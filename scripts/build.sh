@@ -425,6 +425,10 @@ do
         env GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM go build -ldflags "$DYNAMIC_LDFLAGS" -o $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/kelp.exe
         check_build_result $?
         echo "successful"
+
+        echo -n "copying over kelp-start.bat file to the windows build ..."	
+        cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/	
+        echo "done"
         
         # set paths needed for unzipping the vendor and ccxt files
         VENDOR_FILENAME=""
