@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - build script should return an error if amplitude key is missing for force releases ([047db942fd7abbfd4ca78fb74ff6d64acc3e2538](https://github.com/stellar/kelp/commit/047db942fd7abbfd4ca78fb74ff6d64acc3e2538))
 - build script should return an error if amplitude key is missing for test releases ([89f3d310da58b498689e7ab3faed5a7cc87a2294](https://github.com/stellar/kelp/commit/89f3d310da58b498689e7ab3faed5a7cc87a2294))
 - do not crash bot when we encounter a startup event error from Amplitude ([#651](https://github.com/stellar/kelp/issues/651))
+- fix priceFeed_test by adjusting upper bound of expected XLM price ([84ac63d76f7fafb87d93724cadaebb75448bfc5e](https://github.com/stellar/kelp/commit/84ac63d76f7fafb87d93724cadaebb75448bfc5e))
 
 ## [v1.10.0] - 2020-10-22
 
