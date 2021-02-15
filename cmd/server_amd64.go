@@ -125,9 +125,9 @@ func init() {
 		}
 
 		if runtime.GOOS == "windows" {
-			if *options.noElectron {
-				log.Printf("input options had specified noElectron=true for winndows, but that is not supported on windows yet. force setting noElectron=false for windows.\n")
-				*options.noElectron = false
+			if !*options.noElectron {
+				log.Printf("input options had specified noElectron=false for windows, but electron is not supported on windows yet. force setting noElectron=true for windows.\n")
+				*options.noElectron = true
 			}
 		}
 
