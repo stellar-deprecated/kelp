@@ -20,6 +20,66 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## [v1.11.0] - 2020-02-15
+
+### Added
+
+- mirror max base volume cap ([#556](https://github.com/stellar/kelp/issues/556))
+- log time taken for update loop ([#558](https://github.com/stellar/kelp/issues/558))
+- add pprof experimental cli option ([12ac3ce9d4d27acd57da0f9d6edeecdf671e1f4f](https://github.com/stellar/kelp/commit/12ac3ce9d4d27acd57da0f9d6edeecdf671e1f4f))
+- Enable GUI metrics tracking (part of [#508](https://github.com/stellar/kelp/issues/508), [07e8b1e294f026ec7e12964775fcd2b1a3a56df8](https://github.com/stellar/kelp/commit/07e8b1e294f026ec7e12964775fcd2b1a3a56df8))
+- Add buy infrastructure to volume filter (part of [#522](https://github.com/stellar/kelp/issues/522))
+- Bitstamp Integration ([#489](https://github.com/stellar/kelp/issues/489))
+- Add metrics for operation counts (part of [#551](https://github.com/stellar/kelp/issues/551))
+- Add Pull Request Guidelines ([#601](https://github.com/stellar/kelp/issues/601))
+- sleep mode type ([#606](https://github.com/stellar/kelp/issues/606))
+- significant reliability improvement in Kelp GUI with regards to errors from backend to frontend ([002a726c877555b277076e280cb32f32ba650af0](https://github.com/stellar/kelp/commit/002a726c877555b277076e280cb32f32ba650af0))
+- add utils.MustParseAsset helper function ([e65e14006d9c32e7349d4d7e23ffe68cede0a8e5](https://github.com/stellar/kelp/commit/e65e14006d9c32e7349d4d7e23ffe68cede0a8e5))
+- new buyTwap strategy ([#522](https://github.com/stellar/kelp/issues/522))
+- Implement missing filter logic related to buy side ([#636](https://github.com/stellar/kelp/issues/636))
+- Kelp GUI: enable public network ([#649](https://github.com/stellar/kelp/issues/649))
+
+### Changed
+
+- network speedup: check markets cache for existing symbols in ccxt.go#symbolExists() ([#559](https://github.com/stellar/kelp/issues/559))
+- improve condition for placeSellOpsFirst in mirror strategy ([94a30d652f31d125f8b8424472e8c42e321fbe94](https://github.com/stellar/kelp/commit/94a30d652f31d125f8b8424472e8c42e321fbe94))
+- update circleci config to replace quote asset for test runs ([7a15ab6e1656d51cd7bdf7bc5c9654c439024bfe](https://github.com/stellar/kelp/commit/7a15ab6e1656d51cd7bdf7bc5c9654c439024bfe))
+- conditionally reset cached balances and liabilities to reduce network calls, closes [#561](https://github.com/stellar/kelp/issues/561)
+- use single call to load offers when resetting liabilities, closes [#563](https://github.com/stellar/kelp/issues/563)
+- Add missing CLI metrics from inputs (part of [#551](https://github.com/stellar/kelp/issues/551))
+- add GOARM versions in metrics, closes [#567](https://github.com/stellar/kelp/issues/567)
+- increase default spread in sample config file to avoid op_cross_self errors during submission ([ba35e72a18a793f3fb5241297a87100ff5b6e282](https://github.com/stellar/kelp/commit/ba35e72a18a793f3fb5241297a87100ff5b6e282))
+- Refactor volume filter function ([#604](https://github.com/stellar/kelp/issues/604)
+- Update README to include steps to install astilectron-bundler ([ccf2bcabc417242dfe3936869f2d8b15853b5cbd](https://github.com/stellar/kelp/commit/ccf2bcabc417242dfe3936869f2d8b15853b5cbd))
+- clearly document / revise description of behavior of volume filter in config file and revise tests in dailyVolumeByDate ([#623](https://github.com/stellar/kelp/issues/623))
+- clean up root.go basic kelp binary invocation logic ([#568](https://github.com/stellar/kelp/issues/568), [219a557ee5b6b56490cd0aee30d06573e796cc24](https://github.com/stellar/kelp/commit/219a557ee5b6b56490cd0aee30d06573e796cc24))
+
+### Deprecated
+
+- deprecate TICK_INTERVAL_SECONDS in favor of TICK_INTERVAL_MILLIS ([#609](https://github.com/stellar/kelp/issues/609), [2e47abae6749840ef600edf2a0a6316ab66d1137](https://github.com/stellar/kelp/commit/2e47abae6749840ef600edf2a0a6316ab66d1137))
+
+### Fixed
+
+- mirror strategy should ignore backing orders below min volume requirement, closes [#569](https://github.com/stellar/kelp/issues/569)
+- move metrics tracker to plugins package to prevent import cycles ([#583](https://github.com/stellar/kelp/issues/583))
+- fix DYNAMIC_LDFLAGS ([#587](https://github.com/stellar/kelp/issues/587))
+- sample_selltwap.cfg uses incorrect fields (DATA_TYPE_A and DATA_FEED_A_URL), replace them, closes [#598](https://github.com/stellar/kelp/issues/598)
+- Add tests for the volume filter (part of [#483](https://github.com/stellar/kelp/issues/483))
+- Add test for volume filter function (closes [#483](https://github.com/stellar/kelp/issues/483))
+- twap strategy throws error if round returns size near 0, closes [#588](https://github.com/stellar/kelp/issues/588)
+- TestMarketID, closes [#594](https://github.com/stellar/kelp/issues/594)
+- Rename caps in volume filter tests (part of [#522](https://github.com/stellar/kelp/issues/522))
+- add tests for interval time controller ([#605](https://github.com/stellar/kelp/issues/605))
+- Validate volume filter config ([#571](https://github.com/stellar/kelp/issues/571))
+- Modify tests for volume filter ([d811d406cfa8571aa24504ac85f277e03bb060b3](https://github.com/stellar/kelp/commit/d811d406cfa8571aa24504ac85f277e03bb060b3), [798f548e0845b8eb0272480fc3d314462471212d](https://github.com/stellar/kelp/commit/798f548e0845b8eb0272480fc3d314462471212d), [61e2303670de55d2515caea8a7cd6ae0abee23c3](https://github.com/stellar/kelp/commit/61e2303670de55d2515caea8a7cd6ae0abee23c3), [fa2fed9d7c3d78890c86f8103b5a43bfae2be1af](https://github.com/stellar/kelp/commit/fa2fed9d7c3d78890c86f8103b5a43bfae2be1af), [e41133f00ea26c05123bccc11cac395e23f4b1bc](https://github.com/stellar/kelp/commit/e41133f00ea26c05123bccc11cac395e23f4b1bc), [f909f50677ba1e3511024f1a163ecd7b74f02122](https://github.com/stellar/kelp/commit/f909f50677ba1e3511024f1a163ecd7b74f02122), [df4f2fac5c12bfaf566d9caa631993c430da0b12](https://github.com/stellar/kelp/commit/df4f2fac5c12bfaf566d9caa631993c430da0b12), [56c2d6db2655d38b9d65071eea5b0a7590e0b974](https://github.com/stellar/kelp/commit/56c2d6db2655d38b9d65071eea5b0a7590e0b974), [340d6f16469bd4c4ed8e135a9e3f56ad63a9a6e8](https://github.com/stellar/kelp/commit/340d6f16469bd4c4ed8e135a9e3f56ad63a9a6e8))
+- fix botName regex initialization ([554a36b5c22f6fe18d4e7732c92caa49e4ba0ca8](https://github.com/stellar/kelp/commit/554a36b5c22f6fe18d4e7732c92caa49e4ba0ca8))
+- spread value in GUI should be correct along with spread % ([#619](https://github.com/stellar/kelp/issues/619))
+- bugfix: volumeFilterFn should explicitly take in action buy/sell ([#646](https://github.com/stellar/kelp/issues/646))
+- build script should return an error if amplitude key is missing for force releases ([047db942fd7abbfd4ca78fb74ff6d64acc3e2538](https://github.com/stellar/kelp/commit/047db942fd7abbfd4ca78fb74ff6d64acc3e2538))
+- build script should return an error if amplitude key is missing for test releases ([89f3d310da58b498689e7ab3faed5a7cc87a2294](https://github.com/stellar/kelp/commit/89f3d310da58b498689e7ab3faed5a7cc87a2294))
+- do not crash bot when we encounter a startup event error from Amplitude ([#651](https://github.com/stellar/kelp/issues/651))
+- fix priceFeed_test by adjusting upper bound of expected XLM price ([84ac63d76f7fafb87d93724cadaebb75448bfc5e](https://github.com/stellar/kelp/commit/84ac63d76f7fafb87d93724cadaebb75448bfc5e))
+
 ## [v1.10.0] - 2020-10-22
 
 ### Added
@@ -354,7 +414,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.11.0...HEAD
+[v1.11.0]: https://github.com/stellar/kelp/compare/v1.10.0...v1.11.0
 [v1.10.0]: https://github.com/stellar/kelp/compare/v1.9.0...v1.10.0
 [v1.9.0]: https://github.com/stellar/kelp/compare/v1.8.1...v1.9.0
 [v1.8.1]: https://github.com/stellar/kelp/compare/v1.8.0...v1.8.1
