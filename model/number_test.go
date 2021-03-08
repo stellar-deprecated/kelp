@@ -39,6 +39,11 @@ func TestNumberFromFloat(t *testing.T) {
 			precision:  1,
 			wantString: "0.1",
 			wantFloat:  0.1,
+		}, {
+			f:          50000.0,
+			precision:  14,
+			wantString: "50000.00000000000000",
+			wantFloat:  50000.0,
 		},
 	}
 
@@ -99,6 +104,68 @@ func TestNumberFromFloatRoundTruncate(t *testing.T) {
 			if !assert.Equal(t, kase.wantFloat, n.AsFloat()) {
 				return
 			}
+		})
+	}
+}
+
+func TestToFixed(t *testing.T) {
+	testCases := []struct {
+		num       float64
+		precision int8
+		rounding  Rounding
+		wantOut   float64
+	}{
+		// precision 5
+		{
+			num:       50000.12345,
+			precision: 5,
+			rounding:  RoundUp,
+			wantOut:   50000.12345,
+		}, {
+			num:       50000.12345,
+			precision: 5,
+			rounding:  RoundTruncate,
+			wantOut:   50000.12345,
+		}, {
+			num:       0.00002,
+			precision: 5,
+			rounding:  RoundUp,
+			wantOut:   0.00002,
+		}, {
+			num:       0.00002,
+			precision: 5,
+			rounding:  RoundTruncate,
+			wantOut:   0.00002,
+		},
+		// precision 4
+		{
+			num:       50000.12345,
+			precision: 4,
+			rounding:  RoundUp,
+			wantOut:   50000.1235,
+		}, {
+			num:       50000.12345,
+			precision: 4,
+			rounding:  RoundTruncate,
+			wantOut:   50000.1234,
+		}, {
+			num:       0.00002,
+			precision: 4,
+			rounding:  RoundUp,
+			wantOut:   0.0000, // we do not round the 2 up, if it was a 5 then we would round it up
+		}, {
+			num:       0.00002,
+			precision: 4,
+			rounding:  RoundTruncate,
+			wantOut:   0.0000,
+		},
+	}
+
+	for i, k := range testCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual := toFixed(k.num, k.precision, k.rounding)
+
+			assert.Equal(t, k.wantOut, actual)
 		})
 	}
 }
@@ -301,7 +368,12 @@ func TestUnaryOperations(t *testing.T) {
 			n:          NumberFromFloat(0.2812, 3),
 			wantAbs:    0.281,
 			wantNegate: -0.281,
-			wantInvert: 3.558718861209964,
+			wantInvert: 3.55871886121,
+		}, {
+			n:          NumberFromFloat(0.00002, 10),
+			wantAbs:    0.00002,
+			wantNegate: -0.00002,
+			wantInvert: 50000.0,
 		},
 	}
 
@@ -321,7 +393,7 @@ func TestUnaryOperations(t *testing.T) {
 			if !assert.Equal(t, kase.wantInvert, inverted.AsFloat()) {
 				return
 			}
-			if !assert.Equal(t, int8(15), inverted.precision) {
+			if !assert.Equal(t, int8(11), inverted.precision) {
 				return
 			}
 		})
