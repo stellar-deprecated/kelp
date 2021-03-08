@@ -9,7 +9,7 @@ commands:
             - v5-node-cache
       - run:
           name: Install glide
-          command: curl https://glide.sh/get | sh
+          command: sudo apt-get update -y && sudo apt-get install -y golang-glide
       - run:
           name: Install dependencies using glide
           command: glide install
