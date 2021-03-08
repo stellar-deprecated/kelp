@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/big"
 	"strconv"
 
 	"github.com/stellar/go/price"
@@ -19,7 +20,8 @@ var NumberConstants = struct {
 }
 
 // InvertPrecision is the precision of the number after it is inverted
-const InvertPrecision = 15
+// this is only 11 becuase if we keep it larger such as 15 then inversions are inaccurate for larger numbers such as inverting 0.00002
+const InvertPrecision = 11
 
 // InternalCalculationsPrecision is the precision to be used for internal calculations in a function
 const InternalCalculationsPrecision = 15
@@ -157,7 +159,19 @@ func InvertNumber(n *Number) *Number {
 	if n == nil {
 		return nil
 	}
-	return NumberFromFloat(1.0/n.AsFloat(), InvertPrecision)
+
+	// return 0 for the inverse of 0 to keep it safe
+	if n.AsFloat() == 0 {
+		log.Printf("trying to invert the number 0, returning the same number to keep it safe")
+		return n
+	}
+
+	bigNum := big.NewRat(1, 1)
+	bigNum = bigNum.SetFloat64(n.AsFloat())
+	bigInv := bigNum.Inv(bigNum)
+
+	bigInvFloat64, _ := bigInv.Float64()
+	return NumberFromFloat(bigInvFloat64, InvertPrecision)
 }
 
 // NumberByCappingPrecision returns a number with a precision that is at max the passed in precision
@@ -174,8 +188,7 @@ func round(num float64, rounding Rounding) int64 {
 	} else if rounding == RoundTruncate {
 		return int64(num)
 	} else {
-		// error
-		return -1
+		panic(fmt.Sprintf("unknown rounding type %v", rounding))
 	}
 }
 
@@ -189,8 +202,26 @@ const (
 )
 
 func toFixed(num float64, precision int8, rounding Rounding) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output, rounding)) / output
+	bigNum := big.NewRat(1, 1)
+	bigNum = bigNum.SetFloat64(num)
+	bigPow := big.NewRat(1, 1)
+	bigPow = bigPow.SetFloat64(math.Pow(10, float64(precision)))
+
+	// multiply
+	bigMultiply := bigNum.Mul(bigNum, bigPow)
+
+	// convert to int after rounding
+	bigMultiplyFloat64, _ := bigMultiply.Float64()
+	roundedInt64 := round(bigMultiplyFloat64, rounding)
+	bigMultiplyIntFloat64 := big.NewRat(1, 1)
+	bigMultiplyIntFloat64 = bigMultiplyIntFloat64.SetInt64(roundedInt64)
+
+	// divide it
+	bigPowInverse := bigPow.Inv(bigPow)
+	bigResult := bigMultiply.Mul(bigMultiplyIntFloat64, bigPowInverse)
+
+	br, _ := bigResult.Float64()
+	return br
 }
 
 func minPrecision(n1 Number, n2 Number) int8 {
