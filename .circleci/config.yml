@@ -9,7 +9,7 @@ commands:
             - v5-node-cache
       - run:
           name: Install glide
-          command: sudo add-apt-repository ppa:masterminds/glide && sudo apt-get update && sudo apt-get install glide
+          command: sudo apt-get update -y && sudo apt-get install -y glide
       - run:
           name: Install dependencies using glide
           command: glide install
