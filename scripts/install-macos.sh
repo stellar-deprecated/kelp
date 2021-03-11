@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # shellcheck disable=SC2016
 set -e
 
@@ -54,7 +54,7 @@ function installGo() {
     # Go install script based on https://github.com/canha/golang-tools-install-script
     VERSION="1.15.7"
 
-    [ -z "$GOROOT" ] && GOROOT="/usr/local/go"
+    [ -z "$GOROOT" ] && GOROOT="$HOME/go/go-install-do-not-delete"
     [ -z "$GOPATH" ] && GOPATH="$HOME/go"
 
     OS="$(uname -s)"
@@ -91,15 +91,23 @@ function installGo() {
         exit 1
     fi
 
-    if [ -n "$($SHELL -c 'echo $BASH_VERSION')" ]; then
+    if [ '/bin/bash' == `which bash` ]; then 
         shell_profile="$HOME/.bashrc"
+        echo "bash is installed"
     else
         echo "Kelp requires bash"
     fi
 
+    {
+        echo '# GoLang'
+        echo "export GOROOT=${GOROOT}"
+        echo 'export PATH=$GOROOT/bin:$PATH'
+        echo "export GOPATH=$GOPATH"
+        echo 'export PATH=$GOPATH:$PATH'
+    } >> "$shell_profile"
+
     if [ -d "$GOROOT" ]; then
-        echo "The Go install directory ($GOROOT) already exists. Exiting."
-        exit 1
+        echo "The Go install directory ($GOROOT) already exists."
     fi
 
     PACKAGE_NAME="go$VERSION.$PLATFORM.tar.gz"
@@ -119,35 +127,36 @@ function installGo() {
 
     echo "Extracting File..."
 
-    sudo chown -R $USER: $HOME # https://github.com/golang/go/issues/27187
+    # sudo chown -R $USER: $HOME # https://github.com/golang/go/issues/27187
     mkdir -p "$GOROOT"
 
     tar -C "$GOROOT" --strip-components=1 -xzf "$TEMP_DIRECTORY/go.tar.gz"
 
-    GOROOT=${GOROOT}
-    PATH=$GOROOT/bin:$PATH
-    GOPATH=$GOPATH
-    PATH=$GOPATH:$PATH
+    # GOROOT=${GOROOT}
+    # PATH=$GOROOT/bin:$PATH
+    # GOPATH=$GOPATH
+    # PATH=$GOPATH:$PATH
 
     mkdir -p "${GOPATH}/"{src,pkg,bin}
     echo -e "\nGo $VERSION was installed into $GOROOT.\nMake sure to relogin into your shell or run:"
     echo -e "\n\ restart script to update your environment variables."
     echo "Tip: Opening a new terminal window usually just works. :)"
     rm -f "$TEMP_DIRECTORY/go.tar.gz"
-    exit
 }
 
 # Once we have Golang; finish the install processes inside the development directory to avoid errors (Glide)
 function cloneIntoDir() {
     echo "Setting up Kelp folders in the Golang working directory"
-    echo $GOPATH
-    cd $GOPATH
-
-    # pwd
-    sudo mkdir github.com/stellar/kelp
-
-    echo "Cloning Kelp into $GOPATH/src/github.com/stellar/kelp"
-    git clone https://github.com/stellar/kelp.git $GOPATH/src/github.com/stellar/kelp
+    
+    # check github.com/stellar/kelp
+    if [ -d "$GOPATH/github.com/stellar/kelp" ]; then
+        echo "Kelp dir exists, no need to clone."
+    else
+        # pwd
+        mkdir -p $GOPATH/github.com/stellar/kelp
+        echo "Cloning Kelp into $GOPATH/src/github.com/stellar/kelp"
+        git clone https://github.com/stellar/kelp.git $GOPATH/src/github.com/stellar/kelp
+    fi
 
     cd $GOPATH/src/github.com/stellar/kelp
 }
@@ -163,6 +172,8 @@ function installGlide() {
         echo "curl and wget are not available, install glide manually https://github.com/Masterminds/glide"
         exit
     fi
+
+    glide install
 }
 
 # After Glide install Astilectron
@@ -171,21 +182,54 @@ function installAstilectron() {
     go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
 }
 
-# Finally install build Kelp and run it
-function buildKelpAndRun() {
-    echo "Building Kelp binaries"
-    ./scripts/build.sh
+function postGoInstall() {
+    cloneIntoDir
+    isGlide
+    installAstilectron
 
-    echo "Confirming the Kelp binary exists with version information."
-    if ./bin/kelp version; then
-        echo "Kelp has built successfully"
-    else 
-        echo "The Kelp build was not successful"
+    checkDeps
+    echo "Remember, PostgreSQL must be running to store data."
+    echo "Remember, Docker and CCXT must be configured for the expanded set of priceFeeds and orderbooks."
+    echo "Run everything related to Kelp in BASH shell only."
+    echo "All dependencies successfully installed. Run build script from $GOPATH/src/github.com/stellar/kelp/scripts/build.sh"
+}
+
+# Utility function for checking dependency statuses
+function checkDeps(){
+    isNode
+    if [ $OK ]; then
+        echo "Node `node -v` is installed"
+    else
+        echo "Node is not installed"
     fi
 
-    echo "run the GUI"
-    ./bin/kelp server 
+    isYarn
+    if [ $OK ]; then
+        echo "Yarn `yarn -v` is installed"
+    else
+        echo "Yarn is not installed"
+    fi
+
+    isGit
+    if [ $OK ]; then
+        echo "`git version` is installed"
+    else
+        echo "Git is not installed"
+    fi
+
+    isGo
+    if $OK; then
+        echo "`go version` is installed"
+    else
+        echo "Goland is not installed"
+    fi
 }
+
+
+#**********************
+# Execute the functions
+#**********************
+cd
 
 isNode
 if [ $OK ]; then
@@ -212,15 +256,13 @@ else
 fi
 
 isGo
-echo $OK
 if $OK; then
     echo "true for some reason"
-    cloneIntoDir
-    isGlide
-    installAstilectron
-    buildAndRun
-    echo "Remember, PostgreSQL must be running to store data."
-    echo "Remember, Docker and CCXT must be configured for the expanded set of priceFeeds and orderbooks."
 else
     installGo
+    echo "Finished installing Golang, now sourcing from .bashrc"
+    source $HOME/.bashrc
 fi
+
+echo "Go version = $((go version))" 
+postGoInstall
