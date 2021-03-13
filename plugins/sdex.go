@@ -557,7 +557,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 
 		tradesPage, e := sdex.API.Trades(tradeReq)
 		if e != nil {
-			if strings.Contains(e.Error(), "Rate limit exceeded") {
+			if strings.Contains(strings.ToLower(e.Error()), "rate limit exceeded") {
 				// return normally, we will continue loading trades in the next call from where we left off
 				return &api.TradeHistoryResult{
 					Cursor: cursorStart,
