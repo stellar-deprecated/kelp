@@ -559,10 +559,10 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		}
 
 		tradesPage, e := sdex.API.Trades(tradeReq)
-		log.Printf("returned from fetch trades API call for SDEX (len(records) = %d, error = %v)", len(tradesPage.Embedded.Records), e)
+		log.Printf("returned from fetch trades API call for SDEX using cursor '%s' (len(records) = %d, error = %v)", cursorStart, len(tradesPage.Embedded.Records), e)
 		if e != nil {
 			if isRateLimitError(e) {
-				log.Printf("encountered a rate limit error when fetching trades from cursor '%s', return normally, we will continue loading trades in the next call from where we left off", cursorStart)
+				log.Printf("encountered a rate limit error when fetching trades from cursor '%s', return normally, we will continue loading trades in the next call from where we left off (len(trades) = %d)", cursorStart, len(trades))
 				return &api.TradeHistoryResult{
 					Cursor: cursorStart,
 					Trades: trades,
@@ -616,12 +616,14 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		}
 		cursorStart = trades[len(trades)-1].TransactionID.String()
 
-		if hitCursorEnd || len(trades) == sdexTradesFetchLimit || hitRateLimit {
+		stoppingCondition := hitCursorEnd || len(trades) == sdexTradesFetchLimit || hitRateLimit
+		if stoppingCondition {
 			return &api.TradeHistoryResult{
 				Cursor: cursorStart,
 				Trades: trades,
 			}, nil
 		}
+		log.Printf("continuing to fetch trades from the new updated cursor (%s) because we did not hit a stoppping condition, (len(trades) = %d, sdexTradesFetchLimit = %d; hitCursorEnd=%v, hitRateLimit=%v)", cursorStart, len(trades), sdexTradesFetchLimit, hitCursorEnd, hitRateLimit)
 	}
 }
 
