@@ -615,9 +615,12 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		if len(trades) > sdexTradesFetchLimit {
 			trades = trades[:sdexTradesFetchLimit]
 		}
-		cursorStart = trades[len(trades)-1].TransactionID.String()
+		if len(trades) > 0 {
+			// it could fail this condition because we hit a rate limit issue on trying to process the first result in the list even though the list had more than 0 items
+			cursorStart = trades[len(trades)-1].TransactionID.String()
+		}
 
-		stoppingCondition := hitCursorEnd || len(trades) == sdexTradesFetchLimit || hitRateLimit
+		stoppingCondition := hitCursorEnd || len(trades) >= sdexTradesFetchLimit || hitRateLimit
 		if stoppingCondition {
 			return &api.TradeHistoryResult{
 				Cursor: cursorStart,
