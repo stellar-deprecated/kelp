@@ -562,7 +562,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		log.Printf("returned from fetch trades API call for SDEX (len(records) = %d, error = %v)", len(tradesPage.Embedded.Records), e)
 		if e != nil {
 			if isRateLimitError(e) {
-				// return normally, we will continue loading trades in the next call from where we left off
+				log.Printf("encountered a rate limit error when fetching trades from cursor '%s', return normally, we will continue loading trades in the next call from where we left off", cursorStart)
 				return &api.TradeHistoryResult{
 					Cursor: cursorStart,
 					Trades: trades,
@@ -600,7 +600,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(baseAsset, quoteAsset, tradesPage, cursorEnd)
 		if e != nil {
 			if isRateLimitError(e) {
-				// return normally, we will continue loading trades in the next call from where we left off
+				log.Printf("encountered a rate limit error when converting tradesPage2TradeHistoryResult, return normally, we will continue loading trades in the next call from where we left off")
 				return &api.TradeHistoryResult{
 					Cursor: cursorStart,
 					Trades: trades,
