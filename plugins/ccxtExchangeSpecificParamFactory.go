@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/stellar/kelp/api"
+	"github.com/stellar/kelp/model"
 )
 
 /****************************** COINBASE PRO ******************************/
@@ -33,6 +34,11 @@ func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) getParamsForGetTradeHistor
 
 func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) useSignToDenoteSideForTrades() bool {
 	return false
+}
+
+func (f *ccxtExchangeSpecificParamFactoryCoinbasepro) getCursorFetchTrades(t model.Trade) (interface{}, error) {
+	// not implemented so use default implementation
+	return nil, nil
 }
 
 var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryCoinbasepro{}
@@ -110,6 +116,17 @@ func (f *ccxtExchangeSpecificParamFactoryBinance) useSignToDenoteSideForTrades()
 	return false
 }
 
+func (f *ccxtExchangeSpecificParamFactoryBinance) getCursorFetchTrades(t model.Trade) (interface{}, error) {
+	lastCursor, e := t.TransactionID.AsInt64()
+	if e != nil {
+		return nil, fmt.Errorf("error converting transactionID (%s) to int64: %s", t.TransactionID.String(), e)
+	}
+
+	// add 1 to lastCursor so we don't repeat the same cursor on the next run
+	cursor := strconv.FormatInt(lastCursor+1, 10)
+	return cursor, nil
+}
+
 var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryBinance{}
 
 /****************************** BITSTAMP ******************************/
@@ -136,6 +153,11 @@ func (f *ccxtExchangeSpecificParamFactoryBitstamp) getParamsForGetTradeHistory()
 // Bitstamp uses signs to denote which side the trade was on (buy/sell)
 func (f *ccxtExchangeSpecificParamFactoryBitstamp) useSignToDenoteSideForTrades() bool {
 	return true
+}
+
+func (f *ccxtExchangeSpecificParamFactoryBitstamp) getCursorFetchTrades(t model.Trade) (interface{}, error) {
+	// not implemented so use default implementation
+	return nil, nil
 }
 
 var _ ccxtExchangeSpecificParamFactory = &ccxtExchangeSpecificParamFactoryBitstamp{}

@@ -25,6 +25,7 @@ type ccxtExchangeSpecificParamFactory interface {
 	getParamsForAddOrder(submitMode api.SubmitMode) interface{}
 	getParamsForGetTradeHistory() interface{}
 	useSignToDenoteSideForTrades() bool
+	getCursorFetchTrades(model.Trade) (interface{}, error)
 }
 
 // ccxtExchange is the implementation for the CCXT REST library that supports many exchanges (https://github.com/franz-see/ccxt-rest, https://github.com/ccxt/ccxt/)
@@ -308,9 +309,10 @@ func (c ccxtExchange) GetTradeHistory(pair model.TradingPair, maybeCursorStart i
 	sort.Sort(model.TradesByTsID(trades))
 	cursor := maybeCursorStart
 	if len(trades) > 0 {
-		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
-		// add 1 to lastCursor so we don't repeat the same cursor on the next run
-		cursor = strconv.FormatInt(lastCursor+1, 10)
+		cursor, e = c.getCursor(trades)
+		if e != nil {
+			return nil, fmt.Errorf("error getting cursor when fetching trades: %s", e)
+		}
 	}
 
 	return &api.TradeHistoryResult{
@@ -352,15 +354,40 @@ func (c ccxtExchange) GetTrades(pair *model.TradingPair, maybeCursor interface{}
 	sort.Sort(model.TradesByTsID(trades))
 	cursor := maybeCursor
 	if len(trades) > 0 {
-		lastCursor := trades[len(trades)-1].Order.Timestamp.AsInt64()
-		// add 1 to lastCursor so we don't repeat the same cursor on the next run
-		cursor = strconv.FormatInt(lastCursor+1, 10)
+		cursor, e = c.getCursor(trades)
+		if e != nil {
+			return nil, fmt.Errorf("error getting cursor when fetching trades: %s", e)
+		}
 	}
 
 	return &api.TradesResult{
 		Cursor: cursor,
 		Trades: trades,
 	}, nil
+}
+
+func (c ccxtExchange) getCursor(trades []model.Trade) (interface{}, error) {
+	lastTrade := trades[len(trades)-1]
+
+	var fetchedCursor interface{}
+	var e error
+	// getCursor from Trade object for specific exchange
+	if c.esParamFactory != nil {
+		fetchedCursor, e = c.esParamFactory.getCursorFetchTrades(lastTrade)
+		if e != nil {
+			return nil, fmt.Errorf("tried to convert string cursor to int64 in exchange-specific getCursor method but returned an error: %s", e)
+		}
+	}
+
+	// fetched cursor can be nil after fetching from the esParamFactory in case the function is not implemented
+	if fetchedCursor == nil {
+		lastCursor := lastTrade.Order.Timestamp.AsInt64()
+		// add 1 to lastCursor so we don't repeat the same cursor on the next run
+		fetchedCursor = strconv.FormatInt(lastCursor+1, 10)
+	}
+
+	// update cursor accordingly
+	return fetchedCursor, nil
 }
 
 func (c ccxtExchange) readTrade(pair *model.TradingPair, pairString string, rawTrade sdk.CcxtTrade) (*model.Trade, error) {

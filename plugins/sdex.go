@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -27,6 +28,7 @@ const baseReserve = 0.5
 const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
 const maxPageLimit = 200
+const sdexTradesFetchLimit = 200
 
 var sdexOrderConstraints = model.MakeOrderConstraints(7, 7, 0.0000001)
 
@@ -544,6 +546,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 	trades := []model.Trade{}
 	for {
 		tradeReq := horizonclient.TradeRequest{
+			ForAccount:         sdex.TradingAccount,
 			BaseAssetType:      horizonclient.AssetType(baseAsset.Type),
 			BaseAssetCode:      baseAsset.Code,
 			BaseAssetIssuer:    baseAsset.Issuer,
@@ -556,9 +559,10 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		}
 
 		tradesPage, e := sdex.API.Trades(tradeReq)
+		log.Printf("returned from fetch trades API call for SDEX using cursor '%s' (len(records) = %d, error = %v)", cursorStart, len(tradesPage.Embedded.Records), e)
 		if e != nil {
-			if strings.Contains(e.Error(), "Rate limit exceeded") {
-				// return normally, we will continue loading trades in the next call from where we left off
+			if isRateLimitError(e) {
+				log.Printf("encountered a rate limit error when fetching trades from cursor '%s', return normally, we will continue loading trades in the next call from where we left off (len(trades) = %d)", cursorStart, len(trades))
 				return &api.TradeHistoryResult{
 					Cursor: cursorStart,
 					Trades: trades,
@@ -593,20 +597,42 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 			}, nil
 		}
 
+		hitRateLimit := false
 		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(baseAsset, quoteAsset, tradesPage, cursorEnd)
+		numFetchedTrades := len(updatedResult.Trades)
 		if e != nil {
-			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
+			if isRateLimitError(e) {
+				log.Printf("encountered a rate limit error when converting tradesPage2TradeHistoryResult, process what we were able to fetch (len = %d), we will continue loading trades in the next call from where we left off", numFetchedTrades)
+				hitRateLimit = true
+				// don't do anything here, just continue to the logic outside this error check so we process the results
+			} else {
+				return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
+			}
 		}
-		cursorStart = updatedResult.Cursor.(string)
-		trades = append(trades, updatedResult.Trades...)
+		if updatedResult != nil {
+			trades = append(trades, updatedResult.Trades...)
+		}
+		if len(trades) > sdexTradesFetchLimit {
+			trades = trades[:sdexTradesFetchLimit]
+		}
+		if len(trades) > 0 {
+			// it could fail this condition because we hit a rate limit issue on trying to process the first result in the list even though the list had more than 0 items
+			cursorStart = trades[len(trades)-1].TransactionID.String()
+		}
 
-		if hitCursorEnd {
+		stoppingCondition := hitCursorEnd || len(trades) >= sdexTradesFetchLimit || hitRateLimit
+		if stoppingCondition {
 			return &api.TradeHistoryResult{
 				Cursor: cursorStart,
 				Trades: trades,
 			}, nil
 		}
+		log.Printf("continuing to fetch trades from the new updated cursor (%s) because we did not hit a stoppping condition, (numFetchedTrades = %d, total len(trades) = %d, sdexTradesFetchLimit = %d; hitCursorEnd=%v, hitRateLimit=%v)", cursorStart, numFetchedTrades, len(trades), sdexTradesFetchLimit, hitCursorEnd, hitRateLimit)
 	}
+}
+
+func isRateLimitError(err error) bool {
+	return strings.Contains(strings.ToLower(err.Error()), "rate limit exceeded")
 }
 
 func makeEffectsLink(trade hProtocol.Trade) string {
@@ -749,21 +775,80 @@ func (sdex *SDEX) parseAssetFromEffect(effectMap map[string]interface{}, prefix 
 	return assetCodeString + ":" + assetIssuerString, nil
 }
 
+type orderActionResult struct {
+	oa *model.OrderAction
+	e  error
+}
+
+// concurrentFetchOrderActions fetches order actions for each trade (parallelized)
+func (sdex *SDEX) concurrentFetchOrderActions(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradesPage hProtocol.TradesPage) (map[string]orderActionResult, error) {
+	threadTracker := multithreading.MakeThreadTracker()
+	trade2OrderAction := map[string]orderActionResult{}
+	lock := &sync.Mutex{}
+
+	for _, t := range tradesPage.Embedded.Records {
+		e := threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			ba := inputs[0].(hProtocol.Asset)
+			qa := inputs[1].(hProtocol.Asset)
+			trade := inputs[2].(hProtocol.Trade)
+
+			orderAction, e2 := sdex.getOrderAction(ba, qa, trade)
+
+			// add to map (locked operation to avoid concurrent writes to map error, even if to different keys)
+			lock.Lock()
+			defer lock.Unlock()
+			trade2OrderAction[trade.ID] = orderActionResult{
+				oa: orderAction,
+				e:  e2,
+			}
+		}, []interface{}{baseAsset, quoteAsset, t})
+
+		// check if there's an error starting up the thread
+		if e != nil {
+			return nil, fmt.Errorf("could not start thread to fetch orderAction for trade.ID = %s", t.ID)
+		}
+	}
+
+	// wait until we have fetched all orderActions
+	threadTracker.Wait()
+
+	return trade2OrderAction, nil
+}
+
 // returns tradeHistoryResult, hitCursorEnd, and any error
 func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradesPage hProtocol.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
 	var cursor string
 	trades := []model.Trade{}
 
+	// make call to fetch order actions in a parallelized manner so it's faster for I/O
+	trade2OrderAction, e := sdex.concurrentFetchOrderActions(baseAsset, quoteAsset, tradesPage)
+	if e != nil {
+		return nil, false, fmt.Errorf("unable to fetch order actions in a parallelized way: %s", e)
+	}
+
 	for _, t := range tradesPage.Embedded.Records {
 		// update cursor first so we keep it moving
+		oldCursor := cursor
 		cursor = t.PT
 
-		orderAction, e := sdex.getOrderAction(baseAsset, quoteAsset, t)
+		oar := trade2OrderAction[t.ID]
+		orderAction, e := oar.oa, oar.e
 		if e != nil {
-			return nil, false, fmt.Errorf("could not load orderAction: %s", e)
+			if isRateLimitError(e) {
+				// we return the progress we have made so far in the case where we hit a rate limit error
+				return &api.TradeHistoryResult{
+					// use oldCursor since we could not finish this iteration
+					Cursor: oldCursor,
+					// this includes (and should) the latest trades we processed so far
+					Trades: trades,
+				}, false, fmt.Errorf("hit rate limit error when fetching tradesPage2TradeHistoryResult: %s", e) // return error so it is caught and processed upstream
+			}
+
+			return nil, false, fmt.Errorf("could not load orderAction for trade.ID = %s: %s", t.ID, e)
 		}
 		if orderAction == nil {
-			// we have encountered a trade that is different from the base and quote asset for our trading account
+			// encountered a trade that is different from the base and quote asset for our trading account
+			log.Printf("encountered a trade (ID=%s) that is different from the base and quote asset (%s:%s/%s:%s) on the bot or uses a different trading account, botTraderAccount=%s (tradeBaseAccount=%s, tradeCounterAccount=%s)", t.ID, t.BaseAssetCode, t.BaseAssetIssuer, t.CounterAssetCode, t.CounterAssetIssuer, sdex.TradingAccount, t.BaseAccount, t.CounterAccount)
 			continue
 		}
 
