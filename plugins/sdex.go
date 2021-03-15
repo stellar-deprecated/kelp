@@ -561,7 +561,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		tradesPage, e := sdex.API.Trades(tradeReq)
 		log.Printf("returned from fetch trades API call for SDEX (len(records) = %d, error = %v)", len(tradesPage.Embedded.Records), e)
 		if e != nil {
-			if strings.Contains(strings.ToLower(e.Error()), "rate limit exceeded") {
+			if isRateLimitError(e) {
 				// return normally, we will continue loading trades in the next call from where we left off
 				return &api.TradeHistoryResult{
 					Cursor: cursorStart,
@@ -599,6 +599,14 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 
 		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(baseAsset, quoteAsset, tradesPage, cursorEnd)
 		if e != nil {
+			if isRateLimitError(e) {
+				// return normally, we will continue loading trades in the next call from where we left off
+				return &api.TradeHistoryResult{
+					Cursor: cursorStart,
+					Trades: trades,
+				}, nil
+			}
+
 			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 		}
 		if updatedResult != nil {
@@ -614,6 +622,10 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 			}, nil
 		}
 	}
+}
+
+func isRateLimitError(err error) bool {
+	return strings.Contains(strings.ToLower(err.Error()), "rate limit exceeded")
 }
 
 func makeEffectsLink(trade hProtocol.Trade) string {
@@ -786,7 +798,7 @@ func (sdex *SDEX) concurrentFetchOrderActions(baseAsset hProtocol.Asset, quoteAs
 
 		// check if there's an error starting up the thread
 		if e != nil {
-			return nil, fmt.Errorf("could not load orderAction for trade.ID = %s", t.ID)
+			return nil, fmt.Errorf("could not start thread to fetch orderAction for trade.ID = %s", t.ID)
 		}
 	}
 
