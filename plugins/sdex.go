@@ -558,6 +558,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		}
 
 		tradesPage, e := sdex.API.Trades(tradeReq)
+		log.Printf("returned from fetch trades API call for SDEX (len(records) = %d, error = %v)", len(tradesPage.Embedded.Records), e)
 		if e != nil {
 			if strings.Contains(strings.ToLower(e.Error()), "rate limit exceeded") {
 				// return normally, we will continue loading trades in the next call from where we left off
@@ -599,7 +600,9 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		if e != nil {
 			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 		}
-		trades = append(trades, updatedResult.Trades...)
+		if updatedResult != nil {
+			trades = append(trades, updatedResult.Trades...)
+		}
 		trades = trades[:sdexTradesFetchLimit]
 		cursorStart = trades[len(trades)-1].TransactionID.String()
 
@@ -752,18 +755,62 @@ func (sdex *SDEX) parseAssetFromEffect(effectMap map[string]interface{}, prefix 
 	return assetCodeString + ":" + assetIssuerString, nil
 }
 
+type orderActionResult struct {
+	oa *model.OrderAction
+	e  error
+}
+
+// concurrentFetchOrderActions fetches order actions for each trade (parallelized)
+func (sdex *SDEX) concurrentFetchOrderActions(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradesPage hProtocol.TradesPage) (map[string]orderActionResult, error) {
+	threadTracker := multithreading.MakeThreadTracker()
+	trade2OrderAction := map[string]orderActionResult{}
+
+	for _, t := range tradesPage.Embedded.Records {
+		e := threadTracker.TriggerGoroutine(func(inputs []interface{}) {
+			ba := inputs[0].(hProtocol.Asset)
+			qa := inputs[1].(hProtocol.Asset)
+			trade := inputs[2].(hProtocol.Trade)
+
+			orderAction, e2 := sdex.getOrderAction(ba, qa, trade)
+
+			// add to map
+			trade2OrderAction[trade.ID] = orderActionResult{
+				oa: orderAction,
+				e:  e2,
+			}
+		}, []interface{}{baseAsset, quoteAsset, t})
+
+		// check if there's an error starting up the thread
+		if e != nil {
+			return nil, fmt.Errorf("could not load orderAction for trade.ID = %s", t.ID)
+		}
+	}
+
+	// wait until we have fetched all orderActions
+	threadTracker.Wait()
+
+	return trade2OrderAction, nil
+}
+
 // returns tradeHistoryResult, hitCursorEnd, and any error
 func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradesPage hProtocol.TradesPage, cursorEnd string) (*api.TradeHistoryResult, bool, error) {
 	var cursor string
 	trades := []model.Trade{}
 
+	// make call to fetch order actions in a parallelized manner so it's faster for I/O
+	trade2OrderAction, e := sdex.concurrentFetchOrderActions(baseAsset, quoteAsset, tradesPage)
+	if e != nil {
+		return nil, false, fmt.Errorf("unable to fetch order actions in a parallelized way: %s", e)
+	}
+
 	for _, t := range tradesPage.Embedded.Records {
 		// update cursor first so we keep it moving
 		cursor = t.PT
 
-		orderAction, e := sdex.getOrderAction(baseAsset, quoteAsset, t)
+		oar := trade2OrderAction[t.ID]
+		orderAction, e := oar.oa, oar.e
 		if e != nil {
-			return nil, false, fmt.Errorf("could not load orderAction: %s", e)
+			return nil, false, fmt.Errorf("could not load orderAction for trade.ID = %s: %s", t.ID, e)
 		}
 		if orderAction == nil {
 			// encountered a trade that is different from the base and quote asset for our trading account
