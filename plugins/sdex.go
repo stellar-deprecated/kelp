@@ -841,7 +841,7 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 					Cursor: oldCursor,
 					// this includes (and should) the latest trades we processed so far
 					Trades: trades,
-				}, false, nil
+				}, false, fmt.Errorf("hit rate limit error when fetching tradesPage2TradeHistoryResult: %s", e) // return error so it is caught and processed upstream
 			}
 
 			return nil, false, fmt.Errorf("could not load orderAction for trade.ID = %s: %s", t.ID, e)
