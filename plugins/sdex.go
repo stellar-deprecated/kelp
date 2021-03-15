@@ -27,6 +27,7 @@ const baseReserve = 0.5
 const baseFee = 0.0000100
 const maxLumenTrust = math.MaxFloat64
 const maxPageLimit = 200
+const sdexTradesFetchLimit = 200
 
 var sdexOrderConstraints = model.MakeOrderConstraints(7, 7, 0.0000001)
 
@@ -598,10 +599,11 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		if e != nil {
 			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 		}
-		cursorStart = updatedResult.Cursor.(string)
 		trades = append(trades, updatedResult.Trades...)
+		trades = trades[:sdexTradesFetchLimit]
+		cursorStart = trades[len(trades)-1].TransactionID.String()
 
-		if hitCursorEnd {
+		if hitCursorEnd || len(trades) == sdexTradesFetchLimit {
 			return &api.TradeHistoryResult{
 				Cursor: cursorStart,
 				Trades: trades,
