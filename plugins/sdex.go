@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nikhilsaraf/go-tools/multithreading"
@@ -764,6 +765,7 @@ type orderActionResult struct {
 func (sdex *SDEX) concurrentFetchOrderActions(baseAsset hProtocol.Asset, quoteAsset hProtocol.Asset, tradesPage hProtocol.TradesPage) (map[string]orderActionResult, error) {
 	threadTracker := multithreading.MakeThreadTracker()
 	trade2OrderAction := map[string]orderActionResult{}
+	lock := &sync.Mutex{}
 
 	for _, t := range tradesPage.Embedded.Records {
 		e := threadTracker.TriggerGoroutine(func(inputs []interface{}) {
@@ -773,7 +775,9 @@ func (sdex *SDEX) concurrentFetchOrderActions(baseAsset hProtocol.Asset, quoteAs
 
 			orderAction, e2 := sdex.getOrderAction(ba, qa, trade)
 
-			// add to map
+			// add to map (locked operation to avoid concurrent writes to map error, even if to different keys)
+			lock.Lock()
+			defer lock.Unlock()
 			trade2OrderAction[trade.ID] = orderActionResult{
 				oa: orderAction,
 				e:  e2,
