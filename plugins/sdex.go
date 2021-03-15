@@ -544,6 +544,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 	trades := []model.Trade{}
 	for {
 		tradeReq := horizonclient.TradeRequest{
+			ForAccount:         sdex.TradingAccount,
 			BaseAssetType:      horizonclient.AssetType(baseAsset.Type),
 			BaseAssetCode:      baseAsset.Code,
 			BaseAssetIssuer:    baseAsset.Issuer,
@@ -763,7 +764,8 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 			return nil, false, fmt.Errorf("could not load orderAction: %s", e)
 		}
 		if orderAction == nil {
-			// we have encountered a trade that is different from the base and quote asset for our trading account
+			// encountered a trade that is different from the base and quote asset for our trading account
+			log.Printf("encountered a trade (ID=%s) that is different from the base and quote asset (%s:%s/%s:%s) on the bot or uses a different trading account, botTraderAccount=%s (tradeBaseAccount=%s, tradeCounterAccount=%s)", t.ID, t.BaseAssetCode, t.BaseAssetIssuer, t.CounterAssetCode, t.CounterAssetIssuer, sdex.TradingAccount, t.BaseAccount, t.CounterAccount)
 			continue
 		}
 
