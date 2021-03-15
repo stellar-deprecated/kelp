@@ -600,14 +600,11 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 		updatedResult, hitCursorEnd, e := sdex.tradesPage2TradeHistoryResult(baseAsset, quoteAsset, tradesPage, cursorEnd)
 		if e != nil {
 			if isRateLimitError(e) {
-				log.Printf("encountered a rate limit error when converting tradesPage2TradeHistoryResult, return normally, we will continue loading trades in the next call from where we left off")
-				return &api.TradeHistoryResult{
-					Cursor: cursorStart,
-					Trades: trades,
-				}, nil
+				log.Printf("encountered a rate limit error when converting tradesPage2TradeHistoryResult, process what we were able to fetch, we will continue loading trades in the next call from where we left off")
+				// don't do anything here, just continue to the logic outside this error check so we process the results
+			} else {
+				return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 			}
-
-			return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 		}
 		if updatedResult != nil {
 			trades = append(trades, updatedResult.Trades...)
@@ -821,11 +818,22 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 
 	for _, t := range tradesPage.Embedded.Records {
 		// update cursor first so we keep it moving
+		oldCursor := cursor
 		cursor = t.PT
 
 		oar := trade2OrderAction[t.ID]
 		orderAction, e := oar.oa, oar.e
 		if e != nil {
+			if isRateLimitError(e) {
+				// we return the progress we have made so far in the case where we hit a rate limit error
+				return &api.TradeHistoryResult{
+					// use oldCursor since we could not finish this iteration
+					Cursor: oldCursor,
+					// this includes (and should) the latest trades we processed so far
+					Trades: trades,
+				}, false, nil
+			}
+
 			return nil, false, fmt.Errorf("could not load orderAction for trade.ID = %s: %s", t.ID, e)
 		}
 		if orderAction == nil {
