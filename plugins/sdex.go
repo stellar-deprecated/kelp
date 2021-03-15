@@ -608,6 +608,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 				return nil, fmt.Errorf("error converting tradesPage2TradesResult: %s", e)
 			}
 		}
+		numFetchedTrades := len(updatedResult.Trades)
 		if updatedResult != nil {
 			trades = append(trades, updatedResult.Trades...)
 		}
@@ -623,7 +624,7 @@ func (sdex *SDEX) GetTradeHistory(pair model.TradingPair, maybeCursorStart inter
 				Trades: trades,
 			}, nil
 		}
-		log.Printf("continuing to fetch trades from the new updated cursor (%s) because we did not hit a stoppping condition, (len(trades) = %d, sdexTradesFetchLimit = %d; hitCursorEnd=%v, hitRateLimit=%v)", cursorStart, len(trades), sdexTradesFetchLimit, hitCursorEnd, hitRateLimit)
+		log.Printf("continuing to fetch trades from the new updated cursor (%s) because we did not hit a stoppping condition, (numFetchedTrades = %d, total len(trades) = %d, sdexTradesFetchLimit = %d; hitCursorEnd=%v, hitRateLimit=%v)", cursorStart, numFetchedTrades, len(trades), sdexTradesFetchLimit, hitCursorEnd, hitRateLimit)
 	}
 }
 
