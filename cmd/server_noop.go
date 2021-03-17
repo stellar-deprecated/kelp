@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var hasUICapability = false
-
+// load the basic serverCmd for all architectures. Default action is a noop action.
+// This is overriden for platforms that support this command, example: server_amd64.go
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Serves the Kelp GUI",

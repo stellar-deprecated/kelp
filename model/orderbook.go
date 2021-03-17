@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/stellar/kelp/support/utils"
 )
@@ -182,6 +183,11 @@ func (t *TransactionID) String() string {
 func MakeTransactionID(s string) *TransactionID {
 	t := TransactionID(s)
 	return &t
+}
+
+// AsInt64 converts to an integer
+func (t *TransactionID) AsInt64() (int64, error) {
+	return strconv.ParseInt(t.String(), 10, 64)
 }
 
 // OpenOrder represents an open order for a trading account

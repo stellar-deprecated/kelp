@@ -70,8 +70,6 @@ type serverInputs struct {
 }
 
 func init() {
-	hasUICapability = true
-
 	options := serverInputs{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
@@ -123,6 +121,13 @@ func init() {
 
 			if *options.verbose {
 				astilog.SetDefaultLogger()
+			}
+		}
+
+		if runtime.GOOS == "windows" {
+			if !*options.noElectron {
+				log.Printf("input options had specified noElectron=false for windows, but electron is not supported on windows yet. force setting noElectron=true for windows.\n")
+				*options.noElectron = true
 			}
 		}
 
@@ -315,7 +320,7 @@ func init() {
 					"unknown_todo", // TODO DS Determine how to get GOARM.
 					runtime.Version(),
 					0,
-					true, // isTestnet hardcoded to true for now, but once we allow it on the GUI via enablePubnetBots then this should be set accordingly
+					false, // isTestnet hardcoded to false since we have enabled pubnet bots from the frontend. This needs to always logically match the frontend
 					guiVersion,
 				),
 				nil,
@@ -729,7 +734,7 @@ func startTailFileServer(tailFileHTML string) int {
 const windowsInitialFile = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<title>Kelp GUI (beta) VERSION_PLACEHOLDER</title>
 		<script type="text/javascript">
 			if (typeof XMLHttpRequest == "undefined") {
 				// this is only for really ancient browsers
@@ -775,7 +780,7 @@ const tailFileHTML = `<!-- taken from http://www.davejennifer.com/computerjunk/j
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
-		<title>Kelp GUI VERSION_PLACEHOLDER</title>
+		<title>Kelp GUI (beta) VERSION_PLACEHOLDER</title>
 
 		<style>
 			.button {

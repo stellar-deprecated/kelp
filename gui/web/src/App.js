@@ -293,7 +293,8 @@ class App extends Component {
   }
 
   render() {
-    const enablePubnetBots = false;
+    // construction of metricsTracker in server_amd64.go (isTestnet) needs to logically match this variable
+    const enablePubnetBots = true;
 
     let banner = (<div className={styles.banner}>
       <Button
@@ -304,7 +305,7 @@ class App extends Component {
       >
         Quit
       </Button>
-      Kelp UI is only available on the Stellar Test Network
+      Kelp GUI (beta) v1.0.0-rc2
     </div>);
 
     const removeBotError = this.removeError.bind(this, Constants.ErrorType.bot);
@@ -316,7 +317,7 @@ class App extends Component {
         <Router>
           <Header version={this.state.version}/>
           <Route exact path="/"
-            render={(props) => <Bots {...props} baseUrl={baseUrl} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
+            render={(props) => <Bots {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
             />
           <Route exact path="/new"
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
