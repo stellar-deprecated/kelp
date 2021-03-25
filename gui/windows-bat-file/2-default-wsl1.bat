@@ -1,0 +1,1 @@
+wsl --set-default-version 1
