@@ -2,6 +2,8 @@
 Instructions for Running Kelp GUI on Windows
 ============================================
 
+Note: Your version of Windows should support WSL (64-bit versions of Windows 10 from build 1607 or later)
+
 You need to enable the WSL feature (Windows Subsystem for Linux) offered by Windows and also install a linux distribution such as Ubuntu. Here are the steps to do that:
 1. To do this you can right-click the "1-Install-WSL.ps1" script and click on "Run with PowerShell". If it asks for permissions to run scripts then enter "Y" on your keyboard so the PowerShell window can run this script.
     i. This will download Ubuntu 18.04 LTS which is 230MB so can take some time.
