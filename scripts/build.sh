@@ -426,8 +426,8 @@ do
         check_build_result $?
         echo "successful"
 
-        echo -n "copying over kelp-start.bat file to the windows build ..."	
-        cp $KELP/gui/windows-bat-file/kelp-start.bat $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/	
+        echo -n "copying over all windows files to the windows build ..."	
+        cp $KELP/gui/windows/* $ARCHIVE_DIR_SOURCE_UI/$GOOS-$GOARCH/
         echo "done"
         
         # set paths needed for unzipping the vendor and ccxt files
