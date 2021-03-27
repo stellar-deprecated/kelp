@@ -34,9 +34,11 @@
     &:hover {
         border-color: $color-contrast-4;
     }
-    
-    option {
-        font-weight:normal;
-    }
 }
 
+// from all combinations of select/option tag/class, this one seemed to be the one that had the highest precedence
+.select .option {
+    font-weight: normal;
+    // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
+    color: $color-base-1;
+}
