@@ -36,7 +36,7 @@
     }
 }
 
-option {
+.option {
     font-weight: normal;
     // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
     color: $color-base-1;

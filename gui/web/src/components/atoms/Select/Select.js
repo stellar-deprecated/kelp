@@ -8,7 +8,7 @@ class Select extends Component {
     let options = [];
     for (let i in this.props.options) {
       let o = this.props.options[i];
-      options.push(<option key={o.value} value={o.value}>{o.text}</option>);
+      options.push(<option className={styles.option} key={o.value} value={o.value}>{o.text}</option>);
 
       if (this.props.selected === o.value) {
         selectedText = o.text;
