@@ -36,8 +36,38 @@
     }
 }
 
-.option {
+.select option {
     font-weight: normal;
     // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
     color: $color-base-1;
+}
+
+select option {
+    font-weight: normal;
+    // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
+    color: $color-base-2;
+}
+
+.select .option {
+    font-weight: normal;
+    // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
+    color: $color-base-3;
+}
+
+select .option {
+    font-weight: normal;
+    // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
+    color: $color-base-4;
+}
+
+option {
+    font-weight: normal;
+    // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
+    color: $color-base-5;
+}
+
+.option {
+    font-weight: normal;
+    // need to set color explicitly otherwise it doesn't work on Windows: https://github.com/stellar/kelp/issues/230
+    color: $color-success;
 }
