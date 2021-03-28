@@ -11,6 +11,7 @@ func SetRoutes(r *chi.Mux, s *APIServer) {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/version", http.HandlerFunc(s.version))
 		r.Get("/quit", http.HandlerFunc(s.quit))
+		r.Get("/serverMetadata", http.HandlerFunc(s.serverMetadata))
 		r.Get("/listBots", http.HandlerFunc(s.listBots))
 		r.Get("/autogenerate", http.HandlerFunc(s.autogenerateBot))
 		r.Get("/genBotName", http.HandlerFunc(s.generateBotName))
