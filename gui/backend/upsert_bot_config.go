@@ -146,6 +146,36 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 				errResp.TraderConfig.IssuerB = "cannot trade asset issued by trading account"
 				hasError = true
 			}
+			// use isTradingSdex() function because we have not called Iint() on the trader config yet
+			isPubnetAccount := req.TraderConfig.IsTradingSdex() && strings.TrimSuffix(req.TraderConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiTestNet.HorizonURL, "/")
+			log.Printf("checking if secret key exists on pubnet: isTradingSdex=%v, isPubnetAccount=%v", req.TraderConfig.IsTradingSdex(), isPubnetAccount)
+			if isPubnetAccount {
+				// ensure that trader secret key does not exist on the main net
+				_, e := s.apiPubNet.AccountDetail(horizonclient.AccountRequest{AccountID: *tradingAccount})
+				if e != nil {
+					log.Printf("case: received error from call to check secret key on pubnet")
+					switch t := e.(type) {
+					case *horizonclient.Error:
+						if t.Problem.Status == 404 || strings.ToLower(t.Problem.Title) == "resource missing" {
+							log.Printf("case: account not found on pubnet error so it is valid case")
+							// this is the desired case
+							// do nothing
+						} else {
+							log.Printf("case: error from horizon while validating secret key being used on test network: status = %d, message = %s - %s", t.Problem.Status, t.Problem.Title, t.Problem.Detail)
+							errResp.TraderConfig.TradingSecretSeed = fmt.Sprintf("unknown error from Horizon (%d): %s", t.Problem.Status, t.Problem.Title)
+							hasError = true
+						}
+					default:
+						log.Printf("case: some other non-horizon error")
+						errResp.TraderConfig.TradingSecretSeed = fmt.Sprintf("unknown error checking key on pubnet: %s", e.Error())
+						hasError = true
+					}
+				} else {
+					log.Printf("case: account exists on pubnet, so this is an error!")
+					errResp.TraderConfig.TradingSecretSeed = "account for key exists on pubnet, cannot use on testnet"
+					hasError = true
+				}
+			}
 		}
 	}
 

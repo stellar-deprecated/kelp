@@ -171,7 +171,7 @@ func (b *BotConfig) TradingPair() string {
 
 // IsTradingSdex returns whether the config is set to trade on SDEX
 func (b *BotConfig) IsTradingSdex() bool {
-	return b.isTradingSdex
+	return b.TradingExchange == "" || b.TradingExchange == "sdex"
 }
 
 // TradingExchangeName returns the defaulted trading exchange name
@@ -184,7 +184,7 @@ func (b *BotConfig) TradingExchangeName() string {
 
 // Init initializes this config
 func (b *BotConfig) Init() error {
-	b.isTradingSdex = b.TradingExchange == "" || b.TradingExchange == "sdex"
+	b.isTradingSdex = b.IsTradingSdex()
 
 	if b.AssetCodeA == b.AssetCodeB && b.IssuerA == b.IssuerB {
 		return fmt.Errorf("error: both assets cannot be the same '%s:%s'", b.AssetCodeA, b.IssuerA)
