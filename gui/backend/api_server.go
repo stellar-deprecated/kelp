@@ -29,6 +29,7 @@ type APIServer struct {
 	ccxtRestUrl       string
 	apiTestNet        *horizonclient.Client
 	apiPubNet         *horizonclient.Client
+	disablePubnet     bool
 	noHeaders         bool
 	quitFn            func()
 	metricsTracker    *plugins.MetricsTracker
@@ -48,6 +49,7 @@ func MakeAPIServer(
 	horizonPubnetURI string,
 	apiPubNet *horizonclient.Client,
 	ccxtRestUrl string,
+	disablePubnet bool,
 	noHeaders bool,
 	quitFn func(),
 	metricsTracker *plugins.MetricsTracker,
@@ -71,6 +73,7 @@ func MakeAPIServer(
 		ccxtRestUrl:           ccxtRestUrl,
 		apiTestNet:            apiTestNet,
 		apiPubNet:             apiPubNet,
+		disablePubnet:         disablePubnet,
 		noHeaders:             noHeaders,
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,

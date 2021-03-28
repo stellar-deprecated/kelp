@@ -126,6 +126,13 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 		StrategyConfig: plugins.BuySellConfig{},
 	}
 
+	// use isTradingSdex() function because we have not called Iint() on the trader config yet
+	isPubnetBot := req.TraderConfig.IsTradingSdex() && strings.TrimSuffix(req.TraderConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiPubNet.HorizonURL, "/")
+	if s.disablePubnet && isPubnetBot {
+		errResp.TraderConfig.HorizonURL = "pubnnet bots are disabled so cannot update pubnet bots right now"
+		hasError = true
+	}
+
 	if _, e := strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.TradingSecretSeed); e != nil {
 		errResp.TraderConfig.TradingSecretSeed = "invalid Trader Secret Key"
 		hasError = true
@@ -147,9 +154,9 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 				hasError = true
 			}
 			// use isTradingSdex() function because we have not called Iint() on the trader config yet
-			isPubnetAccount := req.TraderConfig.IsTradingSdex() && strings.TrimSuffix(req.TraderConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiTestNet.HorizonURL, "/")
-			log.Printf("checking if secret key exists on pubnet: isTradingSdex=%v, isPubnetAccount=%v", req.TraderConfig.IsTradingSdex(), isPubnetAccount)
-			if isPubnetAccount {
+			isTestnetBot := req.TraderConfig.IsTradingSdex() && strings.TrimSuffix(req.TraderConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiTestNet.HorizonURL, "/")
+			log.Printf("checking if secret key exists on pubnet: isTradingSdex=%v, isTestnetBot=%v", req.TraderConfig.IsTradingSdex(), isTestnetBot)
+			if isTestnetBot {
 				// ensure that trader secret key does not exist on the main net
 				_, e := s.apiPubNet.AccountDetail(horizonclient.AccountRequest{AccountID: *tradingAccount})
 				if e != nil {

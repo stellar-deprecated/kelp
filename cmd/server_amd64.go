@@ -67,6 +67,7 @@ type serverInputs struct {
 	noHeaders         *bool
 	verbose           *bool
 	noElectron        *bool
+	disablePubnet     *bool
 }
 
 func init() {
@@ -79,6 +80,7 @@ func init() {
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
+	options.disablePubnet = serverCmd.Flags().Bool("disable-pubnet", false, "disable pubnet option")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -303,7 +305,8 @@ func init() {
 			if e != nil {
 				panic(fmt.Errorf("could not generate machine id: %s", e))
 			}
-			userID := deviceID // reuse for now
+			userID := deviceID                      // reuse for now
+			isTestnetOnly := *options.disablePubnet // needs to always match the fronntend
 			metricsTracker, e = plugins.MakeMetricsTracker(
 				http.DefaultClient,
 				amplitudeAPIKey,
@@ -320,7 +323,7 @@ func init() {
 					"unknown_todo", // TODO DS Determine how to get GOARM.
 					runtime.Version(),
 					0,
-					false, // isTestnet hardcoded to false since we have enabled pubnet bots from the frontend. This needs to always logically match the frontend
+					isTestnetOnly,
 					guiVersion,
 				),
 				nil,
@@ -342,6 +345,7 @@ func init() {
 			*options.horizonPubnetURI,
 			apiPubNet,
 			*rootCcxtRestURL,
+			*options.disablePubnet,
 			*options.noHeaders,
 			quit,
 			metricsTracker,
