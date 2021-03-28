@@ -83,7 +83,7 @@ class App extends Component {
       }
 
       delete _this._asyncRequests["serverMetadata"];
-      if (!resp.includes("error")) {
+      if (!resp["error"]) {
         _this.setState({ server_metadata: resp });
       } else {
         setTimeout(_this.fetchServerMetadata, 30000);
