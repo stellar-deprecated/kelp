@@ -9,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/gui/model2"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/trader"
 )
 
 func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +90,18 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	logRelativePrefixPath, e := s.botLogsPath.Join(logPrefix).RelFromPath(s.kos.GetDotKelpWorkingDir())
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of log prefix path from basepath: %s", e)
+	}
+
+	// prevent starting pubnet bots if pubnet is disabled
+	var botConfig trader.BotConfig
+	traderLoadReadPath := s.botConfigsPath.Join(filenamePair.Trader)
+	e = config.Read(traderLoadReadPath.Native(), &botConfig)
+	if e != nil {
+		return fmt.Errorf("cannot read bot config at path '%s': %s", traderLoadReadPath.Native(), e)
+	}
+	isPubnetBot := botConfig.IsTradingSdex() && strings.TrimSuffix(botConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiPubNet.HorizonURL, "/")
+	if s.disablePubnet && isPubnetBot {
+		return fmt.Errorf("cannnot start pubnet bots when pubnet is disabled")
 	}
 
 	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
