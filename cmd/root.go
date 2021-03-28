@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -85,16 +86,19 @@ func checkInitRootFlags() {
 	if *rootCcxtRestURL != "" {
 		*rootCcxtRestURL = strings.TrimSuffix(*rootCcxtRestURL, "/")
 		if !strings.HasPrefix(*rootCcxtRestURL, "http://") && !strings.HasPrefix(*rootCcxtRestURL, "https://") {
+			log.Printf("'ccxt-rest-url' argument must start with either `http://` or `https://`")
 			panic("'ccxt-rest-url' argument must start with either `http://` or `https://`")
 		}
 
 		e := isCcxtUp(*rootCcxtRestURL)
 		if e != nil {
+			log.Printf(e.Error())
 			panic(e)
 		}
 
 		e = sdk.SetBaseURL(*rootCcxtRestURL)
 		if e != nil {
+			log.Printf("unable to set CCXT-rest URL to '%s': %s", *rootCcxtRestURL, e)
 			panic(fmt.Errorf("unable to set CCXT-rest URL to '%s': %s", *rootCcxtRestURL, e))
 		}
 	}
