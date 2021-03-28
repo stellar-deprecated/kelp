@@ -24,6 +24,11 @@ import (
 	"github.com/stellar/kelp/trader"
 )
 
+type upsertBotConfigRequestWrapper struct {
+	UserData               UserData               `json:"user_data"`
+	UpsertBotConfigRequest upsertBotConfigRequest `json:"config_data"`
+}
+
 type upsertBotConfigRequest struct {
 	Name           string                `json:"name"`
 	Strategy       string                `json:"strategy"`
@@ -58,10 +63,16 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("upsertBotConfig requestJson: %s\n", string(bodyBytes))
 
-	var req upsertBotConfigRequest
-	e = json.Unmarshal(bodyBytes, &req)
+	var reqWrapper upsertBotConfigRequestWrapper
+	e = json.Unmarshal(bodyBytes, &reqWrapper)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
+		return
+	}
+	req := reqWrapper.UpsertBotConfigRequest
+	userID := reqWrapper.UserData.ID
+	if strings.TrimSpace(userID) == "" {
+		s.writeErrorJson(w, fmt.Sprintf("cannot have empty userID"))
 		return
 	}
 
@@ -88,14 +99,14 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e = s.setupOpsDirectory()
+	e = s.setupOpsDirectory(userID)
 	if e != nil {
 		s.writeError(w, fmt.Sprintf("error setting up ops directory: %s\n", e))
 		return
 	}
 
 	filenamePair := model2.GetBotFilenames(req.Name, req.Strategy)
-	traderFilePath := s.botConfigsPath.Join(filenamePair.Trader)
+	traderFilePath := s.botConfigsPathForUser(userID).Join(filenamePair.Trader)
 	botConfig := req.TraderConfig
 	log.Printf("upsert bot config to file: %s\n", traderFilePath.AsString())
 	e = toml.WriteFile(traderFilePath.Native(), &botConfig)
@@ -104,7 +115,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	strategyFilePath := s.botConfigsPath.Join(filenamePair.Strategy)
+	strategyFilePath := s.botConfigsPathForUser(userID).Join(filenamePair.Strategy)
 	strategyConfig := req.StrategyConfig
 	log.Printf("upsert strategy config to file: %s\n", strategyFilePath.AsString())
 	e = toml.WriteFile(strategyFilePath.Native(), &strategyConfig)

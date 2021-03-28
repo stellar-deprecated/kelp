@@ -18,6 +18,11 @@ import (
 	"github.com/stellar/kelp/support/kelpos"
 )
 
+// UserData is the json data passed in to represent a user
+type UserData struct {
+	ID string `json:"id"`
+}
+
 // APIServer is an instance of the API service
 type APIServer struct {
 	kelpBinPath       *kelpos.OSPath
@@ -81,6 +86,14 @@ func MakeAPIServer(
 		kelpErrorMap:          kelpErrorMap,
 		kelpErrorMapLock:      &sync.Mutex{},
 	}, nil
+}
+
+func (s *APIServer) botConfigsPathForUser(userID string) *kelpos.OSPath {
+	return s.botConfigsPath.Join(userID)
+}
+
+func (s *APIServer) botLogsPathForUser(userID string) *kelpos.OSPath {
+	return s.botLogsPath.Join(userID)
 }
 
 // InitBackend initializes anything required to get the backend ready to serve
@@ -239,15 +252,15 @@ func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kel
 	return s.kos.Background(namespace, cmdString)
 }
 
-func (s *APIServer) setupOpsDirectory() error {
-	e := s.kos.Mkdir(s.botConfigsPath)
+func (s *APIServer) setupOpsDirectory(userID string) error {
+	e := s.kos.Mkdir(s.botConfigsPathForUser(userID))
 	if e != nil {
-		return fmt.Errorf("error setting up configs directory (%s): %s\n", s.botConfigsPath, e)
+		return fmt.Errorf("error setting up configs directory (%s): %s", s.botConfigsPathForUser(userID).Native(), e)
 	}
 
-	e = s.kos.Mkdir(s.botLogsPath)
+	e = s.kos.Mkdir(s.botLogsPathForUser(userID))
 	if e != nil {
-		return fmt.Errorf("error setting up logs directory (%s): %s\n", s.botLogsPath, e)
+		return fmt.Errorf("error setting up logs directory (%s): %s", s.botLogsPathForUser(userID).Native(), e)
 	}
 
 	return nil
