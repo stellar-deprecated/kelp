@@ -98,12 +98,8 @@ func (s *APIServer) botLogsPathForUser(userID string) *kelpos.OSPath {
 
 // InitBackend initializes anything required to get the backend ready to serve
 func (s *APIServer) InitBackend() error {
-	// initial load of bots into memory
-	_, e := s.doListBots()
-	if e != nil {
-		return fmt.Errorf("error listing/loading bots: %s", e)
-	}
-
+	// do not do an initial load of bots into memory for now since it's based on the user context which we don't have right now
+	// and we don't want to do it for all users right now
 	return nil
 }
 
