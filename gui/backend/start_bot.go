@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,15 +16,30 @@ import (
 	"github.com/stellar/kelp/trader"
 )
 
+type startBotRequest struct {
+	UserData UserData `json:"user_data"`
+	BotName  string   `json:"bot_name"`
+}
+
 func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
-	botNameBytes, e := ioutil.ReadAll(r.Body)
+	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error when reading request input: %s\n", e))
 		return
 	}
-	botName := string(botNameBytes)
+	var req startBotRequest
+	e = json.Unmarshal(bodyBytes, &req)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
+		return
+	}
+	if strings.TrimSpace(req.UserData.ID) == "" {
+		s.writeErrorJson(w, fmt.Sprintf("cannot have empty userID"))
+		return
+	}
+	botName := req.BotName
 
-	e = s.doStartBot(botName, "buysell", nil, nil)
+	e = s.doStartBot(req.UserData, botName, "buysell", nil, nil)
 	if e != nil {
 		s.writeKelpError(w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
@@ -51,7 +67,7 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
+func (s *APIServer) doStartBot(userData UserData, botName string, strategy string, iterations *uint8, maybeFinishCallback func()) error {
 	filenamePair := model2.GetBotFilenames(botName, strategy)
 	logPrefix := model2.GetLogPrefix(botName, strategy)
 
@@ -77,24 +93,24 @@ func (s *APIServer) doStartBot(botName string, strategy string, iterations *uint
 	// use relative paths, which is why it seems to work
 	// Note that /mnt/c is unlikely to be valid in windows (but is valid in the linux subsystem) since it's usually prefixed by the
 	// volume (C:\ etc.), which is why relative paths works so well here as it avoids this confusion.
-	traderRelativeConfigPath, e := s.botConfigsPath.Join(filenamePair.Trader).RelFromPath(s.kos.GetDotKelpWorkingDir())
+	traderRelativeConfigPath, e := s.botConfigsPathForUser(userData.ID).Join(filenamePair.Trader).RelFromPath(s.kos.GetDotKelpWorkingDir())
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of trader config file from basepath: %s", e)
 	}
 
-	stratRelativeConfigPath, e := s.botConfigsPath.Join(filenamePair.Strategy).RelFromPath(s.kos.GetDotKelpWorkingDir())
+	stratRelativeConfigPath, e := s.botConfigsPathForUser(userData.ID).Join(filenamePair.Strategy).RelFromPath(s.kos.GetDotKelpWorkingDir())
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of strategy config file from basepath: %s", e)
 	}
 
-	logRelativePrefixPath, e := s.botLogsPath.Join(logPrefix).RelFromPath(s.kos.GetDotKelpWorkingDir())
+	logRelativePrefixPath, e := s.botLogsPathForUser(userData.ID).Join(logPrefix).RelFromPath(s.kos.GetDotKelpWorkingDir())
 	if e != nil {
 		return fmt.Errorf("unable to get relative path of log prefix path from basepath: %s", e)
 	}
 
 	// prevent starting pubnet bots if pubnet is disabled
 	var botConfig trader.BotConfig
-	traderLoadReadPath := s.botConfigsPath.Join(filenamePair.Trader)
+	traderLoadReadPath := s.botConfigsPathForUser(userData.ID).Join(filenamePair.Trader)
 	e = config.Read(traderLoadReadPath.Native(), &botConfig)
 	if e != nil {
 		return fmt.Errorf("cannot read bot config at path '%s': %s", traderLoadReadPath.Native(), e)
