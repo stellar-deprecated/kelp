@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -38,17 +39,33 @@ type botInfo struct {
 	SpreadPercent  float64            `json:"spread_pct"`
 }
 
-func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
-	botName, e := s.parseBotName(r)
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("error parsing bot name in getBotInfo: %s\n", e))
-		return
-	}
-
-	s.runGetBotInfoDirect(w, botName)
+type getBotInfoRequest struct {
+	UserData UserData `json:"user_data"`
+	BotName  string   `json:"bot_name"`
 }
 
-func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
+func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
+	bodyBytes, e := ioutil.ReadAll(r.Body)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error when reading request input: %s\n", e))
+		return
+	}
+	var req getBotInfoRequest
+	e = json.Unmarshal(bodyBytes, &req)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
+		return
+	}
+	if strings.TrimSpace(req.UserData.ID) == "" {
+		s.writeErrorJson(w, fmt.Sprintf("cannot have empty userID"))
+		return
+	}
+	botName := req.BotName
+
+	s.runGetBotInfoDirect(w, req.UserData, botName)
+}
+
+func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData, botName string) {
 	log.Printf("getBotInfo is invoking logic directly for botName: %s\n", botName)
 
 	botState, e := s.doGetBotState(botName)
@@ -70,7 +87,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, botName string) {
 	}
 
 	filenamePair := model2.GetBotFilenames(botName, buysell)
-	traderFilePath := s.botConfigsPath.Join(filenamePair.Trader)
+	traderFilePath := s.botConfigsPathForUser(userData.ID).Join(filenamePair.Trader)
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
