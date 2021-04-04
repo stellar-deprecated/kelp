@@ -50,7 +50,7 @@ func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) doStopBot(userData UserData, botName string) error {
-	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
+	e := s.kos.BotDataForUser(userData.toUser()).AdvanceBotState(botName, kelpos.BotStateRunning)
 	if e != nil {
 		return fmt.Errorf("error advancing bot state: %s", e)
 	}
@@ -63,7 +63,7 @@ func (s *APIServer) doStopBot(userData UserData, botName string) error {
 
 	var numIterations uint8 = 1
 	e = s.doStartBot(userData, botName, "delete", &numIterations, func() {
-		eInner := s.deleteFinishCallback(botName)
+		eInner := s.deleteFinishCallback(userData, botName)
 		if eInner != nil {
 			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
@@ -81,10 +81,10 @@ func (s *APIServer) doStopBot(userData UserData, botName string) error {
 	return nil
 }
 
-func (s *APIServer) deleteFinishCallback(botName string) error {
+func (s *APIServer) deleteFinishCallback(userData UserData, botName string) error {
 	log.Printf("deleted offers for bot '%s'\n", botName)
 
-	e := s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
+	e := s.kos.BotDataForUser(userData.toUser()).AdvanceBotState(botName, kelpos.BotStateStopping)
 	if e != nil {
 		return fmt.Errorf("error advancing bot state when manually attempting to stop bot: %s", e)
 	}

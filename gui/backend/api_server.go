@@ -23,6 +23,16 @@ type UserData struct {
 	ID string `json:"id"`
 }
 
+// toUser converts to the format understood by kelpos
+func (u UserData) toUser() *kelpos.User {
+	return kelpos.MakeUser(u.ID)
+}
+
+// String is the stringer method
+func (u UserData) String() string {
+	return fmt.Sprintf("UserData[ID=%s]", u.ID)
+}
+
 // kelpErrorDataForUser tracks errors for a given user
 type kelpErrorDataForUser struct {
 	errorMap map[string]KelpError

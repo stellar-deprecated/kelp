@@ -76,7 +76,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	botState, e := s.kos.QueryBotState(req.Name)
+	botState, e := s.kos.BotDataForUser(reqWrapper.UserData.toUser()).QueryBotState(req.Name)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error getting bot state for bot '%s': %s", req.Name, e))
 		return
@@ -275,7 +275,7 @@ func (s *APIServer) reinitBotCheck(userData UserData, req upsertBotConfigRequest
 	}
 
 	// set bot state to initializing so it handles the update
-	s.kos.RegisterBotWithStateUpsert(bot, kelpos.InitState())
+	s.kos.BotDataForUser(userData.toUser()).RegisterBotWithStateUpsert(bot, kelpos.InitState())
 
 	// we only want to start initializing bot once it has been created, so we only advance state if everything is completed
 	go func() {
@@ -351,7 +351,7 @@ func (s *APIServer) reinitBotCheck(userData UserData, req upsertBotConfigRequest
 		}
 
 		// advance bot state
-		e = s.kos.AdvanceBotState(bot.Name, kelpos.InitState())
+		e = s.kos.BotDataForUser(userData.toUser()).AdvanceBotState(bot.Name, kelpos.InitState())
 		if e != nil {
 			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,

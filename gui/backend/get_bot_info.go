@@ -68,7 +68,7 @@ func (s *APIServer) getBotInfo(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData, botName string) {
 	log.Printf("getBotInfo is invoking logic directly for botName: %s\n", botName)
 
-	botState, e := s.doGetBotState(botName)
+	botState, e := s.doGetBotState(userData, botName)
 	if e != nil {
 		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,

@@ -16,11 +16,12 @@ func (s *APIServer) getBotState(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, fmt.Sprintf("error in getBotState: %s\n", e))
 		return
 	}
+	// TODO fetch userData and pass in here
+	userData := UserData{}
 
-	state, e := s.doGetBotState(botName)
+	state, e := s.doGetBotState(userData, botName)
 	if e != nil {
-		// TODO fetch userData and pass in here
-		s.writeKelpError(UserData{}, w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -34,11 +35,12 @@ func (s *APIServer) getBotState(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("%s\n", state)))
 }
 
-func (s *APIServer) doGetBotState(botName string) (kelpos.BotState, error) {
-	b, e := s.kos.GetBot(botName)
+func (s *APIServer) doGetBotState(userData UserData, botName string) (kelpos.BotState, error) {
+	ubd := s.kos.BotDataForUser(userData.toUser())
+	b, e := ubd.GetBot(botName)
 	if e != nil {
 		return kelpos.InitState(), fmt.Errorf("unable to get bot state: %s", e)
 	}
-	log.Printf("bots available: %v", s.kos.RegisteredBots())
+	log.Printf("bots available for user (%s): %v", userData.String(), ubd.RegisteredBots())
 	return b.State, nil
 }

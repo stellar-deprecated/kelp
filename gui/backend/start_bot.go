@@ -51,7 +51,7 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopped)
+	e = s.kos.BotDataForUser(req.UserData.toUser()).AdvanceBotState(botName, kelpos.BotStateStopped)
 	if e != nil {
 		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
@@ -182,7 +182,7 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 
 func (s *APIServer) abruptStoppedState(userData UserData, botName string) {
 	// advance state from running to stopping
-	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
+	e := s.kos.BotDataForUser(userData.toUser()).AdvanceBotState(botName, kelpos.BotStateRunning)
 	if e != nil {
 		s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 			errorTypeBot,
@@ -195,7 +195,7 @@ func (s *APIServer) abruptStoppedState(userData UserData, botName string) {
 	}
 
 	// advance state from stopping to stopped
-	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
+	e = s.kos.BotDataForUser(userData.toUser()).AdvanceBotState(botName, kelpos.BotStateStopping)
 	if e != nil {
 		s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 			errorTypeBot,

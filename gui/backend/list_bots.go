@@ -67,8 +67,9 @@ func (s *APIServer) doListBots(userData UserData) ([]model2.Bot, error) {
 	}
 	log.Printf("bots available: %v", bots)
 
+	ubd := s.kos.BotDataForUser(userData.toUser())
 	for _, bot := range bots {
-		botState, e := s.kos.QueryBotState(bot.Name)
+		botState, e := ubd.QueryBotState(bot.Name)
 		if e != nil {
 			return bots, fmt.Errorf("unable to query bot state for bot '%s': %s", bot.Name, e)
 		}
@@ -76,7 +77,7 @@ func (s *APIServer) doListBots(userData UserData) ([]model2.Bot, error) {
 		log.Printf("found bot '%s' with state '%s'\n", bot.Name, botState)
 		// if page is reloaded then bot would already be registered, which is ok -- but we upsert here so it doesn't matter
 		if botState != kelpos.InitState() {
-			s.kos.RegisterBotWithStateUpsert(&bot, botState)
+			ubd.RegisterBotWithStateUpsert(&bot, botState)
 		}
 	}
 
