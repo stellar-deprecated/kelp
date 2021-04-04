@@ -1,23 +1,41 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/stellar/kelp/support/kelpos"
 )
 
+type getBotStateRequest struct {
+	UserData UserData `json:"user_data"`
+	BotName  string   `json:"bot_name"`
+}
+
 func (s *APIServer) getBotState(w http.ResponseWriter, r *http.Request) {
-	botName, e := s.parseBotName(r)
+	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
 		// we do not have the botName so we cannot throw a bot specific error here
 		s.writeError(w, fmt.Sprintf("error in getBotState: %s\n", e))
 		return
 	}
-	// TODO fetch userData and pass in here
-	userData := UserData{}
+	var req getBotStateRequest
+	e = json.Unmarshal(bodyBytes, &req)
+	if e != nil {
+		s.writeError(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
+		return
+	}
+	if strings.TrimSpace(req.UserData.ID) == "" {
+		s.writeError(w, fmt.Sprintf("cannot have empty userID"))
+		return
+	}
+	botName := req.BotName
+	userData := req.UserData
 
 	state, e := s.doGetBotState(userData, botName)
 	if e != nil {
