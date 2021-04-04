@@ -19,7 +19,8 @@ func (s *APIServer) getBotState(w http.ResponseWriter, r *http.Request) {
 
 	state, e := s.doGetBotState(botName)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		// TODO fetch userData and pass in here
+		s.writeKelpError(UserData{}, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),

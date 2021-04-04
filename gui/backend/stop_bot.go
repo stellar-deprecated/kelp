@@ -37,7 +37,7 @@ func (s *APIServer) stopBot(w http.ResponseWriter, r *http.Request) {
 
 	e = s.doStopBot(req.UserData, botName)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -65,7 +65,7 @@ func (s *APIServer) doStopBot(userData UserData, botName string) error {
 	e = s.doStartBot(userData, botName, "delete", &numIterations, func() {
 		eInner := s.deleteFinishCallback(botName)
 		if eInner != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),

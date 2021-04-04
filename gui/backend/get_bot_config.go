@@ -50,7 +50,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -63,7 +63,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	var buysellConfig plugins.BuySellConfig
 	e = config.Read(strategyFilePath.Native(), &buysellConfig)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -81,7 +81,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonBytes, e := json.MarshalIndent(response, "", "  ")
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),

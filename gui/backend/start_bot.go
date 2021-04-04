@@ -41,7 +41,7 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 
 	e = s.doStartBot(req.UserData, botName, "buysell", nil, nil)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -53,7 +53,7 @@ func (s *APIServer) startBot(w http.ResponseWriter, r *http.Request) {
 
 	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopped)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -156,7 +156,7 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 				return
 			}
 
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -165,7 +165,7 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 			).KelpError)
 
 			// set state to stopped
-			s.abruptStoppedState(botName)
+			s.abruptStoppedState(userData, botName)
 
 			// we don't want to continue because the bot didn't finish correctly
 			return
@@ -180,11 +180,11 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 	return nil
 }
 
-func (s *APIServer) abruptStoppedState(botName string) {
+func (s *APIServer) abruptStoppedState(userData UserData, botName string) {
 	// advance state from running to stopping
 	e := s.kos.AdvanceBotState(botName, kelpos.BotStateRunning)
 	if e != nil {
-		s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+		s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -197,7 +197,7 @@ func (s *APIServer) abruptStoppedState(botName string) {
 	// advance state from stopping to stopped
 	e = s.kos.AdvanceBotState(botName, kelpos.BotStateStopping)
 	if e != nil {
-		s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+		s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),

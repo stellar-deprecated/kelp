@@ -125,7 +125,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if we need to create new funding accounts and new trustlines
-	s.reinitBotCheck(req)
+	s.reinitBotCheck(reqWrapper.UserData, req)
 
 	s.writeJson(w, upsertBotConfigResponse{Success: true})
 }
@@ -265,7 +265,7 @@ func hasNewLevel(levels []plugins.StaticLevel) bool {
 	return false
 }
 
-func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
+func (s *APIServer) reinitBotCheck(userData UserData, req upsertBotConfigRequest) {
 	isTestnet := strings.Contains(req.TraderConfig.HorizonURL, "test")
 	bot := &model2.Bot{
 		Name:     req.Name,
@@ -281,7 +281,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 	go func() {
 		tradingKP, e := keypair.Parse(req.TraderConfig.TradingSecretSeed)
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
@@ -297,7 +297,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 
 		traderAccount, e := s.checkFundAccount(client, tradingKP.Address(), bot.Name)
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
@@ -314,7 +314,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		}
 		e = s.checkAddTrustline(*traderAccount, tradingKP, req.TraderConfig.TradingSecretSeed, bot.Name, isTestnet, assets)
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
@@ -328,7 +328,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		if req.TraderConfig.SourceSecretSeed != "" {
 			sourceKP, e := keypair.Parse(req.TraderConfig.SourceSecretSeed)
 			if e != nil {
-				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 					errorTypeBot,
 					bot.Name,
 					time.Now().UTC(),
@@ -339,7 +339,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 			}
 			_, e = s.checkFundAccount(client, sourceKP.Address(), bot.Name)
 			if e != nil {
-				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 					errorTypeBot,
 					bot.Name,
 					time.Now().UTC(),
@@ -353,7 +353,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		// advance bot state
 		e = s.kos.AdvanceBotState(bot.Name, kelpos.InitState())
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),

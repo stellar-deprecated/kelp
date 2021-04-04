@@ -70,7 +70,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 
 	botState, e := s.doGetBotState(botName)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -91,7 +91,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -102,7 +102,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 	}
 	e = botConfig.Init()
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -126,7 +126,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 
 	account, e := client.AccountDetail(horizonclient.AccountRequest{AccountID: botConfig.TradingAccount()})
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -139,7 +139,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 	if assetBase == utils.NativeAsset {
 		balanceBase, e = getNativeBalance(account)
 		if e != nil {
-			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -151,7 +151,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 	} else {
 		balanceBase, e = getCreditBalance(account, assetBase)
 		if e != nil {
-			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -165,7 +165,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 	if assetQuote == utils.NativeAsset {
 		balanceQuote, e = getNativeBalance(account)
 		if e != nil {
-			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -177,7 +177,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 	} else {
 		balanceQuote, e = getCreditBalance(account, assetQuote)
 		if e != nil {
-			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -190,7 +190,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 
 	offers, e := utils.LoadAllOffers(account.AccountID, client)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -213,7 +213,7 @@ func (s *APIServer) runGetBotInfoDirect(w http.ResponseWriter, userData UserData
 		Limit:              1,
 	})
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(userData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),

@@ -23,23 +23,29 @@ type UserData struct {
 	ID string `json:"id"`
 }
 
+// kelpErrorDataForUser tracks errors for a given user
+type kelpErrorDataForUser struct {
+	errorMap map[string]KelpError
+	lock     *sync.Mutex
+}
+
 // APIServer is an instance of the API service
 type APIServer struct {
-	kelpBinPath       *kelpos.OSPath
-	botConfigsPath    *kelpos.OSPath
-	botLogsPath       *kelpos.OSPath
-	kos               *kelpos.KelpOS
-	horizonTestnetURI string
-	horizonPubnetURI  string
-	ccxtRestUrl       string
-	apiTestNet        *horizonclient.Client
-	apiPubNet         *horizonclient.Client
-	disablePubnet     bool
-	noHeaders         bool
-	quitFn            func()
-	metricsTracker    *plugins.MetricsTracker
-	kelpErrorMap      map[string]KelpError
-	kelpErrorMapLock  *sync.Mutex
+	kelpBinPath          *kelpos.OSPath
+	botConfigsPath       *kelpos.OSPath
+	botLogsPath          *kelpos.OSPath
+	kos                  *kelpos.KelpOS
+	horizonTestnetURI    string
+	horizonPubnetURI     string
+	ccxtRestUrl          string
+	apiTestNet           *horizonclient.Client
+	apiPubNet            *horizonclient.Client
+	disablePubnet        bool
+	noHeaders            bool
+	quitFn               func()
+	metricsTracker       *plugins.MetricsTracker
+	kelpErrorsByUser     map[string]kelpErrorDataForUser
+	kelpErrorsByUserLock *sync.Mutex
 
 	cachedOptionsMetadata metadata
 }
@@ -66,8 +72,6 @@ func MakeAPIServer(
 		return nil, fmt.Errorf("error while loading options metadata when making APIServer: %s", e)
 	}
 
-	kelpErrorMap := map[string]KelpError{}
-
 	return &APIServer{
 		kelpBinPath:           kelpBinPath,
 		botConfigsPath:        botConfigsPath,
@@ -83,8 +87,8 @@ func MakeAPIServer(
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,
 		metricsTracker:        metricsTracker,
-		kelpErrorMap:          kelpErrorMap,
-		kelpErrorMapLock:      &sync.Mutex{},
+		kelpErrorsByUser:      map[string]kelpErrorDataForUser{},
+		kelpErrorsByUserLock:  &sync.Mutex{},
 	}, nil
 }
 
@@ -94,6 +98,25 @@ func (s *APIServer) botConfigsPathForUser(userID string) *kelpos.OSPath {
 
 func (s *APIServer) botLogsPathForUser(userID string) *kelpos.OSPath {
 	return s.botLogsPath.Join(userID)
+}
+
+func (s *APIServer) kelpErrorsForUser(userID string) kelpErrorDataForUser {
+	s.kelpErrorsByUserLock.Lock()
+	defer s.kelpErrorsByUserLock.Unlock()
+
+	var kefu kelpErrorDataForUser
+	if v, ok := s.kelpErrorsByUser[userID]; ok {
+		kefu = v
+	} else {
+		// create new value and insert in map
+		kefu = kelpErrorDataForUser{
+			errorMap: map[string]KelpError{},
+			lock:     &sync.Mutex{},
+		}
+		s.kelpErrorsByUser[userID] = kefu
+	}
+
+	return kefu
 }
 
 // InitBackend initializes anything required to get the backend ready to serve
@@ -186,20 +209,37 @@ func (s *APIServer) writeErrorJson(w http.ResponseWriter, message string) {
 	w.Write(marshalledJson)
 }
 
-func (s *APIServer) addKelpErrorToMap(ke KelpError) {
+func (s *APIServer) addKelpErrorToMap(userData UserData, ke KelpError) {
 	key := ke.UUID
 
+	kefu := s.kelpErrorsForUser(userData.ID)
 	// need to use a lock because we could encounter a "concurrent map writes" error against the map which is being updated by multiple threads
-	s.kelpErrorMapLock.Lock()
-	defer s.kelpErrorMapLock.Unlock()
+	kefu.lock.Lock()
+	defer kefu.lock.Unlock()
 
-	s.kelpErrorMap[key] = ke
+	kefu.errorMap[key] = ke
 }
 
-func (s *APIServer) writeKelpError(w http.ResponseWriter, kerw KelpErrorResponseWrapper) {
+// removeKelpErrorUserDataIfEmpty removes user error data if the underlying map is empty
+func (s *APIServer) removeKelpErrorUserDataIfEmpty(userData UserData) {
+	// issue with this is that someone can hold a reference to this object when it is empty
+	// and then we remove from parent map and the other thread will add a value, which would result
+	// in the object having an entry in the map but being orphaned.
+	//
+	// We can get creative with timeouts too but that is all an overoptimizationn
+	//
+	// We could resolve this by always holding both the higher level lock and the per-user lock to modify
+	// values inside a user's error map, but that will slow things down
+	//
+	// for now we do not remove Kelp error user data even if empty.
+
+	// do nothing
+}
+
+func (s *APIServer) writeKelpError(userData UserData, w http.ResponseWriter, kerw KelpErrorResponseWrapper) {
 	w.WriteHeader(http.StatusInternalServerError)
 	log.Printf("writing error: %s\n", kerw.String())
-	s.addKelpErrorToMap(kerw.KelpError)
+	s.addKelpErrorToMap(userData, kerw.KelpError)
 
 	marshalledJSON, e := json.MarshalIndent(kerw, "", "    ")
 	if e != nil {

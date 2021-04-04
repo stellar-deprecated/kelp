@@ -39,7 +39,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	// only stop bot if current state is running
 	botState, e := s.doGetBotState(botName)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -52,7 +52,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	if botState == kelpos.BotStateRunning {
 		e = s.doStopBot(req.UserData, botName)
 		if e != nil {
-			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -66,7 +66,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	for {
 		botState, e := s.doGetBotState(botName)
 		if e != nil {
-			s.writeKelpError(w, makeKelpErrorResponseWrapper(
+			s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				botName,
 				time.Now().UTC(),
@@ -92,7 +92,7 @@ func (s *APIServer) deleteBot(w http.ResponseWriter, r *http.Request) {
 	botConfigPath := s.botConfigsPathForUser(req.UserData.ID).Join(botPrefix)
 	_, e = s.kos.Blocking("rm", fmt.Sprintf("rm %s*", botConfigPath.Unix()))
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
