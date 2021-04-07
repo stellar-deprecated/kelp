@@ -51,6 +51,7 @@ type APIServer struct {
 	apiTestNet           *horizonclient.Client
 	apiPubNet            *horizonclient.Client
 	disablePubnet        bool
+	enableKaas           bool
 	noHeaders            bool
 	quitFn               func()
 	metricsTracker       *plugins.MetricsTracker
@@ -71,6 +72,7 @@ func MakeAPIServer(
 	apiPubNet *horizonclient.Client,
 	ccxtRestUrl string,
 	disablePubnet bool,
+	enableKaas bool,
 	noHeaders bool,
 	quitFn func(),
 	metricsTracker *plugins.MetricsTracker,
@@ -93,6 +95,7 @@ func MakeAPIServer(
 		apiTestNet:            apiTestNet,
 		apiPubNet:             apiPubNet,
 		disablePubnet:         disablePubnet,
+		enableKaas:            enableKaas,
 		noHeaders:             noHeaders,
 		cachedOptionsMetadata: optionsMetadata,
 		quitFn:                quitFn,
