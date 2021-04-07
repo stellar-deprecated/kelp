@@ -1,7 +1,8 @@
 package constants
 
-// TriggerUI and TriggerKaas represent the various trigger modes of starting up a bot from a GUI interface
+// Trigger values representing the various trigger modes of starting up a bot
 const (
-	TriggerUI   string = "ui"
-	TriggerKaas string = "kaas"
+	TriggerDefault string = ""
+	TriggerUI      string = "ui"
+	TriggerKaas    string = "kaas"
 )

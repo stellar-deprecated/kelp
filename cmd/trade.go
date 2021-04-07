@@ -128,6 +128,10 @@ func validateCliParams(l logger.Logger, options inputs) {
 	} else {
 		l.Infof("will run only %d update iterations\n", *options.fixedIterations)
 	}
+
+	if *options.trigger != constants.TriggerDefault && *options.trigger != constants.TriggerUI && *options.trigger != constants.TriggerKaas {
+		panic(fmt.Sprintf("invalid trigger argument: '%s'", *options.trigger))
+	}
 }
 
 func validateBotConfig(l logger.Logger, botConfig trader.BotConfig) {
@@ -168,7 +172,7 @@ func init() {
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
-	options.trigger = tradeCmd.Flags().String("trigger", "", fmt.Sprintf("indicates a bot that is triggered from a parent process ('%s' or '%s')", constants.TriggerUI, constants.TriggerKaas))
+	options.trigger = tradeCmd.Flags().String("trigger", constants.TriggerDefault, fmt.Sprintf("indicates a bot that is triggered from a parent process ('%s' or '%s')", constants.TriggerUI, constants.TriggerKaas))
 	options.cpuProfile = tradeCmd.Flags().String("cpuprofile", "", "write cpu profile to `file`")
 	options.memProfile = tradeCmd.Flags().String("memprofile", "", "write memory profile to `file`")
 
