@@ -71,6 +71,12 @@ type serverInputOptions struct {
 	enableKaas        *bool
 }
 
+// String is the stringer method impl.
+func (o serverInputOptions) String() string {
+	return fmt.Sprintf("serverInputOptions[port=%d, dev=%v, devAPIPort=%d, horizonTestnetURI='%s', horizonPubnetURI='%s', noHeaders=%v, verbose=%v, noElectron=%v, disablePubnet=%v, enableKaas=%v]",
+		*o.port, *o.dev, *o.devAPIPort, *o.horizonTestnetURI, *o.horizonPubnetURI, *o.noHeaders, *o.verbose, *o.noElectron, *o.disablePubnet, *o.enableKaas)
+}
+
 func init() {
 	options := serverInputOptions{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
@@ -85,6 +91,8 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
+		log.Printf("starting server with cli flag inputs: %s", options)
+
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
