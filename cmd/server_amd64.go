@@ -236,12 +236,17 @@ func init() {
 			HTTP:       http.DefaultClient,
 		}
 		if !*options.noHeaders {
-			if *options.noElectron {
-				apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
-				apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+			if *options.enableKaas {
+				apiTestNet.AppName = "kelp--gui-kaas--admin"
+				apiPubNet.AppName = "kelp--gui-kaas--admin"
 			} else {
-				apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
-				apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+				if *options.noElectron {
+					apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
+					apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+				} else {
+					apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
+					apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+				}
 			}
 
 			apiTestNet.AppVersion = version
@@ -258,6 +263,7 @@ func init() {
 				}
 			}
 		}
+		log.Printf("using apiTestNet.AppName = '%s' and apiPubNet.AppName = '%s'", apiTestNet.AppName, apiPubNet.AppName)
 
 		if isLocalDevMode {
 			log.Printf("not checking ccxt in local dev mode")
