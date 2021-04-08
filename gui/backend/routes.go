@@ -6,11 +6,15 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// SetRoutes
+// SetRoutes adds the handlers for the endpoints
 func SetRoutes(r *chi.Mux, s *APIServer) {
 	r.Route("/api/v1", func(r chi.Router) {
+		if !s.enableKaas {
+			// /quit is only enabled when we are not in KaaS mode
+			r.Get("/quit", http.HandlerFunc(s.quit))
+		}
+
 		r.Get("/version", http.HandlerFunc(s.version))
-		r.Get("/quit", http.HandlerFunc(s.quit))
 		r.Get("/serverMetadata", http.HandlerFunc(s.serverMetadata))
 		r.Get("/newSecretKey", http.HandlerFunc(s.newSecretKey))
 		r.Get("/optionsMetadata", http.HandlerFunc(s.optionsMetadata))

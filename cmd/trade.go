@@ -24,6 +24,7 @@ import (
 	"github.com/stellar/kelp/kelpdb"
 	"github.com/stellar/kelp/model"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/constants"
 	"github.com/stellar/kelp/support/database"
 	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/monitoring"
@@ -105,7 +106,7 @@ type inputs struct {
 	logPrefix                     *string
 	fixedIterations               *uint64
 	noHeaders                     *bool
-	ui                            *bool
+	trigger                       *string
 	cpuProfile                    *string
 	memProfile                    *string
 }
@@ -126,6 +127,10 @@ func validateCliParams(l logger.Logger, options inputs) {
 		l.Info("will run unbounded iterations")
 	} else {
 		l.Infof("will run only %d update iterations\n", *options.fixedIterations)
+	}
+
+	if *options.trigger != constants.TriggerDefault && *options.trigger != constants.TriggerUI && *options.trigger != constants.TriggerKaas {
+		panic(fmt.Sprintf("invalid trigger argument: '%s'", *options.trigger))
 	}
 }
 
@@ -167,7 +172,7 @@ func init() {
 	options.logPrefix = tradeCmd.Flags().StringP("log", "l", "", "log to a file (and stdout) with this prefix for the filename")
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
-	options.ui = tradeCmd.Flags().Bool("ui", false, "indicates a bot that is started from the Kelp UI server")
+	options.trigger = tradeCmd.Flags().String("trigger", constants.TriggerDefault, fmt.Sprintf("indicates a bot that is triggered from a parent process ('%s' or '%s')", constants.TriggerUI, constants.TriggerKaas))
 	options.cpuProfile = tradeCmd.Flags().String("cpuprofile", "", "write cpu profile to `file`")
 	options.memProfile = tradeCmd.Flags().String("memprofile", "", "write memory profile to `file`")
 
@@ -175,7 +180,7 @@ func init() {
 	requiredFlag("strategy")
 	hiddenFlag("operationalBuffer")
 	hiddenFlag("operationalBufferNonNativePct")
-	hiddenFlag("ui")
+	hiddenFlag("trigger")
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
@@ -564,7 +569,7 @@ func runTradeCmd(options inputs) {
 	l.Infof("Trading %s:%s for %s:%s\n", botConfig.AssetCodeA, botConfig.IssuerA, botConfig.AssetCodeB, botConfig.IssuerB)
 
 	var guiVersionFlag string
-	if *options.ui {
+	if *options.trigger == constants.TriggerUI || *options.trigger == constants.TriggerKaas {
 		guiVersionFlag = guiVersion
 	}
 
@@ -644,8 +649,10 @@ func runTradeCmd(options inputs) {
 	}
 	if !*options.noHeaders {
 		client.AppName = "kelp--cli--bot"
-		if *options.ui {
+		if *options.trigger == constants.TriggerUI {
 			client.AppName = "kelp--gui-desktop--bot"
+		} else if *options.trigger == constants.TriggerKaas {
+			client.AppName = "kelp--gui-kaas--bot"
 		}
 		client.AppVersion = version
 
@@ -660,6 +667,7 @@ func runTradeCmd(options inputs) {
 			}
 		}
 	}
+	log.Printf("using client.AppName = %s", client.AppName)
 
 	if *rootCcxtRestURL == "" && botConfig.CcxtRestURL != nil {
 		e := sdk.SetBaseURL(*botConfig.CcxtRestURL)

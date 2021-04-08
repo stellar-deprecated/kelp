@@ -58,7 +58,7 @@ const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
 const downloadCcxtUpdateIntervalLogMillis = 1000
 
-type serverInputs struct {
+type serverInputOptions struct {
 	port              *uint16
 	dev               *bool
 	devAPIPort        *uint16
@@ -68,10 +68,17 @@ type serverInputs struct {
 	verbose           *bool
 	noElectron        *bool
 	disablePubnet     *bool
+	enableKaas        *bool
+}
+
+// String is the stringer method impl.
+func (o serverInputOptions) String() string {
+	return fmt.Sprintf("serverInputOptions[port=%d, dev=%v, devAPIPort=%d, horizonTestnetURI='%s', horizonPubnetURI='%s', noHeaders=%v, verbose=%v, noElectron=%v, disablePubnet=%v, enableKaas=%v]",
+		*o.port, *o.dev, *o.devAPIPort, *o.horizonTestnetURI, *o.horizonPubnetURI, *o.noHeaders, *o.verbose, *o.noElectron, *o.disablePubnet, *o.enableKaas)
 }
 
 func init() {
-	options := serverInputs{}
+	options := serverInputOptions{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
 	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
@@ -79,8 +86,9 @@ func init() {
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
-	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
+	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron, only applies when not in KaaS mode")
 	options.disablePubnet = serverCmd.Flags().Bool("disable-pubnet", false, "disable pubnet option")
+	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -125,6 +133,8 @@ func init() {
 				astilog.SetDefaultLogger()
 			}
 		}
+
+		log.Printf("initialized server with cli flag inputs: %s", options)
 
 		if runtime.GOOS == "windows" {
 			if !*options.noElectron {
@@ -180,15 +190,18 @@ func init() {
 				electronURL = tailFilepath.Native()
 			}
 
-			// kick off the desktop window for UI feedback to the user
-			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
-			go func() {
-				if *options.noElectron {
-					openBrowser(appURL, openBrowserWg)
-				} else {
-					openElectron(trayIconPath, electronURL)
-				}
-			}()
+			// only open browser or electron when not running in kaas mode
+			if !*options.enableKaas {
+				// kick off the desktop window for UI feedback to the user
+				// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
+				go func() {
+					if *options.noElectron {
+						openBrowser(appURL, openBrowserWg)
+					} else {
+						openElectron(trayIconPath, electronURL)
+					}
+				}()
+			}
 		}
 
 		log.Printf("Starting Kelp GUI Server, gui=%s, cli=%s [%s]\n", guiVersion, version, gitHash)
@@ -223,12 +236,17 @@ func init() {
 			HTTP:       http.DefaultClient,
 		}
 		if !*options.noHeaders {
-			if *options.noElectron {
-				apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
-				apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+			if *options.enableKaas {
+				apiTestNet.AppName = "kelp--gui-kaas--admin"
+				apiPubNet.AppName = "kelp--gui-kaas--admin"
 			} else {
-				apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
-				apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+				if *options.noElectron {
+					apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
+					apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+				} else {
+					apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
+					apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+				}
 			}
 
 			apiTestNet.AppVersion = version
@@ -245,6 +263,7 @@ func init() {
 				}
 			}
 		}
+		log.Printf("using apiTestNet.AppName = '%s' and apiPubNet.AppName = '%s'", apiTestNet.AppName, apiPubNet.AppName)
 
 		if isLocalDevMode {
 			log.Printf("not checking ccxt in local dev mode")
@@ -346,6 +365,7 @@ func init() {
 			apiPubNet,
 			*rootCcxtRestURL,
 			*options.disablePubnet,
+			*options.enableKaas,
 			*options.noHeaders,
 			quit,
 			metricsTracker,
@@ -364,7 +384,7 @@ func init() {
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
-			runWithYarn(kos, options, guiWebPath)
+			runWithYarn(kos, *options.port, guiWebPath)
 
 			log.Printf("should not have reached here after running yarn")
 			return
@@ -574,11 +594,11 @@ func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPo
 	log.Fatal(e)
 }
 
-func runWithYarn(kos *kelpos.KelpOS, options serverInputs, guiWebPath *kelpos.OSPath) {
+func runWithYarn(kos *kelpos.KelpOS, port uint16, guiWebPath *kelpos.OSPath) {
 	// yarn requires the PORT variable to be set when serving
-	os.Setenv("PORT", fmt.Sprintf("%d", *options.port))
+	os.Setenv("PORT", fmt.Sprintf("%d", port))
 
-	log.Printf("Serving frontend via yarn on HTTP port: %d\n", *options.port)
+	log.Printf("Serving frontend via yarn on HTTP port: %d\n", port)
 	e := kos.StreamOutput(exec.Command("yarn", "--cwd", guiWebPath.Unix(), "start"))
 	if e != nil {
 		panic(e)
@@ -710,6 +730,7 @@ func openElectron(trayIconPath *kelpos.OSPath, url string) {
 }
 
 func quit() {
+	// this is still valid when running in KaaS mode since it doesn't matter. we can disable it (or make it error) if we wanted
 	log.Printf("quitting...")
 	os.Exit(0)
 }

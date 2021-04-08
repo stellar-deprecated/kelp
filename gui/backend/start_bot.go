@@ -12,6 +12,7 @@ import (
 
 	"github.com/stellar/go/support/config"
 	"github.com/stellar/kelp/gui/model2"
+	"github.com/stellar/kelp/support/constants"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/trader"
 )
@@ -120,11 +121,18 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 		return fmt.Errorf("cannnot start pubnet bots when pubnet is disabled")
 	}
 
-	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --ui",
+	// triggerMode informs the underlying bot process how it was started so it can set anything specific on that bot that it needs to
+	// it is only one of these two because it is not started up manually, which would not have a trigger mode (i.e. default)
+	triggerMode := constants.TriggerUI
+	if s.enableKaas {
+		triggerMode = constants.TriggerKaas
+	}
+	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --trigger %s",
 		traderRelativeConfigPath.Unix(),
 		strategy,
 		stratRelativeConfigPath.Unix(),
 		logRelativePrefixPath.Unix(),
+		triggerMode,
 	)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
