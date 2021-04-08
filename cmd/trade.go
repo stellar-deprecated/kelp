@@ -667,6 +667,7 @@ func runTradeCmd(options inputs) {
 			}
 		}
 	}
+	log.Printf("using client.AppName = %s", client.AppName)
 
 	if *rootCcxtRestURL == "" && botConfig.CcxtRestURL != nil {
 		e := sdk.SetBaseURL(*botConfig.CcxtRestURL)
