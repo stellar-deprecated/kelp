@@ -91,8 +91,6 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
-		log.Printf("starting server with cli flag inputs: %s", options)
-
 		isLocalMode := env == envDev
 		isLocalDevMode := isLocalMode && *options.dev
 		kos := kelpos.GetKelpOS()
@@ -135,6 +133,8 @@ func init() {
 				astilog.SetDefaultLogger()
 			}
 		}
+
+		log.Printf("initialized server with cli flag inputs: %s", options)
 
 		if runtime.GOOS == "windows" {
 			if !*options.noElectron {
