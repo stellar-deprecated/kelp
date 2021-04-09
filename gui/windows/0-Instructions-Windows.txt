@@ -1,0 +1,29 @@
+============================================
+Instructions for Running Kelp GUI on Windows
+============================================
+
+Note: Your version of Windows should support WSL (64-bit versions of Windows 10 from build 1607 or later)
+
+You need to enable the WSL feature (Windows Subsystem for Linux) offered by Windows and also install a linux distribution such as Ubuntu. Here are the steps to do that:
+1. To do this you can right-click the "1-Install-WSL.ps1" script and click on "Run with PowerShell". If it asks for permissions to run scripts then enter "Y" on your keyboard so the PowerShell window can run this script.
+    i. This will download Ubuntu 18.04 LTS which is 230MB so can take some time.
+   ii. Restart your computer after this step for WSL changes to be applied correctly.
+2. Run the "2-default-wsl-version1.bat" script so it defaults to using version 1 of WSL.
+3. Run the "1-Install-WSL.ps1" script again by right-clicking on the script and selecting "Run with PowerShell". This will attempt to install "Ubuntu 18.04 LTS" in case it failed in the first attempt in step 1.
+    i. Once the installation is completed then you will need to set up your username and password for this new Ubuntu installation.
+   ii. If required, restart your computer after this step for Ubuntu changes to be applied correctly.
+
+Now you can run Kelp GUI by double-clicking on the "3-kelp-start-windows.bat" script. You can use this script every time you want to start the Kelp GUI.
+
+See the included "0-Instruction-Video.html" link for an Instructional Video on how to get Kelp GUI set up for Windows using WSL.
+
+-------------
+Common Issues
+-------------
+1. Sometimes when you use the "3-kelp-start-windows.bat" script, the command prompt windows closes within a few seconds without starting up the Kelp GUI. If this happens then just try 4-5 more times and it should work. This is an issue with the WSL implementation.
+
+2. Downloading Ubuntu is slow -- Yes, it is slow since it is 221MB. This can take a few minutes or more depending on your internet speed. There is no way around this.
+
+3. It seems stuck when trying to install Ubuntu -- Yes, it is a little slow. It takes about 5 minutes to install Ubuntu before it gives you a prompt for your username and password. This is normal.
+
+4. When I create my password in Ubuntu in the command prompt, I cannot see my password -- Yes, this is expected and is meant to help protect the privacy of your password. Even though you cannot see it when you type keys it is being entered correctly. The ask you to retype your password so you are safe from typo errors.

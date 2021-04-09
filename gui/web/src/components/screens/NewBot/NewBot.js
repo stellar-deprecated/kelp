@@ -72,7 +72,7 @@ class NewBot extends Component {
     });
 
     var _this = this;
-    this._asyncRequests["botConfig"] = upsertBotConfig(this.props.baseUrl, JSON.stringify(this.state.configData)).then(resp => {
+    this._asyncRequests["botConfig"] = upsertBotConfig(this.props.baseUrl, this.state.configData).then(resp => {
       if (!_this._asyncRequests["botConfig"]) {
         // if it has been deleted it means we don't want to process the result
         return

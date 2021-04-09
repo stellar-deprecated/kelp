@@ -515,6 +515,7 @@ class Form extends Component {
                   }
                   this.props.onChange("trader_config.horizon_url", { target: { value: newValue } });
                 }}
+                error={this.getError("trader_config.horizon_url")}
               />
             </FieldItem>
           </FormSection>

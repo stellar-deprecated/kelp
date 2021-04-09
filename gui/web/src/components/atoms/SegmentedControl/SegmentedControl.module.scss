@@ -47,3 +47,8 @@
     background-color: $color-primary;
 }
 
+.errorMessage {
+    margin: 0;
+    color: $color-danger;
+    font-size: 12/16+rem;
+}

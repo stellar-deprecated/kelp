@@ -24,6 +24,11 @@ import (
 	"github.com/stellar/kelp/trader"
 )
 
+type upsertBotConfigRequestWrapper struct {
+	UserData               UserData               `json:"user_data"`
+	UpsertBotConfigRequest upsertBotConfigRequest `json:"config_data"`
+}
+
 type upsertBotConfigRequest struct {
 	Name           string                `json:"name"`
 	Strategy       string                `json:"strategy"`
@@ -58,14 +63,20 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("upsertBotConfig requestJson: %s\n", string(bodyBytes))
 
-	var req upsertBotConfigRequest
-	e = json.Unmarshal(bodyBytes, &req)
+	var reqWrapper upsertBotConfigRequestWrapper
+	e = json.Unmarshal(bodyBytes, &reqWrapper)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
 		return
 	}
+	req := reqWrapper.UpsertBotConfigRequest
+	userID := reqWrapper.UserData.ID
+	if strings.TrimSpace(userID) == "" {
+		s.writeErrorJson(w, fmt.Sprintf("cannot have empty userID"))
+		return
+	}
 
-	botState, e := s.kos.QueryBotState(req.Name)
+	botState, e := s.kos.BotDataForUser(reqWrapper.UserData.toUser()).QueryBotState(req.Name)
 	if e != nil {
 		s.writeErrorJson(w, fmt.Sprintf("error getting bot state for bot '%s': %s", req.Name, e))
 		return
@@ -88,14 +99,14 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e = s.setupOpsDirectory()
+	e = s.setupOpsDirectory(userID)
 	if e != nil {
 		s.writeError(w, fmt.Sprintf("error setting up ops directory: %s\n", e))
 		return
 	}
 
 	filenamePair := model2.GetBotFilenames(req.Name, req.Strategy)
-	traderFilePath := s.botConfigsPath.Join(filenamePair.Trader)
+	traderFilePath := s.botConfigsPathForUser(userID).Join(filenamePair.Trader)
 	botConfig := req.TraderConfig
 	log.Printf("upsert bot config to file: %s\n", traderFilePath.AsString())
 	e = toml.WriteFile(traderFilePath.Native(), &botConfig)
@@ -104,7 +115,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	strategyFilePath := s.botConfigsPath.Join(filenamePair.Strategy)
+	strategyFilePath := s.botConfigsPathForUser(userID).Join(filenamePair.Strategy)
 	strategyConfig := req.StrategyConfig
 	log.Printf("upsert strategy config to file: %s\n", strategyFilePath.AsString())
 	e = toml.WriteFile(strategyFilePath.Native(), &strategyConfig)
@@ -114,7 +125,7 @@ func (s *APIServer) upsertBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if we need to create new funding accounts and new trustlines
-	s.reinitBotCheck(req)
+	s.reinitBotCheck(reqWrapper.UserData, req)
 
 	s.writeJson(w, upsertBotConfigResponse{Success: true})
 }
@@ -124,6 +135,13 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 	errResp := upsertBotConfigRequest{
 		TraderConfig:   trader.BotConfig{},
 		StrategyConfig: plugins.BuySellConfig{},
+	}
+
+	// use isTradingSdex() function because we have not called Iint() on the trader config yet
+	isPubnetBot := req.TraderConfig.IsTradingSdex() && strings.TrimSuffix(req.TraderConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiPubNet.HorizonURL, "/")
+	if s.disablePubnet && isPubnetBot {
+		errResp.TraderConfig.HorizonURL = "pubnnet bots are disabled so cannot update pubnet bots right now"
+		hasError = true
 	}
 
 	if _, e := strkey.Decode(strkey.VersionByteSeed, req.TraderConfig.TradingSecretSeed); e != nil {
@@ -145,6 +163,36 @@ func (s *APIServer) validateConfigs(req upsertBotConfigRequest) *upsertBotConfig
 				errResp.TraderConfig.TradingSecretSeed = "cannot trade using issuer account"
 				errResp.TraderConfig.IssuerB = "cannot trade asset issued by trading account"
 				hasError = true
+			}
+			// use isTradingSdex() function because we have not called Iint() on the trader config yet
+			isTestnetBot := req.TraderConfig.IsTradingSdex() && strings.TrimSuffix(req.TraderConfig.HorizonURL, "/") == strings.TrimSuffix(s.apiTestNet.HorizonURL, "/")
+			log.Printf("checking if secret key exists on pubnet: isTradingSdex=%v, isTestnetBot=%v", req.TraderConfig.IsTradingSdex(), isTestnetBot)
+			if isTestnetBot {
+				// ensure that trader secret key does not exist on the main net
+				_, e := s.apiPubNet.AccountDetail(horizonclient.AccountRequest{AccountID: *tradingAccount})
+				if e != nil {
+					log.Printf("case: received error from call to check secret key on pubnet")
+					switch t := e.(type) {
+					case *horizonclient.Error:
+						if t.Problem.Status == 404 || strings.ToLower(t.Problem.Title) == "resource missing" {
+							log.Printf("case: account not found on pubnet error so it is valid case")
+							// this is the desired case
+							// do nothing
+						} else {
+							log.Printf("case: error from horizon while validating secret key being used on test network: status = %d, message = %s - %s", t.Problem.Status, t.Problem.Title, t.Problem.Detail)
+							errResp.TraderConfig.TradingSecretSeed = fmt.Sprintf("unknown error from Horizon (%d): %s", t.Problem.Status, t.Problem.Title)
+							hasError = true
+						}
+					default:
+						log.Printf("case: some other non-horizon error")
+						errResp.TraderConfig.TradingSecretSeed = fmt.Sprintf("unknown error checking key on pubnet: %s", e.Error())
+						hasError = true
+					}
+				} else {
+					log.Printf("case: account exists on pubnet, so this is an error!")
+					errResp.TraderConfig.TradingSecretSeed = "account for key exists on pubnet, cannot use on testnet"
+					hasError = true
+				}
 			}
 		}
 	}
@@ -217,7 +265,7 @@ func hasNewLevel(levels []plugins.StaticLevel) bool {
 	return false
 }
 
-func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
+func (s *APIServer) reinitBotCheck(userData UserData, req upsertBotConfigRequest) {
 	isTestnet := strings.Contains(req.TraderConfig.HorizonURL, "test")
 	bot := &model2.Bot{
 		Name:     req.Name,
@@ -227,13 +275,13 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 	}
 
 	// set bot state to initializing so it handles the update
-	s.kos.RegisterBotWithStateUpsert(bot, kelpos.InitState())
+	s.kos.BotDataForUser(userData.toUser()).RegisterBotWithStateUpsert(bot, kelpos.InitState())
 
 	// we only want to start initializing bot once it has been created, so we only advance state if everything is completed
 	go func() {
 		tradingKP, e := keypair.Parse(req.TraderConfig.TradingSecretSeed)
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
@@ -249,7 +297,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 
 		traderAccount, e := s.checkFundAccount(client, tradingKP.Address(), bot.Name)
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
@@ -266,7 +314,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		}
 		e = s.checkAddTrustline(*traderAccount, tradingKP, req.TraderConfig.TradingSecretSeed, bot.Name, isTestnet, assets)
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
@@ -280,7 +328,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		if req.TraderConfig.SourceSecretSeed != "" {
 			sourceKP, e := keypair.Parse(req.TraderConfig.SourceSecretSeed)
 			if e != nil {
-				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 					errorTypeBot,
 					bot.Name,
 					time.Now().UTC(),
@@ -291,7 +339,7 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 			}
 			_, e = s.checkFundAccount(client, sourceKP.Address(), bot.Name)
 			if e != nil {
-				s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+				s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 					errorTypeBot,
 					bot.Name,
 					time.Now().UTC(),
@@ -303,9 +351,9 @@ func (s *APIServer) reinitBotCheck(req upsertBotConfigRequest) {
 		}
 
 		// advance bot state
-		e = s.kos.AdvanceBotState(bot.Name, kelpos.InitState())
+		e = s.kos.BotDataForUser(userData.toUser()).AdvanceBotState(bot.Name, kelpos.InitState())
 		if e != nil {
-			s.addKelpErrorToMap(makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(userData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),

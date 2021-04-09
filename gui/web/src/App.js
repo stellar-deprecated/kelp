@@ -7,6 +7,7 @@ import Button from './components/atoms/Button/Button';
 import Bots from './components/screens/Bots/Bots';
 import NewBot from './components/screens/NewBot/NewBot';
 import version from './kelp-ops-api/version';
+import serverMetadata from './kelp-ops-api/serverMetadata';
 import quit from './kelp-ops-api/quit';
 import fetchKelpErrors from './kelp-ops-api/fetchKelpErrors';
 import removeKelpErrors from './kelp-ops-api/removeKelpErrors';
@@ -27,11 +28,14 @@ class App extends Component {
     super(props);
     this.state = {
       version: "",
+      server_metadata: null,
       kelp_errors: {},
       active_error: null, // { botName, level, errorList, index }
     };
 
     this.setVersion = this.setVersion.bind(this);
+    this.fetchServerMetadata = this.fetchServerMetadata.bind(this);
+    this.showQuitButton = this.showQuitButton.bind(this);
     this.quit = this.quit.bind(this);
     this.addError = this.addError.bind(this);
     this.addErrorToObject = this.addErrorToObject.bind(this);
@@ -46,6 +50,7 @@ class App extends Component {
 
   componentDidMount() {
     this.setVersion()
+    this.fetchServerMetadata();
 
     this.fetchKelpErrors();
     if (!this._fetchKelpErrorsTimer) {
@@ -70,7 +75,29 @@ class App extends Component {
     });
   }
 
+  fetchServerMetadata() {
+    var _this = this;
+    this._asyncRequests["serverMetadata"] = serverMetadata(baseUrl).then(resp => {
+      if (!_this._asyncRequests["serverMetadata"]) {
+        // if it has been deleted it means we don't want to process the result
+        return
+      }
+
+      delete _this._asyncRequests["serverMetadata"];
+      if (!resp["error"]) {
+        _this.setState({ server_metadata: resp });
+      } else {
+        setTimeout(_this.fetchServerMetadata, 30000);
+      }
+    });
+  }
+
   quit() {
+    if (!this.showQuitButton()) {
+      console.error("calling quit function when showQuitButton() returned false!");
+      return
+    }
+
     var _this = this
     this._asyncRequests["quit"] = quit(baseUrl).then(resp => {
       if (!_this._asyncRequests["quit"]) {
@@ -292,19 +319,32 @@ class App extends Component {
     this.setState({ "active_error": null });
   }
 
+  showQuitButton() {
+    // showQuit defaults to false, use this instead of enableKaas so it's more explicit
+    return this.state.server_metadata ? !this.state.server_metadata.enable_kaas : false;
+  }
+
   render() {
     // construction of metricsTracker in server_amd64.go (isTestnet) needs to logically match this variable
-    const enablePubnetBots = true;
+    // we use the state because that is updated from the /serverMetadata endpoint
+    const enablePubnetBots = this.state.server_metadata ? !this.state.server_metadata.disable_pubnet : false;
+
+    let quitButton = "";
+    if (this.showQuitButton()) {
+      quitButton = (
+        <Button
+          eventName="main-quit"
+          className={styles.quit}
+          size="small"
+          onClick={this.quit}
+        >
+          Quit
+        </Button>
+      );
+    }
 
     let banner = (<div className={styles.banner}>
-      <Button
-        eventName="main-quit"
-        className={styles.quit}
-        size="small"
-        onClick={this.quit}
-      >
-        Quit
-      </Button>
+      {quitButton}
       Kelp GUI (beta) v1.0.0-rc2
     </div>);
 
