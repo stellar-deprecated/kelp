@@ -1,11 +1,11 @@
-import uuid from "uuid";
+import { v4 as uuidv4 } from "uuid";
 
 export default () => {
     const userIDKey = 'user_id';
     
     let userId = localStorage.getItem(userIDKey);
     if (userId == null) {
-        userId = uuid.v4();
+        userId = uuidv4();
         localStorage.setItem(userIDKey, userId);
     }
     
