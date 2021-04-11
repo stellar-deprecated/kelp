@@ -1,7 +1,0 @@
-{
-  "auth0enabled" : false,
-  "domain": "domain-goes-here_example_dev-xxxxx.eu.auth0.com", 
-  "clientId": "clientID-here_example_7I47xxxxxxxxxxxxxnXKF29hY5",
-  "audience": "audience-here",
-  "scope": "scope-here"
-}
