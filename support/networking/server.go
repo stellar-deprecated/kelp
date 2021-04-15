@@ -39,11 +39,6 @@ type server struct {
 	permittedEmails    map[string]bool
 }
 
-// MakeServer creates a WebServer
-func MakeServer() (WebServer, error) {
-	return MakeServerWithGoogleAuth(&Config{}, []Endpoint{})
-}
-
 // MakeServerWithGoogleAuth creates a WebServer that's responsible for serving all the endpoints passed into it with google authentication.
 func MakeServerWithGoogleAuth(cfg *Config, endpoints []Endpoint) (WebServer, error) {
 	mux := new(http.ServeMux)
@@ -73,10 +68,15 @@ func MakeServerWithGoogleAuth(cfg *Config, endpoints []Endpoint) (WebServer, err
 	return s, nil
 }
 
+// StartServer starts the server by using the router on the server struct
+func (s *server) StartServer(port uint16, certFile string, keyFile string) error {
+	return StartServer(s.router, port, certFile, keyFile)
+}
+
 // StartServer starts the monitoring server by listening on the specified port and serving requests
 // according to its handlers. If certFile and keyFile aren't empty, then the server will use TLS.
 // This call will block or return a non-nil error.
-func (s *server) StartServer(port uint16, certFile string, keyFile string) error {
+func StartServer(handler http.Handler, port uint16, certFile string, keyFile string) error {
 	addr := ":" + strconv.Itoa(int(port))
 	if certFile != "" && keyFile != "" {
 		_, e := os.Stat(certFile)
@@ -87,9 +87,9 @@ func (s *server) StartServer(port uint16, certFile string, keyFile string) error
 		if e != nil {
 			return fmt.Errorf("provided tls key file cannot be found")
 		}
-		return http.ListenAndServeTLS(addr, certFile, keyFile, s.router)
+		return http.ListenAndServeTLS(addr, certFile, keyFile, handler)
 	}
-	return http.ListenAndServe(addr, s.router)
+	return http.ListenAndServe(addr, handler)
 }
 
 // googleAuthHandler creates a random key to encrypt/decrypt session cookies

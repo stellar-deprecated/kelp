@@ -410,13 +410,9 @@ func init() {
 		gui.FileServer(r, "/", gui.FS)
 
 		log.Printf("starting server on port %d\n", *options.port)
-		webServer, e := networking.MakeServer()
-		if e != nil {
-			log.Fatal(e)
-		}
 		threadTracker := multithreading.MakeThreadTracker()
 		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			e1 := webServer.StartServer(*options.port, *options.tlsCertFile, *options.tlsKeyFile)
+			e1 := networking.StartServer(r, *options.port, *options.tlsCertFile, *options.tlsKeyFile)
 			if e1 != nil {
 				log.Fatal(e1)
 			}
