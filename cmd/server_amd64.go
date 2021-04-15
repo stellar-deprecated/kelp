@@ -415,7 +415,10 @@ func init() {
 					log.Fatal(e1)
 				}
 			} else {
-				_ = http.ListenAndServe(portString, r)
+				e1 := http.ListenAndServe(portString, r)
+				if e1 != nil {
+					log.Fatal(e1)
+				}
 			}
 		}, nil)
 		if e != nil {
