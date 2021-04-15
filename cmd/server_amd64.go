@@ -334,6 +334,7 @@ func init() {
 				http.DefaultClient,
 				amplitudeAPIKey,
 				userID,
+				"", // use an empty guiUserID because it is sent from the web request via the frontend for each request
 				deviceID,
 				time.Now(),         // TODO: Find proper time.
 				*options.noHeaders, // disable metrics if the CLI specified no headers

@@ -107,6 +107,7 @@ type inputs struct {
 	fixedIterations               *uint64
 	noHeaders                     *bool
 	trigger                       *string
+	guiUserID                     *string
 	cpuProfile                    *string
 	memProfile                    *string
 }
@@ -173,6 +174,7 @@ func init() {
 	options.fixedIterations = tradeCmd.Flags().Uint64("iter", 0, "only run the bot for the first N iterations (defaults value 0 runs unboundedly)")
 	options.noHeaders = tradeCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.trigger = tradeCmd.Flags().String("trigger", constants.TriggerDefault, fmt.Sprintf("indicates a bot that is triggered from a parent process ('%s' or '%s')", constants.TriggerUI, constants.TriggerKaas))
+	options.guiUserID = tradeCmd.Flags().String("gui-user-id", "", "specifies the guiUserID associated with this bot to use for metric tracking")
 	options.cpuProfile = tradeCmd.Flags().String("cpuprofile", "", "write cpu profile to `file`")
 	options.memProfile = tradeCmd.Flags().String("memprofile", "", "write memory profile to `file`")
 
@@ -181,6 +183,7 @@ func init() {
 	hiddenFlag("operationalBuffer")
 	hiddenFlag("operationalBufferNonNativePct")
 	hiddenFlag("trigger")
+	hiddenFlag("gui-user-id")
 	tradeCmd.Flags().SortFlags = false
 
 	tradeCmd.Run = func(ccmd *cobra.Command, args []string) {
@@ -586,6 +589,7 @@ func runTradeCmd(options inputs) {
 		http.DefaultClient,
 		amplitudeAPIKey,
 		userID,
+		*options.guiUserID,
 		deviceID,
 		botStartTime,
 		*options.noHeaders, // disable metrics if the CLI specified no headers

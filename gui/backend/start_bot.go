@@ -127,12 +127,13 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 	if s.enableKaas {
 		triggerMode = constants.TriggerKaas
 	}
-	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --trigger %s",
+	command := fmt.Sprintf("trade -c %s -s %s -f %s -l %s --trigger %s --gui-user-id %s",
 		traderRelativeConfigPath.Unix(),
 		strategy,
 		stratRelativeConfigPath.Unix(),
 		logRelativePrefixPath.Unix(),
 		triggerMode,
+		userData.ID,
 	)
 	if iterations != nil {
 		command = fmt.Sprintf("%s --iter %d", command, *iterations)
