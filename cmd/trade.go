@@ -873,7 +873,7 @@ func startMonitoringServer(l logger.Logger, botConfig trader.BotConfig) error {
 	for _, email := range strings.Split(botConfig.AcceptableEmails, ",") {
 		serverConfig.PermittedEmails[email] = true
 	}
-	server, e := networking.MakeServer(serverConfig, []networking.Endpoint{healthEndpoint, metricsEndpoint})
+	server, e := networking.MakeServerWithGoogleAuth(serverConfig, []networking.Endpoint{healthEndpoint, metricsEndpoint})
 	if e != nil {
 		return fmt.Errorf("unable to initialize the metrics server: %s", e)
 	}

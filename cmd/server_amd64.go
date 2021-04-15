@@ -69,6 +69,8 @@ type serverInputOptions struct {
 	noElectron        *bool
 	disablePubnet     *bool
 	enableKaas        *bool
+	tlsCertFile       *string
+	tlsKeyFile        *string
 }
 
 // String is the stringer method impl.
@@ -89,6 +91,8 @@ func init() {
 	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron, only applies when not in KaaS mode")
 	options.disablePubnet = serverCmd.Flags().Bool("disable-pubnet", false, "disable pubnet option")
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
+	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
+	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -404,21 +408,16 @@ func init() {
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
-		portString := fmt.Sprintf(":%d", *options.port)
 		log.Printf("starting server on port %d\n", *options.port)
-
+		webServer, e := networking.MakeServer()
+		if e != nil {
+			log.Fatal(e)
+		}
 		threadTracker := multithreading.MakeThreadTracker()
 		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			if isLocalMode {
-				e1 := http.ListenAndServe(portString, r)
-				if e1 != nil {
-					log.Fatal(e1)
-				}
-			} else {
-				e1 := http.ListenAndServe(portString, r)
-				if e1 != nil {
-					log.Fatal(e1)
-				}
+			e1 := webServer.StartServer(*options.port, *options.tlsCertFile, *options.tlsKeyFile)
+			if e1 != nil {
+				log.Fatal(e1)
 			}
 		}, nil)
 		if e != nil {

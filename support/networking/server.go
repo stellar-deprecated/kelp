@@ -39,8 +39,13 @@ type server struct {
 	permittedEmails    map[string]bool
 }
 
-// MakeServer creates a WebServer that's responsible for serving all the endpoints passed into it.
-func MakeServer(cfg *Config, endpoints []Endpoint) (WebServer, error) {
+// MakeServer creates a WebServer
+func MakeServer() (WebServer, error) {
+	return MakeServerWithGoogleAuth(&Config{}, []Endpoint{})
+}
+
+// MakeServerWithGoogleAuth creates a WebServer that's responsible for serving all the endpoints passed into it with google authentication.
+func MakeServerWithGoogleAuth(cfg *Config, endpoints []Endpoint) (WebServer, error) {
 	mux := new(http.ServeMux)
 	s := &server{
 		router:             mux,
