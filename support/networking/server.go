@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/lechengfan/googleauth"
 )
 
@@ -111,4 +112,12 @@ func (s *server) googleAuthHandler(h http.Handler) http.Handler {
 		MaxAge:          28 * 24 * time.Hour,
 		Handler:         h,
 	}
+}
+
+// AddHTTPSUpgrade adds an entry on the passed in path to redirect to an https connection
+func AddHTTPSUpgrade(mux *chi.Mux, path string) {
+	mux.HandleFunc(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("received request on http port, redirecting to https connection using a temporary redirect (http status code 307)")
+		http.Redirect(w, r, fmt.Sprintf("https://%s%s", r.Host, path), http.StatusTemporaryRedirect)
+	}))
 }

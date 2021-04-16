@@ -60,6 +60,7 @@ const downloadCcxtUpdateIntervalLogMillis = 1000
 
 type serverInputOptions struct {
 	port              *uint16
+	ports             *uint16
 	dev               *bool
 	devAPIPort        *uint16
 	horizonTestnetURI *string
@@ -81,9 +82,10 @@ func (o serverInputOptions) String() string {
 
 func init() {
 	options := serverInputOptions{}
-	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
+	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve HTTP")
+	options.ports = serverCmd.Flags().Uint16P("ports", "P", 8001, "port on which to serve HTTPS (only applicable if tls cert and key provided)")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
-	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
+	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8002, "port on which to run API server when in dev mode")
 	options.horizonTestnetURI = serverCmd.Flags().String("horizon-testnet-uri", "https://horizon-testnet.stellar.org", "URI to use for the horizon instance connected to the Stellar Test Network (must contain the word 'test')")
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
@@ -409,16 +411,31 @@ func init() {
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
-		log.Printf("starting server on port %d\n", *options.port)
+		isTLS := *options.tlsCertFile != "" && *options.tlsKeyFile != ""
 		threadTracker := multithreading.MakeThreadTracker()
 		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			e1 := networking.StartServer(r, *options.port, *options.tlsCertFile, *options.tlsKeyFile)
+			port := *options.port
+			if isTLS {
+				port = *options.ports
+			}
+			log.Printf("starting server on port %d (TLS enabled = %v)\n", port, isTLS)
+			e1 := networking.StartServer(r, port, *options.tlsCertFile, *options.tlsKeyFile)
 			if e1 != nil {
 				log.Fatal(e1)
 			}
 		}, nil)
 		if e != nil {
 			log.Fatal(e)
+		}
+		if isTLS {
+			// we want a new server to redirect traffic from http to https
+			httpRedirectMux := chi.NewRouter()
+			networking.AddHTTPSUpgrade(httpRedirectMux, "/")
+			log.Printf("starting server on port %d to upgrade HTTP requests on the root path '/' to HTTPS connections\n", *options.port)
+			e1 := networking.StartServer(httpRedirectMux, *options.port, "", "")
+			if e1 != nil {
+				log.Fatal(e1)
+			}
 		}
 
 		log.Printf("sleeping for %d seconds before showing the ready string indicator...\n", sleepNumSecondsBeforeReadyString)
