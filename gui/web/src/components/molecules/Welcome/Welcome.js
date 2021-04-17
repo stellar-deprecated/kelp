@@ -78,6 +78,10 @@ class Welcome extends Component {
         </div>
       </div>
     );
+    let quitButton = (<Button eventName="welcome-quit" variant="faded" onClick={this.quit}>Quit</Button>);
+    if (!this.props.showQuitButton) {
+      quitButton = "";
+    }
     const page2 = (
       <div className={styles.window}>
         {kelpLogo}
@@ -110,7 +114,7 @@ class Welcome extends Component {
 
           <div className={styles.footer}>
             <Button eventName="welcome-accept" variant="faded" onClick={this.accept}>Accept</Button>
-            <Button eventName="welcome-quit" variant="faded" onClick={this.quit}>Quit</Button>
+            {quitButton}
           </div>
         </div>
       </div>
