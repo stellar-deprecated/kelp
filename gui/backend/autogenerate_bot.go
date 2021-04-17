@@ -105,25 +105,25 @@ func (s *APIServer) autogenerateBot(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		e := s.setupTestnetAccount(kp.Address(), kp.Seed(), bot.Name)
 		if e != nil {
-			s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(req.UserData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
 				errorLevelError,
 				fmt.Sprintf("error setting up account for bot '%s': %s\n", bot.Name, e),
-			))
+			).KelpError)
 			return
 		}
 
 		e = s.kos.BotDataForUser(req.UserData.toUser()).AdvanceBotState(bot.Name, kelpos.InitState())
 		if e != nil {
-			s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
+			s.addKelpErrorToMap(req.UserData, makeKelpErrorResponseWrapper(
 				errorTypeBot,
 				bot.Name,
 				time.Now().UTC(),
 				errorLevelError,
 				fmt.Sprintf("error advancing bot state after setting up account for bot '%s': %s\n", bot.Name, e),
-			))
+			).KelpError)
 			return
 		}
 	}()
