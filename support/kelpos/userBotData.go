@@ -129,7 +129,7 @@ func (ubd *UserBotData) QueryBotState(botName string) (BotState, error) {
 
 	prefix := getBotNamePrefix(botName)
 	command := fmt.Sprintf("ps aux | grep trade | grep %s | grep -v grep", prefix)
-	outputBytes, e := ubd.kos.Blocking(fmt.Sprintf("query_bot_state: %s", botName), command)
+	outputBytes, e := ubd.kos.Blocking(ubd.user.ID, fmt.Sprintf("query_bot_state: %s", botName), command)
 	if e != nil {
 		if strings.Contains(e.Error(), "exit status 1") {
 			return BotStateStopped, nil

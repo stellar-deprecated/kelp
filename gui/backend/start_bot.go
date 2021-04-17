@@ -146,7 +146,7 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 	}
 	log.Printf("run command for bot '%s': %s\n", botName, command)
 
-	p, e := s.runKelpCommandBackground(botName, command)
+	p, e := s.runKelpCommandBackground(userData.ID, botName, command)
 	if e != nil {
 		return fmt.Errorf("could not start bot %s: %s", botName, e)
 	}
@@ -156,7 +156,7 @@ func (s *APIServer) doStartBot(userData UserData, botName string, strategy strin
 	}
 
 	go func(kelpCommand *exec.Cmd, name string) {
-		defer s.kos.SafeUnregister(name)
+		defer s.kos.SafeUnregister(userData.ID, name)
 
 		e := kelpCommand.Wait()
 		if e != nil {

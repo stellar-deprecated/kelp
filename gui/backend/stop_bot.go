@@ -55,7 +55,7 @@ func (s *APIServer) doStopBot(userData UserData, botName string) error {
 		return fmt.Errorf("error advancing bot state: %s", e)
 	}
 
-	e = s.kos.Stop(botName)
+	e = s.kos.Stop(userData.ID, botName)
 	if e != nil {
 		return fmt.Errorf("error when killing bot %s: %s", botName, e)
 	}

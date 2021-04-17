@@ -281,33 +281,33 @@ func (s *APIServer) writeJsonWithLog(w http.ResponseWriter, v interface{}, doLog
 	w.Write(marshalledJson)
 }
 
-func (s *APIServer) runKelpCommandBlocking(namespace string, cmd string) ([]byte, error) {
+func (s *APIServer) runKelpCommandBlocking(userID string, namespace string, cmd string) ([]byte, error) {
 	// There is a weird issue on windows where the absolute path for the kelp binary does not work on the release GUI
 	// version because of the unzipped directory name but it will work on the released cli version or if we change the
 	// name of the folder in which the GUI version is unzipped.
 	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
 	// directory name. see start_bot.go for some experimentation with absolute and relative paths
 	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
-	return s.kos.Blocking(namespace, cmdString)
+	return s.kos.Blocking(userID, namespace, cmdString)
 }
 
-func (s *APIServer) runKelpCommandBackground(namespace string, cmd string) (*kelpos.Process, error) {
+func (s *APIServer) runKelpCommandBackground(userID string, namespace string, cmd string) (*kelpos.Process, error) {
 	// There is a weird issue on windows where the absolute path for the kelp binary does not work on the release GUI
 	// version because of the unzipped directory name but it will work on the released cli version or if we change the
 	// name of the folder in which the GUI version is unzipped.
 	// To avoid these issues we only invoke with the binary name as opposed to the absolute path that contains the
 	// directory name. see start_bot.go for some experimentation with absolute and relative paths
 	cmdString := fmt.Sprintf("%s %s", s.kelpBinPath.Unix(), cmd)
-	return s.kos.Background(namespace, cmdString)
+	return s.kos.Background(userID, namespace, cmdString)
 }
 
 func (s *APIServer) setupOpsDirectory(userID string) error {
-	e := s.kos.Mkdir(s.botConfigsPathForUser(userID))
+	e := s.kos.Mkdir(userID, s.botConfigsPathForUser(userID))
 	if e != nil {
 		return fmt.Errorf("error setting up configs directory (%s): %s", s.botConfigsPathForUser(userID).Native(), e)
 	}
 
-	e = s.kos.Mkdir(s.botLogsPathForUser(userID))
+	e = s.kos.Mkdir(userID, s.botLogsPathForUser(userID))
 	if e != nil {
 		return fmt.Errorf("error setting up logs directory (%s): %s", s.botLogsPathForUser(userID).Native(), e)
 	}

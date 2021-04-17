@@ -53,7 +53,7 @@ func (s *APIServer) listBots(w http.ResponseWriter, r *http.Request) {
 
 func (s *APIServer) doListBots(userData UserData) ([]model2.Bot, error) {
 	bots := []model2.Bot{}
-	resultBytes, e := s.kos.Blocking("ls", fmt.Sprintf("ls %s | sort", s.botConfigsPathForUser(userData.ID).Unix()))
+	resultBytes, e := s.kos.Blocking(userData.ID, "ls", fmt.Sprintf("ls %s | sort", s.botConfigsPathForUser(userData.ID).Unix()))
 	if e != nil {
 		return bots, fmt.Errorf("error when listing bots: %s", e)
 	}

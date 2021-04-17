@@ -126,7 +126,8 @@ func init() {
 
 			uiLogsDirPath := kos.GetDotKelpWorkingDir().Join(uiLogsDir)
 			log.Printf("calling mkdir on uiLogsDirPath: %s ...", uiLogsDirPath.AsString())
-			e = kos.Mkdir(uiLogsDirPath)
+			// no need to pass a userID since we are not running under the context of any user at this point
+			e = kos.Mkdir("_", uiLogsDirPath)
 			if e != nil {
 				panic(errors.Wrap(e, "could not mkdir on uiLogsDirPath: "+uiLogsDirPath.AsString()))
 			}
@@ -293,29 +294,34 @@ func init() {
 				ccxtBinPath := ccxtDestDir.Join(ccxtBinaryName)
 
 				log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath.AsString())
-				e := kos.Mkdir(ccxtDirPath)
+				// no need to pass a userID since we are not running under the context of any user at this point
+				e := kos.Mkdir("_", ccxtDirPath)
 				if e != nil {
 					panic(fmt.Errorf("could not mkdir for ccxtDirPath: %s", e))
 				}
 
 				if runtime.GOOS == "windows" {
 					ccxtSourceDir := kos.GetBinDir().Join("ccxt").Join(ccxtFilenameNoExt)
-					e = copyCcxtFolder(kos, ccxtSourceDir, ccxtDestDir)
+					// no need to pass a userID since we are not running under the context of any user at this point
+					e = copyCcxtFolder(kos, "_", ccxtSourceDir, ccxtDestDir)
 					if e != nil {
 						panic(e)
 					}
 				} else {
 					ccxtBundledZipPath := kos.GetBinDir().Join("ccxt").Join(filenameWithExt)
 					ccxtZipDestPath := ccxtDirPath.Join(filenameWithExt)
-					e = copyOrDownloadCcxtBinary(kos, ccxtBundledZipPath, ccxtZipDestPath, filenameWithExt)
+					// no need to pass a userID since we are not running under the context of any user at this point
+					e = copyOrDownloadCcxtBinary(kos, "_", ccxtBundledZipPath, ccxtZipDestPath, filenameWithExt)
 					if e != nil {
 						panic(e)
 					}
 
-					unzipCcxtFile(kos, ccxtDirPath, ccxtBinPath, filenameWithExt)
+					// no need to pass a userID since we are not running under the context of any user at this point
+					unzipCcxtFile(kos, "_", ccxtDirPath, ccxtBinPath, filenameWithExt)
 				}
 
-				e = runCcxtBinary(kos, ccxtBinPath)
+				// no need to pass a userID since we are not running under the context of any user at this point
+				e = runCcxtBinary(kos, "_", ccxtBinPath)
 				if e != nil {
 					panic(e)
 				}
@@ -476,13 +482,14 @@ func setMiddleware(r *chi.Mux) {
 
 func copyCcxtFolder(
 	kos *kelpos.KelpOS,
+	userID string,
 	ccxtSourceDir *kelpos.OSPath,
 	ccxtDestDir *kelpos.OSPath,
 ) error {
 	log.Printf("copying ccxt directory from %s to location %s ...", ccxtSourceDir.AsString(), ccxtDestDir.AsString())
 
 	cpCmd := fmt.Sprintf("cp -a %s %s", ccxtSourceDir.Unix(), ccxtDestDir.Unix())
-	_, e := kos.Blocking("cp-ccxt", cpCmd)
+	_, e := kos.Blocking(userID, "cp-ccxt", cpCmd)
 	if e != nil {
 		return fmt.Errorf("unable to copy ccxt directory from %s to %s: %s", ccxtSourceDir.AsString(), ccxtDestDir.AsString(), e)
 	}
@@ -493,6 +500,7 @@ func copyCcxtFolder(
 
 func copyOrDownloadCcxtBinary(
 	kos *kelpos.KelpOS,
+	userID string,
 	ccxtBundledZipPath *kelpos.OSPath,
 	ccxtZipDestPath *kelpos.OSPath,
 	filenameWithExt string,
@@ -505,7 +513,7 @@ func copyOrDownloadCcxtBinary(
 		log.Printf("copying ccxt from %s to location %s ...", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
 
 		cpCmd := fmt.Sprintf("cp %s %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
-		_, e = kos.Blocking("cp-ccxt", cpCmd)
+		_, e = kos.Blocking(userID, "cp-ccxt", cpCmd)
 		if e != nil {
 			return fmt.Errorf("unable to copy ccxt zip file from %s to %s: %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix(), e)
 		}
@@ -546,6 +554,7 @@ func copyOrDownloadCcxtBinary(
 
 func unzipCcxtFile(
 	kos *kelpos.KelpOS,
+	userID string,
 	ccxtDir *kelpos.OSPath,
 	ccxtBinPath *kelpos.OSPath,
 	filenameWithExt string,
@@ -558,21 +567,21 @@ func unzipCcxtFile(
 
 	log.Printf("unzipping file %s ... ", filenameWithExt)
 	zipCmd := fmt.Sprintf("cd %s && unzip %s", ccxtDir.Unix(), filenameWithExt)
-	_, e := kos.Blocking("zip", zipCmd)
+	_, e := kos.Blocking(userID, "zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDir.AsString())))
 	}
 	log.Printf("done\n")
 }
 
-func runCcxtBinary(kos *kelpos.KelpOS, ccxtBinPath *kelpos.OSPath) error {
+func runCcxtBinary(kos *kelpos.KelpOS, userID string, ccxtBinPath *kelpos.OSPath) error {
 	if _, e := os.Stat(ccxtBinPath.Native()); os.IsNotExist(e) {
 		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath.AsString())
 	}
 
 	log.Printf("running binary %s", ccxtBinPath.AsString())
 	// TODO CCXT should be run at the port specified by rootCcxtRestURL, currently it will default to port 3000 even if the config file specifies otherwise
-	_, e := kos.Background("ccxt-rest", ccxtBinPath.Unix())
+	_, e := kos.Background(userID, "ccxt-rest", ccxtBinPath.Unix())
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file at location %s", ccxtBinPath.AsString())))
 	}
@@ -653,7 +662,8 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, assetsDirPat
 	// create dir if not exists
 	if _, e := os.Stat(assetsDirPath.Native()); os.IsNotExist(e) {
 		log.Printf("mkdir assetsDirPath: %s ...", assetsDirPath.AsString())
-		e = kos.Mkdir(assetsDirPath)
+		// no need to pass a userID since we are not running under the context of any user at this point
+		e = kos.Mkdir("_", assetsDirPath)
 		if e != nil {
 			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath.AsString())
 		}
