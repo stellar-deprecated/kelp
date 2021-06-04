@@ -9,19 +9,20 @@ import (
 	"sync"
 
 	"github.com/stellar/go/support/errors"
-	"github.com/stellar/kelp/gui/model2"
 )
 
 const dotKelpDir = ".kelp"
 
 // KelpOS is a struct that manages all subprocesses started by this Kelp process
 type KelpOS struct {
-	binDir              *OSPath
-	dotKelpWorkingDir   *OSPath
-	processes           map[string]Process
-	processLock         *sync.Mutex
-	bots                map[string]*BotInstance
-	botLock             *sync.Mutex
+	binDir            *OSPath
+	dotKelpWorkingDir *OSPath
+	processes         map[string]Process
+	processLock       *sync.Mutex
+	userBotData       map[string]*UserBotData
+	userBotDataLock   *sync.Mutex
+
+	// uninitialized
 	silentRegistrations bool
 }
 
@@ -90,15 +91,25 @@ func makeKelpOS() *KelpOS {
 		dotKelpWorkingDir: dotKelpWorkingDir,
 		processes:         map[string]Process{},
 		processLock:       &sync.Mutex{},
-		bots:              map[string]*BotInstance{},
-		botLock:           &sync.Mutex{},
+		userBotData:       map[string]*UserBotData{},
+		userBotDataLock:   &sync.Mutex{},
 	}
 }
 
-// BotInstance is an instance of a given bot along with the metadata
-type BotInstance struct {
-	Bot   *model2.Bot
-	State BotState
+// BotDataForUser gets the UserBotData for a given user
+func (kos *KelpOS) BotDataForUser(user *User) *UserBotData {
+	kos.userBotDataLock.Lock()
+	defer kos.userBotDataLock.Unlock()
+
+	var ubd *UserBotData
+	if v, ok := kos.userBotData[user.ID]; ok {
+		ubd = v
+	} else {
+		ubd = makeUserBotData(kos, user)
+		kos.userBotData[user.ID] = ubd
+	}
+
+	return ubd
 }
 
 // GetKelpOS gets the singleton instance

@@ -6,19 +6,16 @@ import (
 	"strings"
 )
 
-func (s *APIServer) version(w http.ResponseWriter, r *http.Request) {
-	guiVersionBytes, e := s.runKelpCommandBlocking("version", "version | grep 'gui version' | cut -d':' -f2,3")
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("error in version command: %s\n", e))
-		return
-	}
-	cliVersionBytes, e := s.runKelpCommandBlocking("version", "version | grep 'cli version' | cut -d':' -f2,3")
-	if e != nil {
-		s.writeError(w, fmt.Sprintf("error in version command: %s\n", e))
-		return
-	}
+// this will be set automatically from root command
+var versionString = ""
 
-	versionBytes := []byte(fmt.Sprintf("%s (%s)", strings.TrimSpace(string(guiVersionBytes)), strings.TrimSpace(string(cliVersionBytes))))
+// SetVersionString sets the version string to be displayed in the GUI
+func SetVersionString(guiVersion string, cliVersion string) {
+	versionString = fmt.Sprintf("%s (%s)", strings.TrimSpace(guiVersion), strings.TrimSpace(cliVersion))
+}
+
+func (s *APIServer) version(w http.ResponseWriter, r *http.Request) {
+	versionBytes := []byte(versionString)
 	w.WriteHeader(http.StatusOK)
 	w.Write(versionBytes)
 }

@@ -1,7 +1,9 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -18,8 +20,28 @@ func init() {
 	utils.Shuffle(ocean_animals)
 }
 
+type genBotNameRequest struct {
+	UserData UserData `json:"user_data"`
+}
+
 func (s *APIServer) generateBotName(w http.ResponseWriter, r *http.Request) {
-	botName, e := s.doGenerateBotName()
+	bodyBytes, e := ioutil.ReadAll(r.Body)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error when reading request input: %s\n", e))
+		return
+	}
+	var req genBotNameRequest
+	e = json.Unmarshal(bodyBytes, &req)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
+		return
+	}
+	if strings.TrimSpace(req.UserData.ID) == "" {
+		s.writeErrorJson(w, fmt.Sprintf("cannot have empty userID"))
+		return
+	}
+
+	botName, e := s.doGenerateBotName(req.UserData)
 	if e != nil {
 		s.writeError(w, fmt.Sprintf("error encountered while generating new bot name: %s", e))
 		return
@@ -29,7 +51,7 @@ func (s *APIServer) generateBotName(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(botName))
 }
 
-func (s *APIServer) doGenerateBotName() (string, error) {
+func (s *APIServer) doGenerateBotName(userData UserData) (string, error) {
 	var botName string
 	startingIdxName := idx_name
 	for {
@@ -40,7 +62,7 @@ func (s *APIServer) doGenerateBotName() (string, error) {
 		idx_animals = (idx_animals + 1) % len(ocean_animals)
 
 		// only check name so we use unique first names for convenience
-		prefixExists, e := s.prefixExists(strings.ToLower(name))
+		prefixExists, e := s.prefixExists(userData, strings.ToLower(name))
 		if e != nil {
 			return "", fmt.Errorf("error encountered while checking for new bot name prefix: %s", e)
 		}
@@ -50,15 +72,15 @@ func (s *APIServer) doGenerateBotName() (string, error) {
 
 		// if prefix exists and we have reached back to the starting index then we have exhausted all options
 		if idx_name == startingIdxName {
-			return "", fmt.Errorf("cannot generate name because we ran out of first name combinations...")
+			return "", fmt.Errorf("cannot generate name because we ran out of first name combinations")
 		}
 	}
 	return botName, nil
 }
 
-func (s *APIServer) prefixExists(prefix string) (bool, error) {
-	command := fmt.Sprintf("ls %s | grep %s", s.botConfigsPath.Unix(), prefix)
-	_, e := s.kos.Blocking("prefix", command)
+func (s *APIServer) prefixExists(userData UserData, prefix string) (bool, error) {
+	command := fmt.Sprintf("ls %s | grep %s", s.botConfigsPathForUser(userData.ID).Unix(), prefix)
+	_, e := s.kos.Blocking(userData.ID, "prefix", command)
 	if e != nil {
 		if strings.Contains(e.Error(), "exit status 1") {
 			return false, nil

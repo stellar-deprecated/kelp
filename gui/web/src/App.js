@@ -35,6 +35,7 @@ class App extends Component {
 
     this.setVersion = this.setVersion.bind(this);
     this.fetchServerMetadata = this.fetchServerMetadata.bind(this);
+    this.showQuitButton = this.showQuitButton.bind(this);
     this.quit = this.quit.bind(this);
     this.addError = this.addError.bind(this);
     this.addErrorToObject = this.addErrorToObject.bind(this);
@@ -92,6 +93,11 @@ class App extends Component {
   }
 
   quit() {
+    if (!this.showQuitButton()) {
+      console.error("calling quit function when showQuitButton() returned false!");
+      return
+    }
+
     var _this = this
     this._asyncRequests["quit"] = quit(baseUrl).then(resp => {
       if (!_this._asyncRequests["quit"]) {
@@ -313,20 +319,32 @@ class App extends Component {
     this.setState({ "active_error": null });
   }
 
+  showQuitButton() {
+    // showQuit defaults to false, use this instead of enableKaas so it's more explicit
+    return this.state.server_metadata ? !this.state.server_metadata.enable_kaas : false;
+  }
+
   render() {
     // construction of metricsTracker in server_amd64.go (isTestnet) needs to logically match this variable
     // we use the state because that is updated from the /serverMetadata endpoint
     const enablePubnetBots = this.state.server_metadata ? !this.state.server_metadata.disable_pubnet : false;
 
+    let quitButton = "";
+    if (this.showQuitButton()) {
+      quitButton = (
+        <Button
+          eventName="main-quit"
+          className={styles.quit}
+          size="small"
+          onClick={this.quit}
+        >
+          Quit
+        </Button>
+      );
+    }
+
     let banner = (<div className={styles.banner}>
-      <Button
-        eventName="main-quit"
-        className={styles.quit}
-        size="small"
-        onClick={this.quit}
-      >
-        Quit
-      </Button>
+      {quitButton}
       Kelp GUI (beta) v1.0.0-rc2
     </div>);
 
@@ -351,7 +369,7 @@ class App extends Component {
             render={(props) => <NewBot {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots}/>}
             />
         </Router>
-        <Welcome quitFn={this.quit}/>
+        <Welcome quitFn={this.quit} showQuitButton={this.showQuitButton()}/>
       </div>
     );
   }
