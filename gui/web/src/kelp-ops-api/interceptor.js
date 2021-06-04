@@ -1,5 +1,5 @@
 import fetchIntercept from 'fetch-intercept';
-import authConfig from '../../src/custom_config_ui.json';
+import authConfig from '../../src/auth0-config.json';
 
 let AccessToken = authConfig.auth0_enabled ? localStorage.getItem('accessToken') : null;
 // console.log("interceptor getting call: "+ AccessToken);

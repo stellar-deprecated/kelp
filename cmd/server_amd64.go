@@ -72,6 +72,7 @@ type serverInputOptions struct {
 	enableKaas        *bool
 	tlsCertFile       *string
 	tlsKeyFile        *string
+	guiConfig		  *string
 }
 
 // String is the stringer method impl.
@@ -95,6 +96,7 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
 	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
+	options.guiConfig = serverCmd.Flags().StringP("custom-config", "c", "", "custom config for auth0 and delegated basic config file path")  //custom-config flag
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
