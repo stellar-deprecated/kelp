@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"encoding/json"	
 
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
@@ -39,6 +40,8 @@ import (
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
+	"github.com/stellar/kelp/support/guiconfig"
+	"github.com/stellar/go/support/config"
 )
 
 const kelpAssetsPath = "/assets"
@@ -81,6 +84,19 @@ func (o serverInputOptions) String() string {
 		*o.port, *o.dev, *o.devAPIPort, *o.horizonTestnetURI, *o.horizonPubnetURI, *o.noHeaders, *o.verbose, *o.noElectron, *o.disablePubnet, *o.enableKaas)
 }
 
+// function for reading custom config file and returning config struct with intilized value
+func readGUIConfig(options serverInputOptions) guiconfig.GUIConfig {
+	var guiConfigInFunc guiconfig.GUIConfig
+	e := config.Read(*options.guiConfig, &guiConfigInFunc)
+	// utils.CheckConfigError(guiConfigInFunc, e, *options.guiConfig)
+	if e != nil {
+		fmt.Println(e)
+	}
+	return guiConfigInFunc
+}
+// customConfigVar Variable with its equivalent struct #used to inject config values to jwt config var and to configure route
+var auth0ConfigVar guiconfig.GUIConfig
+
 func init() {
 	options := serverInputOptions{}
 	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve HTTP")
@@ -96,7 +112,7 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
 	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
-	options.guiConfig = serverCmd.Flags().StringP("custom-config", "c", "", "custom config for auth0 and delegated basic config file path")  //custom-config flag
+	options.guiConfig = serverCmd.Flags().StringP("guiconfig", "c", "", "gui-config for auth0 and other basic config file path")  //guiconfig flag
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -114,6 +130,27 @@ func init() {
 				panic(e)
 			}
 		}
+
+		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar 
+		auth0ConfigVar = readGUIConfig(options)
+		backend.Auth0ConfigVarJWT = auth0ConfigVar
+
+		//opening/creating "auth0-config.json" file in ./gui/web/src
+		filePathname, _ := filepath.Abs("../kelp/gui/web/src/" + "auth0-config.json")
+
+		shortVarForUIConfig := guiconfig.Auth0Config{}
+		if(auth0ConfigVar.Auth0Config != nil){
+			shortVarForUIConfig = guiconfig.Auth0Config{
+				Auth0Enabled : auth0ConfigVar.Auth0Config.Auth0Enabled,
+				Domain :	   auth0ConfigVar.Auth0Config.Domain,
+				ClientId :	   auth0ConfigVar.Auth0Config.ClientId,
+				Audience :	   auth0ConfigVar.Auth0Config.Audience,
+			}
+		}
+
+		//writing to "auth0-config.json" file in ./gui/web/src
+		file, _ := json.MarshalIndent(shortVarForUIConfig, "", " ")
+		_ = ioutil.WriteFile(filePathname, file, 0644)
 
 		e = backend.InitBotNameRegex()
 		if e != nil {
@@ -415,7 +452,15 @@ func init() {
 
 		r := chi.NewRouter()
 		setMiddleware(r)
-		backend.SetRoutes(r, s)
+		if (auth0ConfigVar.Auth0Config != nil) {
+			if(auth0ConfigVar.Auth0Config.Auth0Enabled){
+				backend.SetRoutesWithAuth0(r, s)
+			}	else {
+				backend.SetRoutes(r, s)
+			}
+		} else {
+			backend.SetRoutes(r, s)
+		}
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
@@ -614,7 +659,15 @@ func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPo
 	}).Handler)
 
 	setMiddleware(r)
-	backend.SetRoutes(r, s)
+	if (auth0ConfigVar.Auth0Config != nil) {
+		if(auth0ConfigVar.Auth0Config.Auth0Enabled){
+			backend.SetRoutesWithAuth0(r, s)
+		}	else {
+			backend.SetRoutes(r, s)
+		}
+	} else {
+		backend.SetRoutes(r, s)
+	}
 	portString := fmt.Sprintf(":%d", devAPIPort)
 	log.Printf("Serving API server on HTTP port: %d\n", devAPIPort)
 	e := http.ListenAndServe(portString, r)
