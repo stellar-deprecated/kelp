@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/auth0/go-jwt-middleware"
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/stellar/kelp/support/guiconfig"
 )
@@ -84,4 +84,4 @@ func getPemCert(token *jwt.Token) (string, error) {
 	}
 
 	return cert, nil
-} 
+}
