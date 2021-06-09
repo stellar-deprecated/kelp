@@ -58,8 +58,9 @@ const readyPlaceholder = "READY_STRING"
 const readyStringIndicator = "Serving frontend and API server on HTTP port"
 const downloadCcxtUpdateIntervalLogMillis = 1000
 
-type serverInputs struct {
+type serverInputOptions struct {
 	port              *uint16
+	ports             *uint16
 	dev               *bool
 	devAPIPort        *uint16
 	horizonTestnetURI *string
@@ -68,19 +69,32 @@ type serverInputs struct {
 	verbose           *bool
 	noElectron        *bool
 	disablePubnet     *bool
+	enableKaas        *bool
+	tlsCertFile       *string
+	tlsKeyFile        *string
+}
+
+// String is the stringer method impl.
+func (o serverInputOptions) String() string {
+	return fmt.Sprintf("serverInputOptions[port=%d, dev=%v, devAPIPort=%d, horizonTestnetURI='%s', horizonPubnetURI='%s', noHeaders=%v, verbose=%v, noElectron=%v, disablePubnet=%v, enableKaas=%v]",
+		*o.port, *o.dev, *o.devAPIPort, *o.horizonTestnetURI, *o.horizonPubnetURI, *o.noHeaders, *o.verbose, *o.noElectron, *o.disablePubnet, *o.enableKaas)
 }
 
 func init() {
-	options := serverInputs{}
-	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve")
+	options := serverInputOptions{}
+	options.port = serverCmd.Flags().Uint16P("port", "p", 8000, "port on which to serve HTTP")
+	options.ports = serverCmd.Flags().Uint16P("ports", "P", 8001, "port on which to serve HTTPS (only applicable if tls cert and key provided)")
 	options.dev = serverCmd.Flags().Bool("dev", false, "run in dev mode for hot-reloading of JS code")
-	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8001, "port on which to run API server when in dev mode")
+	options.devAPIPort = serverCmd.Flags().Uint16("dev-api-port", 8002, "port on which to run API server when in dev mode")
 	options.horizonTestnetURI = serverCmd.Flags().String("horizon-testnet-uri", "https://horizon-testnet.stellar.org", "URI to use for the horizon instance connected to the Stellar Test Network (must contain the word 'test')")
 	options.horizonPubnetURI = serverCmd.Flags().String("horizon-pubnet-uri", "https://horizon.stellar.org", "URI to use for the horizon instance connected to the Stellar Public Network (must not contain the word 'test')")
 	options.noHeaders = serverCmd.Flags().Bool("no-headers", false, "do not use Amplitude or set X-App-Name and X-App-Version headers on requests to horizon")
 	options.verbose = serverCmd.Flags().BoolP("verbose", "v", false, "enable verbose log lines typically used for debugging")
-	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron")
+	options.noElectron = serverCmd.Flags().Bool("no-electron", false, "open in browser instead of using electron, only applies when not in KaaS mode")
 	options.disablePubnet = serverCmd.Flags().Bool("disable-pubnet", false, "disable pubnet option")
+	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
+	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
+	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -112,7 +126,8 @@ func init() {
 
 			uiLogsDirPath := kos.GetDotKelpWorkingDir().Join(uiLogsDir)
 			log.Printf("calling mkdir on uiLogsDirPath: %s ...", uiLogsDirPath.AsString())
-			e = kos.Mkdir(uiLogsDirPath)
+			// no need to pass a userID since we are not running under the context of any user at this point
+			e = kos.Mkdir("_", uiLogsDirPath)
 			if e != nil {
 				panic(errors.Wrap(e, "could not mkdir on uiLogsDirPath: "+uiLogsDirPath.AsString()))
 			}
@@ -125,6 +140,8 @@ func init() {
 				astilog.SetDefaultLogger()
 			}
 		}
+
+		log.Printf("initialized server with cli flag inputs: %s", options)
 
 		if runtime.GOOS == "windows" {
 			if !*options.noElectron {
@@ -180,15 +197,18 @@ func init() {
 				electronURL = tailFilepath.Native()
 			}
 
-			// kick off the desktop window for UI feedback to the user
-			// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
-			go func() {
-				if *options.noElectron {
-					openBrowser(appURL, openBrowserWg)
-				} else {
-					openElectron(trayIconPath, electronURL)
-				}
-			}()
+			// only open browser or electron when not running in kaas mode
+			if !*options.enableKaas {
+				// kick off the desktop window for UI feedback to the user
+				// local mode (non --dev) and release binary should open browser (since --dev already opens browser via yarn and returns)
+				go func() {
+					if *options.noElectron {
+						openBrowser(appURL, openBrowserWg)
+					} else {
+						openElectron(trayIconPath, electronURL)
+					}
+				}()
+			}
 		}
 
 		log.Printf("Starting Kelp GUI Server, gui=%s, cli=%s [%s]\n", guiVersion, version, gitHash)
@@ -223,12 +243,17 @@ func init() {
 			HTTP:       http.DefaultClient,
 		}
 		if !*options.noHeaders {
-			if *options.noElectron {
-				apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
-				apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+			if *options.enableKaas {
+				apiTestNet.AppName = "kelp--gui-kaas--admin"
+				apiPubNet.AppName = "kelp--gui-kaas--admin"
 			} else {
-				apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
-				apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+				if *options.noElectron {
+					apiTestNet.AppName = "kelp--gui-desktop--admin-browser"
+					apiPubNet.AppName = "kelp--gui-desktop--admin-browser"
+				} else {
+					apiTestNet.AppName = "kelp--gui-desktop--admin-electron"
+					apiPubNet.AppName = "kelp--gui-desktop--admin-electron"
+				}
 			}
 
 			apiTestNet.AppVersion = version
@@ -245,6 +270,7 @@ func init() {
 				}
 			}
 		}
+		log.Printf("using apiTestNet.AppName = '%s' and apiPubNet.AppName = '%s'", apiTestNet.AppName, apiPubNet.AppName)
 
 		if isLocalDevMode {
 			log.Printf("not checking ccxt in local dev mode")
@@ -268,29 +294,34 @@ func init() {
 				ccxtBinPath := ccxtDestDir.Join(ccxtBinaryName)
 
 				log.Printf("mkdir ccxtDirPath: %s ...", ccxtDirPath.AsString())
-				e := kos.Mkdir(ccxtDirPath)
+				// no need to pass a userID since we are not running under the context of any user at this point
+				e := kos.Mkdir("_", ccxtDirPath)
 				if e != nil {
 					panic(fmt.Errorf("could not mkdir for ccxtDirPath: %s", e))
 				}
 
 				if runtime.GOOS == "windows" {
 					ccxtSourceDir := kos.GetBinDir().Join("ccxt").Join(ccxtFilenameNoExt)
-					e = copyCcxtFolder(kos, ccxtSourceDir, ccxtDestDir)
+					// no need to pass a userID since we are not running under the context of any user at this point
+					e = copyCcxtFolder(kos, "_", ccxtSourceDir, ccxtDestDir)
 					if e != nil {
 						panic(e)
 					}
 				} else {
 					ccxtBundledZipPath := kos.GetBinDir().Join("ccxt").Join(filenameWithExt)
 					ccxtZipDestPath := ccxtDirPath.Join(filenameWithExt)
-					e = copyOrDownloadCcxtBinary(kos, ccxtBundledZipPath, ccxtZipDestPath, filenameWithExt)
+					// no need to pass a userID since we are not running under the context of any user at this point
+					e = copyOrDownloadCcxtBinary(kos, "_", ccxtBundledZipPath, ccxtZipDestPath, filenameWithExt)
 					if e != nil {
 						panic(e)
 					}
 
-					unzipCcxtFile(kos, ccxtDirPath, ccxtBinPath, filenameWithExt)
+					// no need to pass a userID since we are not running under the context of any user at this point
+					unzipCcxtFile(kos, "_", ccxtDirPath, ccxtBinPath, filenameWithExt)
 				}
 
-				e = runCcxtBinary(kos, ccxtBinPath)
+				// no need to pass a userID since we are not running under the context of any user at this point
+				e = runCcxtBinary(kos, "_", ccxtBinPath)
 				if e != nil {
 					panic(e)
 				}
@@ -311,6 +342,7 @@ func init() {
 				http.DefaultClient,
 				amplitudeAPIKey,
 				userID,
+				"", // use an empty guiUserID because it is sent from the web request via the frontend for each request
 				deviceID,
 				time.Now(),         // TODO: Find proper time.
 				*options.noHeaders, // disable metrics if the CLI specified no headers
@@ -346,6 +378,7 @@ func init() {
 			apiPubNet,
 			*rootCcxtRestURL,
 			*options.disablePubnet,
+			*options.enableKaas,
 			*options.noHeaders,
 			quit,
 			metricsTracker,
@@ -364,7 +397,7 @@ func init() {
 			// the frontend app checks the REACT_APP_API_PORT variable to be set when serving
 			os.Setenv("REACT_APP_API_PORT", fmt.Sprintf("%d", *options.devAPIPort))
 			go runAPIServerDevBlocking(s, *options.port, *options.devAPIPort)
-			runWithYarn(kos, options, guiWebPath)
+			runWithYarn(kos, *options.port, guiWebPath)
 
 			log.Printf("should not have reached here after running yarn")
 			return
@@ -384,22 +417,31 @@ func init() {
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
-		portString := fmt.Sprintf(":%d", *options.port)
-		log.Printf("starting server on port %d\n", *options.port)
-
+		isTLS := *options.tlsCertFile != "" && *options.tlsKeyFile != ""
 		threadTracker := multithreading.MakeThreadTracker()
 		e = threadTracker.TriggerGoroutine(func(inputs []interface{}) {
-			if isLocalMode {
-				e1 := http.ListenAndServe(portString, r)
-				if e1 != nil {
-					log.Fatal(e1)
-				}
-			} else {
-				_ = http.ListenAndServe(portString, r)
+			port := *options.port
+			if isTLS {
+				port = *options.ports
+			}
+			log.Printf("starting server on port %d (TLS enabled = %v)\n", port, isTLS)
+			e1 := networking.StartServer(r, port, *options.tlsCertFile, *options.tlsKeyFile)
+			if e1 != nil {
+				log.Fatal(e1)
 			}
 		}, nil)
 		if e != nil {
 			log.Fatal(e)
+		}
+		if isTLS {
+			// we want a new server to redirect traffic from http to https
+			httpRedirectMux := chi.NewRouter()
+			networking.AddHTTPSUpgrade(httpRedirectMux, "/")
+			log.Printf("starting server on port %d to upgrade HTTP requests on the root path '/' to HTTPS connections\n", *options.port)
+			e1 := networking.StartServer(httpRedirectMux, *options.port, "", "")
+			if e1 != nil {
+				log.Fatal(e1)
+			}
 		}
 
 		log.Printf("sleeping for %d seconds before showing the ready string indicator...\n", sleepNumSecondsBeforeReadyString)
@@ -440,13 +482,14 @@ func setMiddleware(r *chi.Mux) {
 
 func copyCcxtFolder(
 	kos *kelpos.KelpOS,
+	userID string,
 	ccxtSourceDir *kelpos.OSPath,
 	ccxtDestDir *kelpos.OSPath,
 ) error {
 	log.Printf("copying ccxt directory from %s to location %s ...", ccxtSourceDir.AsString(), ccxtDestDir.AsString())
 
 	cpCmd := fmt.Sprintf("cp -a %s %s", ccxtSourceDir.Unix(), ccxtDestDir.Unix())
-	_, e := kos.Blocking("cp-ccxt", cpCmd)
+	_, e := kos.Blocking(userID, "cp-ccxt", cpCmd)
 	if e != nil {
 		return fmt.Errorf("unable to copy ccxt directory from %s to %s: %s", ccxtSourceDir.AsString(), ccxtDestDir.AsString(), e)
 	}
@@ -457,6 +500,7 @@ func copyCcxtFolder(
 
 func copyOrDownloadCcxtBinary(
 	kos *kelpos.KelpOS,
+	userID string,
 	ccxtBundledZipPath *kelpos.OSPath,
 	ccxtZipDestPath *kelpos.OSPath,
 	filenameWithExt string,
@@ -469,7 +513,7 @@ func copyOrDownloadCcxtBinary(
 		log.Printf("copying ccxt from %s to location %s ...", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
 
 		cpCmd := fmt.Sprintf("cp %s %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix())
-		_, e = kos.Blocking("cp-ccxt", cpCmd)
+		_, e = kos.Blocking(userID, "cp-ccxt", cpCmd)
 		if e != nil {
 			return fmt.Errorf("unable to copy ccxt zip file from %s to %s: %s", ccxtBundledZipPath.Unix(), ccxtZipDestPath.Unix(), e)
 		}
@@ -510,6 +554,7 @@ func copyOrDownloadCcxtBinary(
 
 func unzipCcxtFile(
 	kos *kelpos.KelpOS,
+	userID string,
 	ccxtDir *kelpos.OSPath,
 	ccxtBinPath *kelpos.OSPath,
 	filenameWithExt string,
@@ -522,21 +567,21 @@ func unzipCcxtFile(
 
 	log.Printf("unzipping file %s ... ", filenameWithExt)
 	zipCmd := fmt.Sprintf("cd %s && unzip %s", ccxtDir.Unix(), filenameWithExt)
-	_, e := kos.Blocking("zip", zipCmd)
+	_, e := kos.Blocking(userID, "zip", zipCmd)
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to unzip file %s in directory %s", filenameWithExt, ccxtDir.AsString())))
 	}
 	log.Printf("done\n")
 }
 
-func runCcxtBinary(kos *kelpos.KelpOS, ccxtBinPath *kelpos.OSPath) error {
+func runCcxtBinary(kos *kelpos.KelpOS, userID string, ccxtBinPath *kelpos.OSPath) error {
 	if _, e := os.Stat(ccxtBinPath.Native()); os.IsNotExist(e) {
 		return fmt.Errorf("path to ccxt binary (%s) does not exist", ccxtBinPath.AsString())
 	}
 
 	log.Printf("running binary %s", ccxtBinPath.AsString())
 	// TODO CCXT should be run at the port specified by rootCcxtRestURL, currently it will default to port 3000 even if the config file specifies otherwise
-	_, e := kos.Background("ccxt-rest", ccxtBinPath.Unix())
+	_, e := kos.Background(userID, "ccxt-rest", ccxtBinPath.Unix())
 	if e != nil {
 		log.Fatal(errors.Wrap(e, fmt.Sprintf("unable to run ccxt file at location %s", ccxtBinPath.AsString())))
 	}
@@ -574,11 +619,11 @@ func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPo
 	log.Fatal(e)
 }
 
-func runWithYarn(kos *kelpos.KelpOS, options serverInputs, guiWebPath *kelpos.OSPath) {
+func runWithYarn(kos *kelpos.KelpOS, port uint16, guiWebPath *kelpos.OSPath) {
 	// yarn requires the PORT variable to be set when serving
-	os.Setenv("PORT", fmt.Sprintf("%d", *options.port))
+	os.Setenv("PORT", fmt.Sprintf("%d", port))
 
-	log.Printf("Serving frontend via yarn on HTTP port: %d\n", *options.port)
+	log.Printf("Serving frontend via yarn on HTTP port: %d\n", port)
 	e := kos.StreamOutput(exec.Command("yarn", "--cwd", guiWebPath.Unix(), "start"))
 	if e != nil {
 		panic(e)
@@ -617,7 +662,8 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, assetsDirPat
 	// create dir if not exists
 	if _, e := os.Stat(assetsDirPath.Native()); os.IsNotExist(e) {
 		log.Printf("mkdir assetsDirPath: %s ...", assetsDirPath.AsString())
-		e = kos.Mkdir(assetsDirPath)
+		// no need to pass a userID since we are not running under the context of any user at this point
+		e = kos.Mkdir("_", assetsDirPath)
 		if e != nil {
 			return errors.Wrap(e, "could not mkdir for assetsDirPath: "+assetsDirPath.AsString())
 		}
@@ -710,6 +756,7 @@ func openElectron(trayIconPath *kelpos.OSPath, url string) {
 }
 
 func quit() {
+	// this is still valid when running in KaaS mode since it doesn't matter. we can disable it (or make it error) if we wanted
 	log.Printf("quitting...")
 	os.Exit(0)
 }

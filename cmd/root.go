@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
@@ -71,6 +72,7 @@ var rootCcxtRestURL *string
 
 func init() {
 	validateBuild()
+	backend.SetVersionString(guiVersion, version)
 
 	rootCcxtRestURL = RootCmd.PersistentFlags().String("ccxt-rest-url", "", "URL to use for the CCXT-rest API. Takes precendence over the CCXT_REST_URL param set in the botConfg file for the trade command and passed as a parameter into the Kelp subprocesses started by the GUI (default URL is https://localhost:3000)")
 

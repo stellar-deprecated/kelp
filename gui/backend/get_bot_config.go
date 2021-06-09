@@ -3,8 +3,10 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/stellar/go/support/config"
@@ -12,6 +14,11 @@ import (
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/trader"
 )
+
+type getBotConfigRequest struct {
+	UserData UserData `json:"user_data"`
+	BotName  string   `json:"bot_name"`
+}
 
 type botConfigResponse struct {
 	Name           string                `json:"name"`
@@ -21,18 +28,29 @@ type botConfigResponse struct {
 }
 
 func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
-	botName, e := s.parseBotName(r)
+	bodyBytes, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		s.writeError(w, fmt.Sprintf("error parsing bot name in getBotConfig: %s\n", e))
+		s.writeErrorJson(w, fmt.Sprintf("error when reading request input: %s\n", e))
 		return
 	}
+	var req getBotConfigRequest
+	e = json.Unmarshal(bodyBytes, &req)
+	if e != nil {
+		s.writeErrorJson(w, fmt.Sprintf("error unmarshaling json: %s; bodyString = %s", e, string(bodyBytes)))
+		return
+	}
+	if strings.TrimSpace(req.UserData.ID) == "" {
+		s.writeErrorJson(w, fmt.Sprintf("cannot have empty userID"))
+		return
+	}
+	botName := req.BotName
 
 	filenamePair := model2.GetBotFilenames(botName, "buysell")
-	traderFilePath := s.botConfigsPath.Join(filenamePair.Trader)
+	traderFilePath := s.botConfigsPathForUser(req.UserData.ID).Join(filenamePair.Trader)
 	var botConfig trader.BotConfig
 	e = config.Read(traderFilePath.Native(), &botConfig)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -41,11 +59,11 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 		))
 		return
 	}
-	strategyFilePath := s.botConfigsPath.Join(filenamePair.Strategy)
+	strategyFilePath := s.botConfigsPathForUser(req.UserData.ID).Join(filenamePair.Strategy)
 	var buysellConfig plugins.BuySellConfig
 	e = config.Read(strategyFilePath.Native(), &buysellConfig)
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
@@ -63,7 +81,7 @@ func (s *APIServer) getBotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonBytes, e := json.MarshalIndent(response, "", "  ")
 	if e != nil {
-		s.writeKelpError(w, makeKelpErrorResponseWrapper(
+		s.writeKelpError(req.UserData, w, makeKelpErrorResponseWrapper(
 			errorTypeBot,
 			botName,
 			time.Now().UTC(),
