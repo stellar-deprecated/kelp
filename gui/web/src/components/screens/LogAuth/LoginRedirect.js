@@ -17,12 +17,15 @@ const LoginRedirect = () => {
   }
 
   useEffect(() => {
+
       const userIDKey = 'user_id';
       const Auth0ID = JSON.stringify(user.sub).slice(7).replace('"', '')
       localStorage.setItem(userIDKey, Auth0ID);
 
       try {
-        getAccessTokenSilently().then(token => localStorage.setItem("accessToken", token)).then(window.location.reload());
+        if(localStorage.getItem('accessToken') == null){
+          getAccessTokenSilently().then(token => localStorage.setItem("accessToken", token)).then(window.location.reload());
+        }
       } catch (e) {
         console.log(e.message);
       }

@@ -6,7 +6,6 @@ let AccessToken = authConfig.auth0_enabled ? localStorage.getItem('accessToken')
 
 export const interceptor = fetchIntercept.register({
     request: function (url, config) {
-        AccessToken = authConfig.auth0_enabled ? localStorage.getItem('accessToken') : null;
         // Modify the url or config here
         const withDefaults = Object.assign({}, config);
         withDefaults.headers = config.headers || new Headers({
