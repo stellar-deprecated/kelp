@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from 'react';
+import React, { Component } from 'react';
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import Constants from './Constants';
 import styles from './App.module.scss';
@@ -14,10 +14,6 @@ import removeKelpErrors from './kelp-ops-api/removeKelpErrors';
 import Welcome from './components/molecules/Welcome/Welcome';
 import LoginRedirect  from './components/screens/LogAuth/LoginRedirect';
 import { interceptor } from './kelp-ops-api/interceptor';
-import { withAuth0 } from '@auth0/auth0-react';
-import { withAuthenticationRequired } from '@auth0/auth0-react';
-import { Redirect } from 'react-router';
-import ThreeDotsWave from './components/screens/Loading/ThreeDotWaves'
 
 let baseUrl = function () {
   let base_url = window.location.origin;
@@ -54,78 +50,7 @@ class App extends Component {
     this._asyncRequests = {};
   }
 
-  // async componentWillMount(){
-    // const { user,isAuthenticated, isLoading ,loginWithRedirect, getAccessTokenSilently, handleRedirectCallback } = this.props.auth0;
-    // console.log("Printing from componentWillMount app.js 1st", isAuthenticated)
-    // if (!isAuthenticated && !window.location.search.includes('code=')) {
-      // loginWithRedirect();
-    // }
-    // if (window.location.search.includes('code=')) {
-		// 	// return this.handleRedirectCallback();
-    //   return await handleRedirectCallback()
-		// }
-
-    // console.log("Printing from componentWillMount app.js 2st", isAuthenticated)
-
-
-    // if (!isAuthenticated) {
-    //     await loginWithRedirect("http://localhost:8000/")
-    // }
-    // console.log("Printing from componentWillMount app.js 3st", isAuthenticated)
-
-    // console.log("we are not authenticated")
-
-    // if(isAuthenticated){
-    //   console.log("we are authenticated")
-    //   getAccessTokenSilently().then(token => localStorage.setItem("accessToken", token))
-    // }
-  // }
-
   async componentDidMount() {
-    // console.log("Printing from componentDidMount app.js", isAuthenticated)
-
-
-    // // const { getAccessTokenSilently } = this.props.auth0;
-    // // getAccessTokenSilently().then(token => localStorage.setItem("accessToken", token))
-    // const userIDKey = 'user_id';
-    // const Auth0ID = JSON.stringify(user.sub).slice(7).replace('"', '')
-    // console.log('the profile ' +JSON.stringify(Auth0ID));
-    // localStorage.setItem(userIDKey, Auth0ID);
-    // this.setState({user_id: Auth0ID})
-    // const accessToken = await getAccessTokenSilently();
-    // localStorage.setItem("accessToken", accessToken);
-    // this.setState({access_token: accessToken})
-    // console.log(isAuthenticated)
-    // console.log(this.props.auth0.isAuthenticated)
-
-    
-    // if(isAuthenticated){
-    //   console.log("we are authenticated in componentDidMount")
-    //   getAccessTokenSilently().then(token => localStorage.setItem("accessToken", token))
-    // }
-    // if(!isAuthenticated){
-    //   console.log("we are not authenticated in componentDidMount")
-    //   getAccessTokenSilently().then(token => localStorage.setItem("accessToken", token))
-    // }
-
-    // if(isAuthenticated){
-    //   const userIDKey = 'user_id';
-    //   const Auth0ID = JSON.stringify(user.sub).slice(7).replace('"', '')
-    //   console.log('the profile ' +JSON.stringify(Auth0ID));
-    //   localStorage.setItem(userIDKey, Auth0ID);
-    //   const accessToken = await getAccessTokenSilently();
-    //   localStorage.setItem("accessToken", accessToken);
-    // }
-    // while(isLoading && !isAuthenticated){
-    //   console.log("priting while authenticating");
-    //   if(isAuthenticated){
-    //     break;
-    //   }
-    // }
-
-    
-    // this.initializeAuth0()
-    // this.getAccessToken();
     this.setVersion()
     this.fetchServerMetadata();
 
@@ -134,78 +59,6 @@ class App extends Component {
       this._fetchKelpErrorsTimer = setInterval(this.fetchKelpErrors, 500);
     }
   }
-
-  // initializeAuth0 = async () => {
-  //   console.log("Printing from initializeAuth0 app.js")
-	// 	const auth0Client = await this.props.auth0;
-	// 	this.setState({ auth0Client });
-
-	// 	// check to see if they have been redirected after login
-	// 	if (window.location.search.includes('code=')) {
-	// 		return this.handleRedirectCallback();
-	// 	}
-
-	// 	const isAuthenticated = await auth0Client.isAuthenticated();
-  //   console.log("Printing from initializeAuth0 app.js", isAuthenticated)
-	// 	const user = isAuthenticated ? await auth0Client.getUser() : null;
-	// 	this.setState({ isLoading: false, isAuthenticated, user });
-	// };
-
-	// handleRedirectCallback = async () => {
-  //   const { user,isAuthenticated, isLoading ,loginWithRedirect, getAccessTokenSilently, handleRedirectCallback } = this.props.auth0;
-
-  //   console.log("Printing from handleRedirectCallback app.js")
-
-	// 	this.setState({ isLoading: true });
-
-	// 	// await this.props.auth0.handleRedirectCallback();
-
-  //   console.log("Printing from handleRedirectCallback app.js line 164", user)
-    
-	// 	// const user = await this.state.auth0Client.getUser();
-
-	// 	this.setState({ user, isAuthenticated: true, isLoading: false });
-  //   // console.log("Printing from handleRedirectCallback app.js", isAuthenticated)
-  //   console.log("Printing from handleRedirectCallback app.js", user)
-
-	// 	window.history.replaceState({}, document.title, window.location.pathname);
-	// };
-
-  // async getAccessToken() {
-  //   // const { user, getAccessTokenSilently } = this.props.auth0;
-  //   // const token = await getAccessTokenSilently();
-  //   // localStorage.setItem("accessToken", token);
-  //   // const userIDKey = 'user_id';
-  //   // const Auth0ID = JSON.stringify(user.sub).slice(7).replace('"', '')
-  //   // console.log('the profile ' +JSON.stringify(Auth0ID));
-  //   // localStorage.setItem(userIDKey, Auth0ID);
-
-  //   const { user,isLoading,isAuthenticated, loginWithRedirect, getAccessTokenSilently } = this.props.auth0;
-  //   console.log("Printing from render app.js", isAuthenticated)
-
-  //   if(isAuthenticated && localStorage.getItem('accessToken') == null ){
-  //     const userIDKey = 'user_id';
-  //     // console.log('the profile ' +JSON.stringify(user));
-  //     const Auth0ID = JSON.stringify(user.sub).slice(7).replace('"', '')
-  //     console.log('the profile ' +JSON.stringify(Auth0ID));
-  //     localStorage.setItem(userIDKey, Auth0ID);
-  //     // console.log('the profile: ' +JSON.stringify(user.sub).slice(7).replace('"', ''));
-  
-  //     getAccessTokenSilently().then( token => localStorage.setItem("accessToken", token));
-  //   }
-
-  // }
-
-  // handleRedirectCallback = async () => {
-
-	// 	await this.props.auth0.handleRedirectCallback();
-	// 	// const user = await this.state.auth0.getUser();
-  //   // console.log('the profile ' +JSON.stringify(user));
-  //   // const { isAuthenticated } = this.props.auth0;
-
-  //   console.log(this.props.auth0.isAuthenticated)
-	// 	// window.history.replaceState({}, document.title, window.location.pathname);
-	// };
 
   setVersion() {
     var _this = this
@@ -474,27 +327,6 @@ class App extends Component {
   }
 
   render() {
-
-    const { user,isLoading,isAuthenticated, loginWithRedirect, getAccessTokenSilently } = this.props.auth0;
-
-
-    // if(!isAuthenticated) { // if your component doesn't have to wait for an async action, remove this block 
-    // return null; // render null when app is not ready
-    // }
-  
-    // const { user } = this.props.auth0;
-    // console.log("printing from render",user.name);
-    // return <div>Hello {user.name}</div>;
-    // if (!isAuthenticated && !window.location.search.includes('code=')) {
-    //   loginWithRedirect();
-    // }
-  
-    // if (isLoading) {
-    //   return ;
-    // }
-
-    // const { user,isLoading,isAuthenticated, loginWithRedirect, getAccessTokenSilently } = this.props.auth0;
-
     // construction of metricsTracker in server_amd64.go (isTestnet) needs to logically match this variable
     // we use the state because that is updated from the /serverMetadata endpoint
     const enablePubnetBots = this.state.server_metadata ? !this.state.server_metadata.disable_pubnet : false;
@@ -526,8 +358,6 @@ class App extends Component {
         <div>{banner}</div>
         <Router>
         <LoginRedirect/>
-        {/* {!isAuthenticated && <Redirect exact from="/" to="/loading" />} */}
-          {/* <Route  exact path="/loading" render={<ThreeDotsWave/>}/> */}
           <Header version={this.state.version}/>
           <Route exact path="/"
             render={(props) => <Bots {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
@@ -548,4 +378,4 @@ class App extends Component {
   }
 }
 
-export default withAuth0(App);
+export default App;
