@@ -41,6 +41,7 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
    * [Running Kelp](#running-kelp)
       * [Using CCXT](#using-ccxt)
       * [Using Postgres](#using-postgres)
+      * [Using Auth0](#using-auth0)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files)
@@ -184,6 +185,10 @@ You can find more details on the [CCXT_REST github page][ccxt-rest].
 
 [Postgres][postgres] v12.1 or later must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
 
+### Using Auth0
+
+[Auth0][auth0] account required, to use auth0 authentication uncomment \[AUTH0] in [Sample GUI config file](examples/configs/trader/sample_GUI_config.cfg) and enter the auth0 crendential in required fields.
+
 ## Examples
 
 It's easier to learn with examples! Take a look at the walkthrough guides and sample configuration files below.
@@ -208,6 +213,7 @@ The following reference config files are in the [examples folder](examples/confi
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
+- [Sample GUI(auth0 and other stuff) config file](examples/configs/trader/sample_GUI_config.cfg)
 
 ### Winning Educational Content from StellarBattle
 
@@ -403,6 +409,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [ccxt-rest]: https://github.com/franz-see/ccxt-rest
 [docker]: https://www.docker.com/
 [postgres]: https://www.postgresql.org/
+[auth0]: https://auth0.com/
 [kelp-battle-1]: https://stellarbattle.com/kelp-overview-battle/
 [kelp-battle-1-winners]: https://medium.com/stellar-community/announcing-the-winners-of-the-first-kelpbot-stellarbattle-a6f28fef7776
 [kraken]: https://www.kraken.com/

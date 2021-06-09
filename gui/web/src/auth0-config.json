@@ -1,0 +1,6 @@
+{
+ "auth0_enabled": true,
+ "domain": "dev-6esg0i02.eu.auth0.com",
+ "client_id": "7I47ob2UIUN0NxoJO8bmcbenXKF29hY5",
+ "audience": "https://localhost:3000/api/v2/"
+}

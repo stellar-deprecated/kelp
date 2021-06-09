@@ -12,6 +12,8 @@ import quit from './kelp-ops-api/quit';
 import fetchKelpErrors from './kelp-ops-api/fetchKelpErrors';
 import removeKelpErrors from './kelp-ops-api/removeKelpErrors';
 import Welcome from './components/molecules/Welcome/Welcome';
+import LoginRedirect  from './components/screens/LogAuth/LoginRedirect';
+import { interceptor } from './kelp-ops-api/interceptor';
 
 let baseUrl = function () {
   let base_url = window.location.origin;
@@ -48,7 +50,7 @@ class App extends Component {
     this._asyncRequests = {};
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     this.setVersion()
     this.fetchServerMetadata();
 
@@ -355,6 +357,7 @@ class App extends Component {
       <div>
         <div>{banner}</div>
         <Router>
+        <LoginRedirect/>
           <Header version={this.state.version}/>
           <Route exact path="/"
             render={(props) => <Bots {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
