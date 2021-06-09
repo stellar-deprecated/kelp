@@ -213,7 +213,7 @@ The following reference config files are in the [examples folder](examples/confi
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
-- [Sample GUI(auth0 and other stuff) config file](examples/configs/trader/sample_mirror.cfg)
+- [Sample GUI(auth0 and other stuff) config file](examples/configs/trader/sample_GUI_config.cfg)
 
 ### Winning Educational Content from StellarBattle
 
