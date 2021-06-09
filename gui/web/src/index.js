@@ -5,7 +5,6 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import config from './auth0-config.json'
 import { Auth0Provider } from '@auth0/auth0-react';
-import LoginRedirect  from './components/screens/LogAuth/LoginRedirect';
 
 const auth0enabled = config.auth0_enabled;
 
@@ -19,7 +18,7 @@ ReactDOM.render(
 >
   <App />
   </Auth0Provider>) : (<App />)}
-    </div>,
+  </div>,
 document.getElementById('root')
 );
 
