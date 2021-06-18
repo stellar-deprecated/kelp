@@ -187,7 +187,8 @@ You can find more details on the [CCXT_REST github page][ccxt-rest].
 
 ### Using Auth0
 
-[Auth0][auth0] account required, to use auth0 authentication uncomment \[AUTH0] in [Sample GUI config file](examples/configs/trader/sample_GUI_config.cfg) and enter the auth0 crendential in required fields.
+[Auth0][auth0] account required, to use auth0 authentication uncomment \[AUTH0] section in [Sample GUI config file](examples/configs/trader/sample_GUI_config.cfg) and enter the auth0 crendential in required fields.
+Note: AUTH0 is only applicable for Kelp GUI or Kaas Mode.
 
 ## Examples
 

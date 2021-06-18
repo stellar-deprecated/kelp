@@ -5,7 +5,7 @@ const LoginRedirect = () => {
   const { user,isLoading,isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
 
   if (isLoading) {
-    return <></>;
+    return "";
   }
 
   if (!isAuthenticated) {
@@ -13,13 +13,15 @@ const LoginRedirect = () => {
   }
 
   if (isLoading) {
-    return <></>;
+    return "";
   }
 
   useEffect(() => {
 
+    /* dont rename the user_id key because it is re-used in getUserData.js and both keys need to match*/
+
       const userIDKey = 'user_id';
-      const Auth0ID = JSON.stringify(user.sub).slice(7).replace('"', '')
+      const Auth0ID = JSON.stringify(user.sub).replace('"','').replace('|', '-').replace('"','')
       localStorage.setItem(userIDKey, Auth0ID);
 
       try {

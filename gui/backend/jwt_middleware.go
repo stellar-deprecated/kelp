@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"fmt"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/form3tech-oss/jwt-go"
@@ -47,7 +48,7 @@ var JWTMiddlewareVar = jwtmiddleware.New(jwtmiddleware.Options{
 
 		cert, err := getPemCert(token)
 		if err != nil {
-			panic(err.Error())
+			return nil, fmt.Errorf("error when getting PEM certificate: %s", err)
 		}
 
 		result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))

@@ -1,8 +1,8 @@
 import fetchIntercept from 'fetch-intercept';
-import authConfig from '../../src/auth0-config.json';
 
-let AccessToken = authConfig.auth0_enabled ? localStorage.getItem('accessToken') : null;
-// console.log("interceptor getting call: "+ AccessToken);
+/* this file is not referenced anywhere but still being used because its registering interceptor on javascript fetch function globally */
+
+let AccessToken = localStorage.getItem('accessToken');
 
 export const interceptor = fetchIntercept.register({
     request: function (url, config) {

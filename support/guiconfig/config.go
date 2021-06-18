@@ -1,5 +1,9 @@
 package guiconfig
 
+import (
+	"github.com/stellar/kelp/support/utils"
+)
+
 type Auth0Config struct {
 	Auth0Enabled bool   `valid:"-" toml:"AUTH0_ENABLED" json:"auth0_enabled"`
 	Domain       string `valid:"-" toml:"DOMAIN"json:"domain"`
@@ -9,4 +13,12 @@ type Auth0Config struct {
 
 type GUIConfig struct {
 	Auth0Config 		*Auth0Config `valid:"-" toml:"AUTH0" json:"auth0"`
+}
+
+// String impl.
+func (g GUIConfig) String() string {
+	return utils.StructString(g, 0, map[string]func(interface{}) interface{}{
+		"CLIENT_ID":        utils.Hide,
+		"DOMAIN":        	utils.Hide,
+	})
 }

@@ -16,7 +16,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"encoding/json"	
 
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
@@ -75,7 +74,15 @@ type serverInputOptions struct {
 	enableKaas        *bool
 	tlsCertFile       *string
 	tlsKeyFile        *string
-	guiConfig		  *string
+	guiConfigPath		  *string
+}
+
+// checks for required flag on CLI
+func requiredFlags(flag string) {
+	e := serverCmd.MarkFlagRequired(flag)
+	if e != nil {
+		panic(e)
+	}
 }
 
 // String is the stringer method impl.
@@ -87,10 +94,10 @@ func (o serverInputOptions) String() string {
 // function for reading custom config file and returning config struct with intilized value
 func readGUIConfig(options serverInputOptions) guiconfig.GUIConfig {
 	var guiConfigInFunc guiconfig.GUIConfig
-	e := config.Read(*options.guiConfig, &guiConfigInFunc)
-	// utils.CheckConfigError(guiConfigInFunc, e, *options.guiConfig)
+	e := config.Read(*options.guiConfigPath, &guiConfigInFunc)
+	utils.CheckConfigError(guiConfigInFunc, e, *options.guiConfigPath)
 	if e != nil {
-		fmt.Println(e)
+		panic(fmt.Errorf("could not read GUI config file '%s': %s", *options.guiConfigPath, e))
 	}
 	return guiConfigInFunc
 }
@@ -112,7 +119,9 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
 	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
-	options.guiConfig = serverCmd.Flags().StringP("guiconfig", "c", "", "gui-config for auth0 and other basic config file path")  //guiconfig flag
+	options.guiConfigPath = serverCmd.Flags().StringP("guiconfig", "c", "", "(required) gui-config for auth0 and other basic config file path")
+
+	requiredFlags("guiconfig")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -130,27 +139,6 @@ func init() {
 				panic(e)
 			}
 		}
-
-		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar 
-		auth0ConfigVar = readGUIConfig(options)
-		backend.Auth0ConfigVarJWT = auth0ConfigVar
-
-		//opening/creating "auth0-config.json" file in ./gui/web/src
-		filePathname, _ := filepath.Abs("../kelp/gui/web/src/" + "auth0-config.json")
-
-		shortVarForUIConfig := guiconfig.Auth0Config{}
-		if(auth0ConfigVar.Auth0Config != nil){
-			shortVarForUIConfig = guiconfig.Auth0Config{
-				Auth0Enabled : auth0ConfigVar.Auth0Config.Auth0Enabled,
-				Domain :	   auth0ConfigVar.Auth0Config.Domain,
-				ClientId :	   auth0ConfigVar.Auth0Config.ClientId,
-				Audience :	   auth0ConfigVar.Auth0Config.Audience,
-			}
-		}
-
-		//writing to "auth0-config.json" file in ./gui/web/src
-		file, _ := json.MarshalIndent(shortVarForUIConfig, "", " ")
-		_ = ioutil.WriteFile(filePathname, file, 0644)
 
 		e = backend.InitBotNameRegex()
 		if e != nil {
@@ -181,6 +169,10 @@ func init() {
 		}
 
 		log.Printf("initialized server with cli flag inputs: %s", options)
+
+		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar 
+		auth0ConfigVar = readGUIConfig(options)
+		backend.Auth0ConfigVarJWT = auth0ConfigVar
 
 		if runtime.GOOS == "windows" {
 			if !*options.noElectron {
@@ -421,6 +413,7 @@ func init() {
 			*options.noHeaders,
 			quit,
 			metricsTracker,
+			auth0ConfigVar,
 		)
 		if e != nil {
 			panic(e)
@@ -452,15 +445,7 @@ func init() {
 
 		r := chi.NewRouter()
 		setMiddleware(r)
-		if (auth0ConfigVar.Auth0Config != nil) {
-			if(auth0ConfigVar.Auth0Config.Auth0Enabled){
-				backend.SetRoutesWithAuth0(r, s)
-			}	else {
-				backend.SetRoutes(r, s)
-			}
-		} else {
-			backend.SetRoutes(r, s)
-		}
+		backend.SetRoutes(r, s)
 		// gui.FS is automatically compiled based on whether this is a local or deployment build
 		gui.FileServer(r, "/", gui.FS)
 
@@ -659,15 +644,7 @@ func runAPIServerDevBlocking(s *backend.APIServer, frontendPort uint16, devAPIPo
 	}).Handler)
 
 	setMiddleware(r)
-	if (auth0ConfigVar.Auth0Config != nil) {
-		if(auth0ConfigVar.Auth0Config.Auth0Enabled){
-			backend.SetRoutesWithAuth0(r, s)
-		}	else {
-			backend.SetRoutes(r, s)
-		}
-	} else {
-		backend.SetRoutes(r, s)
-	}
+	backend.SetRoutes(r, s)
 	portString := fmt.Sprintf(":%d", devAPIPort)
 	log.Printf("Serving API server on HTTP port: %d\n", devAPIPort)
 	e := http.ListenAndServe(portString, r)
@@ -740,32 +717,13 @@ func writeTrayIcon(kos *kelpos.KelpOS, trayIconPath *kelpos.OSPath, assetsDirPat
 }
 
 func openBrowser(url string, openBrowserWg *sync.WaitGroup) {
+	log.Printf("opening URL in native browser: %s", url)
+	openBrowserWg.Wait()
 
-	if runtime.GOOS == "linux" {
-		_, err := exec.LookPath("xdg-open")
-		if err != nil {
-			log.Printf("please open your browser at url: %s", url)
-			//return nil
-		} else {
-			log.Printf("opening URL in native browser: %s", url)
-			openBrowserWg.Wait()
-
-			e := browser.OpenURL(url)
-			if e != nil {
-				log.Fatal(e)
-			}
-		}
-	} else {
-
-		log.Printf("opening URL in native browser: %s", url)
-		openBrowserWg.Wait()
-
-		e := browser.OpenURL(url)
-		if e != nil {
-			log.Fatal(e)
-		}
+	e := browser.OpenURL(url)
+	if e != nil {
+		log.Fatal(e)
 	}
-
 }
 
 func openElectron(trayIconPath *kelpos.OSPath, url string) {
