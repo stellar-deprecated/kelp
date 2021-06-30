@@ -23,6 +23,10 @@ imports:
   version: 155c2a10bbb1791fbafe89a9b64be05c64f16c81
 - name: github.com/asticode/go-astilog
   version: 4318d9ca22883d107f0e27db25a91cddbe4a137e
+- name: github.com/auth0/go-jwt-middleware
+  version: v1.0.0
+- name: github.com/form3tech-oss/jwt-go
+  version: 5b2d2b5f6c34ccb3b6b65f77f4706558067690ef
 - name: github.com/asticode/go-astitools
   version: d157a994ecbd55bca08e5daf4fe89518ddae4c50
   subpackages:

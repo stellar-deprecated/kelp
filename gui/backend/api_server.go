@@ -16,6 +16,7 @@ import (
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/kelp/plugins"
 	"github.com/stellar/kelp/support/kelpos"
+	"github.com/stellar/kelp/support/guiconfig"
 )
 
 // UserData is the json data passed in to represent a user
@@ -59,6 +60,7 @@ type APIServer struct {
 	kelpErrorsByUserLock *sync.Mutex
 
 	cachedOptionsMetadata metadata
+	guiConfig			guiconfig.GUIConfig
 }
 
 // MakeAPIServer is a factory method
@@ -76,6 +78,7 @@ func MakeAPIServer(
 	noHeaders bool,
 	quitFn func(),
 	metricsTracker *plugins.MetricsTracker,
+	guiConfig		guiconfig.GUIConfig,
 ) (*APIServer, error) {
 	kelpBinPath := kos.GetBinDir().Join(filepath.Base(os.Args[0]))
 
@@ -102,6 +105,7 @@ func MakeAPIServer(
 		metricsTracker:        metricsTracker,
 		kelpErrorsByUser:      map[string]kelpErrorDataForUser{},
 		kelpErrorsByUserLock:  &sync.Mutex{},
+		guiConfig:			   guiConfig,
 	}, nil
 }
 
