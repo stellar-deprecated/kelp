@@ -37,6 +37,7 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
 * [Getting Started](#getting-started)
    * [How To Get Kelp](#how-to-get-kelp)
       * [Download Kelp Binary](#download-kelp-binary)
+      * [Run With Docker](#run-with-docker)
       * [Compile from Source](#compile-from-source)
    * [Running Kelp](#running-kelp)
       * [Using CCXT](#using-ccxt)
@@ -107,6 +108,15 @@ Here's an example to get you started (replace `filename` with the name of the fi
 To run the bot in simulation mode, try this command:
 
     ./kelp trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim
+
+### Run With Docker
+
+This docker image (`nikhilsaraf/kelp:latest`) points to the latest pre-compiled version of the kelp binary v1.11.0, which can be run like this:
+
+`docker run nikhilsaraf/kelp:latest version`
+`docker run nikhilsaraf/kelp:latest trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim`
+`docker run nikhilsaraf/kelp:latest exchanges`
+`docker run nikhilsaraf/kelp:latest strategies`
 
 ### Compile from Source
 
