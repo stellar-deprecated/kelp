@@ -48,13 +48,9 @@ func Test_GetPrice_ShouldReturnZero_OxrError(t *testing.T) {
 }
 
 func Test_GetPrice_ShouldReturnInvalidRateLength(t *testing.T) {
-	response := oxrRates{
-		Disclaimer: tests.RandomString(),
-		License:    tests.RandomString(),
-		Timestamp:  tests.RandomString(),
-		Base:       tests.RandomString(),
-		Rates:      nil,
-	}
+	response := createOxrResponse()
+	response.Rates = nil
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
@@ -71,16 +67,9 @@ func Test_GetPrice_ShouldReturnInvalidRateLength(t *testing.T) {
 }
 
 func Test_GetPrice_ShouldReturnInvalidUnitType(t *testing.T) {
-	response := oxrRates{
-		Disclaimer: tests.RandomString(),
-		License:    tests.RandomString(),
-		Timestamp:  tests.RandomString(),
-		Base:       tests.RandomString(),
-		Rates: []oxrRate{{
-			Code: tests.RandomString(),
-			Unit: tests.RandomString(),
-		}},
-	}
+	response := createOxrResponse()
+	response.Rates[0].Unit = tests.RandomString()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
@@ -97,17 +86,8 @@ func Test_GetPrice_ShouldReturnInvalidUnitType(t *testing.T) {
 }
 
 func Test_GetPrice_ShouldReturnRates(t *testing.T) {
-	response := oxrRates{
-		Disclaimer: tests.RandomString(),
-		License:    tests.RandomString(),
-		Timestamp:  tests.RandomString(),
-		Base:       tests.RandomString(),
-		Rates: []oxrRate{{
-			Code: tests.RandomString(),
-			Unit: strconv.Itoa(1),
-		},
-		},
-	}
+	response := createOxrResponse()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
@@ -123,4 +103,18 @@ func Test_GetPrice_ShouldReturnRates(t *testing.T) {
 
 	assert.Equal(t, expected, price)
 	assert.NoError(t, err)
+}
+
+func createOxrResponse() oxrRates {
+	return oxrRates{
+		Disclaimer: tests.RandomString(),
+		License:    tests.RandomString(),
+		Timestamp:  tests.RandomString(),
+		Base:       tests.RandomString(),
+		Rates: []oxrRate{{
+			Code: tests.RandomString(),
+			Unit: fmt.Sprintf("%f", 1.1),
+		},
+		},
+	}
 }
