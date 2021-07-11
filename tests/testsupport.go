@@ -23,7 +23,7 @@ func RandomInt() int {
 }
 
 func RandomIntWithMax(max int) int {
-	return rand.Intn(10) //nolint: gosec
+	return rand.Intn(max) //nolint: gosec
 }
 
 func RandomDuration() time.Duration {
