@@ -10,7 +10,6 @@ import (
 
 type FiatFeedOxr struct {
 	url    string      `json:"url"`
-	appID  string      `json:"app_id"`
 	client http.Client `json:"client"`
 }
 
@@ -49,12 +48,12 @@ var oxrErrorCodeMsg = map[int]string{
 func NewFiatFeedOxr(url string) *FiatFeedOxr {
 	return &FiatFeedOxr{
 		url:    url,
-		client: http.Client{Timeout: 2 * time.Second},
+		client: http.Client{Timeout: 10 * time.Second},
 	}
 }
 
 func (f *FiatFeedOxr) GetPrice() (float64, error) {
-	res, err := f.client.Get(fmt.Sprintf("%v/%v", f.url, "latest.json"))
+	res, err := f.client.Get(f.url)
 	if err != nil {
 		return 0, fmt.Errorf("oxr: error %w", err)
 	}
