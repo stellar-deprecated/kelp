@@ -132,7 +132,7 @@ func TestMakePriceFeed_FiatFeedOxr_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	expected, err := strconv.ParseFloat(response.Rates[0].Unit, 64)
+	expected, err := strconv.ParseFloat(response.Rates[0].Price, 64)
 	require.NoError(t, err)
 
 	priceFeed, err := MakePriceFeed("fiat-oxr", ts.URL)

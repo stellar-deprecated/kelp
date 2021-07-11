@@ -22,8 +22,8 @@ type oxrRates struct {
 }
 
 type oxrRate struct {
-	Code string `json:"code"`
-	Unit string `json:"unit"`
+	Code  string `json:"code"`
+	Price string `json:"unit"`
 }
 
 type oxrError struct {
@@ -76,7 +76,7 @@ func (f *FiatFeedOxr) GetPrice() (float64, error) {
 		return 0, fmt.Errorf("oxr: error rates must contain single value found len %d", len(rates.Rates))
 	}
 
-	unit, err := strconv.ParseFloat(rates.Rates[0].Unit, 64)
+	unit, err := strconv.ParseFloat(rates.Rates[0].Price, 64)
 	if err != nil {
 		return 0, fmt.Errorf("oxr: error unit syntax error %w", err)
 	}

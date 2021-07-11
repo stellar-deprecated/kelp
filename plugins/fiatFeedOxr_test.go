@@ -68,7 +68,7 @@ func Test_GetPrice_ShouldReturnInvalidRateLength(t *testing.T) {
 
 func Test_GetPrice_ShouldReturnInvalidUnitType(t *testing.T) {
 	response := createOxrResponse()
-	response.Rates[0].Unit = tests.RandomString()
+	response.Rates[0].Price = tests.RandomString()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -99,7 +99,7 @@ func Test_GetPrice_ShouldReturnRates(t *testing.T) {
 	oxrFeed := NewFiatFeedOxr(ts.URL)
 	price, err := oxrFeed.GetPrice()
 
-	expected, _ := strconv.ParseFloat(response.Rates[0].Unit, 64)
+	expected, _ := strconv.ParseFloat(response.Rates[0].Price, 64)
 
 	assert.Equal(t, expected, price)
 	assert.NoError(t, err)
@@ -112,8 +112,8 @@ func createOxrResponse() oxrRates {
 		Timestamp:  tests.RandomString(),
 		Base:       tests.RandomString(),
 		Rates: []oxrRate{{
-			Code: tests.RandomString(),
-			Unit: fmt.Sprintf("%f", 1.1),
+			Code:  tests.RandomString(),
+			Price: fmt.Sprintf("%f", 1.1),
 		},
 		},
 	}
