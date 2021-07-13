@@ -3,13 +3,13 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/stellar/kelp/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"strconv"
-	"testing"
 )
 
 func Test_GetPrice_ShouldReturnZero_ClientError(t *testing.T) {
@@ -48,7 +48,7 @@ func Test_GetPrice_ShouldReturnZero_OxrError(t *testing.T) {
 }
 
 func Test_GetPrice_ShouldReturnInvalidRateLength(t *testing.T) {
-	response := createOxrResponse()
+	response := createOxrResponse("")
 	response.Rates = nil
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,27 +66,9 @@ func Test_GetPrice_ShouldReturnInvalidRateLength(t *testing.T) {
 	assert.Equal(t, fmt.Errorf("oxr: error rates must contain single value found len %d", len(response.Rates)), err)
 }
 
-func Test_GetPrice_ShouldReturnInvalidUnitType(t *testing.T) {
-	response := createOxrResponse()
-	response.Rates[0].Price = tests.RandomString()
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		require.NoError(t, err)
-	}))
-	defer ts.Close()
-
-	oxrFeed := NewFiatFeedOxr(ts.URL)
-	expected, err := oxrFeed.GetPrice()
-
-	assert.Equal(t, float64(0), expected)
-	assert.Contains(t, err.Error(), "oxr: error unit syntax error")
-}
-
 func Test_GetPrice_ShouldReturnRates(t *testing.T) {
-	response := createOxrResponse()
+	symbol := tests.RandomString()
+	response := createOxrResponse(symbol)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -99,22 +81,18 @@ func Test_GetPrice_ShouldReturnRates(t *testing.T) {
 	oxrFeed := NewFiatFeedOxr(ts.URL)
 	price, err := oxrFeed.GetPrice()
 
-	expected, _ := strconv.ParseFloat(response.Rates[0].Price, 64)
-
-	assert.Equal(t, expected, price)
+	assert.Equal(t, response.Rates[symbol], price)
 	assert.NoError(t, err)
 }
 
-func createOxrResponse() oxrRates {
+func createOxrResponse(symbol string) oxrRates {
 	return oxrRates{
 		Disclaimer: tests.RandomString(),
 		License:    tests.RandomString(),
-		Timestamp:  tests.RandomString(),
+		Timestamp:  int64(tests.RandomInt()),
 		Base:       tests.RandomString(),
-		Rates: []oxrRate{{
-			Code:  tests.RandomString(),
-			Price: fmt.Sprintf("%f", 1.1),
-		},
+		Rates: map[string]float64{
+			symbol: float64(tests.RandomInt()),
 		},
 	}
 }

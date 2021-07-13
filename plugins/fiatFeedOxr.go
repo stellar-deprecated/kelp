@@ -4,26 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 )
 
-type FiatFeedOxr struct {
-	url    string      `json:"url"`
-	client http.Client `json:"client"`
+type fiatFeedOxr struct {
+	url    string
+	client http.Client
 }
 
 type oxrRates struct {
-	Disclaimer string    `json:"disclaimer"`
-	License    string    `json:"license"`
-	Timestamp  string    `json:"timestamp"`
-	Base       string    `json:"base"`
-	Rates      []oxrRate `json:"rates"`
-}
-
-type oxrRate struct {
-	Code  string `json:"code"`
-	Price string `json:"unit"`
+	Disclaimer string             `json:"disclaimer"`
+	License    string             `json:"license"`
+	Timestamp  int64              `json:"timestamp"`
+	Base       string             `json:"base"`
+	Rates      map[string]float64 `json:"rates"`
 }
 
 type oxrError struct {
@@ -45,14 +39,14 @@ var oxrErrorCodeMsg = map[int]string{
 	400: "invalid_base",
 }
 
-func NewFiatFeedOxr(url string) *FiatFeedOxr {
-	return &FiatFeedOxr{
+func NewFiatFeedOxr(url string) *fiatFeedOxr {
+	return &fiatFeedOxr{
 		url:    url,
 		client: http.Client{Timeout: 10 * time.Second},
 	}
 }
 
-func (f *FiatFeedOxr) GetPrice() (float64, error) {
+func (f *fiatFeedOxr) GetPrice() (float64, error) {
 	res, err := f.client.Get(f.url)
 	if err != nil {
 		return 0, fmt.Errorf("oxr: error %w", err)
@@ -76,10 +70,9 @@ func (f *FiatFeedOxr) GetPrice() (float64, error) {
 		return 0, fmt.Errorf("oxr: error rates must contain single value found len %d", len(rates.Rates))
 	}
 
-	unit, err := strconv.ParseFloat(rates.Rates[0].Price, 64)
-	if err != nil {
-		return 0, fmt.Errorf("oxr: error unit syntax error %w", err)
+	for _, v := range rates.Rates {
+		return v, nil
 	}
 
-	return unit, nil
+	return 0, fmt.Errorf("oxr: error retrieving price")
 }

@@ -3,12 +3,13 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stellar/kelp/tests"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/stellar/kelp/tests"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -122,7 +123,8 @@ func TestMakePriceFeed_FiatFeed_Success(t *testing.T) {
 
 // uses mock call
 func TestMakePriceFeed_FiatFeedOxr_Success(t *testing.T) {
-	response := createOxrResponse()
+	symbol := tests.RandomString()
+	response := createOxrResponse(symbol)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -132,14 +134,11 @@ func TestMakePriceFeed_FiatFeedOxr_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	expected, err := strconv.ParseFloat(response.Rates[0].Price, 64)
-	require.NoError(t, err)
-
 	priceFeed, err := MakePriceFeed("fiat-oxr", ts.URL)
 	assert.NoError(t, err)
 
 	price, err := priceFeed.GetPrice()
-	assert.Equal(t, expected, price)
+	assert.Equal(t, response.Rates[symbol], price)
 	assert.NoError(t, err)
 }
 
