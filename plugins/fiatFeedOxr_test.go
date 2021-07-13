@@ -13,7 +13,7 @@ import (
 )
 
 func Test_GetPrice_ShouldReturnZero_ClientError(t *testing.T) {
-	oxrFeed := NewFiatFeedOxr(tests.RandomString())
+	oxrFeed := newFiatFeedOxr(tests.RandomString())
 	price, err := oxrFeed.GetPrice()
 	assert.Equal(t, price, float64(0))
 	assert.Contains(t, err.Error(), "oxr: error ")
@@ -40,7 +40,7 @@ func Test_GetPrice_ShouldReturnZero_OxrError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	oxrFeed := NewFiatFeedOxr(ts.URL)
+	oxrFeed := newFiatFeedOxr(ts.URL)
 	price, err := oxrFeed.GetPrice()
 
 	assert.Equal(t, float64(0), price)
@@ -59,7 +59,7 @@ func Test_GetPrice_ShouldReturnInvalidRateLength(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	oxrFeed := NewFiatFeedOxr(ts.URL)
+	oxrFeed := newFiatFeedOxr(ts.URL)
 	expected, err := oxrFeed.GetPrice()
 
 	assert.Equal(t, float64(0), expected)
@@ -78,7 +78,7 @@ func Test_GetPrice_ShouldReturnRates(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	oxrFeed := NewFiatFeedOxr(ts.URL)
+	oxrFeed := newFiatFeedOxr(ts.URL)
 	price, err := oxrFeed.GetPrice()
 
 	assert.Equal(t, response.Rates[symbol], price)

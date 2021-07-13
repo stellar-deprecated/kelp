@@ -39,7 +39,7 @@ var oxrErrorCodeMsg = map[int]string{
 	400: "invalid_base",
 }
 
-func NewFiatFeedOxr(url string) *fiatFeedOxr {
+func newFiatFeedOxr(url string) *fiatFeedOxr {
 	return &fiatFeedOxr{
 		url:    url,
 		client: http.Client{Timeout: 10 * time.Second},
