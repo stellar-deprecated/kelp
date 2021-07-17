@@ -85,6 +85,35 @@ func Test_GetPrice_ShouldReturnRates(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func Test_GetPrice_ShouldReturnZero_ClientInvalidResponse(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(nil)
+	}))
+	defer ts.Close()
+
+	oxrFeed := newFiatFeedOxr(ts.URL)
+	price, err := oxrFeed.GetPrice()
+
+	assert.Equal(t, float64(0), price)
+	assert.Contains(t, err.Error(), "oxr: error ")
+}
+
+func Test_GetPrice_ShouldReturnZero_ClientInvalidOXRRate(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode("{ bad_json: `invalid_format' }")
+		require.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	oxrFeed := newFiatFeedOxr(ts.URL)
+	price, err := oxrFeed.GetPrice()
+
+	assert.Equal(t, float64(0), price)
+	assert.Contains(t, err.Error(), "oxr: error ")
+}
+
 func createOxrResponse(symbol string) oxrRates {
 	return oxrRates{
 		Disclaimer: tests.RandomString(),

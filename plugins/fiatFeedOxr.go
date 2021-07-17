@@ -56,14 +56,14 @@ func (f *fiatFeedOxr) GetPrice() (float64, error) {
 	if res.StatusCode != 200 {
 		var e oxrError
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return 0, err
+			return 0, fmt.Errorf("oxr: error %w", err)
 		}
 		return 0, e
 	}
 
 	var rates oxrRates
 	if err := json.NewDecoder(res.Body).Decode(&rates); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("oxr: error %w", err)
 	}
 
 	if len(rates.Rates) != 1 {
