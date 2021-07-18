@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	timeToWaitForFirstEvent = time.Second * 2
+	timeoutFirstEvent = time.Second * 2
 )
 
 var (
@@ -277,10 +277,26 @@ func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe 
 	beWs.streams[streamName] = stream
 	beWs.streamLock.Unlock()
 
-	//Wait for binance to send events
-	time.Sleep(timeToWaitForFirstEvent)
+	timePassed := time.Duration(0)
+	checkTime := time.Millisecond * 50
 
-	data, isStream := state.Get(symbol)
+	//Wait for binance to send events
+
+	var (
+		data     mapData
+		isStream bool
+	)
+
+	for timePassed < timeoutFirstEvent {
+		time.Sleep(checkTime)
+		timePassed += checkTime
+
+		data, isStream = state.Get(symbol)
+
+		if isStream {
+			break
+		}
+	}
 
 	//We couldn't subscribe for this pair
 	if !isStream {
