@@ -96,18 +96,21 @@ func (m *mapEvents) Set(key string, data interface{}) {
 	now := time.Now()
 
 	m.mtx.Lock()
+	defer m.mtx.Unlock()
+
 	m.data[key] = mapData{
 		data:      data,
 		createdAt: now,
 	}
-	m.mtx.Unlock()
+
 }
 
 //Get ... get value
 func (m *mapEvents) Get(key string) (mapData, bool) {
 	m.mtx.RLock()
+	defer m.mtx.RUnlock()
+
 	data, isData := m.data[key]
-	m.mtx.RUnlock()
 
 	return data, isData
 }
@@ -115,8 +118,9 @@ func (m *mapEvents) Get(key string) (mapData, bool) {
 //Del ... delete cached value
 func (m *mapEvents) Del(key string) {
 	m.mtx.Lock()
-	delete(m.data, key)
 	m.mtx.Unlock()
+
+	delete(m.data, key)
 
 }
 
