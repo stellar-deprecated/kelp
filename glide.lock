@@ -45,7 +45,7 @@ imports:
 - name: github.com/asticode/go-bindata
   version: 5ad1fa75c07e881fbf05d8aa29bf88008c0da5ab
 - name: github.com/auth0/go-jwt-middleware
-  version: 1c6db3ceac5f4d28b35ee4b9949a3f80030aa6a3
+  version: v1.0.0
 - name: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
 - name: github.com/bitly/go-simplejson
