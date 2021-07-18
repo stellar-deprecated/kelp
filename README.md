@@ -37,10 +37,12 @@ Your use of Kelp is governed by the Apache 2.0 open-source license. Please note 
 * [Getting Started](#getting-started)
    * [How To Get Kelp](#how-to-get-kelp)
       * [Download Kelp Binary](#download-kelp-binary)
+      * [Run With Docker](#run-with-docker)
       * [Compile from Source](#compile-from-source)
    * [Running Kelp](#running-kelp)
       * [Using CCXT](#using-ccxt)
       * [Using Postgres](#using-postgres)
+      * [Using Auth0](#using-auth0)
    * [Examples](#examples)
       * [Walkthrough Guides](#walkthrough-guides)
       * [Configuration Files](#configuration-files)
@@ -106,6 +108,15 @@ Here's an example to get you started (replace `filename` with the name of the fi
 To run the bot in simulation mode, try this command:
 
     ./kelp trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim
+
+### Run With Docker
+
+This docker image (`nikhilsaraf/kelp:latest`) points to the latest pre-compiled version of the kelp binary v1.11.0, which can be run like this:
+
+`docker run nikhilsaraf/kelp:latest version`
+`docker run nikhilsaraf/kelp:latest trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim`
+`docker run nikhilsaraf/kelp:latest exchanges`
+`docker run nikhilsaraf/kelp:latest strategies`
 
 ### Compile from Source
 
@@ -184,6 +195,11 @@ You can find more details on the [CCXT_REST github page][ccxt-rest].
 
 [Postgres][postgres] v12.1 or later must be installed for Kelp to automatically write trades to a sql database along with updating the trader config file.
 
+### Using Auth0
+
+A [auth0](https://auth0.com/) account is required. To use it, uncomment \[AUTH0] section in [Sample GUI config file](examples/configs/trader/sample_GUI_config.cfg) and enter your auth0 crendentials in required fields.
+Note: AUTH0 is only applicable for Kelp GUI or Kaas Mode. Intructions of how to configure your auth0 account can be found [here](https://auth0.com/docs/quickstart/spa/react/01-login#configure-auth0)
+
 ## Examples
 
 It's easier to learn with examples! Take a look at the walkthrough guides and sample configuration files below.
@@ -208,6 +224,7 @@ The following reference config files are in the [examples folder](examples/confi
 - [Sample Balanced strategy config file](examples/configs/trader/sample_balanced.cfg)
 - [Sample Pendulum strategy config file](examples/configs/trader/sample_pendulum.cfg)
 - [Sample Mirror strategy config file](examples/configs/trader/sample_mirror.cfg)
+- [Sample GUI(auth0 and other stuff) config file](examples/configs/trader/sample_GUI_config.cfg)
 
 ### Winning Educational Content from StellarBattle
 
@@ -403,6 +420,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [ccxt-rest]: https://github.com/franz-see/ccxt-rest
 [docker]: https://www.docker.com/
 [postgres]: https://www.postgresql.org/
+[auth0]: https://auth0.com/
 [kelp-battle-1]: https://stellarbattle.com/kelp-overview-battle/
 [kelp-battle-1-winners]: https://medium.com/stellar-community/announcing-the-winners-of-the-first-kelpbot-stellarbattle-a6f28fef7776
 [kraken]: https://www.kraken.com/

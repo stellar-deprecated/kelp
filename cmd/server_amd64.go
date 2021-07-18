@@ -39,6 +39,8 @@ import (
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
+	"github.com/stellar/kelp/support/guiconfig"
+	"github.com/stellar/go/support/config"
 )
 
 const kelpAssetsPath = "/assets"
@@ -72,6 +74,15 @@ type serverInputOptions struct {
 	enableKaas        *bool
 	tlsCertFile       *string
 	tlsKeyFile        *string
+	guiConfigPath		  *string
+}
+
+// checks for required flag on CLI
+func requiredFlags(flag string) {
+	e := serverCmd.MarkFlagRequired(flag)
+	if e != nil {
+		panic(e)
+	}
 }
 
 // String is the stringer method impl.
@@ -79,6 +90,19 @@ func (o serverInputOptions) String() string {
 	return fmt.Sprintf("serverInputOptions[port=%d, dev=%v, devAPIPort=%d, horizonTestnetURI='%s', horizonPubnetURI='%s', noHeaders=%v, verbose=%v, noElectron=%v, disablePubnet=%v, enableKaas=%v]",
 		*o.port, *o.dev, *o.devAPIPort, *o.horizonTestnetURI, *o.horizonPubnetURI, *o.noHeaders, *o.verbose, *o.noElectron, *o.disablePubnet, *o.enableKaas)
 }
+
+// function for reading custom config file and returning config struct with intilized value
+func readGUIConfig(options serverInputOptions) guiconfig.GUIConfig {
+	var guiConfigInFunc guiconfig.GUIConfig
+	e := config.Read(*options.guiConfigPath, &guiConfigInFunc)
+	utils.CheckConfigError(guiConfigInFunc, e, *options.guiConfigPath)
+	if e != nil {
+		panic(fmt.Errorf("could not read GUI config file '%s': %s", *options.guiConfigPath, e))
+	}
+	return guiConfigInFunc
+}
+// customConfigVar Variable with its equivalent struct #used to inject config values to jwt config var and to configure route
+var auth0ConfigVar guiconfig.GUIConfig
 
 func init() {
 	options := serverInputOptions{}
@@ -95,6 +119,9 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
 	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
+	options.guiConfigPath = serverCmd.Flags().StringP("guiconfig", "c", "", "(required) gui-config for auth0 and other basic config file path")
+
+	requiredFlags("guiconfig")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -142,6 +169,10 @@ func init() {
 		}
 
 		log.Printf("initialized server with cli flag inputs: %s", options)
+
+		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar 
+		auth0ConfigVar = readGUIConfig(options)
+		backend.Auth0ConfigVarJWT = auth0ConfigVar
 
 		if runtime.GOOS == "windows" {
 			if !*options.noElectron {
@@ -382,6 +413,7 @@ func init() {
 			*options.noHeaders,
 			quit,
 			metricsTracker,
+			auth0ConfigVar,
 		)
 		if e != nil {
 			panic(e)

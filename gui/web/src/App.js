@@ -12,6 +12,10 @@ import quit from './kelp-ops-api/quit';
 import fetchKelpErrors from './kelp-ops-api/fetchKelpErrors';
 import removeKelpErrors from './kelp-ops-api/removeKelpErrors';
 import Welcome from './components/molecules/Welcome/Welcome';
+import LoginRedirect from './components/screens/LogAuth/LoginRedirect';
+import interceptor from './kelp-ops-api/interceptor';
+import LoadingAnimation from './components/atoms/LoadingAnimation/LoadingAnimation';
+import { Auth0Provider } from '@auth0/auth0-react';
 
 let baseUrl = function () {
   let base_url = window.location.origin;
@@ -325,9 +329,15 @@ class App extends Component {
   }
 
   render() {
+    if (this.state.server_metadata == null) {
+      return (<LoadingAnimation/>);
+    }
     // construction of metricsTracker in server_amd64.go (isTestnet) needs to logically match this variable
     // we use the state because that is updated from the /serverMetadata endpoint
     const enablePubnetBots = this.state.server_metadata ? !this.state.server_metadata.disable_pubnet : false;
+
+    const config = this.state.server_metadata.guiconfig.auth0;
+    const auth0enabled = this.state.server_metadata.guiconfig.auth0 ? config.auth0_enabled : false;
 
     let quitButton = "";
     if (this.showQuitButton()) {
@@ -351,11 +361,12 @@ class App extends Component {
     const removeBotError = this.removeError.bind(this, Constants.ErrorType.bot);
     const findBotErrors = this.findErrors.bind(this, Constants.ErrorType.bot);
 
-    return (
+    const innerAppComponent = (
       <div>
         <div>{banner}</div>
         <Router>
-          <Header version={this.state.version}/>
+        {auth0enabled ? (<LoginRedirect/>) : ""}
+          <Header version={this.state.version} auth0enabled={auth0enabled}/>
           <Route exact path="/"
             render={(props) => <Bots {...props} baseUrl={baseUrl} enablePubnetBots={enablePubnetBots} activeError={this.state.active_error} setActiveError={this.setActiveBotError} hideActiveError={this.hideActiveError} addError={this.addError} removeError={removeBotError} findErrors={findBotErrors}/>}
             />
@@ -372,6 +383,17 @@ class App extends Component {
         <Welcome quitFn={this.quit} showQuitButton={this.showQuitButton()}/>
       </div>
     );
+
+    return (<div>
+      {auth0enabled ? (<Auth0Provider
+      domain= {config.domain}
+      clientId= {config.client_id}
+      redirectUri= {window.location.origin}
+      audience= {config.audience}
+    >
+      {innerAppComponent}
+      </Auth0Provider>) : (innerAppComponent)}
+    </div>);
   }
 }
 
