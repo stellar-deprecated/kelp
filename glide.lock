@@ -1,10 +1,17 @@
-hash: f47cf8b7c16cf631b07fd9154f6e21eb801035233942a1dea694e094c0b418d3
-updated: 2020-12-14T17:00:43.344314+05:30
+hash: 8504f6e02168c5d32b842818e7faaa597ba03b09eaac1859e17c284e9bfc9206
+updated: 2021-07-18T11:55:55.121851647+03:00
 imports:
 - name: cloud.google.com/go
   version: 310d83b78255a1605c3bd3a9ffe1606cf09ebcac
   subpackages:
   - compute/metadata
+- name: github.com/adshao/go-binance
+  version: 8bc583a9b4ab069e91ea2407891104af3b2be131
+  subpackages:
+  - v2
+  - v2/common
+  - v2/delivery
+  - v2/futures
 - name: github.com/akavel/rsrc
   version: 4a6ac1deddb38e97a9ce4f84e0699d2aaadeea0d
   subpackages:
@@ -23,10 +30,6 @@ imports:
   version: 155c2a10bbb1791fbafe89a9b64be05c64f16c81
 - name: github.com/asticode/go-astilog
   version: 4318d9ca22883d107f0e27db25a91cddbe4a137e
-- name: github.com/auth0/go-jwt-middleware
-  version: v1.0.0
-- name: github.com/form3tech-oss/jwt-go
-  version: 5b2d2b5f6c34ccb3b6b65f77f4706558067690ef
 - name: github.com/asticode/go-astitools
   version: d157a994ecbd55bca08e5daf4fe89518ddae4c50
   subpackages:
@@ -41,8 +44,12 @@ imports:
   - url
 - name: github.com/asticode/go-bindata
   version: 5ad1fa75c07e881fbf05d8aa29bf88008c0da5ab
+- name: github.com/auth0/go-jwt-middleware
+  version: 1c6db3ceac5f4d28b35ee4b9949a3f80030aa6a3
 - name: github.com/Beldur/kraken-go-api-client
   version: 8d8ccfe4cc60d1703ffe596c889b887a318a884c
+- name: github.com/bitly/go-simplejson
+  version: 39a59b1b2866b3d321f1d6ca8ad9d1748cc6d8ea
 - name: github.com/BurntSushi/toml
   version: 3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005
 - name: github.com/cavaliercoder/grab
@@ -55,6 +62,8 @@ imports:
   - spew
 - name: github.com/denisbrodbeck/machineid
   version: f07179bb15a0bec252453468aa607c670f5c12b5
+- name: github.com/form3tech-oss/jwt-go
+  version: 5b2d2b5f6c34ccb3b6b65f77f4706558067690ef
 - name: github.com/fsnotify/fsnotify
   version: 7f4cf4dd2b522a984eaca51d1ccee54101d3414a
 - name: github.com/go-chi/chi
@@ -75,6 +84,8 @@ imports:
   version: 0e4e31197428a347842d152773b4cace4645ca25
 - name: github.com/gorilla/schema
   version: 61751c9687439bf8cd824ad7eec0d21db1a1b804
+- name: github.com/gorilla/websocket
+  version: e8629af678b7fe13f35dff5e197de93b4148a909
 - name: github.com/hashicorp/hcl
   version: 569ae818ccb3cf7a7192e329771f8f940feecbba
   subpackages:
@@ -140,6 +151,10 @@ imports:
   - vfsutil
 - name: github.com/shurcooL/vfsgen
   version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069
+- name: github.com/Sirupsen/logrus
+  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
+  repo: git@github.com:sirupsen/logrus
+  vcs: git
 - name: github.com/sirupsen/logrus
   version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
   subpackages:

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	binance "github.com/adshao/go-binance/v2"
+	"github.com/adshao/go-binance/v2"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 )
