@@ -118,7 +118,7 @@ func (m *mapEvents) Get(key string) (mapData, bool) {
 //Del ... delete cached value
 func (m *mapEvents) Del(key string) {
 	m.mtx.Lock()
-	m.mtx.Unlock()
+	defer m.mtx.Unlock()
 
 	delete(m.data, key)
 
