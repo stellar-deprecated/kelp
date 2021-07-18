@@ -399,12 +399,12 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 	askCcxtOrders := book.Asks
 	bidCcxtOrders := book.Bids
 
-	if fetchSize < len(book.Asks) {
+	if len(askCcxtOrders) > fetchSize {
 		askCcxtOrders = askCcxtOrders[:fetchSize]
 
 	}
 
-	if fetchSize < len(book.Bids) {
+	if len(bidCcxtOrders) > fetchSize {
 		bidCcxtOrders = bidCcxtOrders[:fetchSize]
 	}
 
