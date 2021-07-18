@@ -180,7 +180,8 @@ func subcribeTicker(symbol string, state *mapEvents) (*stream, error) {
 
 }
 
-//restart Connection with ws// Binance close each connection after 24 hours
+//restart Connection with ws
+// Binance close each connection after 24 hours
 func keepConnection(doneC chan struct{}, reconnect func()) {
 
 	go func() {
