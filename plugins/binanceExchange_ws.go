@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	timeToWaitForFirstEvent = time.Second
+	timeToWaitForFirstEvent = time.Second * 2
 )
 
 var (
@@ -266,13 +266,15 @@ func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe 
 
 	stream, err := subscribe(symbol, state)
 
+	streamName := fmt.Sprintf(format, symbol)
+
 	if err != nil {
-		return mapData{}, fmt.Errorf("error when subscribing for %s: %s", symbol, err)
+		return mapData{}, fmt.Errorf("error when subscribing for %s: %s", streamName, err)
 	}
 
 	//Store stream
 	beWs.streamLock.Lock()
-	beWs.streams[fmt.Sprintf(format, symbol)] = stream
+	beWs.streams[streamName] = stream
 	beWs.streamLock.Unlock()
 
 	//Wait for binance to send events
@@ -282,7 +284,7 @@ func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe 
 
 	//We couldn't subscribe for this pair
 	if !isStream {
-		return mapData{}, fmt.Errorf("error while subscribing for %s", fmt.Sprintf(format, symbol))
+		return mapData{}, fmt.Errorf("error while subscribing for %s", streamName)
 	}
 
 	return data, nil
