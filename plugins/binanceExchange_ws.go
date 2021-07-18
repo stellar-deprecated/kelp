@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	timeoutFirstEvent = time.Second * 2
+	timeWaitForFirstEvent = time.Second * 2
 )
 
 var (
@@ -277,26 +277,10 @@ func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe 
 	beWs.streams[streamName] = stream
 	beWs.streamLock.Unlock()
 
-	timePassed := time.Duration(0)
-	checkTime := time.Millisecond * 50
-
 	//Wait for binance to send events
+	time.Sleep(timeWaitForFirstEvent)
 
-	var (
-		data     mapData
-		isStream bool
-	)
-
-	for timePassed < timeoutFirstEvent {
-		time.Sleep(checkTime)
-		timePassed += checkTime
-
-		data, isStream = state.Get(symbol)
-
-		if isStream {
-			break
-		}
-	}
+	data, isStream := state.Get(symbol)
 
 	//We couldn't subscribe for this pair
 	if !isStream {
@@ -372,10 +356,10 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
 
 	var (
-		fetchLimit = int(maxCount)
+		fetchSize = int(maxCount)
 	)
 
-	if fetchLimit > 20 {
+	if fetchSize > 20 {
 		return nil, fmt.Errorf("Max supported depth level is 20")
 	}
 
@@ -415,10 +399,13 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 	askCcxtOrders := book.Asks
 	bidCcxtOrders := book.Bids
 
-	if fetchLimit != 20 {
-		// we may not have fetched all the requested levels because the exchange may not have had that many levels in depth
-		askCcxtOrders = askCcxtOrders[:fetchLimit]
-		bidCcxtOrders = bidCcxtOrders[:fetchLimit]
+	if fetchSize < len(book.Asks) {
+		askCcxtOrders = askCcxtOrders[:fetchSize]
+
+	}
+
+	if fetchSize < len(book.Bids) {
+		bidCcxtOrders = bidCcxtOrders[:fetchSize]
 	}
 
 	asks, err := beWs.readOrders(askCcxtOrders, pair, model.OrderActionSell)
