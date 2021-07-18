@@ -260,6 +260,7 @@ func getPrecision(floatStr string) int8 {
 	return int8(len(strs[1]))
 }
 
+//subscribeStream and wait for the first event
 func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe Subscriber) (mapData, error) {
 
 	stream, err := subscribe(symbol, beWs.events.SymbolStats)
@@ -348,9 +349,13 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 	return priceResult, nil
 }
 
+//GetOrderBook impl
 func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
-	maxCountInt := int(maxCount)
-	fetchLimit := maxCountInt
+
+	var (
+		maxCountInt = int(maxCount)
+		fetchLimit  = maxCountInt
+	)
 
 	if fetchLimit > 20 {
 		fetchLimit = 20
@@ -417,6 +422,7 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 	return model.MakeOrderBook(pair, asks, bids), nil
 }
 
+//readOrders... transform orders from binance to model.Order
 func (beWs *binanceExchangeWs) readOrders(orders []common.PriceLevel, pair *model.TradingPair, orderAction model.OrderAction) ([]model.Order, error) {
 
 	pricePrecision := getPrecision(orders[0].Price)
