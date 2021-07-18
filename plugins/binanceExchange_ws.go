@@ -14,8 +14,12 @@ import (
 )
 
 const (
-	STREAMTICKER = "@ticker"
-	TTLTIME      = time.Second * 3 // ttl time in seconds
+	STREAM_TICKER_FMT = "%s@ticker"
+	TTLTIME           = time.Second * 3 // ttl time in seconds
+)
+
+var (
+	waitForFirstEvent = true
 )
 
 var (
@@ -68,21 +72,25 @@ func (s stream) Close() {
 	}
 }
 
+//mapData... struct used to data from events and timestamp when they are cached
 type mapData struct {
 	data      interface{}
 	createdAt time.Time
 }
 
+//isStatle... check if data it's stale
 func isStale(data mapData, ttl time.Duration) bool {
 
 	return time.Now().Sub(data.createdAt).Seconds() > ttl.Seconds()
 }
 
+//struct used to cache events
 type mapEvents struct {
 	data map[string]mapData
-	mtx  *sync.Mutex
+	mtx  *sync.RWMutex
 }
 
+//Set ... set value
 func (m *mapEvents) Set(key string, data interface{}) {
 
 	now := time.Now()
@@ -95,14 +103,16 @@ func (m *mapEvents) Set(key string, data interface{}) {
 	m.mtx.Unlock()
 }
 
+//Get ... get value
 func (m *mapEvents) Get(key string) (mapData, bool) {
-	m.mtx.Lock()
+	m.mtx.RLock()
 	data, isData := m.data[key]
-	m.mtx.Unlock()
+	m.mtx.RUnlock()
 
 	return data, isData
 }
 
+//Del ... delete cached value
 func (m *mapEvents) Del(key string) {
 	m.mtx.Lock()
 	delete(m.data, key)
@@ -110,13 +120,15 @@ func (m *mapEvents) Del(key string) {
 
 }
 
+// create new map for cache
 func makeMapEvents() *mapEvents {
 	return &mapEvents{
 		data: make(map[string]mapData),
-		mtx:  &sync.Mutex{},
+		mtx:  &sync.RWMutex{},
 	}
 }
 
+//struct used to keep all cached data
 type events struct {
 	SymbolStats *mapEvents
 }
@@ -153,14 +165,13 @@ func subcribeTicker(symbol string, state *mapEvents) (*stream, error) {
 }
 
 type binanceExchangeWs struct {
-	events    *events
-	delimiter string
+	events *events
 
-	streams map[string]*stream
+	streams    map[string]*stream
+	streamLock *sync.Mutex
 
 	assetConverter model.AssetConverterInterface
-
-	mtx *sync.Mutex
+	delimiter      string
 }
 
 // makeBinanceWs is a factory method to make an binance exchange over ws
@@ -174,19 +185,20 @@ func makeBinanceWs() (*binanceExchangeWs, error) {
 		events:         events,
 		delimiter:      "",
 		assetConverter: model.CcxtAssetConverter,
-		mtx:            &sync.Mutex{},
+		streamLock:     &sync.Mutex{},
 		streams:        make(map[string]*stream),
 	}
 
 	return beWs, nil
 }
 
+//getPrceision... get precision for float string
 func getPrecision(floatStr string) int8 {
 
 	strs := strings.Split(floatStr, ".")
 
 	if len(strs) != 2 {
-		log.Printf("error get precision for float %s\n", floatStr)
+		log.Printf("could not get precision for float %s\n", floatStr)
 		return 0
 	}
 
@@ -215,12 +227,14 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 			}
 
 			//Store stream
-			beWs.mtx.Lock()
-			beWs.streams[symbol+STREAMTICKER] = stream
-			beWs.mtx.Unlock()
+			beWs.streamLock.Lock()
+			beWs.streams[fmt.Sprintf(STREAM_TICKER_FMT, symbol)] = stream
+			beWs.streamLock.Unlock()
 
-			//Wait for binance to send events
-			time.Sleep(time.Second)
+			if waitForFirstEvent {
+				//Wait for binance to send events
+				time.Sleep(time.Second)
+			}
 
 			tickerData, isTicker = beWs.events.SymbolStats.Get(symbol)
 
@@ -273,11 +287,11 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 //Unsubscribe ... unsubscribe from binance streams
 func (beWs *binanceExchangeWs) Unsubscribe(stream string) {
 
-	beWs.mtx.Lock()
+	beWs.streamLock.Lock()
 
 	if stream, isStream := beWs.streams[stream]; isStream {
 		stream.Close()
 	}
 
-	beWs.mtx.Unlock()
+	beWs.streamLock.Unlock()
 }

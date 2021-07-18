@@ -151,14 +151,6 @@ imports:
   - vfsutil
 - name: github.com/shurcooL/vfsgen
   version: 6a9ea43bcacdf716a5c1b38efff722c07adf0069
-- name: github.com/Sirupsen/logrus
-  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
-  repo: git@github.com:sirupsen/logrus
-  vcs: git
-- name: github.com/sirupsen/logrus
-  version: 070c81def33f6362a8267b6a4e56fb7bf23fc6b5
-  subpackages:
-  - hooks/test
 - name: github.com/spf13/afero
   version: c17d29330031aab335093fc53ac2060eb6d5701d
   subpackages:
