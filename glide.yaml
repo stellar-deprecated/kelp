@@ -67,3 +67,7 @@ import:
   version: v1.0.1
 - package: github.com/google/uuid
   version: v1.1.2
+- package: github.com/adshao/go-binance
+  version: v2.3.0
+  subpackages:
+  - v2
