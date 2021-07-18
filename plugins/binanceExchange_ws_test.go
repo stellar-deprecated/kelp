@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -49,21 +48,7 @@ func Test_binanceExchangeWs_GetTickerPrice(t *testing.T) {
 		return
 	}
 
-	testCcxtExchange, e := makeCcxtExchange(
-		"binance",
-		testOrderConstraints["binance"],
-		[]api.ExchangeAPIKey{emptyAPIKey},
-		[]api.ExchangeParam{emptyParams},
-		[]api.ExchangeHeader{},
-		false,
-		getEsParamFactory("binance"),
-	)
-
-	if !assert.NoError(t, e) {
-		return
-	}
-
-	testBinanceExchangeWs, e := makeBinanceWs(testCcxtExchange.(ccxtExchange))
+	testBinanceExchangeWs, e := makeBinanceWs()
 	if !assert.NoError(t, e) {
 		return
 	}
@@ -78,6 +63,7 @@ func Test_binanceExchangeWs_GetTickerPrice(t *testing.T) {
 	assert.Equal(t, 1, len(m))
 
 	ticker := m[pair]
+
 	assert.True(t, ticker.AskPrice.AsFloat() < 1, ticker.AskPrice.AsString())
 	assert.True(t, ticker.BidPrice.AsFloat() < 1, ticker.BidPrice.AsString())
 	assert.True(t, ticker.BidPrice.AsFloat() < ticker.AskPrice.AsFloat(), fmt.Sprintf("bid price (%s) should be less than ask price (%s)", ticker.BidPrice.AsString(), ticker.AskPrice.AsString()))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 
 const (
 	STREAMTICKER = "@ticker"
-	TTLTIME      = 3 // ttl time in seconds
+	TTLTIME      = time.Second * 3 // ttl time in seconds
 )
 
 var (
@@ -67,20 +68,69 @@ func (s stream) Close() {
 	}
 }
 
+type mapData struct {
+	data      interface{}
+	createdAt time.Time
+}
+
+func isStale(data mapData, ttl time.Duration) bool {
+
+	return time.Now().Sub(data.createdAt).Seconds() > ttl.Seconds()
+}
+
+type mapEvents struct {
+	data map[string]mapData
+	mtx  *sync.Mutex
+}
+
+func (m *mapEvents) Set(key string, data interface{}) {
+
+	now := time.Now()
+
+	m.mtx.Lock()
+	m.data[key] = mapData{
+		data:      data,
+		createdAt: now,
+	}
+	m.mtx.Unlock()
+}
+
+func (m *mapEvents) Get(key string) (mapData, bool) {
+	m.mtx.Lock()
+	data, isData := m.data[key]
+	m.mtx.Unlock()
+
+	return data, isData
+}
+
+func (m *mapEvents) Del(key string) {
+	m.mtx.Lock()
+	delete(m.data, key)
+	m.mtx.Unlock()
+
+}
+
+func makeMapEvents() *mapEvents {
+	return &mapEvents{
+		data: make(map[string]mapData),
+		mtx:  &sync.Mutex{},
+	}
+}
+
 type events struct {
-	SymbolStats *Map
+	SymbolStats *mapEvents
 }
 
 func createStateEvents() *events {
 	events := &events{
-		SymbolStats: NewTTLMap(TTLTIME),
+		SymbolStats: makeMapEvents(),
 	}
 
 	return events
 }
 
 // subscribe for symbol@ticker
-func subcribeTicker(symbol string, state *Map) (*stream, error) {
+func subcribeTicker(symbol string, state *mapEvents) (*stream, error) {
 
 	wsMarketStatHandler := func(ticker *binance.WsMarketStatEvent) {
 		state.Set(symbol, ticker)
@@ -103,32 +153,44 @@ func subcribeTicker(symbol string, state *Map) (*stream, error) {
 }
 
 type binanceExchangeWs struct {
-	ccxtExchange
-
 	events    *events
 	delimiter string
 
 	streams map[string]*stream
 
-	mtx sync.Mutex
+	assetConverter model.AssetConverterInterface
+
+	mtx *sync.Mutex
 }
 
 // makeBinanceWs is a factory method to make an binance exchange over ws
-func makeBinanceWs(
-	ccxt ccxtExchange,
-) (*binanceExchangeWs, error) {
+func makeBinanceWs() (*binanceExchangeWs, error) {
 
 	binance.WebsocketKeepalive = true
 
 	events := createStateEvents()
 
 	beWs := &binanceExchangeWs{
-		ccxtExchange: ccxt,
-		events:       events,
-		delimiter:    "",
+		events:         events,
+		delimiter:      "",
+		assetConverter: model.CcxtAssetConverter,
+		mtx:            &sync.Mutex{},
+		streams:        make(map[string]*stream),
 	}
 
 	return beWs, nil
+}
+
+func getPrecision(floatStr string) int8 {
+
+	strs := strings.Split(floatStr, ".")
+
+	if len(strs) != 2 {
+		log.Printf("error get precision for float %s\n", floatStr)
+		return 0
+	}
+
+	return int8(len(strs[1]))
 }
 
 // GetTickerPrice impl.
@@ -143,7 +205,7 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 			return nil, err
 		}
 
-		tickerI, isTicker, createdAt := beWs.events.SymbolStats.Get(symbol)
+		tickerData, isTicker := beWs.events.SymbolStats.Get(symbol)
 
 		if !isTicker {
 			stream, err := subcribeTicker(symbol, beWs.events.SymbolStats)
@@ -160,7 +222,7 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 			//Wait for binance to send events
 			time.Sleep(time.Second)
 
-			tickerI, isTicker, createdAt = beWs.events.SymbolStats.Get(symbol)
+			tickerData, isTicker = beWs.events.SymbolStats.Get(symbol)
 
 			//We couldn't subscribe for this pair
 			if !isTicker {
@@ -170,9 +232,13 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 		}
 
 		//Show how old is the ticker
-		if time.Now().Sub(createdAt).Seconds() > 1 {
-			log.Printf("Ticker for %s is %f seconds old!\n", symbol, time.Now().Sub(createdAt).Seconds())
+		log.Printf("Ticker for %s is %d milliseconds old!\n", symbol, time.Now().Sub(tickerData.createdAt).Milliseconds())
+
+		if isStale(tickerData, TTLTIME) {
+			return nil, fmt.Errorf("ticker for %s symbols is older than %v", symbol, TTLTIME)
 		}
+
+		tickerI := tickerData.data
 
 		//Convert to WsMarketStatEvent
 		ticker, isOk := tickerI.(*binance.WsMarketStatEvent)
@@ -194,11 +260,10 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 			return nil, fmt.Errorf("unable to correctly parse 'last': %s", e)
 		}
 
-		pricePrecision := beWs.GetOrderConstraints(&p).PricePrecision
 		priceResult[p] = api.Ticker{
-			AskPrice:  model.NumberFromFloat(askPrice, pricePrecision),
-			BidPrice:  model.NumberFromFloat(bidPrice, pricePrecision),
-			LastPrice: model.NumberFromFloat(lastPrice, pricePrecision),
+			AskPrice:  model.NumberFromFloat(askPrice, getPrecision(ticker.AskPrice)),
+			BidPrice:  model.NumberFromFloat(bidPrice, getPrecision(ticker.BidPrice)),
+			LastPrice: model.NumberFromFloat(lastPrice, getPrecision(ticker.LastPrice)),
 		}
 	}
 
