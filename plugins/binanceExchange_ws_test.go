@@ -71,6 +71,14 @@ func Test_binanceExchangeWs_GetOrderBook(t *testing.T) {
 		if !assert.True(t, len(ob.Bids()) > 0, len(ob.Bids())) {
 			return
 		}
+
+		if !assert.True(t, len(ob.Asks()) <= int(obDepth), fmt.Sprintf("asks should be <= %d", obDepth)) {
+			return
+		}
+		if !assert.True(t, len(ob.Bids()) <= int(obDepth), fmt.Sprintf("bids should be <= %d", obDepth)) {
+			return
+		}
+
 		assert.True(t, ob.Asks()[0].OrderAction.IsSell())
 		assert.True(t, ob.Asks()[0].OrderType.IsLimit())
 		assert.True(t, ob.Bids()[0].OrderAction.IsBuy())

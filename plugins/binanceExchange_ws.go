@@ -278,11 +278,11 @@ func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe 
 	//Wait for binance to send events
 	time.Sleep(timeToWaitForFirstEvent)
 
-	data, isStream := beWs.events.SymbolStats.Get(symbol)
+	data, isStream := state.Get(symbol)
 
 	//We couldn't subscribe for this pair
 	if !isStream {
-		return mapData{}, fmt.Errorf("error while fetching ticker price for trading pair %s", symbol)
+		return mapData{}, fmt.Errorf("error while subscribing for %s", fmt.Sprintf(format, symbol))
 	}
 
 	return data, nil
@@ -354,8 +354,7 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount int32) (*model.OrderBook, error) {
 
 	var (
-		maxCountInt = int(maxCount)
-		fetchLimit  = maxCountInt
+		fetchLimit = int(maxCount)
 	)
 
 	if fetchLimit > 20 {
@@ -397,6 +396,12 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 
 	askCcxtOrders := book.Asks
 	bidCcxtOrders := book.Bids
+
+	if fetchLimit != 20 {
+		// we may not have fetched all the requested levels because the exchange may not have had that many levels in depth
+		askCcxtOrders = askCcxtOrders[:fetchLimit]
+		bidCcxtOrders = bidCcxtOrders[:fetchLimit]
+	}
 
 	asks, err := beWs.readOrders(askCcxtOrders, pair, model.OrderActionSell)
 
