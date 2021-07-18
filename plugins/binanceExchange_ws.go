@@ -262,9 +262,9 @@ func getPrecision(floatStr string) int8 {
 }
 
 //subscribeStream and wait for the first event
-func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe Subscriber) (mapData, error) {
+func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe Subscriber, state *mapEvents) (mapData, error) {
 
-	stream, err := subscribe(symbol, beWs.events.SymbolStats)
+	stream, err := subscribe(symbol, state)
 
 	if err != nil {
 		return mapData{}, fmt.Errorf("error when subscribing for %s: %s", symbol, err)
@@ -303,7 +303,7 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 		tickerData, isTicker := beWs.events.SymbolStats.Get(symbol)
 
 		if !isTicker {
-			tickerData, err = beWs.subscribeStream(symbol, STREAM_TICKER_FMT, subcribeTicker)
+			tickerData, err = beWs.subscribeStream(symbol, STREAM_TICKER_FMT, subcribeTicker, beWs.events.SymbolStats)
 
 			if err != nil {
 				return nil, err
@@ -359,7 +359,7 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 	)
 
 	if fetchLimit > 20 {
-		fetchLimit = 20
+		return nil, fmt.Errorf("Max supported depth level is 20")
 	}
 
 	symbol, err := pair.ToString(beWs.assetConverter, beWs.delimiter)
@@ -371,7 +371,7 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 
 	if !isBook {
 
-		bookData, err = beWs.subscribeStream(symbol, STREAM_BOOK_FMT, subcribeBook)
+		bookData, err = beWs.subscribeStream(symbol, STREAM_BOOK_FMT, subcribeBook, beWs.events.BookStats)
 
 		if err != nil {
 			return nil, err
@@ -379,8 +379,8 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 
 	}
 
-	//Show how old is the ticker
-	log.Printf("Ticker for %s is %d milliseconds old!\n", symbol, time.Now().Sub(bookData.createdAt).Milliseconds())
+	//Show how old is the orderbook
+	log.Printf("OrderBook for %s is %d milliseconds old!\n", symbol, time.Now().Sub(bookData.createdAt).Milliseconds())
 
 	if isStale(bookData, TTLTIME) {
 		return nil, fmt.Errorf("ticker for %s symbols is older than %v", symbol, TTLTIME)
@@ -397,16 +397,6 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 
 	askCcxtOrders := book.Asks
 	bidCcxtOrders := book.Bids
-
-	if fetchLimit != maxCountInt {
-		// we may not have fetched all the requested levels because the exchange may not have had that many levels in depth
-		if len(askCcxtOrders) > maxCountInt {
-			askCcxtOrders = askCcxtOrders[:maxCountInt]
-		}
-		if len(bidCcxtOrders) > maxCountInt {
-			bidCcxtOrders = bidCcxtOrders[:maxCountInt]
-		}
-	}
 
 	asks, err := beWs.readOrders(askCcxtOrders, pair, model.OrderActionSell)
 

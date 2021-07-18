@@ -50,9 +50,6 @@ func Test_binanceExchangeWs_GetTickerPrice(t *testing.T) {
 }
 
 func Test_binanceExchangeWs_GetOrderBook(t *testing.T) {
-	if testing.Short() {
-		return
-	}
 
 	testBinanceExchangeWs, e := makeBinanceWs()
 	if !assert.NoError(t, e) {
