@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	waitForFirstEvent = true
+	timeToWaitForFirstEvent = time.Second
 )
 
 var (
@@ -235,10 +235,8 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 			beWs.streams[fmt.Sprintf(STREAM_TICKER_FMT, symbol)] = stream
 			beWs.streamLock.Unlock()
 
-			if waitForFirstEvent {
-				//Wait for binance to send events
-				time.Sleep(time.Second)
-			}
+			//Wait for binance to send events
+			time.Sleep(timeToWaitForFirstEvent)
 
 			tickerData, isTicker = beWs.events.SymbolStats.Get(symbol)
 
