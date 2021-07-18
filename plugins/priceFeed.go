@@ -40,6 +40,8 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 		return newCMCFeed(url), nil
 	case "fiat":
 		return newFiatFeed(url), nil
+	case "fiat-oxr":
+		return newFiatFeedOxr(url), nil
 	case "fixed":
 		return newFixedFeed(url)
 	case "exchange":

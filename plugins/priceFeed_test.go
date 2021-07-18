@@ -1,8 +1,15 @@
 package plugins
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
 	"testing"
+
+	"github.com/stellar/kelp/tests"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -10,6 +17,7 @@ import (
 const wantLowerBoundXLM = 0.02
 const wantUpperBoundXLM = 1.1
 
+// uses real network calls
 func TestMakePriceFeed(t *testing.T) {
 	testCases := []struct {
 		typ                    string
@@ -62,14 +70,14 @@ func TestMakePriceFeed(t *testing.T) {
 			url:                    "invert(fixed/0.02)",
 			wantLowerOrEqualBound:  50.0,
 			wantHigherOrEqualBound: 50.0,
-			// }, { disable ccxt-kraken based tests for now because of the 403 Forbidden Security check API error
-			// 	typ:                    "exchange",
-			// 	url:                    "ccxt-kraken/XLM/USD/last",
-			// 	wantLowerOrEqualBound:  wantLowerBoundXLM,
-			// 	wantHigherOrEqualBound: wantUpperBoundXLM,
 		},
-		// not testing fiat here because it requires an access key
-		// not testing crypto here because it's returning an error when passed an actual URL but works in practice
+		// disable ccxt-kraken based tests for now because of the 403 Forbidden Security check API error
+		// {
+		// 	typ:                    "exchange",
+		// 	url:                    "ccxt-kraken/XLM/USD/last",
+		// 	wantLowerOrEqualBound:  wantLowerBoundXLM,
+		// 	wantHigherOrEqualBound: wantUpperBoundXLM,
+		// },
 	}
 
 	// cannot run this in parallel because ccxt fails (by not recognizing exchanges) when hit with too many requests at once
@@ -89,4 +97,70 @@ func TestMakePriceFeed(t *testing.T) {
 			assert.True(t, price <= k.wantHigherOrEqualBound, fmt.Sprintf("price was %.10f, should have been <= %.10f", price, k.wantHigherOrEqualBound))
 		})
 	}
+}
+
+// uses mock call
+func TestMakePriceFeed_FiatFeed_Success(t *testing.T) {
+	response := fiatAPIReturn{
+		Success: true,
+		Quotes:  map[string]float64{"SOME_CODE": 1},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		require.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	priceFeed, err := MakePriceFeed("fiat", ts.URL)
+	assert.NoError(t, err)
+
+	price, err := priceFeed.GetPrice()
+	assert.Equal(t, response.Quotes["SOME_CODE"], price)
+	assert.NoError(t, err)
+}
+
+// uses mock call
+func TestMakePriceFeed_FiatFeedOxr_Success(t *testing.T) {
+	symbol := tests.RandomString()
+	response := createOxrResponse(symbol)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		require.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	priceFeed, err := MakePriceFeed("fiat-oxr", ts.URL)
+	assert.NoError(t, err)
+
+	price, err := priceFeed.GetPrice()
+	assert.Equal(t, response.Rates[symbol], price)
+	assert.NoError(t, err)
+}
+
+// uses mock call
+func TestMakePriceFeed_CryptoFeed_Success(t *testing.T) {
+	response := []cmcAPIReturn{{Price: strconv.Itoa(tests.RandomInt())}}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		require.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	priceFeed, err := MakePriceFeed("crypto", ts.URL)
+	assert.NoError(t, err)
+
+	expected, err := strconv.ParseFloat(response[0].Price, 64)
+	require.NoError(t, err)
+
+	price, err := priceFeed.GetPrice()
+	assert.Equal(t, expected, price)
+	assert.NoError(t, err)
 }
