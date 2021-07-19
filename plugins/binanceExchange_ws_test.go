@@ -21,6 +21,11 @@ func Test_createStateEvents(t *testing.T) {
 }
 
 func Test_binanceExchangeWs_GetTickerPrice(t *testing.T) {
+
+	if testing.Short() {
+		return
+	}
+
 	pair := model.TradingPair{Base: model.XLM, Quote: model.BTC}
 	pairs := []model.TradingPair{pair}
 
@@ -55,6 +60,10 @@ func Test_binanceExchangeWs_GetTickerPrice(t *testing.T) {
 }
 
 func Test_binanceExchangeWs_GetOrderBook(t *testing.T) {
+
+	if testing.Short() {
+		return
+	}
 
 	testBinanceExchangeWs, e := makeBinanceWs(emptyAPIKeyBinance)
 	if !assert.NoError(t, e) {
@@ -96,6 +105,11 @@ func Test_binanceExchangeWs_GetOrderBook(t *testing.T) {
 }
 
 func Test_binanceExchangeWs_GetLatestTradeCursor(t *testing.T) {
+
+	if testing.Short() {
+		return
+	}
+
 	startIntervalSecs := time.Now().Unix()
 
 	testBinanceExchangeWs, err := makeBinanceWs(emptyAPIKeyBinance)
@@ -129,6 +143,10 @@ func Test_binanceExchangeWs_GetLatestTradeCursor(t *testing.T) {
 }
 
 func Test_binanceExchangeWs_GetTradeHistory(t *testing.T) {
+
+	if testing.Short() {
+		return
+	}
 
 	testBinanceExchangeWs, err := makeBinanceWs(emptyAPIKeyBinance)
 

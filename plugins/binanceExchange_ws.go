@@ -664,6 +664,7 @@ func (beWs *binanceExchangeWs) readOrders(orders []common.PriceLevel, pair *mode
 
 // GetTradeHistory impl
 func (beWs *binanceExchangeWs) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
+
 	symbol, err := pair.ToString(beWs.assetConverter, beWs.delimiter)
 	if err != nil {
 		return nil, fmt.Errorf("error converting symbol to string: %s", err)
