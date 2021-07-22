@@ -7,12 +7,9 @@ commands:
           keys:
             - v3-pkg-cache
             - v5-node-cache
-      - run:
-          name: Install glide
-          command: sudo apt-get update -y && sudo apt-get install -y golang-glide
-      - run:
-          name: Install dependencies using glide
-          command: glide install
+      -run:
+          name: Download go modules
+          command: go mod download
       - run:
           name: Fetch astilectron-bundler
           command: go get -u github.com/asticode/go-astilectron-bundler/...
