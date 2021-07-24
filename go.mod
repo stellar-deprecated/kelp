@@ -13,7 +13,7 @@ require (
 	github.com/asticode/go-astilectron v0.8.1-0.20190411111508-8e68f812e8a2
 	github.com/asticode/go-astilectron-bootstrap v0.0.0-20190816065004-25b857285999
 	github.com/asticode/go-astilectron-bundler v0.0.0-20190426172205-155c2a10bbb1 // indirect
-	github.com/asticode/go-astilog v1.1.0 // indirect
+	github.com/asticode/go-astilog v1.8.0 // indirect
 	github.com/asticode/go-astitools v1.2.1-0.20190929114647-d157a994ecbd // indirect
 	github.com/asticode/go-bindata v1.0.0 // indirect
 	github.com/auth0/go-jwt-middleware v1.0.0
