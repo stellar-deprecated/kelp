@@ -10,7 +10,7 @@ commands:
       - run:
           name: Download Go modules
           command: |
-            GOPROXY="https://goproxy.io,https://proxy.golang.org,https://goproxy.cn"
+            GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
             echo $GOPROXY
             go mod download
       - run:
