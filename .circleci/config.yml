@@ -103,7 +103,7 @@ jobs:
   test_1_13:
     working_directory: /go/src/github.com/stellar/kelp
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
       - image: circleci/postgres:12.1-alpine-ram
