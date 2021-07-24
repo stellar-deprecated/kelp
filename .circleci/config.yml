@@ -9,7 +9,7 @@ commands:
             - v5-node-cache
       - run:
           name: Download Go modules
-          enviornment: GOPROXY=https://proxy.golang.org,https://goproxy.io,direct
+          enviornment: GOPROXY=https://proxy.golang.org,https://goproxy.io,https://goproxy.cn,direct
           command: go mod download
       - run:
           name: Fetch astilectron-bundler
