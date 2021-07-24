@@ -5,10 +5,10 @@ commands:
       - checkout
       - restore_cache:
           keys:
-            - v3-pkg-cache
+            - go-mod-v1-{{ checksum "go.sum" }}
             - v5-node-cache
       -run:
-          name: Download go modules
+          name: Download Go modules
           command: go mod download
       - run:
           name: Fetch astilectron-bundler
@@ -29,9 +29,9 @@ commands:
           name: Use yarn
           command: echo 'export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"' >> $BASH_ENV && source $BASH_ENV
       - save_cache:
-          key: v3-pkg-cache
+          key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
-            - "/go/src/github.com/stellar/kelp/vendor"
+            - "/go/pkg/mod"
 
   build_kelp:
     steps:
