@@ -77,6 +77,8 @@ function gen_bind_files() {
 # 1 = filename with extension
 # 2 = destination folder without trailing slash
 function download_vendor_zip() {
+    echo -n "downloading vendor zip"
+
     FILENAME_WITH_EXT=$1
     DEST_FOLDER=$2
 
