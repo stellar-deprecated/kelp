@@ -43,7 +43,7 @@ function check_build_result() {
     if [[ $1 -ne 0 ]]
     then
         echo ""
-        echo "build failed with error code $1"
+        echo "check build result failed with error code $1"
         exit $1
     fi
 }
