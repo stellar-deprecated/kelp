@@ -292,6 +292,7 @@ then
     echo $GO111MODULE
     echo $(pwd)
     go env -w GO111MODULE=on
+    echo `go env`
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
