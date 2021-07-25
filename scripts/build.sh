@@ -287,7 +287,7 @@ then
     DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=cli"
 
     # cannot set goarm because not accessible (need to figure out a way)
-    echo -n "compiling ... "
+    echo -n "compiling ... $DYNAMIC_LDFLAGS"
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
