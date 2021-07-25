@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -15,13 +16,17 @@ import (
 	"github.com/adshao/go-binance/v2/common"
 	"github.com/stellar/kelp/api"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/support/sdk"
 )
 
 const (
-	STREAM_TICKER_FMT      = "%s@ticker"
-	STREAM_BOOK_FMT        = "%s@depth"
-	STREAM_USER            = "@user"
-	LAST_CURSOR_KEY        = "@user||lastCursor"
+	STREAM_TICKER_FMT = "%s@ticker"
+	STREAM_BOOK_FMT   = "%s@depth"
+
+	//not from binance docs, just for convetion we use @streamName
+	STREAM_USER = "@user"
+	// key used to save last cursor in events, it must be something that couldn't be used in the map
+	LAST_CURSOR_KEY        = STREAM_USER + "||lastCursor"
 	TTLTIME                = time.Second * 3 // ttl time in seconds
 	EVENT_EXECUTION_REPORT = "executionReport"
 )
@@ -37,77 +42,7 @@ var (
 	ErrConversionCursor              = errConversion{from: "interface", to: "int64"}
 )
 
-type eventBinance struct {
-	Name string `json:"e"`
-}
-
-// "E": 1499405658658,            // Event time
-// "s": "ETHBTC",                 // Symbol
-// "c": "mUvoqJxFIILMdfAW5iGSOW", // Client order ID
-// "S": "BUY",                    // Side
-// "o": "LIMIT",                  // Order type
-// "f": "GTC",                    // Time in force
-// "q": "1.00000000",             // Order quantity
-// "p": "0.10264410",             // Order price
-// "P": "0.00000000",             // Stop price
-// "F": "0.00000000",             // Iceberg quantity
-// "g": -1,                       // OrderListId
-// "C": null,                     // Original client order ID; This is the ID of the order being canceled
-// "x": "NEW",                    // Current execution type
-// "X": "NEW",                    // Current order status
-// "r": "NONE",                   // Order reject reason; will be an error code.
-// "i": 4293153,                  // Order ID
-// "l": "0.00000000",             // Last executed quantity
-// "z": "0.00000000",             // Cumulative filled quantity
-// "L": "0.00000000",             // Last executed price
-// "n": "0",                      // Commission amount
-// "N": null,                     // Commission asset
-// "T": 1499405658657,            // Transaction time
-// "t": -1,                       // Trade ID
-// "I": 8641984,                  // Ignore
-// "w": true,                     // Is the order on the book?
-// "m": false,                    // Is this trade the maker side?
-// "M": false,                    // Ignore
-// "O": 1499405658657,            // Order creation time
-// "Z": "0.00000000",             // Cumulative quote asset transacted quantity
-// "Y": "0.00000000",              // Last quote asset transacted quantity (i.e. lastPrice * lastQty)
-// "Q": "0.00000000"              // Quote Order Qty
-type eventExecutionReport struct {
-	eventBinance
-	EventTime                    int64       `json:"E"`
-	Symbol                       string      `json:"s"`
-	ClientOrderID                string      `json:"c"`
-	Side                         string      `json:"S"`
-	OrderType                    string      `json:"o"`
-	TimeInForce                  string      `json:"f"`
-	OrderQuantity                string      `json:"q"`
-	OrderPrice                   string      `json:"p"`
-	StopPrice                    string      `json:"P"`
-	IceberQuantity               string      `json:"F"`
-	OrderListID                  int64       `json:"g"`
-	OriginalClientID             interface{} `json:"C"`
-	CurrentExecutionType         string      `json:"x"`
-	CurrentOrderStatus           string      `json:"X"`
-	OrderRejectReason            string      `json:"r"`
-	OrderID                      int64       `json:"i"`
-	LastExecutedQuantity         string      `json:"l"`
-	CumulativeFillerQuantity     string      `json:"z"`
-	LastExecutedPrice            string      `json:"Z"`
-	ComissionAmount              string      `json:"n"`
-	ComissionAsset               interface{} `json:"N"`
-	TransactionTime              int64       `json:"T"`
-	TradeID                      int64       `json:"t"`
-	Ignore                       int64       `json:"I"`
-	IsTherOrderOnBook            bool        `json:"w"`
-	IsTheTradeMarkerSide         bool        `json:"m"`
-	IsIgnore                     bool        `json:"M"`
-	OrderCreationTime            int64       `json:"O"`
-	CumulativeQuoteAssetQuantity string      `json:"Z"`
-	LastQuoteAssetQuantity       string      `json:"Y"`
-	QuoteOrderQuantity           string      `json:"Q"`
-}
-
-type History []*eventExecutionReport
+type History []*sdk.EventExecutionReport
 
 type Subscriber func(symbol string, state *mapEvents) (*stream, error)
 type errMissingSymbol struct {
@@ -218,16 +153,16 @@ func makeMapEvents() *mapEvents {
 
 //struct used to keep all cached data
 type events struct {
-	SymbolStats *mapEvents
-	BookStats   *mapEvents
-	OrderEvents *mapEvents
+	SymbolStats        *mapEvents
+	BookStats          *mapEvents
+	TradeHistoryEvents *mapEvents
 }
 
 func createStateEvents() *events {
 	events := &events{
-		SymbolStats: makeMapEvents(),
-		BookStats:   makeMapEvents(),
-		OrderEvents: makeMapEvents(),
+		SymbolStats:        makeMapEvents(),
+		BookStats:          makeMapEvents(),
+		TradeHistoryEvents: makeMapEvents(),
 	}
 
 	return events
@@ -268,7 +203,7 @@ func subcribeUserStream(listenKey string, state *mapEvents) (*stream, error) {
 
 	wsUserStreamExecutinReportHandler := func(message []byte) {
 
-		event := &eventExecutionReport{}
+		event := &sdk.EventExecutionReport{}
 		err := json.Unmarshal(message, event)
 
 		if err != nil {
@@ -319,7 +254,7 @@ func subcribeUserStream(listenKey string, state *mapEvents) (*stream, error) {
 	}
 
 	wsUserStreamHandler := func(message []byte) {
-		event := &eventBinance{}
+		event := &sdk.EventBinance{}
 		err := json.Unmarshal(message, event)
 
 		if err != nil {
@@ -397,14 +332,15 @@ func subcribeBook(symbol string, state *mapEvents) (*stream, error) {
 //ListenKey expires every 60 minutes
 func keepAliveStreamService(client *binance.Client, key string) {
 
-	time.Sleep(time.Minute * 50)
-	err := client.NewKeepaliveUserStreamService().ListenKey(key).Do(context.Background())
+	for {
+		time.Sleep(time.Minute * 50)
+		err := client.NewKeepaliveUserStreamService().ListenKey(key).Do(context.Background())
 
-	if err != nil {
-		log.Printf("Error keepAliveStreamService %v\n", err)
+		if err != nil {
+			log.Printf("Error keepAliveStreamService %v\n", err)
+			panic(err)
+		}
 	}
-
-	go keepAliveStreamService(client, key)
 }
 
 type binanceExchangeWs struct {
@@ -418,6 +354,8 @@ type binanceExchangeWs struct {
 
 	client    *binance.Client
 	listenKey string
+
+	keys api.ExchangeAPIKey
 }
 
 // makeBinanceWs is a factory method to make an binance exchange over ws
@@ -427,25 +365,7 @@ func makeBinanceWs(keys api.ExchangeAPIKey) (*binanceExchangeWs, error) {
 
 	events := createStateEvents()
 
-	binanceClient := binance.NewClient(keys.Key, keys.Secret)
-
-	listenKey, err := binanceClient.NewStartUserStreamService().Do(context.Background())
-
-	if err != nil {
-		return nil, err
-	}
-
-	keepAliveStreamService(binanceClient, listenKey)
-
-	streamUser, err := subcribeUserStream(listenKey, events.OrderEvents)
-
-	if err != nil {
-		return nil, err
-	}
-
 	streams := make(map[string]*stream)
-
-	streams[STREAM_USER] = streamUser
 
 	beWs := &binanceExchangeWs{
 		events:         events,
@@ -453,11 +373,52 @@ func makeBinanceWs(keys api.ExchangeAPIKey) (*binanceExchangeWs, error) {
 		assetConverter: model.CcxtAssetConverter,
 		streamLock:     &sync.Mutex{},
 		streams:        streams,
-		client:         binanceClient,
-		listenKey:      listenKey,
+		keys:           keys,
 	}
 
 	return beWs, nil
+}
+
+func (beWs *binanceExchangeWs) isSubscribedUserStream() bool {
+
+	_, isStream := beWs.streams[STREAM_USER]
+
+	return isStream
+}
+
+func (beWs *binanceExchangeWs) subscribeUserStream() error {
+
+	beWs.streamLock.Lock()
+	defer beWs.streamLock.Unlock()
+
+	if beWs.isSubscribedUserStream() {
+		return nil
+	}
+
+	binanceClient := binance.NewClient(beWs.keys.Key, beWs.keys.Secret)
+
+	listenKey, err := binanceClient.NewStartUserStreamService().Do(context.Background())
+
+	if err != nil {
+		return fmt.Errorf("error when creating listenKey: %s", err)
+	}
+
+	go keepAliveStreamService(binanceClient, listenKey)
+
+	streamUser, err := subcribeUserStream(listenKey, beWs.events.TradeHistoryEvents)
+
+	if err != nil {
+		return fmt.Errorf("error when subscribing to user stream: %s", err)
+	}
+
+	beWs.streams[STREAM_USER] = streamUser
+	beWs.client = binanceClient
+	beWs.listenKey = listenKey
+
+	//Wait for first
+	time.Sleep(timeWaitForFirstEvent)
+
+	return nil
 }
 
 //getPrceision... get precision for float string
@@ -520,7 +481,7 @@ func (beWs *binanceExchangeWs) GetTickerPrice(pairs []model.TradingPair) (map[mo
 			tickerData, err = beWs.subscribeStream(symbol, STREAM_TICKER_FMT, subcribeTicker, beWs.events.SymbolStats)
 
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error when subscribing to stream %s:%s", fmt.Sprintf(STREAM_TICKER_FMT, symbol), err)
 			}
 
 		}
@@ -623,13 +584,13 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 	asks, err := beWs.readOrders(askCcxtOrders, pair, model.OrderActionSell)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error when reading ask orders:%s", err)
 	}
 
 	bids, err := beWs.readOrders(bidCcxtOrders, pair, model.OrderActionBuy)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error when reading bid orders:%s", err)
 	}
 
 	return model.MakeOrderBook(pair, asks, bids), nil
@@ -665,12 +626,18 @@ func (beWs *binanceExchangeWs) readOrders(orders []common.PriceLevel, pair *mode
 // GetTradeHistory impl
 func (beWs *binanceExchangeWs) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
 
+	if !beWs.isSubscribedUserStream() {
+		if err := beWs.subscribeUserStream(); err != nil {
+			return nil, fmt.Errorf("error subscribing to user stream: %s", err)
+		}
+	}
+
 	symbol, err := pair.ToString(beWs.assetConverter, beWs.delimiter)
 	if err != nil {
 		return nil, fmt.Errorf("error converting symbol to string: %s", err)
 	}
 
-	data, isOrders := beWs.events.OrderEvents.Get(symbol)
+	data, isOrders := beWs.events.TradeHistoryEvents.Get(symbol)
 
 	if !isOrders {
 		return nil, fmt.Errorf("no trade history for trading pair '%s'", symbol)
@@ -684,8 +651,8 @@ func (beWs *binanceExchangeWs) GetTradeHistory(pair model.TradingPair, maybeCurs
 
 	trades := []model.Trade{}
 	for _, raw := range history {
-		var t *model.Trade
-		t, err = beWs.readTrade(&pair, symbol, raw)
+
+		t, err := beWs.readTrade(&pair, symbol, raw)
 		if err != nil {
 			return nil, fmt.Errorf("error while reading trade: %s", err)
 		}
@@ -697,6 +664,7 @@ func (beWs *binanceExchangeWs) GetTradeHistory(pair model.TradingPair, maybeCurs
 
 	sort.Sort(model.TradesByTsID(trades))
 	cursor := maybeCursorStart
+
 	if len(trades) > 0 {
 		cursor, err = beWs.getCursor(trades)
 		if err != nil {
@@ -724,11 +692,16 @@ func (beWs *binanceExchangeWs) getCursor(trades []model.Trade) (interface{}, err
 // GetLatestTradeCursor impl.
 func (beWs *binanceExchangeWs) GetLatestTradeCursor() (interface{}, error) {
 
-	lastTradeCursor, isCursor := beWs.events.OrderEvents.Get(LAST_CURSOR_KEY)
+	if !beWs.isSubscribedUserStream() {
+		if err := beWs.subscribeUserStream(); err != nil {
+			return nil, fmt.Errorf("error subscribing to user stream: %s", err)
+		}
+	}
+
+	lastTradeCursor, isCursor := beWs.events.TradeHistoryEvents.Get(LAST_CURSOR_KEY)
 
 	if !isCursor {
-		timeNowMillis := time.Now().UnixNano() / int64(time.Millisecond)
-		return fmt.Sprintf("%d", timeNowMillis), nil
+		return nil, errors.New("Missing cursor")
 	}
 
 	cursor, isOk := lastTradeCursor.data.(int64)
@@ -740,7 +713,7 @@ func (beWs *binanceExchangeWs) GetLatestTradeCursor() (interface{}, error) {
 	return fmt.Sprintf("%d", cursor), nil
 }
 
-func (beWs *binanceExchangeWs) readTrade(pair *model.TradingPair, symbol string, rawTrade *eventExecutionReport) (*model.Trade, error) {
+func (beWs *binanceExchangeWs) readTrade(pair *model.TradingPair, symbol string, rawTrade *sdk.EventExecutionReport) (*model.Trade, error) {
 	if rawTrade.Symbol != symbol {
 		return nil, fmt.Errorf("expected '%s' for 'symbol' field, got: %s", symbol, rawTrade.Symbol)
 	}
@@ -781,20 +754,10 @@ func (beWs *binanceExchangeWs) readTrade(pair *model.TradingPair, symbol string,
 		// OrderID read by calling function depending on override set for exchange params in "orderId" field of Info object
 	}
 
-	useSignToDenoteSide := false
-
 	if rawTrade.Side == "sell" {
 		trade.OrderAction = model.OrderActionSell
 	} else if rawTrade.Side == "buy" {
 		trade.OrderAction = model.OrderActionBuy
-	} else if useSignToDenoteSide {
-		if trade.Cost.AsFloat() < 0 {
-			trade.OrderAction = model.OrderActionSell
-			trade.Order.Volume = trade.Order.Volume.Scale(-1.0)
-			trade.Cost = trade.Cost.Scale(-1.0)
-		} else {
-			trade.OrderAction = model.OrderActionBuy
-		}
 	} else {
 		return nil, fmt.Errorf("unrecognized value for 'side' field: %s (rawTrade = %+v)", rawTrade.Side, rawTrade)
 	}
