@@ -11,7 +11,6 @@ commands:
           name: Download Go modules
           command: |
             export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn,direct
-            echo $GOPROXY
             go mod download
       - run:
           name: Fetch astilectron-bundler
