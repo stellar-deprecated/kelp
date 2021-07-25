@@ -276,16 +276,14 @@ func subcribeUserStream(listenKey string, state *mapEvents) (*stream, error) {
 	doneC, stopC, err := binance.WsUserDataServe(listenKey, wsUserStreamHandler, errHandler)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating WsUserDataService:%s", err)
 	}
 
 	keepConnection(doneC, func() {
 		subcribeUserStream(listenKey, state)
 	})
 
-	return &stream{doneC: doneC, stopC: stopC, cleanup: func() {
-
-	}}, err
+	return &stream{doneC: doneC, stopC: stopC}, err
 
 }
 
