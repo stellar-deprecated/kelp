@@ -287,7 +287,9 @@ then
     DYNAMIC_LDFLAGS="$LDFLAGS -X github.com/stellar/kelp/cmd.buildType=cli"
 
     # cannot set goarm because not accessible (need to figure out a way)
-    echo -n "compiling ... $DYNAMIC_LDFLAGS"
+    echo -n "compiling ... "
+    export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn,direct
+    echo "proxy set $GOPROXY"
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
