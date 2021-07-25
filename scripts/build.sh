@@ -288,11 +288,11 @@ then
 
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... $DYNAMIC_LDFLAGS"
-    go get github.com/asticode/go-astilectron v0.8.1-0.20190411111508-8e68f812e8a2
-    go get github.com/asticode/go-astilectron-bootstrap v0.0.0-20190816065004-25b857285999
-    go get github.com/asticode/go-astilectron-bundler v0.0.0-20190426172205-155c2a10bbb1
-    go get github.com/asticode/go-astilog v1.1.0
-    go get github.com/asticode/go-astitools v1.2.1-0.20190929114647-d157a994ecbd
+    go get github.com/asticode/go-astilectron@v0.8.1-0.20190411111508-8e68f812e8a2
+    go get github.com/asticode/go-astilectron-bootstrap@v0.0.0-20190816065004-25b857285999
+    go get github.com/asticode/go-astilectron-bundler@v0.0.0-20190426172205-155c2a10bbb1
+    go get github.com/asticode/go-astilog@v1.1.0
+    go get github.com/asticode/go-astitools@v1.2.1-0.20190929114647-d157a994ecbd
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
