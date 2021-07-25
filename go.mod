@@ -1,6 +1,6 @@
 module github.com/stellar/kelp
 
-go 1.16
+go 1.13
 
 require (
 	cloud.google.com/go v0.84.0 // indirect
