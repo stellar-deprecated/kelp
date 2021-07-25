@@ -294,6 +294,7 @@ then
     go env -w GO111MODULE=on
     export GOBIN="$GOPATH/bin"
     echo `go env`
+    export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
