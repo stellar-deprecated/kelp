@@ -462,7 +462,7 @@ func (beWs *binanceExchangeWs) subscribeStream(symbol, format string, subscribe 
 
 	//We couldn't subscribe for this pair
 	if !isStream {
-		return mapData{}, fmt.Errorf("error while subscribing for %s", streamName)
+		return mapData{}, fmt.Errorf("error data doesn't exist for %s", streamName)
 	}
 
 	return data, nil
