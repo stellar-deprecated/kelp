@@ -289,6 +289,7 @@ then
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
     echo $(pwd)
+    go get github.com/asticode/go-astilectron@155c2a10bbb1791fbafe89a9b64be05c64f16c81
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
