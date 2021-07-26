@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
@@ -116,7 +117,7 @@ func Test_binanceExchangeWs_GetLatestTradeCursor(t *testing.T) {
 		return
 	}
 
-	testBinanceExchangeWs.events.TradeHistoryEvents.Set(LAST_CURSOR_KEY, "fail")
+	testBinanceExchangeWs.events.TradeHistoryEvents.Set(LAST_CURSOR_KEY, "fail", nil)
 
 	cursor, e = testBinanceExchangeWs.GetLatestTradeCursor()
 
@@ -124,12 +125,20 @@ func Test_binanceExchangeWs_GetLatestTradeCursor(t *testing.T) {
 		return
 	}
 
-	testBinanceExchangeWs.events.TradeHistoryEvents.Set(LAST_CURSOR_KEY, time.Now().Unix())
+	testBinanceExchangeWs.events.TradeHistoryEvents.Set(LAST_CURSOR_KEY, time.Now().Unix(), errors.New("test"))
+
+	cursor, e = testBinanceExchangeWs.GetLatestTradeCursor()
+	if !assert.Error(t, e) {
+		return
+	}
+
+	testBinanceExchangeWs.events.TradeHistoryEvents.Set(LAST_CURSOR_KEY, time.Now().Unix(), nil)
 
 	cursor, e = testBinanceExchangeWs.GetLatestTradeCursor()
 	if !assert.NoError(t, e) {
 		return
 	}
+
 	endIntervalSecs := time.Now().Unix()
 
 	if !assert.IsType(t, "string", cursor) {

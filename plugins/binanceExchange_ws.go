@@ -94,6 +94,7 @@ func (s stream) Close() {
 //mapData... struct used to data from events and timestamp when they are cached
 type mapData struct {
 	data      interface{}
+	err       error
 	createdAt time.Time
 }
 
@@ -110,7 +111,7 @@ type mapEvents struct {
 }
 
 //Set ... set value
-func (m *mapEvents) Set(key string, data interface{}) {
+func (m *mapEvents) Set(key string, data interface{}, err error) {
 
 	now := time.Now()
 
@@ -120,6 +121,7 @@ func (m *mapEvents) Set(key string, data interface{}) {
 	m.data[key] = mapData{
 		data:      data,
 		createdAt: now,
+		err:       err,
 	}
 
 }
@@ -174,7 +176,7 @@ func createStateEvents() *events {
 func subcribeTicker(symbol string, state *mapEvents) (*stream, error) {
 
 	wsMarketStatHandler := func(ticker *binance.WsMarketStatEvent) {
-		state.Set(symbol, ticker)
+		state.Set(symbol, ticker, nil)
 	}
 
 	errHandler := func(err error) {
@@ -218,7 +220,7 @@ func subcribeUserStream(listenKey string, state *mapEvents) (*stream, error) {
 
 		if !isHistory {
 			history.data = make(History, 0)
-			state.Set(event.Symbol, history)
+			state.Set(event.Symbol, history, nil)
 		}
 
 		now := time.Now()
@@ -228,6 +230,7 @@ func subcribeUserStream(listenKey string, state *mapEvents) (*stream, error) {
 
 		if !isOk {
 			log.Printf("Error conversion %v\n", ErrConversionHistory)
+			state.Set(event.Symbol, history, ErrConversionHistory)
 			return
 		}
 
@@ -247,10 +250,11 @@ func subcribeUserStream(listenKey string, state *mapEvents) (*stream, error) {
 				}
 			} else {
 				log.Printf("Error converting cursor %v\n", ErrConversionCursor)
+				err = ErrConversionCursor
 			}
 		}
 
-		state.Set(LAST_CURSOR_KEY, lastCursor)
+		state.Set(LAST_CURSOR_KEY, lastCursor, err)
 	}
 
 	wsUserStreamHandler := func(message []byte) {
@@ -303,7 +307,7 @@ func keepConnection(doneC chan struct{}, reconnect func()) {
 func subcribeBook(symbol string, state *mapEvents) (*stream, error) {
 
 	wsPartialDepthHandler := func(event *binance.WsPartialDepthEvent) {
-		state.Set(symbol, event)
+		state.Set(symbol, event, nil)
 	}
 
 	errHandler := func(err error) {
@@ -327,20 +331,6 @@ func subcribeBook(symbol string, state *mapEvents) (*stream, error) {
 
 }
 
-//ListenKey expires every 60 minutes
-func keepAliveStreamService(client *binance.Client, key string) {
-
-	for {
-		time.Sleep(time.Minute * 50)
-		err := client.NewKeepaliveUserStreamService().ListenKey(key).Do(context.Background())
-
-		if err != nil {
-			log.Printf("Error keepAliveStreamService %v\n", err)
-			panic(err)
-		}
-	}
-}
-
 type binanceExchangeWs struct {
 	events *events
 
@@ -354,6 +344,8 @@ type binanceExchangeWs struct {
 	listenKey string
 
 	keys api.ExchangeAPIKey
+
+	errUserStream error
 }
 
 // makeBinanceWs is a factory method to make an binance exchange over ws
@@ -375,6 +367,21 @@ func makeBinanceWs(keys api.ExchangeAPIKey) (*binanceExchangeWs, error) {
 	}
 
 	return beWs, nil
+}
+
+//ListenKey expires every 60 minutes
+func (beWs *binanceExchangeWs) keepAliveStreamService(client *binance.Client, key string) {
+
+	for {
+		time.Sleep(time.Minute * 50)
+		err := client.NewKeepaliveUserStreamService().ListenKey(key).Do(context.Background())
+
+		if err != nil {
+			log.Printf("Error keepAliveStreamService %v\n", err)
+		}
+
+		beWs.errUserStream = err
+	}
 }
 
 func (beWs *binanceExchangeWs) isSubscribedUserStream() bool {
@@ -401,7 +408,7 @@ func (beWs *binanceExchangeWs) subscribeUserStream() error {
 		return fmt.Errorf("error when creating listenKey: %s", err)
 	}
 
-	go keepAliveStreamService(binanceClient, listenKey)
+	go beWs.keepAliveStreamService(binanceClient, listenKey)
 
 	streamUser, err := subcribeUserStream(listenKey, beWs.events.TradeHistoryEvents)
 
@@ -551,6 +558,10 @@ func (beWs *binanceExchangeWs) GetOrderBook(pair *model.TradingPair, maxCount in
 
 	}
 
+	if bookData.err != nil {
+		return nil, fmt.Errorf("error from stream:%v", bookData.err)
+	}
+
 	//Show how old is the orderbook
 	log.Printf("OrderBook for %s is %d milliseconds old!\n", symbol, time.Now().Sub(bookData.createdAt).Milliseconds())
 
@@ -624,6 +635,10 @@ func (beWs *binanceExchangeWs) readOrders(orders []common.PriceLevel, pair *mode
 // GetTradeHistory impl
 func (beWs *binanceExchangeWs) GetTradeHistory(pair model.TradingPair, maybeCursorStart interface{}, maybeCursorEnd interface{}) (*api.TradeHistoryResult, error) {
 
+	if beWs.errUserStream != nil {
+		return nil, fmt.Errorf("error from update listen key:%v", beWs.errUserStream)
+	}
+
 	if !beWs.isSubscribedUserStream() {
 		if err := beWs.subscribeUserStream(); err != nil {
 			return nil, fmt.Errorf("error subscribing to user stream: %s", err)
@@ -639,6 +654,10 @@ func (beWs *binanceExchangeWs) GetTradeHistory(pair model.TradingPair, maybeCurs
 
 	if !isOrders {
 		return nil, fmt.Errorf("no trade history for trading pair '%s'", symbol)
+	}
+
+	if data.err != nil {
+		return nil, fmt.Errorf("error from stream:%v", data.err)
 	}
 
 	history, isOk := data.data.(History)
@@ -690,6 +709,10 @@ func (beWs *binanceExchangeWs) getCursor(trades []model.Trade) (interface{}, err
 // GetLatestTradeCursor impl.
 func (beWs *binanceExchangeWs) GetLatestTradeCursor() (interface{}, error) {
 
+	if beWs.errUserStream != nil {
+		return nil, fmt.Errorf("error from update listen key:%v", beWs.errUserStream)
+	}
+
 	if !beWs.isSubscribedUserStream() {
 		if err := beWs.subscribeUserStream(); err != nil {
 			return nil, fmt.Errorf("error subscribing to user stream: %s", err)
@@ -700,6 +723,10 @@ func (beWs *binanceExchangeWs) GetLatestTradeCursor() (interface{}, error) {
 
 	if !isCursor {
 		return nil, errors.New("Missing cursor")
+	}
+
+	if lastTradeCursor.err != nil {
+		return nil, fmt.Errorf("error from stream:%v", lastTradeCursor.err)
 	}
 
 	cursor, isOk := lastTradeCursor.data.(int64)
