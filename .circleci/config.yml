@@ -44,6 +44,17 @@ commands:
       - run:
           name: Ensure build was successful
           command: ./bin/kelp version
+  debug:
+    steps:
+      - run:
+          name: debug
+          command: |
+            export GO111MODULE=on
+            export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
+            export GOBIN="$GOPATH/bin"
+            echo $(pwd)
+            echo `ls -d -- */`
+            echo `go env`
 
   test_kelp:
     steps:
@@ -105,6 +116,7 @@ jobs:
       POSTGRES_USER: postgres
     steps:
       - install_deps
+      - debug
       - build_kelp
       - test_kelp
   
@@ -116,6 +128,7 @@ jobs:
       # limit to only the key strategies because of rate limit issues, remaining strategies: sell, pendulum
       # don't list sell_twap strategy for now because it requires a db to be enabled in sample_trader.cfg
       - install_deps
+      - debug
       - build_kelp
       - replace_trader_secret
       - replace_source_secret
