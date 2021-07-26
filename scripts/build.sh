@@ -288,13 +288,6 @@ then
 
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
-    export GO111MODULE=on
-    echo $GO111MODULE
-    echo $(pwd)
-    go env -w GO111MODULE=on
-    export GOBIN="$GOPATH/bin"
-    export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
-    echo `go env`
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
