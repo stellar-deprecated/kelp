@@ -14,10 +14,10 @@ commands:
             go mod download
       - run:
           name: Fetch astilectron-bundler
-          command: go get -u github.com/asticode/go-astilectron-bundler/...
+          command: go get -u github.com/asticode/go-astilectron-bundler@v155c2a10bbb1791fbafe89a9b64be05c64f16c81
       - run:
           name: Install astilectron-bundler
-          command: go install github.com/asticode/go-astilectron-bundler
+          command: go install github.com/asticode/go-astilectron-bundler@v155c2a10bbb1791fbafe89a9b64be05c64f16c81
       - run:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
