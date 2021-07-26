@@ -108,7 +108,7 @@ jobs:
   # test performs all package tests from Kelp
   test_1_13:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
       - image: franzsee/ccxt-rest:v0.0.4
         command: ["node", "/usr/local/bin/ccxt-rest"]
       - image: circleci/postgres:12.1-alpine-ram
@@ -123,7 +123,7 @@ jobs:
   # test runs all the strategies as integration tests, one after the other so there's no interference
   test_1_13__integration:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
     steps:
       # limit to only the key strategies because of rate limit issues, remaining strategies: sell, pendulum
       # don't list sell_twap strategy for now because it requires a db to be enabled in sample_trader.cfg
