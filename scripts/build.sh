@@ -122,11 +122,11 @@ function download_file() {
     echo "... downloaded $NAMESPACE to $DESTINATION"
 }
 
-if [[ $(basename $("pwd")) != "kelp" ]]
-then
-    echo "need to invoke from the root 'kelp' directory"
-    exit 1
-fi
+#if [[ $(basename $("pwd")) != "kelp" ]]
+#then
+#    echo "need to invoke from the root 'kelp' directory"
+#    exit 1
+#fi
 
 KELP=`pwd`
 
