@@ -753,17 +753,17 @@ func (beWs *binanceExchangeWs) readTrade(pair *model.TradingPair, symbol string,
 
 	orderPrice, err := strconv.ParseFloat(rawTrade.OrderPrice, 64)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error converting OrderPrice:%v", err)
 	}
 
 	orderQuantity, err := strconv.ParseFloat(rawTrade.OrderQuantity, 64)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error converting OrderQuantity:%v", err)
 	}
 
 	comissionAmount, err := strconv.ParseFloat(rawTrade.ComissionAmount, 64)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error converting ComissionAmount:%v", err)
 	}
 
 	trade := model.Trade{
