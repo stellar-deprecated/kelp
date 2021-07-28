@@ -51,7 +51,6 @@ commands:
           command: |
             export GO111MODULE=on
             export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
-#            export GOBIN="$GOPATH/bin"
             echo $(pwd)
             echo `ls -d -- */`
             echo `go env`
