@@ -5,13 +5,13 @@ commands:
       - checkout
       - restore_cache:
           keys:
-#            - go-mod-v4-{{ checksum "go.sum" }}
+            - go-mod-v4-{{ checksum "go.sum" }}
             - v5-node-cache
-#      - run:
-#          name: Download Go modules
-#          command: |
-#            export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
-#            go mod download
+      - run:
+          name: Download Go modules
+          command: |
+            export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
+            go mod download
       - run:
           name: Fetch astilectron-bundler
           command: go get -u github.com/asticode/go-astilectron-bundler
@@ -30,10 +30,10 @@ commands:
       - run:
           name: Use yarn
           command: echo 'export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"' >> $BASH_ENV && source $BASH_ENV
-#      - save_cache:
-#          key: go-mod-v4-{{ checksum "go.sum" }}
-#          paths:
-#            - "/go/pkg/mod"
+      - save_cache:
+          key: go-mod-v4-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
   build_kelp:
     steps:
