@@ -288,6 +288,8 @@ then
 
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
+    export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
+    go mod downloa
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
     check_build_result $?
     echo "successful: $OUTFILE"
