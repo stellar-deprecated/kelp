@@ -14,7 +14,7 @@ commands:
             go mod download
       - run:
           name: Fetch astilectron-bundler
-          command: go get -u github.com/asticode/go-astilectron-bundler
+          command: go get -u github.com/asticode/go-astilectron-bundler/...
       - run:
           name: Install astilectron-bundler
           command: go install github.com/asticode/go-astilectron-bundler
