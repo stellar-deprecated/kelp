@@ -17,7 +17,7 @@ commands:
           command: go get github.com/asticode/go-astilectron-bundler@2c8a7b06a9020f358a06ff377331d0dd690de6de
       - run:
           name: Install astilectron-bundler
-          command: go install github.com/asticode/go-astilectron-bundler
+          command: go install github.com/asticode/go-astilectron-bundler@2c8a7b06a9020f358a06ff377331d0dd690de6de
       - run:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
