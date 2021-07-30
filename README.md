@@ -129,7 +129,6 @@ To compile Kelp from source:
 2. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] to build the Kelp GUI
 3. Clone the kelp repository `git clone git@github.com:stellar/kelp.git`
 4. Install the [astilectron-bundler][astilectron-bundler] binary into `$GOPATH/bin`
-    * `go get -u github.com/asticode/go-astilectron-bundler/...`
     * `go install github.com/asticode/go-astilectron-bundler/astilectron-bundler`
 5. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
     * `./scripts/build.sh`
