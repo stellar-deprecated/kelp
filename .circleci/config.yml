@@ -22,7 +22,7 @@ commands:
           command: |
             export GOBIN=$GOPATH/bin
             echo $GOBIN
-            go install -x github.com/asticode/go-astilectron-bundler
+            go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
       - run:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
