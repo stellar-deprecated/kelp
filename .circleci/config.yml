@@ -17,7 +17,7 @@ commands:
 #          command: go get -u github.com/asticode/go-astilectron-bundler/...
       - run:
           name: Install astilectron-bundler
-          command: go install github.com/asticode/go-astilectron-bundler
+          command: go install github.com/asticode/go-astilectron-bundler@latest
       - run:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
@@ -55,6 +55,8 @@ commands:
             export GO111MODULE=on
             export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
             echo $(pwd)
+            echo $(pwd/bin)
+            echo $(pwd)/bin
             echo `ls -d -- */`
             echo `go env`
 
