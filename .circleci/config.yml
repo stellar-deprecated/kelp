@@ -114,6 +114,7 @@ jobs:
     environment:
       POSTGRES_USER: postgres
     steps:
+      - debug
       - install_deps
       - debug
       - build_kelp
