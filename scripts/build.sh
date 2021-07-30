@@ -68,6 +68,7 @@ function gen_bundler_json() {
 # takes in no args
 function gen_bind_files() {
     echo -n "generating the bind file in /cmd to create missing files for platforms specified in the bundler.json ... "
+    go install github.com/asticode/go-astilectron-bundler
     astilectron-bundler bd -c $KELP/bundler.json
     check_build_result $?
     echo "done"
@@ -288,6 +289,7 @@ then
 
     # cannot set goarm because not accessible (need to figure out a way)
     echo -n "compiling ... "
+    go install -x github.com/asticode/go-astilectron-bundler
 #    export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
 #    go mod download
     go build -ldflags "$DYNAMIC_LDFLAGS" -o $OUTFILE
