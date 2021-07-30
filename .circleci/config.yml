@@ -7,17 +7,17 @@ commands:
           keys:
             - go-mod-v4-{{ checksum "go.sum" }}
             - v5-node-cache
+      - run:
+          name: Download Modules
+          command: |
+            export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
+            go mod download
 #      - run:
 #          name: Fetch astilectron-bundler
 #          command: go get -u github.com/asticode/go-astilectron-bundler/...
       - run:
           name: Install astilectron-bundler
           command: go install github.com/asticode/go-astilectron-bundler
-      - run:
-          name: Download Modules
-          command: |
-            export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
-            go mod download
       - run:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
