@@ -9,10 +9,10 @@ commands:
             - v5-node-cache
       - run:
           name: Fetch astilectron-bundler
-          command: go get github.com/asticode/go-astilectron-bundler@2c8a7b06a9020f358a06ff377331d0dd690de6de
+          command: go get github.com/asticode/go-astilectron-bundler\...
       - run:
           name: Install astilectron-bundler
-          command: go install github.com/asticode/go-astilectron-bundler@2c8a7b06a9020f358a06ff377331d0dd690de6de
+          command: go install github.com/asticode/go-astilectron-bundler
       - run:
           name: Download Modules
           command: |
