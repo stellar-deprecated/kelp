@@ -97,7 +97,6 @@ commands:
 jobs:
   # test performs all package tests from Kelp
   test_1_13:
-    #working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
       - image: franzsee/ccxt-rest:v0.0.4
@@ -112,7 +111,6 @@ jobs:
   
   # test runs all the strategies as integration tests, one after the other so there's no interference
   test_1_13__integration:
-    #working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
     steps:
