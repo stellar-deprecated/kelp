@@ -121,12 +121,12 @@ function download_file() {
     check_build_result $?
     echo "... downloaded $NAMESPACE to $DESTINATION"
 }
-
-#if [[ $(basename $("pwd")) != "kelp" ]]
-#then
-#    echo "need to invoke from the root 'kelp' directory"
-#    exit 1
-#fi
+echo $("pwd")
+if [[ $(basename $("pwd")) != "kelp" ]]
+then
+    echo "need to invoke from the root 'kelp' directory"
+    exit 1
+fi
 
 KELP=`pwd`
 
@@ -144,6 +144,7 @@ elif [[ ($# -eq 1 && ("$1" == "-t" || "$1" == "--test-deploy")) ]]; then
     ENV=release
     IS_TEST_MODE=1
     IS_NIGHTLY_GUI=0
+     AMPLITUDE_API_KEY="test"
 elif [[ ($# -eq 1 && ("$1" == "-n" || "$1" == "--nightly-gui")) ]]; then
     ENV=release
     IS_TEST_MODE=0

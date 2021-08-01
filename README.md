@@ -131,7 +131,7 @@ To compile Kelp from source:
 4. Install the [astilectron-bundler][astilectron-bundler] binary into `$GOPATH/bin`
     * `go install github.com/asticode/go-astilectron-bundler/astilectron-bundler`
 5. Build the binaries using the provided build script (the _go install_ command will produce a faulty binary):
-    * `./scripts/build.sh`
+    * `./scripts/build.sh` _(this must be invoked from root directory i.e. kelp)_
 6. Confirm one new binary file exists with version information. 
     * `./bin/kelp version`
 7. Set up CCXT to use an expanded set of priceFeeds and orderbooks (see the [Using CCXT](#using-ccxt) section for details)
