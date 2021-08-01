@@ -121,8 +121,8 @@ function download_file() {
     check_build_result $?
     echo "... downloaded $NAMESPACE to $DESTINATION"
 }
-echo $("pwd")
-if [[ $(basename $("pwd")) != "kelp" ]]
+
+if [[ $(basename $("pwd")) != "kelp" || $(pwd) != *"circleci/project" ]]
 then
     echo "need to invoke from the root 'kelp' directory"
     exit 1
