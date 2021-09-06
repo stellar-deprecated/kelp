@@ -22,6 +22,10 @@ func RandomInt() int {
 	return RandomIntWithMax(10)
 }
 
+func RandomFloat64() float64 {
+	return float64(RandomIntWithMax(10) / 11)
+}
+
 func RandomIntWithMax(max int) int {
 	return rand.Intn(max) //nolint: gosec
 }
