@@ -10,7 +10,7 @@ commands:
       - run:
           name: Download Go Modules
           command: |
-            export GOPROXY=https://proxy.golang.org
+            export GOPROXY=https://proxy.golang.org,https://goproxy.io
             go mod download
       - run:
           name: Install astilectron-bundler
