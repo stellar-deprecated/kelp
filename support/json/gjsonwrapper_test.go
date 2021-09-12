@@ -22,18 +22,18 @@ func TestGJsonWrapper_GetRawJsonValue_Error(t *testing.T) {
 
 	rawValue, err := jsonParserWrapper.GetRawJsonValue(json, path)
 
-	assert.EqualError(t, err, fmt.Sprintf("json parser wrapper error: could not find json for path %s", path))
+	assert.EqualError(t, err, fmt.Sprintf("json parser wrapper error: could not find json for path %s in %s", path, json))
 	assert.Equal(t, "", rawValue)
 }
 
 func TestGJsonWrapper_GetRawJsonValue_RawValue(t *testing.T) {
-	expected := tests.RandomString()
+	target := tests.RandomString()
 
 	raw := make(map[string]string)
 
 	r := tests.RandomString()
 
-	raw[r] = expected
+	raw[r] = target
 	raw[tests.RandomString()] = tests.RandomString()
 	raw[tests.RandomString()] = tests.RandomString()
 	raw[tests.RandomString()] = tests.RandomString()
@@ -50,6 +50,8 @@ func TestGJsonWrapper_GetRawJsonValue_RawValue(t *testing.T) {
 	jsonParserWrapper := NewJsonParserWrapper()
 
 	actual, err := jsonParserWrapper.GetRawJsonValue(json, path)
+
+	expected := fmt.Sprintf("\"%s\"", target)
 
 	assert.Equal(t, expected, actual)
 	assert.Nil(t, err)

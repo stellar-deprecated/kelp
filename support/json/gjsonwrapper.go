@@ -15,7 +15,7 @@ func (j GJsonParserWrapper) GetRawJsonValue(json []byte, path string) (string, e
 	value := gjson.GetBytes(json, path)
 
 	if value.Raw == "" {
-		return "", fmt.Errorf("json parser wrapper error: could not find json for path %s", path)
+		return "", fmt.Errorf("json parser wrapper error: could not find json for path %s in %s", path, json)
 	}
 
 	return value.Raw, nil

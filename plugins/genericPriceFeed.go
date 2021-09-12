@@ -2,7 +2,9 @@ package plugins
 
 import (
 	"fmt"
+	"log"
 	"strconv"
+	"strings"
 )
 
 type HttpClient interface {
@@ -35,15 +37,19 @@ func (gpf GenericPriceFeed) GetPrice() (float64, error) {
 		return 0, fmt.Errorf("generic price feed error: %w", err)
 	}
 
-	rawPrice, err := gpf.jsonParser.GetRawJsonValue(res, gpf.jsonPath)
+	rawValue, err := gpf.jsonParser.GetRawJsonValue(res, gpf.jsonPath)
 	if err != nil {
 		return 0, fmt.Errorf("generic price feed error: %w", err)
 	}
+
+	rawPrice := strings.Trim(rawValue, "\" ")
 
 	price, err := strconv.ParseFloat(rawPrice, 64)
 	if err != nil {
 		return 0, fmt.Errorf("generic price feed error: %w", err)
 	}
+
+	log.Println(fmt.Sprintf("price retrieved for generic %f", price))
 
 	return price, nil
 }

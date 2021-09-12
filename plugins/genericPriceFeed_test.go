@@ -68,7 +68,7 @@ func TestGetPrice_ParseFloat_Error(t *testing.T) {
 	assert.Equal(t, float64(0), price)
 }
 
-func TestGetPrice(t *testing.T) {
+func TestGetPrice_Float(t *testing.T) {
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   nil,
@@ -77,6 +77,48 @@ func TestGetPrice(t *testing.T) {
 	expected := tests.RandomFloat64()
 	jsonParser := mockJsonParser{
 		rawValue: fmt.Sprintf("%f", expected),
+		err:      nil,
+	}
+
+	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
+		httpClient, jsonParser)
+
+	price, err := genericPriceFeed.GetPrice()
+
+	assert.Equal(t, expected, price)
+	assert.NoError(t, err)
+}
+
+func TestGetPrice_Trim_DoubleQuotes(t *testing.T) {
+	httpClient := mockHttpClient{
+		bytes: []byte{},
+		err:   nil,
+	}
+
+	expected := tests.RandomFloat64()
+	jsonParser := mockJsonParser{
+		rawValue: fmt.Sprintf("\"%f\"", expected),
+		err:      nil,
+	}
+
+	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
+		httpClient, jsonParser)
+
+	price, err := genericPriceFeed.GetPrice()
+
+	assert.Equal(t, expected, price)
+	assert.NoError(t, err)
+}
+
+func TestGetPrice_Trim_WhiteSpace(t *testing.T) {
+	httpClient := mockHttpClient{
+		bytes: []byte{},
+		err:   nil,
+	}
+
+	expected := tests.RandomFloat64()
+	jsonParser := mockJsonParser{
+		rawValue: fmt.Sprintf(" %f ", expected),
 		err:      nil,
 	}
 
