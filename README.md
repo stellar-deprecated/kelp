@@ -125,7 +125,7 @@ _Note for Windows Users: You should use a [Bash Shell][bash] to follow the steps
 To compile Kelp from source:
 
 1. [Download][golang-download] and [setup][golang-setup] Golang _v1.13 or later_
-   1. Set environment variable `export GOPROXY=https://proxy.golang.org`
+   1. Set environment variable `export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn`
 2. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] to build the Kelp GUI
 3. Clone the kelp repository `git clone git@github.com:stellar/kelp.git`
 4. Install the [astilectron-bundler][astilectron-bundler] binary into `$GOPATH/bin`
