@@ -557,6 +557,7 @@ func TestCancelOrder_Ccxt(t *testing.T) {
 }
 
 func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
+	// coinbasepro gives incorrect precision values so we do not test it here
 	testCases := []struct {
 		exchangeName       string
 		pair               *model.TradingPair
@@ -564,6 +565,12 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 		wantVolPrecision   int8
 	}{
 		{
+			// disable ccxt-kraken based tests for now because of the 403 Forbidden Security check API error
+			// 	exchangeName:       "kraken",
+			// 	pair:               &model.TradingPair{Base: model.XLM, Quote: model.USD},
+			// 	wantPricePrecision: 6,
+			// 	wantVolPrecision:   8,
+			// }, {
 			exchangeName:       "binance",
 			pair:               &model.TradingPair{Base: model.XLM, Quote: model.USDT},
 			wantPricePrecision: 4,
@@ -581,20 +588,20 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.exchangeName, func(t *testing.T) {
+	for _, kase := range testCases {
 
-			epf := getEsParamFactory(tc.exchangeName)
+		epf := getEsParamFactory(kase.exchangeName)
 
-			ccxtExchange, e := makeCcxtExchange(tc.exchangeName, nil, []api.ExchangeAPIKey{emptyAPIKey},
+		t.Run(kase.exchangeName, func(t *testing.T) {
+			testCcxtExchange, e := makeCcxtExchange(kase.exchangeName, nil, []api.ExchangeAPIKey{emptyAPIKey},
 				[]api.ExchangeParam{emptyParams}, []api.ExchangeHeader{}, false, epf)
 
 			require.NoError(t, e)
 
-			result := ccxtExchange.GetOrderConstraints(tc.pair)
+			result := testCcxtExchange.GetOrderConstraints(kase.pair)
 
-			assert.Equal(t, tc.wantPricePrecision, result.PricePrecision)
-			assert.Equal(t, tc.wantVolPrecision, result.VolumePrecision)
+			assert.Equal(t, kase.wantPricePrecision, result.PricePrecision)
+			assert.Equal(t, kase.wantVolPrecision, result.VolumePrecision)
 		})
 	}
 }
