@@ -2,7 +2,7 @@ package networking
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -26,7 +26,7 @@ func (hc httpClient) Get(url string) ([]byte, error) {
 	}
 	defer res.Body.Close()
 
-	bytes, err := io.ReadAll(res.Body)
+	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("http client error: could not read body %w", err)
 	}
