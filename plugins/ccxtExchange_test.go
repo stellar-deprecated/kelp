@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"log"
 	"math"
 	"strconv"
@@ -556,7 +557,6 @@ func TestCancelOrder_Ccxt(t *testing.T) {
 }
 
 func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
-	// coinbasepro gives incorrect precision values so we do not test it here
 	testCases := []struct {
 		exchangeName       string
 		pair               *model.TradingPair
@@ -564,16 +564,10 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 		wantVolPrecision   int8
 	}{
 		{
-			// disable ccxt-kraken based tests for now because of the 403 Forbidden Security check API error
-			// 	exchangeName:       "kraken",
-			// 	pair:               &model.TradingPair{Base: model.XLM, Quote: model.USD},
-			// 	wantPricePrecision: 6,
-			// 	wantVolPrecision:   8,
-			// }, {
 			exchangeName:       "binance",
 			pair:               &model.TradingPair{Base: model.XLM, Quote: model.USDT},
-			wantPricePrecision: 5,
-			wantVolPrecision:   1,
+			wantPricePrecision: 4,
+			wantVolPrecision:   4,
 		}, {
 			exchangeName:       "binance",
 			pair:               &model.TradingPair{Base: model.XLM, Quote: model.BTC},
@@ -587,28 +581,20 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 		},
 	}
 
-	for _, kase := range testCases {
-		t.Run(kase.exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(
-				kase.exchangeName,
-				nil,
-				[]api.ExchangeAPIKey{emptyAPIKey},
-				[]api.ExchangeParam{emptyParams},
-				[]api.ExchangeHeader{},
-				false,
-				getEsParamFactory(kase.exchangeName),
-			)
-			if !assert.NoError(t, e) {
-				return
-			}
+	for _, tc := range testCases {
+		t.Run(tc.exchangeName, func(t *testing.T) {
 
-			result := testCcxtExchange.GetOrderConstraints(kase.pair)
-			if !assert.Equal(t, kase.wantPricePrecision, result.PricePrecision) {
-				return
-			}
-			if !assert.Equal(t, kase.wantVolPrecision, result.VolumePrecision) {
-				return
-			}
+			epf := getEsParamFactory(tc.exchangeName)
+
+			ccxtExchange, e := makeCcxtExchange(tc.exchangeName, nil, []api.ExchangeAPIKey{emptyAPIKey},
+				[]api.ExchangeParam{emptyParams}, []api.ExchangeHeader{}, false, epf)
+
+			require.NoError(t, e)
+
+			result := ccxtExchange.GetOrderConstraints(tc.pair)
+
+			assert.Equal(t, tc.wantPricePrecision, result.PricePrecision)
+			assert.Equal(t, tc.wantVolPrecision, result.VolumePrecision)
 		})
 	}
 }
