@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"log"
 	"math"
 	"strconv"
@@ -572,8 +573,8 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 			// }, {
 			exchangeName:       "binance",
 			pair:               &model.TradingPair{Base: model.XLM, Quote: model.USDT},
-			wantPricePrecision: 5,
-			wantVolPrecision:   1,
+			wantPricePrecision: 4,
+			wantVolPrecision:   4,
 		}, {
 			exchangeName:       "binance",
 			pair:               &model.TradingPair{Base: model.XLM, Quote: model.BTC},
@@ -588,27 +589,19 @@ func TestGetOrderConstraints_Ccxt_Precision(t *testing.T) {
 	}
 
 	for _, kase := range testCases {
+
+		epf := getEsParamFactory(kase.exchangeName)
+
 		t.Run(kase.exchangeName, func(t *testing.T) {
-			testCcxtExchange, e := makeCcxtExchange(
-				kase.exchangeName,
-				nil,
-				[]api.ExchangeAPIKey{emptyAPIKey},
-				[]api.ExchangeParam{emptyParams},
-				[]api.ExchangeHeader{},
-				false,
-				getEsParamFactory(kase.exchangeName),
-			)
-			if !assert.NoError(t, e) {
-				return
-			}
+			testCcxtExchange, e := makeCcxtExchange(kase.exchangeName, nil, []api.ExchangeAPIKey{emptyAPIKey},
+				[]api.ExchangeParam{emptyParams}, []api.ExchangeHeader{}, false, epf)
+
+			require.NoError(t, e)
 
 			result := testCcxtExchange.GetOrderConstraints(kase.pair)
-			if !assert.Equal(t, kase.wantPricePrecision, result.PricePrecision) {
-				return
-			}
-			if !assert.Equal(t, kase.wantVolPrecision, result.VolumePrecision) {
-				return
-			}
+
+			assert.Equal(t, kase.wantPricePrecision, result.PricePrecision)
+			assert.Equal(t, kase.wantVolPrecision, result.VolumePrecision)
 		})
 	}
 }
