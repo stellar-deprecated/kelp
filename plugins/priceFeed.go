@@ -2,8 +2,8 @@ package plugins
 
 import (
 	"fmt"
-	"github.com/stellar/kelp/support/json"
-	networking "github.com/stellar/kelp/support/networking"
+	. "github.com/stellar/kelp/support/json"
+	. "github.com/stellar/kelp/support/networking"
 	"strings"
 
 	"github.com/stellar/go/clients/horizonclient"
@@ -45,12 +45,7 @@ func MakePriceFeed(feedType string, url string) (api.PriceFeed, error) {
 	case "fiat-oxr":
 		return newFiatFeedOxr(url), nil
 	case "generic-price-feed":
-		parts := strings.Split(url, ";")
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("make price feed: generic price feed invalid url %s", url)
-		}
-		return NewGenericPriceFeed(parts[0], parts[1],
-			networking.NewHttpClient(), json.NewJsonParserWrapper()), nil
+		return newGenericPriceFeed(url, NewHttpClient(), NewJsonParserWrapper())
 	case "fixed":
 		return newFixedFeed(url)
 	case "exchange":

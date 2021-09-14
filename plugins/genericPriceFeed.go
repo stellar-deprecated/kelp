@@ -22,13 +22,17 @@ type GenericPriceFeed struct {
 	jsonParser JsonParser
 }
 
-func NewGenericPriceFeed(url string, jsonPath string, httpClient HttpClient, jsonParser JsonParser) *GenericPriceFeed {
+func newGenericPriceFeed(url string, httpClient HttpClient, jsonParser JsonParser) (*GenericPriceFeed, error) {
+	parts := strings.Split(url, ";")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("make price feed: generic price feed invalid url %s", url)
+	}
 	return &GenericPriceFeed{
-		url:        url,
-		jsonPath:   jsonPath,
+		url:        parts[0],
+		jsonPath:   parts[1],
 		httpClient: httpClient,
 		jsonParser: jsonParser,
-	}
+	}, nil
 }
 
 func (gpf GenericPriceFeed) GetPrice() (float64, error) {

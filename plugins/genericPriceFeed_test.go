@@ -1,21 +1,47 @@
-package plugins_test
+package plugins
 
 import (
 	"fmt"
-	"github.com/stellar/kelp/plugins"
+	"testing"
+
 	"github.com/stellar/kelp/tests"
 	"github.com/stretchr/testify/assert"
-	"testing"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGetPrice_HttpClient_Error(t *testing.T) {
+func TestGetPrice_NewGenericPriceFeed(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+	genericPriceFeed, err := newGenericPriceFeed(url, mockHttpClient{}, mockJsonParser{})
+	assert.NoError(t, err)
+	assert.NotNil(t, genericPriceFeed)
+}
+
+func TestGetPrice_NewGenericPriceFeed_InvalidURL(t *testing.T) {
+	url := tests.RandomString()
+
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   fmt.Errorf(tests.RandomString()),
 	}
 
-	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
-		httpClient, mockJsonParser{})
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, mockJsonParser{})
+
+	expected := fmt.Sprintf("make price feed: generic price feed invalid url %s", url)
+
+	assert.Nil(t, genericPriceFeed)
+	assert.EqualError(t, err, expected)
+}
+
+func TestGetPrice_HttpClient_Error(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+
+	httpClient := mockHttpClient{
+		bytes: []byte{},
+		err:   fmt.Errorf(tests.RandomString()),
+	}
+
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, mockJsonParser{})
+	require.NoError(t, err)
 
 	price, err := genericPriceFeed.GetPrice()
 
@@ -26,6 +52,8 @@ func TestGetPrice_HttpClient_Error(t *testing.T) {
 }
 
 func TestGetPrice_JsonParser_Error(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   nil,
@@ -36,8 +64,8 @@ func TestGetPrice_JsonParser_Error(t *testing.T) {
 		err:      fmt.Errorf(tests.RandomString()),
 	}
 
-	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
-		httpClient, jsonParser)
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, jsonParser)
+	require.NoError(t, err)
 
 	price, err := genericPriceFeed.GetPrice()
 
@@ -48,6 +76,8 @@ func TestGetPrice_JsonParser_Error(t *testing.T) {
 }
 
 func TestGetPrice_ParseFloat_Error(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   nil,
@@ -58,8 +88,8 @@ func TestGetPrice_ParseFloat_Error(t *testing.T) {
 		err:      nil,
 	}
 
-	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
-		httpClient, jsonParser)
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, jsonParser)
+	require.NoError(t, err)
 
 	price, err := genericPriceFeed.GetPrice()
 
@@ -69,6 +99,8 @@ func TestGetPrice_ParseFloat_Error(t *testing.T) {
 }
 
 func TestGetPrice_Float(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   nil,
@@ -80,8 +112,8 @@ func TestGetPrice_Float(t *testing.T) {
 		err:      nil,
 	}
 
-	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
-		httpClient, jsonParser)
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, jsonParser)
+	require.NoError(t, err)
 
 	price, err := genericPriceFeed.GetPrice()
 
@@ -90,6 +122,8 @@ func TestGetPrice_Float(t *testing.T) {
 }
 
 func TestGetPrice_Trim_DoubleQuotes(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   nil,
@@ -101,8 +135,8 @@ func TestGetPrice_Trim_DoubleQuotes(t *testing.T) {
 		err:      nil,
 	}
 
-	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
-		httpClient, jsonParser)
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, jsonParser)
+	require.NoError(t, err)
 
 	price, err := genericPriceFeed.GetPrice()
 
@@ -111,6 +145,8 @@ func TestGetPrice_Trim_DoubleQuotes(t *testing.T) {
 }
 
 func TestGetPrice_Trim_WhiteSpace(t *testing.T) {
+	url := fmt.Sprintf("%s;%s", tests.RandomString(), tests.RandomString())
+
 	httpClient := mockHttpClient{
 		bytes: []byte{},
 		err:   nil,
@@ -122,8 +158,8 @@ func TestGetPrice_Trim_WhiteSpace(t *testing.T) {
 		err:      nil,
 	}
 
-	genericPriceFeed := plugins.NewGenericPriceFeed(tests.RandomString(), tests.RandomString(),
-		httpClient, jsonParser)
+	genericPriceFeed, err := newGenericPriceFeed(url, httpClient, jsonParser)
+	require.NoError(t, err)
 
 	price, err := genericPriceFeed.GetPrice()
 
