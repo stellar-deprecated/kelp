@@ -164,3 +164,55 @@ func TestMakePriceFeed_CryptoFeed_Success(t *testing.T) {
 	assert.Equal(t, expected, price)
 	assert.NoError(t, err)
 }
+
+func TestMakePriceFeed_GenericFeed_Error(t *testing.T) {
+	url := "http://no-delimiter.com"
+	priceFeed, err := MakePriceFeed("generic-price-feed", url)
+	assert.Nil(t, priceFeed)
+	assert.EqualError(t, err, fmt.Sprintf("make price feed: generic price feed invalid url %s", url))
+}
+
+// uses mock call
+func TestMakePriceFeed_GenericFeed_Success(t *testing.T) {
+	expected := tests.RandomInt()
+
+	number := make(map[string]int)
+
+	num := tests.RandomString()
+
+	number[num] = expected
+	number[tests.RandomString()] = tests.RandomInt()
+	number[tests.RandomString()] = tests.RandomInt()
+	number[tests.RandomString()] = tests.RandomInt()
+
+	response := TestJsonParserWrapperResponse{
+		Data: TestJsonParserWrapperRates{
+			Number: number,
+		},
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		require.NoError(t, err)
+	}))
+	defer ts.Close()
+
+	url := fmt.Sprintf("%s;%s", ts.URL, fmt.Sprintf("data.number.%s", num))
+
+	priceFeed, err := MakePriceFeed("generic-price-feed", url)
+	assert.NoError(t, err)
+
+	price, err := priceFeed.GetPrice()
+	assert.Equal(t, float64(expected), price)
+	assert.NoError(t, err)
+}
+
+type TestJsonParserWrapperResponse struct {
+	Data TestJsonParserWrapperRates `json:"data"`
+}
+
+type TestJsonParserWrapperRates struct {
+	Number map[string]int `json:"number"`
+}
