@@ -5,20 +5,16 @@ commands:
       - checkout
       - restore_cache:
           keys:
-            - v3-pkg-cache
+            - go-mod-v4-{{ checksum "go.sum" }}
             - v5-node-cache
       - run:
-          name: Install glide
-          command: sudo apt-get update -y && sudo apt-get install -y golang-glide
-      - run:
-          name: Install dependencies using glide
-          command: glide install
-      - run:
-          name: Fetch astilectron-bundler
-          command: go get -u github.com/asticode/go-astilectron-bundler/...
+          name: Download Go Modules
+          command: |
+            export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn
+            go mod download
       - run:
           name: Install astilectron-bundler
-          command: go install github.com/asticode/go-astilectron-bundler
+          command: go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
       - run:
           name: Install nvm
           command: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
@@ -32,9 +28,9 @@ commands:
           name: Use yarn
           command: echo 'export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"' >> $BASH_ENV && source $BASH_ENV
       - save_cache:
-          key: v3-pkg-cache
+          key: go-mod-v4-{{ checksum "go.sum" }}
           paths:
-            - "/go/src/github.com/stellar/kelp/vendor"
+            - "/go/pkg/mod"
 
   build_kelp:
     steps:
@@ -96,12 +92,10 @@ commands:
       - run:
           name: Run Kelp tests integration - mirror
           command: ./bin/kelp trade -c examples/configs/trader/sample_trader.cfg -s mirror -f examples/configs/trader/sample_mirror.cfg --iter 1
-                  
 
 jobs:
   # test performs all package tests from Kelp
   test_1_13:
-    working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
       - image: franzsee/ccxt-rest:v0.0.4
@@ -116,7 +110,6 @@ jobs:
   
   # test runs all the strategies as integration tests, one after the other so there's no interference
   test_1_13__integration:
-    working_directory: /go/src/github.com/stellar/kelp
     docker:
       - image: circleci/golang:1.13
     steps:

@@ -17,9 +17,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/asticode/go-astilog"
+
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"github.com/asticode/go-astilog"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -29,18 +30,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/stellar/go/clients/horizonclient"
+	"github.com/stellar/go/support/config"
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/kelp/gui"
 	"github.com/stellar/kelp/gui/backend"
 	"github.com/stellar/kelp/plugins"
+	"github.com/stellar/kelp/support/guiconfig"
 	"github.com/stellar/kelp/support/kelpos"
 	"github.com/stellar/kelp/support/logger"
 	"github.com/stellar/kelp/support/networking"
 	"github.com/stellar/kelp/support/prefs"
 	"github.com/stellar/kelp/support/sdk"
 	"github.com/stellar/kelp/support/utils"
-	"github.com/stellar/kelp/support/guiconfig"
-	"github.com/stellar/go/support/config"
 )
 
 const kelpAssetsPath = "/assets"
@@ -74,7 +75,7 @@ type serverInputOptions struct {
 	enableKaas        *bool
 	tlsCertFile       *string
 	tlsKeyFile        *string
-	guiConfigPath		  *string
+	guiConfigPath     *string
 }
 
 // checks for required flag on CLI
@@ -101,6 +102,7 @@ func readGUIConfig(options serverInputOptions) guiconfig.GUIConfig {
 	}
 	return guiConfigInFunc
 }
+
 // customConfigVar Variable with its equivalent struct #used to inject config values to jwt config var and to configure route
 var auth0ConfigVar guiconfig.GUIConfig
 
@@ -170,7 +172,7 @@ func init() {
 
 		log.Printf("initialized server with cli flag inputs: %s", options)
 
-		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar 
+		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar
 		auth0ConfigVar = readGUIConfig(options)
 		backend.Auth0ConfigVarJWT = auth0ConfigVar
 
