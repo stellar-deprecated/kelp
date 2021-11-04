@@ -3,15 +3,13 @@ module github.com/stellar/kelp
 go 1.13
 
 require (
-	cloud.google.com/go v0.84.0 // indirect
 	github.com/Beldur/kraken-go-api-client v0.0.0-20180126083054-8d8ccfe4cc60
 	github.com/BurntSushi/toml v0.3.1
 	github.com/PagerDuty/go-pagerduty v0.0.0-20180821050606-635c5ce27149
 	github.com/adshao/go-binance/v2 v2.3.0
 	github.com/akavel/rsrc v0.9.0 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
-	github.com/asticode/go-astilectron v0.8.1-0.20190411111508-8e68f812e8a2 // indirect
-	github.com/asticode/go-astilectron-bootstrap v0.0.0-20190816065004-25b857285999 // indirect
+	github.com/asticode/go-astilectron v0.8.1-0.20190411111508-8e68f812e8a2
+	github.com/asticode/go-astilectron-bootstrap v0.0.0-20190816065004-25b857285999
 	github.com/asticode/go-astilectron-bundler v0.0.0-20190426172205-155c2a10bbb1 // indirect
 	github.com/asticode/go-astilog v1.1.0
 	github.com/asticode/go-astitools v1.2.1-0.20190929114647-d157a994ecbd // indirect
@@ -31,6 +29,7 @@ require (
 	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7 // indirect
 	github.com/hashicorp/hcl v1.0.1-0.20200422214639-569ae818ccb3 // indirect
 	github.com/julienschmidt/httprouter v1.3.1-0.20200114094804-8c9f31f047a3 // indirect
+	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/kr/session v0.1.1-0.20191204081249-b3d751351733 // indirect
 	github.com/lechengfan/googleauth v0.1.1-0.20181105235754-7595ba02fbce
 	github.com/lib/pq v1.2.0
@@ -39,8 +38,9 @@ require (
 	github.com/mattn/go-isatty v0.0.13-0.20200128103942-cb30d6282491 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nikhilsaraf/go-tools v0.0.0-20190326212736-a26df67722de
+	github.com/onsi/ginkgo v1.7.0
+	github.com/onsi/gomega v1.4.3
 	github.com/openlyinc/pointy v1.1.2
-	github.com/pelletier/go-toml v1.9.0 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -48,21 +48,13 @@ require (
 	github.com/sam-kamerer/go-plister v1.2.1-0.20200203020647-924bd04c389c // indirect
 	github.com/segmentio/go-loggly v0.5.1-0.20180728234623-7a70408c3650 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
-	github.com/sirupsen/logrus v1.4.1 // indirect
 	github.com/spf13/afero v1.2.3-0.20200421135842-c17d29330031 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v0.0.1
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.6.3-0.20200421151844-c42a305a4bd2 // indirect
-	github.com/stellar/go v0.0.0-20200428193902-20797e3e2f1a
-	github.com/stellar/go-xdr v0.0.0-20201028102745-f80a23dac78a // indirect
-	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/stretchr/testify v1.6.1
+	github.com/stellar/go v0.0.0-20211007183021-ea18bbab9344
+	github.com/stretchr/testify v1.7.0
 	github.com/subosito/gotenv v1.2.1-0.20190917103637-de67a6614a4d // indirect
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
-	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	gopkg.in/ini.v1 v1.55.0 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
