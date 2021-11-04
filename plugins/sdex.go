@@ -203,7 +203,7 @@ func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 	txOffer := utils.Offer2TxnBuildSellOffer(offer)
 	txOffer.Amount = "0"
 	if sdex.SourceAccount != sdex.TradingAccount {
-		txOffer.SourceAccount = &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount}
+		txOffer.SourceAccount = sdex.TradingAccount
 	}
 	return txOffer
 }
@@ -349,7 +349,7 @@ func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtoco
 		result.OfferID = offer.ID
 	}
 	if sdex.SourceAccount != sdex.TradingAccount {
-		result.SourceAccount = &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount}
+		result.SourceAccount = sdex.TradingAccount
 	}
 
 	return &result, nil

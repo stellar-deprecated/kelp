@@ -45,13 +45,13 @@ func createAlphaNumAsset(code, issuerAccountId string) (xdr.Asset, error) {
 		var codeArray xdr.AssetCode4
 		byteArray := []byte(code)
 		copy(codeArray[:], byteArray[0:length])
-		asset := xdr.AssetAlphaNum4{AssetCode: codeArray, Issuer: issuer}
+		asset := xdr.AlphaNum4{AssetCode: codeArray, Issuer: issuer}
 		return xdr.NewAsset(xdr.AssetTypeAssetTypeCreditAlphanum4, asset)
 	case length >= 5 && length <= 12:
 		var codeArray xdr.AssetCode12
 		byteArray := []byte(code)
 		copy(codeArray[:], byteArray[0:length])
-		asset := xdr.AssetAlphaNum12{AssetCode: codeArray, Issuer: issuer}
+		asset := xdr.AlphaNum12{AssetCode: codeArray, Issuer: issuer}
 		return xdr.NewAsset(xdr.AssetTypeAssetTypeCreditAlphanum12, asset)
 	default:
 		return xdr.Asset{}, errors.New("Asset code length is invalid")

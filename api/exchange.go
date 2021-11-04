@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/stellar/kelp/stellargohorizonclientv300/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
 	"github.com/stellar/kelp/model"
+	"github.com/stellar/kelp/stellargohorizonclientv300/build"
 )
 
 // ExchangeAPIKey specifies API credentials for an exchange
@@ -253,8 +253,8 @@ func ConvertOperation2TM(ops []txnbuild.Operation) []build.TransactionMutator {
 				},
 				build.OfferID(mso.OfferID),
 			)
-			if mso.SourceAccount != nil {
-				mob.Mutate(build.SourceAccount{AddressOrSeed: mso.SourceAccount.GetAccountID()})
+			if mso.SourceAccount != "" {
+				mob.Mutate(build.SourceAccount{AddressOrSeed: mso.SourceAccount})
 			}
 		} else {
 			panic(fmt.Sprintf("could not convert txnbuild.Operation to build.TransactionMutator: %v\n", o))
@@ -303,9 +303,7 @@ func convertMOB2MSO(mob build.ManageOfferBuilder) *txnbuild.ManageSellOffer {
 		Price:   fmt.Sprintf("%.7f", float64(mob.MO.Price.N)/float64(mob.MO.Price.D)),
 	}
 	if mob.O.SourceAccount != nil {
-		mso.SourceAccount = &txnbuild.SimpleAccount{
-			AccountID: mob.O.SourceAccount.Address(),
-		}
+		mso.SourceAccount = mob.O.SourceAccount.Address()
 	}
 
 	if mob.MO.Buying.Type == xdr.AssetTypeAssetTypeNative {
