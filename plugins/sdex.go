@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/big"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -856,7 +857,11 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 		if e != nil {
 			return nil, false, fmt.Errorf("could not convert baseAmount to model.Number: %s", e)
 		}
-		floatPrice := float64(t.Price.N) / float64(t.Price.D)
+		floatPrice, exact := big.NewRat(t.Price.N, t.Price.D).Float64()
+		if !exact {
+			// TODO: What needs to happen if the float price cannot be determined?
+			panic(fmt.Errorf("price %d / %d cannot be captured as a float64", t.Price.N, t.Price.D))
+		}
 		price := model.NumberFromFloat(floatPrice, sdexOrderConstraints.PricePrecision)
 
 		trades = append(trades, model.Trade{
