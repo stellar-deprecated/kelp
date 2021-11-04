@@ -7,7 +7,6 @@ import (
 )
 
 var _ = Describe("AccountMergeBuilder Mutators", func() {
-
 	var (
 		subject AccountMergeBuilder
 		mut     interface{}
@@ -32,7 +31,9 @@ var _ = Describe("AccountMergeBuilder Mutators", func() {
 			It("sets the destination to the correct xdr.MuxedAccount", func() {
 				var muxed xdr.MuxedAccount
 				muxed.SetAddress(address)
-				Expect(subject.Destination.Equals(muxed)).To(BeTrue())
+				Expect(subject.Destination.Type).To(Equal(muxed.Type))
+				Expect(subject.Destination.Ed25519).To(Equal(muxed.Ed25519))
+				Expect(subject.Destination.Med25519).To(Equal(muxed.Med25519))
 			})
 		})
 
@@ -53,7 +54,9 @@ var _ = Describe("AccountMergeBuilder Mutators", func() {
 			It("sets the destination to the correct xdr.AccountId", func() {
 				var muxed xdr.MuxedAccount
 				muxed.SetAddress(address)
-				Expect(subject.O.SourceAccount.Equals(muxed)).To(BeTrue())
+				Expect(subject.O.SourceAccount.Type).To(Equal(muxed.Type))
+				Expect(subject.O.SourceAccount.Ed25519).To(Equal(muxed.Ed25519))
+				Expect(subject.O.SourceAccount.Med25519).To(Equal(muxed.Med25519))
 			})
 		})
 

@@ -31,8 +31,8 @@ func TestAsset_ToXDR(t *testing.T) {
 			Asset: CreditAsset("USD", issuerAddress),
 			Expected: xdr.Asset{
 				Type: xdr.AssetTypeAssetTypeCreditAlphanum4,
-				AlphaNum4: &xdr.AssetAlphaNum4{
-					AssetCode: xdr.AssetCode4{0x55, 0x53, 0x44, 0x00}, //USD
+				AlphaNum4: &xdr.AlphaNum4{
+					AssetCode: xdr.AssetCode4{0x55, 0x53, 0x44, 0x00}, // USD
 					Issuer:    issuer,
 				},
 			},
@@ -42,7 +42,7 @@ func TestAsset_ToXDR(t *testing.T) {
 			Asset: CreditAsset("SCOTTBUCKS", issuerAddress),
 			Expected: xdr.Asset{
 				Type: xdr.AssetTypeAssetTypeCreditAlphanum12,
-				AlphaNum12: &xdr.AssetAlphaNum12{
+				AlphaNum12: &xdr.AlphaNum12{
 					AssetCode: [12]byte{
 						0x53, 0x43, 0x4f, 0x54,
 						0x54, 0x42, 0x55, 0x43,
