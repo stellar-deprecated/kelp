@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - update Dockerfile to use pre-compiled binnary v1.11.0 ([#713](https://github.com/stellar/kelp/issues/713))
 - fix broken precision value test ([3aae9ed6ea9a27a6bae1aabfd97591c5382ea849](https://github.com/stellar/kelp/commit/3aae9ed6ea9a27a6bae1aabfd97591c5382ea849))
 - Upgrade to use stellar/go@horizonclient-v8.0.0 and fix outage from Stellar protocol 18 upgrade ([#748](https://github.com/stellar/kelp/pull/748))
+- update Dockerfile to use v1.12.0 of kelp binary ([4982f10325ff64d327c86a927bcdeaf4ad4278db](https://github.com/stellar/kelp/commit/4982f10325ff64d327c86a927bcdeaf4ad4278db))
+
 
 ### Security
 
