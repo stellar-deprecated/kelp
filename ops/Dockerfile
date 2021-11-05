@@ -11,11 +11,11 @@ RUN curl -L https://github.com/stellar/kelp/releases/download/ccxt-rest_v0.0.4/c
 RUN unzip /root/.kelp/ccxt/ccxt-rest_linux-x64.zip -d /root/.kelp/ccxt
 
 # fetch kelp archive
-RUN curl -L https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-linux-amd64.tar -o kelp-archive.tar
+RUN curl -L https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-linux-amd64.tar -o kelp-archive.tar
 # extract
 RUN tar xvf kelp-archive.tar
 # set working directory
-WORKDIR kelp-v1.11.0
+WORKDIR kelp-v1.12.0
 
 # set ulimit
 RUN ulimit -n 10000
