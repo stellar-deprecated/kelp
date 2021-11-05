@@ -8,7 +8,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Kelp GUI: add support for multitenancy on the backend ([#682](https://github.com/stellar/kelp/issues/682), [8002a95f45bbced90d87baa8c68ba9142e11a779](https://github.com/stellar/kelp/commit/8002a95f45bbced90d87baa8c68ba9142e11a779))
+- Kelp GUI: Auth0 integration_V2 ([#706](https://github.com/stellar/kelp/issues/706), [0d3f7c590bec82598149f543ed1c7d858e5b2437](https://github.com/stellar/kelp/commit/0d3f7c590bec82598149f543ed1c7d858e5b2437))
+- Script to Automate WSL and Ubuntu Installation on Windows ([#674](https://github.com/stellar/kelp/issues/674))
+- Kelp GUI: allow multiple users on frontend via getUserData() localstorage method ([#686](https://github.com/stellar/kelp/issues/686))
+- Add note about resting spread to sample_pendulum ([08378e15cc21aed3167bff0b2e91d17f341c4d9c](https://github.com/stellar/kelp/commit/08378e15cc21aed3167bff0b2e91d17f341c4d9c))
+- Started adding support for web sockets in binance ([3e8093de9f950a1a2aa7902995e4e1c1e7507839](https://github.com/stellar/kelp/commit/3e8093de9f950a1a2aa7902995e4e1c1e7507839), [10994b1178dea6aca89701b1a00e4c4e810d6528](https://github.com/stellar/kelp/commit/10994b1178dea6aca89701b1a00e4c4e810d6528))
+- feat(191) add support for open exchange rates for forex currency data ([#191](https://github.com/stellar/kelp/issues/191))
+
 ### Changed
+
+- improve precision for BTC markets, can still improve precision further ([be1f91744d21313623a21d24711b13136f78d4d5](https://github.com/stellar/kelp/commit/be1f91744d21313623a21d24711b13136f78d4d5))
+- Improve fill tracking for SDEX (faster, better rate limit handling) ([#671](https://github.com/stellar/kelp/issues/671))
+- log error in checkInitRootFlags() ([7531b9bbd349e83553f2f3ede5ccddaddce994c2](https://github.com/stellar/kelp/commit/7531b9bbd349e83553f2f3ede5ccddaddce994c2))
+- Kelp GUI: kaas mode, quit() disabled in KaaS mode, update AppName ([#687](https://github.com/stellar/kelp/issues/687), [4db12f85b6b838e78ce8e84bbaa99aa59dd52549](https://github.com/stellar/kelp/commit/4db12f85b6b838e78ce8e84bbaa99aa59dd52549))
+- Kelp GUI: log error when we fail to serve in non-local mode ([3f3d74fbd2b3984ae19c0471f1d1d66d5840a486](https://github.com/stellar/kelp/commit/3f3d74fbd2b3984ae19c0471f1d1d66d5840a486))
+- Kelp GUI: metrics should use guiUserID from frontend ([8b64485e3931ce7b4fc5f1f2608a4b629d57bee1](https://github.com/stellar/kelp/commit/8b64485e3931ce7b4fc5f1f2608a4b629d57bee1))
+- feat(277): upgrade dependency management go modules ([#277](https://github.com/stellar/kelp/issues/277))
 
 ### Deprecated
 
@@ -16,8 +32,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Kelp GUI: Price feed dropdown looks empty on chrome on Windows ([#230](https://github.com/stellar/kelp/issues/230))
+- Kelp GUI: add scrolling to welcome screen ([86214e85dd06557792bc243d1143638c50a6b1eb](https://github.com/stellar/kelp/commit/86214e85dd06557792bc243d1143638c50a6b1eb))
+- Kelp GUI: autogen bot endpoint was adding errors incorrectly causing a panic ([3c47994c762517605b103f52fd4da8f815a05511](https://github.com/stellar/kelp/commit/3c47994c762517605b103f52fd4da8f815a05511))
+- update Dockerfile to use pre-compiled binnary v1.11.0 ([#713](https://github.com/stellar/kelp/issues/713))
+- fix broken precision value test ([3aae9ed6ea9a27a6bae1aabfd97591c5382ea849](https://github.com/stellar/kelp/commit/3aae9ed6ea9a27a6bae1aabfd97591c5382ea849))
+- Upgrade to use stellar/go@horizonclient-v8.0.0 and fix outage from Stellar protocol 18 upgrade ([#748](https://github.com/stellar/kelp/pull/748))
+
 ### Security
 
+- Kelp GUI option to disable pubnet ([#680](https://github.com/stellar/kelp/issues/680))
+- Kelp GUI: When in testnet, do not allow secret keys that are valid accounts on the main network ([#677](https://github.com/stellar/kelp/issues/677))
+- Kelp GUI: add support for providing TLS certificates for KaaS server ([5c36eadcc3c69fcb2c713f3b0d3d5ea382839dfe](https://github.com/stellar/kelp/commit/5c36eadcc3c69fcb2c713f3b0d3d5ea382839dfe), [345f68071d57328819e2919074696dc9ea72b90b](https://github.com/stellar/kelp/commit/345f68071d57328819e2919074696dc9ea72b90b))
+- Kelp GUI: Add server to upgrade connections to HTTPS ([2798c784204f8f93de64de0dbcbc3d9bd56847fb](https://github.com/stellar/kelp/commit/2798c784204f8f93de64de0dbcbc3d9bd56847fb))
 
 
 ## [v1.11.0] - 2020-02-15
