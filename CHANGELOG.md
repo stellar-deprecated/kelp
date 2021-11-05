@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v1.12.0] - 2021-11-05
+
+### Added
+
 - Kelp GUI: add support for multitenancy on the backend ([#682](https://github.com/stellar/kelp/issues/682), [8002a95f45bbced90d87baa8c68ba9142e11a779](https://github.com/stellar/kelp/commit/8002a95f45bbced90d87baa8c68ba9142e11a779))
 - Kelp GUI: Auth0 integration_V2 ([#706](https://github.com/stellar/kelp/issues/706), [0d3f7c590bec82598149f543ed1c7d858e5b2437](https://github.com/stellar/kelp/commit/0d3f7c590bec82598149f543ed1c7d858e5b2437))
 - Script to Automate WSL and Ubuntu Installation on Windows ([#674](https://github.com/stellar/kelp/issues/674))
@@ -26,10 +41,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Kelp GUI: metrics should use guiUserID from frontend ([8b64485e3931ce7b4fc5f1f2608a4b629d57bee1](https://github.com/stellar/kelp/commit/8b64485e3931ce7b4fc5f1f2608a4b629d57bee1))
 - feat(277): upgrade dependency management go modules ([#277](https://github.com/stellar/kelp/issues/277))
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Kelp GUI: Price feed dropdown looks empty on chrome on Windows ([#230](https://github.com/stellar/kelp/issues/230))
@@ -40,14 +51,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade to use stellar/go@horizonclient-v8.0.0 and fix outage from Stellar protocol 18 upgrade ([#748](https://github.com/stellar/kelp/pull/748))
 - update Dockerfile to use v1.12.0 of kelp binary ([4982f10325ff64d327c86a927bcdeaf4ad4278db](https://github.com/stellar/kelp/commit/4982f10325ff64d327c86a927bcdeaf4ad4278db))
 
-
 ### Security
 
 - Kelp GUI option to disable pubnet ([#680](https://github.com/stellar/kelp/issues/680))
 - Kelp GUI: When in testnet, do not allow secret keys that are valid accounts on the main network ([#677](https://github.com/stellar/kelp/issues/677))
 - Kelp GUI: add support for providing TLS certificates for KaaS server ([5c36eadcc3c69fcb2c713f3b0d3d5ea382839dfe](https://github.com/stellar/kelp/commit/5c36eadcc3c69fcb2c713f3b0d3d5ea382839dfe), [345f68071d57328819e2919074696dc9ea72b90b](https://github.com/stellar/kelp/commit/345f68071d57328819e2919074696dc9ea72b90b))
 - Kelp GUI: Add server to upgrade connections to HTTPS ([2798c784204f8f93de64de0dbcbc3d9bd56847fb](https://github.com/stellar/kelp/commit/2798c784204f8f93de64de0dbcbc3d9bd56847fb))
-
 
 ## [v1.11.0] - 2020-02-15
 
@@ -443,7 +452,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Configuration file based approach to setting up a bot
 - Documentation on existing capabilities
 
-[Unreleased]: https://github.com/stellar/kelp/compare/v1.11.0...HEAD
+[Unreleased]: https://github.com/stellar/kelp/compare/v1.12.0...HEAD
+[v1.12.0]: https://github.com/stellar/kelp/compare/v1.11.0...v1.12.0
 [v1.11.0]: https://github.com/stellar/kelp/compare/v1.10.0...v1.11.0
 [v1.10.0]: https://github.com/stellar/kelp/compare/v1.9.0...v1.10.0
 [v1.9.0]: https://github.com/stellar/kelp/compare/v1.8.1...v1.9.0

@@ -75,34 +75,34 @@ You can find the pre-compiled binary for your platform from the [Github Releases
 
 #### GUI
 
-Here is a list of binaries for the most recent release **v1.0.0-rc2 (v1.11.0)**:
+Here is a list of binaries for the most recent release **v1.0.0-rc2 (v1.12.0)**:
 
 | Platform       | Architecture | Binary File Name |
 | -------------- | ------------ | ---------------- |
-| MacOS (Darwin) | 64-bit       | [kelp-v1.11.0-darwin-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/KelpGUI__gui-v1.0.0-rc2__cli-v1.11.0__darwin-amd64.dmg) |
-| Windows        | 64-bit       | [kelp-v1.11.0-windows-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/KelpGUI__gui-v1.0.0-rc2__cli-v1.11.0__windows-amd64.zip) |
-| Linux          | 64-bit       | [kelp-v1.11.0-linux-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/KelpGUI__gui-v1.0.0-rc2__cli-v1.11.0__linux-amd64.zip) |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.12.0-darwin-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/KelpGUI__gui-v1.0.0-rc2__cli-v1.12.0__darwin-amd64.dmg) |
+| Windows        | 64-bit       | [kelp-v1.12.0-windows-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/KelpGUI__gui-v1.0.0-rc2__cli-v1.12.0__windows-amd64.zip) |
+| Linux          | 64-bit       | [kelp-v1.12.0-linux-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/KelpGUI__gui-v1.0.0-rc2__cli-v1.12.0__linux-amd64.zip) |
 
 #### CLI
 
-Here is a list of binaries for the most recent release **v1.11.0**:
+Here is a list of binaries for the most recent release **v1.12.0**:
 
 | Platform       | Architecture | Binary File Name |
 | -------------- | ------------ | ---------------- |
-| MacOS (Darwin) | 64-bit       | [kelp-v1.11.0-darwin-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-darwin-amd64.tar) |
-| Windows        | 64-bit       | [kelp-v1.11.0-windows-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-windows-amd64.tar) |
-| Linux          | 64-bit       | [kelp-v1.11.0-linux-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-linux-amd64.tar) |
-| Linux          | 64-bit arm   | [kelp-v1.11.0-linux-arm64.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-linux-arm64.tar) |
-| Linux          | 32-bit arm5  | [kelp-v1.11.0-linux-arm5.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-linux-arm5.tar) |
-| Linux          | 32-bit arm6  | [kelp-v1.11.0-linux-arm6.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-linux-arm6.tar) |
-| Linux          | 32-bit arm7  | [kelp-v1.11.0-linux-arm7.tar](https://github.com/stellar/kelp/releases/download/v1.11.0/kelp-v1.11.0-linux-arm7.tar) |
+| MacOS (Darwin) | 64-bit       | [kelp-v1.12.0-darwin-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-darwin-amd64.tar) |
+| Windows        | 64-bit       | [kelp-v1.12.0-windows-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-windows-amd64.tar) |
+| Linux          | 64-bit       | [kelp-v1.12.0-linux-amd64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-linux-amd64.tar) |
+| Linux          | 64-bit arm   | [kelp-v1.12.0-linux-arm64.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-linux-arm64.tar) |
+| Linux          | 32-bit arm5  | [kelp-v1.12.0-linux-arm5.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-linux-arm5.tar) |
+| Linux          | 32-bit arm6  | [kelp-v1.12.0-linux-arm6.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-linux-arm6.tar) |
+| Linux          | 32-bit arm7  | [kelp-v1.12.0-linux-arm7.tar](https://github.com/stellar/kelp/releases/download/v1.12.0/kelp-v1.12.0-linux-arm7.tar) |
 
-After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.11.0`) and invoke the `kelp` binary.
+After you _untar_ the downloaded file, change to the generated directory (`kelp-v1.12.0`) and invoke the `kelp` binary.
 
 Here's an example to get you started (replace `filename` with the name of the file that you download):
 
     tar xvf filename
-    cd kelp-v1.11.0
+    cd kelp-v1.12.0
     ./kelp
 
 To run the bot in simulation mode, try this command:
@@ -111,7 +111,7 @@ To run the bot in simulation mode, try this command:
 
 ### Run With Docker
 
-This docker image (`nikhilsaraf/kelp:latest`) points to the latest pre-compiled version of the kelp binary v1.11.0, which can be run like this:
+This docker image (`nikhilsaraf/kelp:latest`) points to the latest pre-compiled version of the kelp binary v1.12.0, which can be run like this:
 
 `docker run nikhilsaraf/kelp:latest version`
 `docker run nikhilsaraf/kelp:latest trade -c sample_trader.cfg -s buysell -f sample_buysell.cfg --sim`
