@@ -94,6 +94,10 @@ func (o serverInputOptions) String() string {
 
 // function for reading custom config file and returning config struct with intilized value
 func readGUIConfig(options serverInputOptions) guiconfig.GUIConfig {
+	if *options.guiConfigPath == "" {
+		return guiconfig.EmptyGuiConfig()
+	}
+
 	var guiConfigInFunc guiconfig.GUIConfig
 	e := config.Read(*options.guiConfigPath, &guiConfigInFunc)
 	utils.CheckConfigError(guiConfigInFunc, e, *options.guiConfigPath)
@@ -102,9 +106,6 @@ func readGUIConfig(options serverInputOptions) guiconfig.GUIConfig {
 	}
 	return guiConfigInFunc
 }
-
-// customConfigVar Variable with its equivalent struct #used to inject config values to jwt config var and to configure route
-var auth0ConfigVar guiconfig.GUIConfig
 
 func init() {
 	options := serverInputOptions{}
@@ -121,9 +122,7 @@ func init() {
 	options.enableKaas = serverCmd.Flags().Bool("enable-kaas", false, "enable kelp-as-a-service (KaaS) mode, which does not bring up browser or electron")
 	options.tlsCertFile = serverCmd.Flags().String("tls-cert-file", "", "path to TLS certificate file")
 	options.tlsKeyFile = serverCmd.Flags().String("tls-key-file", "", "path to TLS key file")
-	options.guiConfigPath = serverCmd.Flags().StringP("guiconfig", "c", "", "(required) gui-config for auth0 and other basic config file path")
-
-	requiredFlags("guiconfig")
+	options.guiConfigPath = serverCmd.Flags().StringP("guiconfig", "c", "", "gui-config for auth0 and other basic config file path")
 
 	serverCmd.Run = func(ccmd *cobra.Command, args []string) {
 		isLocalMode := env == envDev
@@ -173,7 +172,7 @@ func init() {
 		log.Printf("initialized server with cli flag inputs: %s", options)
 
 		//calliing readGUIConfig func and then inject values into JWT_middleware customconfigvar
-		auth0ConfigVar = readGUIConfig(options)
+		auth0ConfigVar := readGUIConfig(options)
 		backend.Auth0ConfigVarJWT = auth0ConfigVar
 
 		if runtime.GOOS == "windows" {

@@ -22,3 +22,10 @@ func (g GUIConfig) String() string {
 		"DOMAIN":        	utils.Hide,
 	})
 }
+
+// EmptyGuiConfig returns an empty GUIConfig for when it is not specified on the command-line
+func EmptyGuiConfig() GUIConfig {
+	return GUIConfig{
+		Auth0Config: &Auth0Config{},
+	}
+}
