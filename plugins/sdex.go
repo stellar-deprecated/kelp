@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/big"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 	"github.com/nikhilsaraf/go-tools/multithreading"
 	"github.com/pkg/errors"
 
-	"github.com/stellar/go/build"
+	"github.com/stellar/kelp/stellargohorizonclientv300/build"
 	"github.com/stellar/go/clients/horizonclient"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
@@ -203,7 +204,7 @@ func (sdex *SDEX) DeleteOffer(offer hProtocol.Offer) txnbuild.ManageSellOffer {
 	txOffer := utils.Offer2TxnBuildSellOffer(offer)
 	txOffer.Amount = "0"
 	if sdex.SourceAccount != sdex.TradingAccount {
-		txOffer.SourceAccount = &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount}
+		txOffer.SourceAccount = sdex.TradingAccount
 	}
 	return txOffer
 }
@@ -349,7 +350,7 @@ func (sdex *SDEX) createModifySellOffer(offer *hProtocol.Offer, selling hProtoco
 		result.OfferID = offer.ID
 	}
 	if sdex.SourceAccount != sdex.TradingAccount {
-		result.SourceAccount = &txnbuild.SimpleAccount{AccountID: sdex.TradingAccount}
+		result.SourceAccount = sdex.TradingAccount
 	}
 
 	return &result, nil
@@ -856,7 +857,7 @@ func (sdex *SDEX) tradesPage2TradeHistoryResult(baseAsset hProtocol.Asset, quote
 		if e != nil {
 			return nil, false, fmt.Errorf("could not convert baseAmount to model.Number: %s", e)
 		}
-		floatPrice := float64(t.Price.N) / float64(t.Price.D)
+		floatPrice, _ := big.NewRat(t.Price.N, t.Price.D).Float64()
 		price := model.NumberFromFloat(floatPrice, sdexOrderConstraints.PricePrecision)
 
 		trades = append(trades, model.Trade{

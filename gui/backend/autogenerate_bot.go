@@ -157,7 +157,7 @@ func (s *APIServer) setupTestnetAccount(address string, signer string, botName s
 		Line: txnbuild.CreditAsset{
 			Code:   "COUPON",
 			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
-		},
+		}.MustToChangeTrustAsset(),
 	}
 	txOps = append(txOps, &trustOp)
 
@@ -168,7 +168,7 @@ func (s *APIServer) setupTestnetAccount(address string, signer string, botName s
 			Code:   "COUPON",
 			Issuer: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
 		},
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+		SourceAccount: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
 	}
 	txOps = append(txOps, &paymentOp)
 

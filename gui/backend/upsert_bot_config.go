@@ -417,7 +417,7 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 	for _, a := range trustlines {
 		creditAsset := txnbuild.CreditAsset{Code: a.Code, Issuer: a.Issuer}
 		trustOp := txnbuild.ChangeTrust{
-			Line: creditAsset,
+			Line: creditAsset.MustToChangeTrustAsset(),
 		}
 		txOps = append(txOps, &trustOp)
 		log.Printf("added trust asset operation to transaction for asset: %+v\n", a)
@@ -427,7 +427,7 @@ func (s *APIServer) checkAddTrustline(account hProtocol.Account, kp keypair.KP, 
 				Destination:   address,
 				Amount:        "1000.0",
 				Asset:         creditAsset,
-				SourceAccount: &txnbuild.SimpleAccount{AccountID: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI"},
+				SourceAccount: "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI",
 			}
 			txOps = append(txOps, &paymentOp)
 			log.Printf("added payment operation to transaction for asset because issuer was the public issuer (%s): %+v\n", "GBMMZMK2DC4FFP4CAI6KCVNCQ7WLO5A7DQU7EC7WGHRDQBZB763X4OQI", a)

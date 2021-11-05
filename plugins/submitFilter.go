@@ -382,6 +382,6 @@ func convertOffer2MSO(offer hProtocol.Offer) *txnbuild.ManageSellOffer {
 		Amount:        offer.Amount,
 		Price:         offer.Price,
 		OfferID:       offer.ID,
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: offer.Seller},
+		SourceAccount: offer.Seller,
 	}
 }

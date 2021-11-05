@@ -101,7 +101,7 @@ func (t *Terminator) run() {
 			&txnbuild.ManageData{
 				Name:          terminatorKey,
 				Value:         []byte(tsMillisStr),
-				SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+				SourceAccount: t.tradingAccount,
 			},
 		}
 
@@ -146,22 +146,22 @@ func (t *Terminator) deleteOffers(sellOffers []hProtocol.Offer, buyOffers []hPro
 
 	// delete existing data entries
 	ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(0),
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+		SourceAccount: t.tradingAccount,
 	})
 	ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(1),
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+		SourceAccount: t.tradingAccount,
 	})
 	if len(botKey.AssetBaseIssuer) > 0 {
 		ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(2),
-			SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+			SourceAccount: t.tradingAccount,
 		})
 	}
 	ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(3),
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+		SourceAccount: t.tradingAccount,
 	})
 	if len(botKey.AssetQuoteIssuer) > 0 {
 		ops = append(ops, &txnbuild.ManageData{Name: botKey.FullKey(4),
-			SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+			SourceAccount: t.tradingAccount,
 		})
 	}
 
@@ -170,7 +170,7 @@ func (t *Terminator) deleteOffers(sellOffers []hProtocol.Offer, buyOffers []hPro
 	ops = append(ops, &txnbuild.ManageData{
 		Name:          terminatorKey,
 		Value:         []byte(tsMillisStr),
-		SourceAccount: &txnbuild.SimpleAccount{AccountID: t.tradingAccount},
+		SourceAccount: t.tradingAccount,
 	})
 
 	log.Printf("deleting %d offers and 5 data entries, updating delete timestamp to %s\n", numOffers, tsMillisStr)

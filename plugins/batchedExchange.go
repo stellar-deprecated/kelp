@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stellar/go/build"
+	"github.com/stellar/kelp/stellargohorizonclientv300/build"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/kelp/api"
