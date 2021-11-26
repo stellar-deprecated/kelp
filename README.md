@@ -126,7 +126,7 @@ To compile Kelp from source:
 
 1. [Download][golang-download] and [setup][golang-setup] Golang _v1.13 or later_
    1. Set environment variable `export GOPROXY=https://goproxy.io,https://proxy.golang.org,https://goproxy.cn`
-2. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] to build the Kelp GUI
+2. Install [Yarn][yarn-install] and [NodeJs][nodejs-install] (Node v12.3.1 via [nvm][nvm]) to build the Kelp GUI
 3. Clone the kelp repository `git clone git@github.com:stellar/kelp.git`
 4. Install the [astilectron-bundler][astilectron-bundler] binary
     * `go install github.com/asticode/go-astilectron-bundler/astilectron-bundler`
@@ -401,6 +401,7 @@ See the [Code of Conduct](CODE_OF_CONDUCT.md).
 [glide-install]: https://github.com/Masterminds/glide#install
 [yarn-install]: https://yarnpkg.com/lang/en/docs/install/
 [nodejs-install]: https://nodejs.org/en/download/
+[nvm]: https://github.com/nvm-sh/nvm
 [astilectron-bundler]: https://github.com/asticode/go-astilectron-bundler
 [spread]: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
 [hedge]: https://en.wikipedia.org/wiki/Hedge_(finance)
