@@ -62,6 +62,8 @@ var RootCmd = &cobra.Command{
 			if e != nil {
 				panic(e)
 			}
+		} else {
+			panic(fmt.Sprintf("unrecognized buildType: %s", buildType))
 		}
 	},
 }
