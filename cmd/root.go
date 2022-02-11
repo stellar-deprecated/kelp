@@ -56,14 +56,12 @@ var RootCmd = &cobra.Command{
 		if buildType == "gui" {
 			// if this is the GUI binary then we want to start off with the server command
 			serverCmd.Run(ccmd, args)
-		} else if buildType == "cli" {
+		} else if buildType == "cli" || buildType == "" {
 			// else start off with the help command
 			e := ccmd.Help()
 			if e != nil {
 				panic(e)
 			}
-		} else {
-			panic(fmt.Sprintf("unrecognized buildType: %s", buildType))
 		}
 	},
 }
@@ -108,12 +106,16 @@ func checkInitRootFlags() {
 }
 
 func validateBuild() {
+	if env != envRelease {
+		return
+	}
+
 	if version == "" || guiVersion == "" || buildDate == "" || gitBranch == "" || gitHash == "" {
 		fmt.Println("version information not included, please build using the build script (scripts/build.sh)")
 		os.Exit(1)
 	}
 
-	if amplitudeAPIKey == "" && env == envRelease {
+	if amplitudeAPIKey == "" {
 		utils.PrintErrorHintf("amplitude API key not included, please export AMPLITUDE_API_KEY before running build script (scripts/build.sh)")
 		os.Exit(1)
 	}
